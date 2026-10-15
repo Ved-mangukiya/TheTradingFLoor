@@ -77,6 +77,12 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 html, body {
   min-height: 100vh;
   background-color: var(--bg-ivory);
@@ -86,6 +92,17 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+img, svg, video, canvas {
+  display: block;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
 }
 
 h1, h2, h3, .font-serif {
@@ -93,6 +110,8 @@ h1, h2, h3, .font-serif {
   color: var(--text-forest);
   font-weight: 700;
   letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .font-mono-price {
@@ -149,6 +168,12 @@ h1, h2, h3, .font-serif {
   user-select: none;
   text-decoration: none;
   white-space: nowrap;
+  min-height: 36px;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--champagne-accent);
+  outline-offset: 2px;
 }
 
 .btn:active {
@@ -246,6 +271,7 @@ h1, h2, h3, .font-serif {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .badge-active {
@@ -306,7 +332,7 @@ h1, h2, h3, .font-serif {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -317,6 +343,8 @@ h1, h2, h3, .font-serif {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .brand-icon {
@@ -331,6 +359,7 @@ h1, h2, h3, .font-serif {
   font-weight: 900;
   font-family: var(--font-serif);
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .header-clock-pill {
@@ -341,17 +370,20 @@ h1, h2, h3, .font-serif {
   border: 1px solid var(--subtle-border);
   padding: 6px 14px;
   border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .header-metrics-bar {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .metric-item {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .metric-label {
@@ -367,6 +399,7 @@ h1, h2, h3, .font-serif {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-charcoal);
+  white-space: nowrap;
 }
 
 /* 8. MARKET GRID & STOCK CARDS */
@@ -386,6 +419,7 @@ h1, h2, h3, .font-serif {
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  min-width: 0;
 }
 
 .stock-card:hover {
@@ -404,6 +438,7 @@ h1, h2, h3, .font-serif {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 8px;
+  gap: 8px;
 }
 
 .stock-ticker {
@@ -431,6 +466,7 @@ h1, h2, h3, .font-serif {
   background-color: var(--champagne-light);
   padding: 2px 7px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .stock-price-row {
@@ -438,6 +474,8 @@ h1, h2, h3, .font-serif {
   align-items: baseline;
   justify-content: space-between;
   margin-top: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .stock-current-price {
@@ -480,6 +518,8 @@ h1, h2, h3, .font-serif {
   align-items: center;
   font-size: 11px;
   margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* 9. BREAKING NEWS WIRE SIDEBAR */
@@ -494,6 +534,7 @@ h1, h2, h3, .font-serif {
   max-height: calc(100vh - 120px);
   position: sticky;
   top: 90px;
+  min-width: 0;
 }
 
 .news-item {
@@ -517,6 +558,8 @@ h1, h2, h3, .font-serif {
   font-family: var(--font-mono);
   color: var(--text-muted);
   margin-bottom: 4px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .news-headline {
@@ -545,6 +588,7 @@ h1, h2, h3, .font-serif {
   justify-content: center;
   padding: 16px;
   z-index: 100;
+  overflow-y: auto;
 }
 
 .modal-content {
@@ -578,6 +622,7 @@ h1, h2, h3, .font-serif {
   border-bottom: 1px solid var(--subtle-border);
   padding-bottom: 14px;
   margin-bottom: 18px;
+  gap: 12px;
 }
 
 .modal-close-btn {
@@ -586,9 +631,15 @@ h1, h2, h3, .font-serif {
   font-size: 18px;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   transition: background 0.15s ease;
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close-btn:hover {
@@ -621,6 +672,7 @@ h1, h2, h3, .font-serif {
   font-size: 13px;
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 40px;
 }
 
 .form-input:focus {
@@ -628,6 +680,16 @@ h1, h2, h3, .font-serif {
   border-color: var(--champagne-accent);
   box-shadow: 0 0 0 3px var(--champagne-glow);
   background-color: #FFFFFF;
+}
+
+select.form-input {
+  appearance: auto;
+  cursor: pointer;
+}
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 60px;
 }
 
 /* 11. PROJECTOR VIEW SPECIFICATIONS (AUDITORIUM VISIBILITY) */
@@ -652,6 +714,8 @@ h1, h2, h3, .font-serif {
   align-items: center;
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .projector-clock {
@@ -659,6 +723,7 @@ h1, h2, h3, .font-serif {
   font-size: 32px;
   font-weight: 900;
   color: var(--text-forest);
+  white-space: nowrap;
 }
 
 .projector-grid {
@@ -681,6 +746,7 @@ h1, h2, h3, .font-serif {
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  min-width: 0;
 }
 
 .projector-card.halted {
@@ -712,6 +778,7 @@ h1, h2, h3, .font-serif {
   align-items: center;
   gap: 16px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 /* Breaking News Ticker Animation */
@@ -755,6 +822,8 @@ h1, h2, h3, .font-serif {
   box-shadow: var(--shadow-lg);
   position: relative;
   transition: transform 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .podium-first {
@@ -864,20 +933,693 @@ h1, h2, h3, .font-serif {
   background: var(--champagne-accent);
 }
 
-/* 15. RESPONSIVE BREAKPOINTS */
+/* ==========================================================================
+   15. COMPREHENSIVE RESPONSIVE BREAKPOINTS (ZERO OVERLAP, INSTITUTIONAL FINESSE)
+   ========================================================================== */
+
+/* ---------- 15.1 Universal Table & Scrolling Foundation ---------- */
+table {
+  min-width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+th {
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+td {
+  white-space: nowrap; /* Financial numbers, tickers and badges never wrap awkwardly */
+  vertical-align: middle;
+}
+
+td.td-wrap,
+th.th-wrap {
+  white-space: normal;
+}
+
+.table-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Sub-navigation universal responsive behavior */
+.trader-sub-nav,
+.host-sub-nav {
+  background-color: var(--surface-cream);
+  border-bottom: 1px solid var(--subtle-border);
+  padding: 8px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trader-tabs-wrap,
+.host-tabs-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.trader-tabs-wrap::-webkit-scrollbar,
+.host-tabs-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.trader-tabs-wrap .btn,
+.host-tabs-wrap .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.trader-filters-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- 15.2 1440px: Large Desktop & Auditorium Projectors ---------- */
+@media (max-width: 1440px) {
+  .projector-ticker {
+    font-size: 28px;
+  }
+  .projector-price {
+    font-size: 32px;
+  }
+}
+
+/* ---------- 15.3 1280px: Standard Laptops & Classroom Displays ---------- */
+@media (max-width: 1280px) {
+  .header-metrics-bar {
+    gap: 14px;
+  }
+  .metric-value {
+    font-size: 14px;
+  }
+  .projector-ticker {
+    font-size: 24px;
+  }
+  .projector-price {
+    font-size: 28px;
+  }
+  .projector-clock {
+    font-size: 26px;
+  }
+}
+
+/* ---------- 15.4 1024px: Tablets & Compact Desktops ---------- */
 @media (max-width: 1024px) {
+  .app-header {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  /* Collapse trader main grid: sidebar sits below trading cards */
+  #traderView main {
+    grid-template-columns: 1fr !important;
+    gap: 18px;
+  }
+
+  .news-sidebar {
+    position: static;
+    max-height: 340px;
+    top: auto;
+    width: 100%;
+  }
+
+  /* 2-column stock grid */
+  .stock-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  /* Projector: 2x4 layout */
   .projector-grid {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(4, 1fr);
   }
+
+  /* Podium: stack vertically with Grand Champion Gold prominently at the top */
   .podium-container {
     grid-template-columns: 1fr;
-    height: auto;
+    gap: 16px;
+    max-width: 540px;
   }
   .podium-card {
     height: auto !important;
-    min-height: 220px;
+    min-height: 180px;
+    padding: 20px;
   }
+  .podium-first {
+    order: 1; /* Gold Champion on top */
+  }
+  .podium-second {
+    order: 2; /* Silver runner-up second */
+  }
+  .podium-third {
+    order: 3; /* Bronze third */
+  }
+
+  /* Hero metrics: 2 columns */
+  .trader-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  /* Flow stepper pills: compact */
+  .flow-step-pill .step-label {
+    display: none;
+  }
+  .flow-step-arrow {
+    font-size: 10px;
+  }
+
+  /* Projector header: hide divider sticks when wrapping */
+  .proj-header-divider {
+    display: none !important;
+  }
+  .projector-header {
+    padding: 10px 16px;
+  }
+  .projector-clock {
+    font-size: 22px;
+  }
+  .projector-ticker {
+    font-size: 22px;
+  }
+  .projector-price {
+    font-size: 24px;
+  }
+  .projector-card {
+    padding: 12px 14px;
+  }
+  .projector-ticker-strip {
+    padding: 8px 16px;
+    gap: 10px;
+  }
+  .news-marquee-text {
+    font-size: 15px;
+  }
+}
+
+/* ---------- 15.5 900px: Large Tablet Portrait & Split-Screen ---------- */
+@media (max-width: 900px) {
+  .header-brand {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .header-metrics-bar {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  #traderView main,
+  #hostView main {
+    padding: 16px !important;
+  }
+
+  /* Host projector controls: 1 column */
+  .host-projector-split {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Hide vertical dividers on positions panel */
+  .pos-header-divider {
+    display: none !important;
+  }
+
+  .metric-item {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* ---------- 15.6 768px: Tablets & Large Mobile Devices ---------- */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 13px;
+  }
+
+  /* Permanently hide screen-id-pill on tablet/mobile to prevent overlapping headers */
+  .screen-id-pill {
+    display: none !important;
+  }
+
+  /* App header compact styling */
+  .app-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .header-clock-pill {
+    padding: 4px 10px;
+    gap: 6px;
+  }
+
+  /* Multi-row metrics bar */
+  .header-metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  .header-metrics-bar .metric-item {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .header-metrics-bar .btn {
+    grid-column: 1 / -1;
+  }
+
+  /* Stock cards: single column */
+  .stock-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .stock-card {
+    padding: 14px;
+  }
+  .stock-current-price {
+    font-size: 20px;
+  }
+
+  /* Hero grid: 2 columns with clamp */
+  .trader-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .hero-metric-card {
+    padding: 14px;
+    gap: 10px;
+  }
+  .hero-icon-box {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  /* Sub-nav horizontal scrolling */
+  .trader-sub-nav,
+  .host-sub-nav {
+    padding: 8px 12px;
+  }
+  .trader-tabs-wrap,
+  .host-tabs-wrap {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    padding: 10px;
+    align-items: center;
+  }
+  .modal-content {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+    max-height: 94vh;
+  }
+
+  /* Toast notification */
+  .toast-notice {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+
+  /* Projector 2-column fallback */
+  .projector-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .projector-card {
+    padding: 10px 12px;
+  }
+  .projector-ticker {
+    font-size: 18px;
+  }
+  .projector-price {
+    font-size: 20px;
+  }
+  .projector-header {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .projector-clock {
+    font-size: 18px;
+  }
+  .projector-container {
+    padding: 10px 12px;
+  }
+
+  /* Overlays */
+  .circuit-alert-banner {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+  }
+  .blackout-card,
+  .soft-pause-card,
+  .day-transition-card {
+    padding: 24px 18px;
+    max-width: 440px;
+  }
+
+  /* Indices ticker */
+  .indices-ticker-bar {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+  .index-chip {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 6px;
+  }
+}
+
+/* ---------- 15.7 640px: Large Mobile Landscape & Phablets ---------- */
+@media (max-width: 640px) {
+  /* Prevent iOS Safari auto-zoom on input focus */
+  .form-input {
+    font-size: 16px !important;
+  }
+
+  /* Touch-friendly button sizes */
+  .btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  .metric-value {
+    font-size: 13px;
+  }
+
+  /* Trader sub-nav filters take full width */
+  .trader-filters-wrap {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+  }
+  .trader-filters-wrap input,
+  .trader-filters-wrap select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Hero grid becomes single column */
+  .trader-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Login card */
+  .login-card {
+    padding: 24px 18px !important;
+    max-width: 100% !important;
+  }
+  .login-terminals-grid {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  /* Waiting room modal */
+  #traderWaitingRoomOverlay .modal-content {
+    padding: 20px 14px !important;
+  }
+  .waiting-room-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* News flash modal */
+  #newsFlashModal .modal-content {
+    max-width: 100% !important;
+    padding: 18px 14px !important;
+  }
+
+  /* Winner podium modal */
+  #winnerPodiumModal .modal-content {
+    padding: 18px 12px !important;
+    max-width: 100% !important;
+  }
+  .podium-container {
+    gap: 10px;
+  }
+  .podium-card {
+    padding: 14px;
+    min-height: 160px;
+  }
+
+  /* Modal forms: all 2-column grids collapse to 1 column */
+  .news-modal-grid,
+  .settings-modal-grid,
+  .share-modal-grid,
+  .schedule-mode-grid,
+  .liquidate-action-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .chart-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Projector grid: 1 column at narrow widths */
+  .projector-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .projector-card {
+    padding: 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .projector-ticker {
+    font-size: 16px;
+  }
+  .projector-price {
+    font-size: 18px;
+  }
+  .projector-ticker-strip {
+    padding: 6px 12px;
+    gap: 8px;
+    border-radius: var(--radius-md);
+  }
+  .news-marquee-text {
+    font-size: 13px;
+  }
+
+  /* Host tournament flow card */
+  .host-tournament-flow-card {
+    margin: 8px 10px 0 10px !important;
+    padding: 10px 12px !important;
+  }
+  .flow-step-arrow {
+    display: none;
+  }
+}
+
+/* ---------- 15.8 480px: Standard Mobile Portrait ---------- */
+@media (max-width: 480px) {
+  html, body {
+    font-size: 12px;
+  }
+
+  /* Compact header */
+  .app-header {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  .header-clock-pill {
+    padding: 3px 6px;
+    gap: 4px;
+    font-size: 10px;
+    border-radius: 6px;
+  }
+
+  /* 2-column compact metrics */
+  .header-metrics-bar {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .metric-label {
+    font-size: 9px;
+  }
+  .metric-value {
+    font-size: 12px;
+  }
+
+  /* Stock cards */
+  .stock-card {
+    padding: 12px;
+    border-radius: var(--radius-md);
+  }
+  .stock-ticker {
+    font-size: 16px;
+  }
+  .stock-current-price {
+    font-size: 18px;
+  }
+  .stock-name {
+    max-width: 130px;
+  }
+  .sparkline-wrapper {
+    height: 48px;
+    margin: 8px 0;
+  }
+
+  /* Compact buttons */
+  .btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 4px;
+    min-height: 34px;
+    border-radius: 6px;
+  }
+  .btn-buy, .btn-sell {
+    padding: 5px 6px;
+    font-size: 11px;
+    min-height: 32px;
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    gap: 3px;
+  }
+
+  /* Modals near full-screen */
+  .modal-overlay {
+    padding: 4px;
+  }
+  .modal-content {
+    padding: 14px 12px;
+    border-radius: var(--radius-md);
+    max-height: 96vh;
+    margin-top: 4px;
+  }
+  .modal-header {
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+  .modal-header h2 {
+    font-size: 16px !important;
+  }
+
+  /* News sidebar */
+  .news-sidebar {
+    padding: 12px;
+    border-radius: var(--radius-md);
+  }
+  .news-headline {
+    font-size: 12px;
+  }
+  .news-item {
+    padding: 8px;
+    margin-bottom: 6px;
+  }
+
+  /* Toast edge-to-edge */
+  .toast-notice {
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    padding: 9px 12px;
+    font-size: 11px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Waiting room timer display */
+  #waitingRoomTimerDisplay {
+    font-size: 36px !important;
+    letter-spacing: 2px !important;
+  }
+
+  /* Countdown overlay number */
+  #countdownNumber {
+    font-size: 90px !important;
+  }
+
+  /* Presentation scenes */
+  #winnerPresentationView main {
+    padding: 14px 8px !important;
+  }
+  #presHostToolbar {
+    padding: 8px 10px !important;
+  }
+}
+
+/* ---------- 15.9 360px: Small Mobile Portrait ---------- */
+@media (max-width: 360px) {
+  .app-header {
+    padding: 4px 6px;
+  }
+  .stock-card {
+    padding: 10px;
+  }
+  .stock-ticker {
+    font-size: 15px;
+  }
+  .stock-current-price {
+    font-size: 16px;
+  }
+  .hero-metric-card {
+    padding: 10px;
+    gap: 8px;
+  }
+  .hero-icon-box {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+  .btn {
+    padding: 5px 8px;
+    font-size: 10px;
+    min-height: 30px;
+  }
+  .modal-content {
+    padding: 12px 10px;
+  }
+}
+
+/* ==========================================================================
+   15b. PROJECTOR FULLSCREEN OPTIMIZATIONS
+   ========================================================================== */
+.projector-container:-webkit-full-screen,
+.projector-container:fullscreen {
+  background-color: #FAF8F5;
 }
 
 /* ==========================================================================
@@ -912,6 +1654,8 @@ h1, h2, h3, .font-serif {
   font-weight: 800;
   letter-spacing: 0.05em;
   animation: slideBannerDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 @keyframes slideBannerDown {
@@ -971,6 +1715,7 @@ h1, h2, h3, .font-serif {
   font-size: 12px;
   font-weight: 800;
   margin-right: 8px;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -997,6 +1742,10 @@ h1, h2, h3, .font-serif {
   gap: 8px;
   pointer-events: none;
   animation: pillFadeIn 0.3s ease;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @keyframes pillFadeIn {
@@ -1044,6 +1793,7 @@ h1, h2, h3, .font-serif {
 
 .blackout-card {
   max-width: 580px;
+  width: 100%;
   background: rgba(26, 48, 38, 0.7);
   border: 1px solid rgba(142, 109, 59, 0.4);
   border-radius: 20px;
@@ -1073,6 +1823,7 @@ h1, h2, h3, .font-serif {
 
 .soft-pause-card {
   max-width: 540px;
+  width: 100%;
   background: #FFFFFF;
   border: 2px solid var(--warning-amber);
   border-radius: 16px;
@@ -1097,6 +1848,7 @@ h1, h2, h3, .font-serif {
 .day-transition-card {
   text-align: center;
   max-width: 620px;
+  width: 100%;
   animation: transitionZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1113,18 +1865,6 @@ h1, h2, h3, .font-serif {
   margin-bottom: 20px;
 }
 
-@media (max-width: 1024px) {
-  .trader-hero-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 580px) {
-  .trader-hero-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .hero-metric-card {
   background: #FFFFFF;
   border: 1px solid var(--subtle-border);
@@ -1135,6 +1875,7 @@ h1, h2, h3, .font-serif {
   gap: 14px;
   box-shadow: 0 2px 10px rgba(26, 48, 38, 0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 0;
 }
 
 .hero-metric-card:hover {
@@ -1235,6 +1976,7 @@ h1, h2, h3, .font-serif {
   font-weight: 700;
   color: var(--text-muted);
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .flow-step-pill .step-num {
@@ -1248,6 +1990,7 @@ h1, h2, h3, .font-serif {
   font-size: 11px;
   font-weight: 800;
   color: var(--text-forest);
+  flex-shrink: 0;
 }
 
 .flow-step-pill.active {
@@ -1278,6 +2021,7 @@ h1, h2, h3, .font-serif {
   font-size: 13px;
   font-weight: 800;
   user-select: none;
+  flex-shrink: 0;
 }
 
 /* Indices Ticker Bar & Chips */
@@ -1292,6 +2036,7 @@ h1, h2, h3, .font-serif {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .indices-ticker-bar::-webkit-scrollbar {
   display: none;
@@ -1309,6 +2054,7 @@ h1, h2, h3, .font-serif {
   font-size: 12px;
   cursor: default;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .index-chip:hover {
@@ -1346,5 +2092,25 @@ h1, h2, h3, .font-serif {
   color: var(--price-down);
 }
 
+/* ==========================================================================
+   19. PRINT STYLES
+   ========================================================================== */
+@media print {
+  .app-header,
+  .screen-id-pill,
+  .toast-notice,
+  .circuit-alert-banner,
+  .modal-overlay,
+  .confetti-container {
+    display: none !important;
+  }
+  body {
+    background: #FFFFFF;
+  }
+  .luxury-card {
+    box-shadow: none;
+    border: 1px solid #DDD;
+  }
+}
 
 

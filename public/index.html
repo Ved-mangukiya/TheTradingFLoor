@@ -32,8 +32,8 @@
   <!-- 1.2 Breaking News Flashover Modal -->
   <div id="newsFlashModal" class="hidden modal-overlay" style="z-index: 110;">
     <div class="modal-content" style="max-width: 720px; border: 3px solid var(--champagne-accent);">
-      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 16px; gap: 8px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
           <span class="badge" style="background-color: var(--error-bg); color: var(--error-red); border: 1px solid var(--error-border);">
             🚨 BREAKING MARKET WIRE
           </span>
@@ -42,7 +42,7 @@
             SECTOR SHOCK
           </span>
         </div>
-        <span id="flashCountdownBadge" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+        <span id="flashCountdownBadge" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap;">
           Closing in 20s
         </span>
       </div>
@@ -238,7 +238,7 @@
        ========================================================================== -->
   <section id="loginView" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
     <div class="screen-id-pill screen-id-login">🔑 TERMINAL AUTHENTICATION &bull; ALL DESKS</div>
-    <div class="luxury-card" style="max-width: 440px; width: 100%; padding: 36px;">
+    <div class="luxury-card login-card" style="max-width: 440px; width: 100%; padding: 36px;">
       <div style="text-align: center; margin-bottom: 28px;">
         <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 22px;">TF</div>
         <div class="badge badge-sage" style="margin-bottom: 10px;">
@@ -267,7 +267,7 @@
         <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 8px;">
           Pre-Configured Terminal Logins
         </span>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
+        <div class="login-terminals-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
           <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--text-forest); display: block;">HOST</strong>host / host2026</div>
           <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--champagne-accent); display: block;">PROJECTOR</strong>projector / screen2026</div>
           <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--price-up); display: block;">TEAMS</strong>team1..team12</div>
@@ -294,7 +294,7 @@
         <h2 id="waitingRoomTitle" style="font-size: 28px; color: var(--text-forest); margin-bottom: 6px; font-family: var(--font-serif); font-weight: 900;">The Trading Floor Championship</h2>
         <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">SSASIT Surat (GTU 076) • Official Trading Terminal</p>
         
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
+        <div class="waiting-room-stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
           <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Assigned Desk</div>
             <div id="waitingRoomTeamName" style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">Team 1</div>
@@ -316,7 +316,7 @@
           <p id="waitingRoomTimerNote" style="font-size: 13px; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">Trading desks and all 20 NSE stocks will unlock automatically when timer reaches zero.</p>
         </div>
 
-        <div style="display: flex; justify-content: center; gap: 16px; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
           <span>⚡ 20 Live Stocks Loaded</span>
           <span>•</span>
           <span>🔒 Order Security Ready</span>
@@ -376,9 +376,9 @@
     </header>
 
     <!-- Sub-Navigation & Filters Bar -->
-    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+    <div class="trader-sub-nav" style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
       <!-- Desk Tabs -->
-      <div style="display: flex; gap: 8px;">
+      <div class="trader-tabs-wrap" style="display: flex; gap: 8px;">
         <button id="tabBtnMarket" onclick="switchTraderTab('market')" class="btn btn-sage" style="padding: 6px 14px; font-size: 12px;">
           📊 Market Trading Desk
         </button>
@@ -394,7 +394,7 @@
       </div>
 
       <!-- Search & Sector Filters -->
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="trader-filters-wrap" style="display: flex; align-items: center; gap: 8px;">
         <input id="traderStockSearch" type="text" placeholder="Search company or ticker..." oninput="filterTraderStocks()" class="form-input" style="padding: 5px 10px; font-size: 12px; width: 180px;" />
         <select id="traderSectorFilter" onchange="filterTraderStocks()" class="form-input" style="padding: 5px 10px; font-size: 12px; width: 140px;">
           <option value="ALL">All Sectors</option>
@@ -492,12 +492,12 @@
                 <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Cash in Hand</span>
                 <span id="posCashInHand" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--price-up);">₹0.00</span>
               </div>
-              <div style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
+              <div class="pos-header-divider" style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
               <div>
                 <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Stock Valuation</span>
                 <span id="posStockValuation" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--text-forest);">₹0.00</span>
               </div>
-              <div style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
+              <div class="pos-header-divider" style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
               <div>
                 <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Total Portfolio Value</span>
                 <span id="posTotalNetWorth" style="font-family: var(--font-mono); font-size: 16px; font-weight: 900; color: var(--text-charcoal);">₹0.00</span>
@@ -678,8 +678,8 @@
     </div>
 
     <!-- Streamlined Host Navigation Sub-Bar (5 Core Tabs) -->
-    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
-      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <div class="host-sub-nav" style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+      <div class="host-tabs-wrap" style="display: flex; flex-wrap: wrap; gap: 8px;">
         <button id="hostTabBtnStocks" onclick="switchHostTab('stocks')" class="btn btn-sage" style="padding: 6px 16px; font-size: 12px; font-weight: 800;">
           📈 Live Floor &amp; Stocks
         </button>
@@ -717,7 +717,7 @@
     <!-- Host Main Panels -->
     <main style="flex: 1; padding: 24px; max-width: 1600px; width: 100%; margin: 0 auto;">
       <!-- EVENT CONFIGURATION LOCK STATUS BANNER -->
-      <div id="hostConfigLockBanner" class="luxury-card" style="padding: 12px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; background: #F8FAFC; border: 2px solid #CBD5E1;">
+      <div id="hostConfigLockBanner" class="luxury-card" style="padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: #F8FAFC; border: 2px solid #CBD5E1;">
         <div style="display: flex; align-items: center; gap: 14px;">
           <span id="hostConfigLockIcon" style="font-size: 24px;">🔓</span>
           <div>
@@ -1165,7 +1165,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+        <div class="host-projector-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
           <!-- Left: Playlist & Scene Selection -->
           <div class="cream-panel" style="padding: 16px;">
             <h3 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 10px; text-transform: uppercase;">
@@ -1282,13 +1282,13 @@
             The Trading Floor Championship 2026
           </div>
         </div>
-        <div style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
+        <div class="proj-header-divider" style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
         <div id="projClockText" class="projector-clock">CLOCK: 00:00</div>
-        <div style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
+        <div class="proj-header-divider" style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
         <span id="projStatusText" class="badge badge-active" style="font-size: 16px; padding: 6px 16px;">
           ACTIVE TRADING
         </span>
-        <div style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
+        <div class="proj-header-divider" style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
         <span id="projSceneBadge" class="badge badge-champagne" style="font-size: 13px; font-weight: 700;">
           🔄 CYCLE: MARKET BOARD (12s)
         </span>
@@ -1954,7 +1954,7 @@
       </div>
 
       <!-- Key Metrics Row -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-family: var(--font-mono); font-size: 12px;">
+      <div class="chart-metrics-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-family: var(--font-mono); font-size: 12px;">
         <div class="cream-panel" style="padding: 8px 12px;">
           <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block;">Day Open</span>
           <span id="chartModalOpen" style="font-weight: 700;">₹0.00</span>
@@ -1992,7 +1992,7 @@
           <label class="form-label" for="newsExplanationInput">Explanation & Sector Context</label>
           <textarea id="newsExplanationInput" rows="2" placeholder="e.g. Lower interest rates boost borrowing and auto sales across all major manufacturers." class="form-input"></textarea>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="news-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label class="form-label" for="newsTickerInput">Affected Stock / Scope</label>
             <select id="newsTickerInput" class="form-input"></select>
@@ -2029,7 +2029,7 @@
           <label class="form-label" for="settingEventTitle">Event Title</label>
           <input id="settingEventTitle" type="text" class="form-input" placeholder="e.g. SSASIT B-School Trading Championship 2026" />
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="settings-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label class="form-label" for="settingDayDuration">Round Duration (Seconds)</label>
             <input id="settingDayDuration" type="number" step="30" min="60" class="form-input" style="font-family: var(--font-mono);" />
@@ -2040,7 +2040,7 @@
             <input id="settingTotalDays" type="number" min="1" max="10" class="form-input" style="font-family: var(--font-mono);" />
           </div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="settings-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
             <label class="form-label" for="settingCircuitPercent">Circuit Breaker Limit (%)</label>
             <input id="settingCircuitPercent" type="number" step="1" min="5" max="50" class="form-input" style="font-family: var(--font-mono);" />
@@ -2091,7 +2091,7 @@
       </div>
 
       <!-- Editable Roster Table -->
-      <div style="overflow-y: auto; flex: 1; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); margin-bottom: 16px;">
+      <div class="table-scroll-wrap" style="overflow: auto; flex: 1; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); margin-bottom: 16px; -webkit-overflow-scrolling: touch;">
         <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
           <thead>
             <tr style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
@@ -2133,7 +2133,7 @@
 
       <form id="shareEditorForm" onsubmit="saveShareEditorForm(event)">
         <input type="hidden" id="shareEditOriginalTicker" />
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px;">
+        <div class="share-modal-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px;">
           <div class="form-group">
             <label class="form-label" for="shareEditTicker">Ticker Symbol *</label>
             <input id="shareEditTicker" type="text" required maxlength="10" placeholder="e.g. TATASTEEL" class="form-input" style="font-family: var(--font-mono); text-transform: uppercase;" />
@@ -2144,7 +2144,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="share-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div class="form-group">
             <label class="form-label" for="shareEditSector">Sector / Industry *</label>
             <input id="shareEditSector" type="text" required placeholder="e.g. Metals & Mining" class="form-input" />
@@ -2155,7 +2155,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="share-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div class="form-group">
             <label class="form-label" for="shareEditVol">Volatility StdDev (σ)</label>
             <input id="shareEditVol" type="number" step="0.001" min="0.001" max="0.10" value="0.012" class="form-input" style="font-family: var(--font-mono);" />
@@ -2455,7 +2455,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+      <div class="liquidate-action-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
         <button type="button" onclick="closeLiquidateModal()" class="btn btn-outline" style="padding: 13px; font-size: 13px; font-weight: 600;">
           Keep Holdings (Cancel)
         </button>
@@ -2484,7 +2484,7 @@
 
       <div style="margin: 16px 0;">
         <!-- Start Mode Selection -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+        <div class="schedule-mode-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
           <div id="modeCardImmediate" class="cream-panel" style="padding: 14px; cursor: pointer; border: 2px solid var(--champagne-accent);" onclick="selectStartMode('IMMEDIATE')">
             <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer; color: var(--text-forest);">
               <input type="radio" name="eventStartMode" value="IMMEDIATE" checked onchange="selectStartMode('IMMEDIATE')" />
