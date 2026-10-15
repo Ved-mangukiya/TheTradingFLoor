@@ -426,10 +426,12 @@ function restartEngineInterval() {
         }
       }
 
-      // 2. Realistic Gaussian + micro-drift
+      // 2. Realistic Gaussian + micro-drift + Ornstein-Uhlenbeck mean-reversion
       const gaussianComponent = gaussianRandom() * stock.volatility_factor * stock.currentPrice * 0.35;
       const microDrift = (Math.random() - 0.495) * 2 * stock.volatility_factor * stock.currentPrice * 0.65;
-      const totalDrift = gaussianComponent + microDrift;
+      // Subtle gravitational anchor towards baseline price (prevents unrealistic runaway divergence)
+      const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
+      const totalDrift = gaussianComponent + microDrift + meanReversion;
 
       const minBound = stock.min_price || 1;
       const maxBound = stock.max_price || 100000;
@@ -792,6 +794,11 @@ wss.on('connection', (ws) => {
         team.avgBuyPrice[stock.ticker] = +((prevCost + grossValue) / (prevQty + qty)).toFixed(2);
         team.tradeCount++;
 
+        // Dynamic market impact (order flow buying pressure)
+        const buyImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        stock.currentPrice = Math.min(stock.max_price || 100000, +(stock.currentPrice + buyImpact).toFixed(2));
+        if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
+
         tradeSeqCounter++;
         const tradeRecord = {
           tradeId: `TRD_${tradeSeqCounter}`,
@@ -850,6 +857,11 @@ wss.on('connection', (ws) => {
         team.realizedPnl = +(team.realizedPnl + profitOnSold - feeAmount).toFixed(2);
         if (team.holdings[stock.ticker] === 0) team.avgBuyPrice[stock.ticker] = 0;
         team.tradeCount++;
+
+        // Dynamic market impact (order flow selling pressure)
+        const sellImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
+        if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
 
         tradeSeqCounter++;
         const tradeRecord = {
