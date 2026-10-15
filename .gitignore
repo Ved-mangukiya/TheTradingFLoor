@@ -2,11 +2,20 @@
 node_modules/
 package-lock.json
 
-# Logs
-logs/
-*.log
+# Local Environment & Secrets
+.env
+.env.local
+*.secret
 
-# OS & Editor Files
+# Logs & Runtime Dumps
+logs/*.json
+logs/*.csv
+logs/*.log
+!logs/.gitkeep
+
+# Temporary Backups & OS files
+*.tmp
+*.bak
 .DS_Store
 Thumbs.db
 .vscode/

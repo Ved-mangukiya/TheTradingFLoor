@@ -893,7 +893,7 @@ function drawSmoothBezierSparkline(canvasId, history, dayOpenPrice, isUp, isLarg
 // ==========================================
 function switchHostTab(tabName) {
   activeHostTab = tabName;
-  ['stocks', 'news', 'leaderboard', 'trades', 'exports'].forEach((t) => {
+  ['stocks', 'universe', 'news', 'leaderboard', 'trades', 'exports'].forEach((t) => {
     const btn = document.getElementById(`hostTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
     const content = document.getElementById(`hostTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
     if (btn) btn.className = t === tabName ? 'btn btn-sage' : 'btn btn-outline';
@@ -905,7 +905,7 @@ function switchHostTab(tabName) {
 }
 
 function renderHostView(state) {
-  const { gameState, companies, leaderboard, newsEvents, recentTrades } = state;
+  const { gameState, companies, leaderboard, newsEvents, recentTrades, allCompaniesUniverse } = state;
   if (!gameState) return;
 
   document.getElementById('hostScenarioModeBadge').textContent = `${state.scenarioMode.toUpperCase()} MODE`;
@@ -913,6 +913,9 @@ function renderHostView(state) {
     `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${
       gameState.isPaused ? 'PAUSED' : 'LIVE'
     } • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
+
+  // 0. Render Universe Market Builder Table
+  renderHostUniverseView(allCompaniesUniverse || companies || []);
 
   // 1. Render Stocks Table
   if (companies) {
@@ -1048,6 +1051,219 @@ function hostConcludeChampionship() {
   if (confirm('Crown Championship Winners and launch Grand Finale ceremony across all terminals?')) {
     ws.send(JSON.stringify({ action: 'HOST_CONCLUDE_CHAMPIONSHIP', session_token: sessionToken }));
   }
+}
+
+// ==========================================
+// 8. SHARE UNIVERSE MANAGEMENT CONTROLLERS
+// ==========================================
+function renderHostUniverseView(universe) {
+  if (!universe) return;
+  const total = universe.length;
+  const activeCount = universe.filter((c) => c.isEnabled !== false).length;
+  const disabledCount = total - activeCount;
+  const sectorsSet = new Set(universe.map((c) => c.sector));
+
+  const statTotal = document.getElementById('universeStatTotal');
+  const statActive = document.getElementById('universeStatActive');
+  const statDisabled = document.getElementById('universeStatDisabled');
+  const statSectors = document.getElementById('universeStatSectors');
+
+  if (statTotal) statTotal.textContent = total;
+  if (statActive) statActive.textContent = activeCount;
+  if (statDisabled) statDisabled.textContent = disabledCount;
+  if (statSectors) statSectors.textContent = sectorsSet.size;
+
+  const tbody = document.getElementById('hostUniverseTbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = universe.map((c) => {
+    const isEnabled = c.isEnabled !== false;
+    const currentPrice = c.currentPrice !== undefined ? c.currentPrice : c.base_price;
+    const basePrice = c.base_price !== undefined ? c.base_price : currentPrice;
+    const vol = c.volatility_factor || 0.004;
+    const beta = c.beta || 1.0;
+
+    return `
+      <tr style="border-bottom: 1px solid var(--subtle-border); ${!isEnabled ? 'opacity: 0.6; background-color: rgba(0,0,0,0.02);' : ''}">
+        <td style="padding: 8px; font-weight: 800; color: var(--text-forest);">${c.ticker}</td>
+        <td style="padding: 8px;">
+          <div style="font-weight: 600;">${c.name}</div>
+          ${c.fundamentals && c.fundamentals.summary ? `<div style="font-size: 11px; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.fundamentals.summary}</div>` : ''}
+        </td>
+        <td style="padding: 8px;">
+          <span class="badge" style="background-color: var(--surface-cream); border: 1px solid var(--subtle-border); font-size: 10px;">${c.sector}</span>
+        </td>
+        <td style="padding: 8px; text-align: right; font-weight: 600;">₹${basePrice.toFixed(2)}</td>
+        <td style="padding: 8px; text-align: right; font-weight: 700;">₹${currentPrice.toFixed(2)}</td>
+        <td style="padding: 8px; text-align: right; font-family: var(--font-mono); color: var(--text-muted);">${(vol * 100).toFixed(2)}%</td>
+        <td style="padding: 8px; text-align: right; font-family: var(--font-mono);">${beta.toFixed(2)}</td>
+        <td style="padding: 8px; text-align: center;">
+          <button onclick="toggleShareActive('${c.ticker}')" class="badge ${isEnabled ? 'badge-active' : 'badge-paused'}" style="cursor: pointer; border: none; font-size: 11px; padding: 4px 8px;" title="Click to ${isEnabled ? 'disable and exclude' : 'enable and include'}">
+            ${isEnabled ? '● Active in Market' : '○ Disabled'}
+          </button>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <div style="display: flex; gap: 4px; justify-content: center;">
+            <button onclick="openShareEditorModal('${c.ticker}')" class="btn btn-outline" style="padding: 2px 6px; font-size: 10px;" title="Edit share details">✏️</button>
+            <button onclick="duplicateShare('${c.ticker}')" class="btn btn-outline" style="padding: 2px 6px; font-size: 10px;" title="Duplicate as template">📋</button>
+            <button onclick="deleteShare('${c.ticker}')" class="btn btn-outline" style="padding: 2px 6px; font-size: 10px; color: var(--error-red); border-color: var(--error-border);" title="Delete share">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function toggleShareActive(ticker) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({ action: 'HOST_TOGGLE_SHARE', session_token: sessionToken, ticker }));
+}
+
+function openShareEditorModal(ticker) {
+  const modal = document.getElementById('shareEditorModal');
+  if (!modal) return;
+
+  const originalInput = document.getElementById('shareEditOriginalTicker');
+  const tickerInput = document.getElementById('shareEditTicker');
+  const nameInput = document.getElementById('shareEditName');
+  const sectorInput = document.getElementById('shareEditSector');
+  const basePriceInput = document.getElementById('shareEditBasePrice');
+  const volInput = document.getElementById('shareEditVol');
+  const betaInput = document.getElementById('shareEditBeta');
+  const descInput = document.getElementById('shareEditDescription');
+  const enabledInput = document.getElementById('shareEditEnabled');
+  const title = document.getElementById('shareEditorModalTitle');
+
+  if (ticker && latestState) {
+    const list = latestState.allCompaniesUniverse || latestState.companies || [];
+    const stock = list.find((c) => c.ticker === ticker);
+    if (stock) {
+      originalInput.value = stock.ticker;
+      tickerInput.value = stock.ticker;
+      tickerInput.disabled = true;
+      nameInput.value = stock.name;
+      sectorInput.value = stock.sector;
+      basePriceInput.value = stock.base_price || stock.currentPrice;
+      volInput.value = stock.volatility_factor || 0.004;
+      betaInput.value = stock.beta || 1.0;
+      descInput.value = (stock.fundamentals && stock.fundamentals.summary) || '';
+      enabledInput.checked = stock.isEnabled !== false;
+      title.textContent = `Edit Company Share — ${stock.ticker}`;
+      modal.classList.remove('hidden');
+      return;
+    }
+  }
+
+  // Adding new share
+  originalInput.value = '';
+  tickerInput.value = '';
+  tickerInput.disabled = false;
+  nameInput.value = '';
+  sectorInput.value = '';
+  basePriceInput.value = '100.00';
+  volInput.value = '0.004';
+  betaInput.value = '1.0';
+  descInput.value = '';
+  enabledInput.checked = true;
+  title.textContent = 'Add New Company to Market Universe';
+  modal.classList.remove('hidden');
+}
+
+function closeShareEditorModal() {
+  const modal = document.getElementById('shareEditorModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveShareEditorForm(e) {
+  if (e) e.preventDefault();
+  if (!ws || !sessionToken) return;
+
+  const originalTicker = document.getElementById('shareEditOriginalTicker').value;
+  const ticker = document.getElementById('shareEditTicker').value.trim().toUpperCase();
+  const name = document.getElementById('shareEditName').value.trim();
+  const sector = document.getElementById('shareEditSector').value.trim();
+  const base_price = parseFloat(document.getElementById('shareEditBasePrice').value);
+  const volatility_factor = parseFloat(document.getElementById('shareEditVol').value) || 0.004;
+  const beta = parseFloat(document.getElementById('shareEditBeta').value) || 1.0;
+  const summary = document.getElementById('shareEditDescription').value.trim();
+  const isEnabled = document.getElementById('shareEditEnabled').checked;
+
+  if (!ticker || isNaN(base_price) || base_price <= 0) {
+    alert('Please enter a valid ticker symbol and positive starting base price.');
+    return;
+  }
+
+  if (originalTicker) {
+    ws.send(JSON.stringify({
+      action: 'HOST_EDIT_SHARE',
+      session_token: sessionToken,
+      ticker: originalTicker,
+      name,
+      sector,
+      base_price,
+      volatility_factor,
+      beta,
+      summary
+    }));
+  } else {
+    ws.send(JSON.stringify({
+      action: 'HOST_ADD_SHARE',
+      session_token: sessionToken,
+      ticker,
+      name,
+      sector,
+      base_price,
+      volatility_factor,
+      beta,
+      summary
+    }));
+  }
+
+  closeShareEditorModal();
+}
+
+function duplicateShare(ticker) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({ action: 'HOST_DUPLICATE_SHARE', session_token: sessionToken, ticker }));
+}
+
+function deleteShare(ticker) {
+  if (!ws || !sessionToken) return;
+  if (confirm(`Permanently remove ${ticker} from the market universe? Existing team holdings in this stock will be cleared.`)) {
+    ws.send(JSON.stringify({ action: 'HOST_DELETE_SHARE', session_token: sessionToken, ticker }));
+  }
+}
+
+function applyMarketTemplate(templateId) {
+  if (!ws || !sessionToken) return;
+  const map = {
+    'balanced': 'all_active',
+    'all': 'all_active',
+    'tech_auto': 'tech_auto_focus',
+    'high_vol': 'high_volatility',
+    'defensive': 'banking_defensive'
+  };
+  const targetId = map[templateId] || templateId;
+  ws.send(JSON.stringify({ action: 'HOST_APPLY_MARKET_TEMPLATE', session_token: sessionToken, templateId: targetId }));
+}
+
+function hostRandomizePrices(variancePct = 10) {
+  if (!ws || !sessionToken) return;
+  if (confirm(`Randomize active share base prices by up to ±${variancePct}%? This establishes new baseline prices for tournament rounds.`)) {
+    ws.send(JSON.stringify({ action: 'HOST_RANDOMIZE_PRICES', session_token: sessionToken, variancePct }));
+  }
+}
+
+function hostResetUniverseBaseline() {
+  if (!ws || !sessionToken) return;
+  if (confirm('Reset the entire stock universe back to the official 12 blue-chip baseline? This discards custom shares.')) {
+    ws.send(JSON.stringify({ action: 'HOST_RESET_UNIVERSE_BASELINE', session_token: sessionToken }));
+  }
+}
+
+function downloadUniverseExport(format = 'json') {
+  const url = format === 'csv' ? '/api/export/universe-csv' : '/api/export/universe';
+  window.open(url, '_blank');
 }
 
 function dismissPodiumCeremony() {

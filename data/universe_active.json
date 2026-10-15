@@ -1,0 +1,231 @@
+[
+  {
+    "ticker": "APEXAUTO",
+    "name": "Apex Mobility EV",
+    "sector": "Automobile",
+    "base_price": 800,
+    "lot_presets": [
+      5,
+      15,
+      30
+    ],
+    "beta": 1.35,
+    "volatility_factor": 0.0035,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹2.10 Lakh Cr",
+      "pe_ratio": 18.2,
+      "high_52w": 920,
+      "low_52w": 540,
+      "face_value": 2,
+      "debt_to_equity": 1.1,
+      "dividend_yield": "1.2%",
+      "summary": "Fictitious electric fleet manufacturer used for dry-run calibration."
+    }
+  },
+  {
+    "ticker": "VELOCAR",
+    "name": "Velocity Motors",
+    "sector": "Automobile",
+    "base_price": 4500,
+    "lot_presets": [
+      1,
+      3,
+      5
+    ],
+    "beta": 0.85,
+    "volatility_factor": 0.002,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹1.85 Lakh Cr",
+      "pe_ratio": 24,
+      "high_52w": 5100,
+      "low_52w": 3900,
+      "face_value": 5,
+      "debt_to_equity": 0.05,
+      "dividend_yield": "1.8%",
+      "summary": "Traditional combustion engine automaker with strong rural dealership network."
+    }
+  },
+  {
+    "ticker": "NEXUSTECH",
+    "name": "Nexus Cloud Systems",
+    "sector": "IT & Tech",
+    "base_price": 2400,
+    "lot_presets": [
+      2,
+      5,
+      10
+    ],
+    "beta": 0.7,
+    "volatility_factor": 0.0016,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹9.40 Lakh Cr",
+      "pe_ratio": 29.5,
+      "high_52w": 2800,
+      "low_52w": 2100,
+      "face_value": 1,
+      "debt_to_equity": 0,
+      "dividend_yield": "2.4%",
+      "summary": "Global enterprise software outsourcer with steady cash flows."
+    }
+  },
+  {
+    "ticker": "CYBERINF",
+    "name": "CyberGrid Solutions",
+    "sector": "IT & Tech",
+    "base_price": 1250,
+    "lot_presets": [
+      5,
+      10,
+      25
+    ],
+    "beta": 1.15,
+    "volatility_factor": 0.0028,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹4.20 Lakh Cr",
+      "pe_ratio": 26.1,
+      "high_52w": 1500,
+      "low_52w": 980,
+      "face_value": 5,
+      "debt_to_equity": 0.08,
+      "dividend_yield": "1.5%",
+      "summary": "Cloud migration and AI analytics provider serving North American banks."
+    }
+  },
+  {
+    "ticker": "CROWNBNK",
+    "name": "Crown National Bank",
+    "sector": "Banking",
+    "base_price": 1500,
+    "lot_presets": [
+      5,
+      10,
+      20
+    ],
+    "beta": 0.95,
+    "volatility_factor": 0.002,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹10.1 Lakh Cr",
+      "pe_ratio": 17.9,
+      "high_52w": 1720,
+      "low_52w": 1310,
+      "face_value": 1,
+      "debt_to_equity": 6.4,
+      "dividend_yield": "1.1%",
+      "summary": "Leading institutional and retail lender with low non-performing assets."
+    }
+  },
+  {
+    "ticker": "PULSEFIN",
+    "name": "Pulse Consumer Credit",
+    "sector": "Banking",
+    "base_price": 5200,
+    "lot_presets": [
+      1,
+      3,
+      5
+    ],
+    "beta": 1.5,
+    "volatility_factor": 0.004,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹3.10 Lakh Cr",
+      "pe_ratio": 33.8,
+      "high_52w": 6600,
+      "low_52w": 4300,
+      "face_value": 2,
+      "debt_to_equity": 3.9,
+      "dividend_yield": "0.4%",
+      "summary": "High-growth EMI and digital consumer finance company."
+    }
+  },
+  {
+    "ticker": "SOLARIX",
+    "name": "Solarix Renewables",
+    "sector": "Renewables",
+    "base_price": 1400,
+    "lot_presets": [
+      2,
+      5,
+      15
+    ],
+    "beta": 1.75,
+    "volatility_factor": 0.0048,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹1.95 Lakh Cr",
+      "pe_ratio": 95,
+      "high_52w": 1850,
+      "low_52w": 780,
+      "face_value": 10,
+      "debt_to_equity": 4.2,
+      "dividend_yield": "0.0%",
+      "summary": "Utility-scale wind and solar developer sensitive to interest rates."
+    }
+  },
+  {
+    "ticker": "ZENITHBIO",
+    "name": "Zenith Biopharma",
+    "sector": "Pharma",
+    "base_price": 1100,
+    "lot_presets": [
+      5,
+      10,
+      20
+    ],
+    "beta": 0.55,
+    "volatility_factor": 0.0022,
+    "min_price": 1,
+    "max_price": 50000,
+    "isEnabled": true,
+    "fundamentals": {
+      "market_cap": "₹2.70 Lakh Cr",
+      "pe_ratio": 31,
+      "high_52w": 1320,
+      "low_52w": 890,
+      "face_value": 1,
+      "debt_to_equity": 0.12,
+      "dividend_yield": "0.9%",
+      "summary": "Defensive pharmaceutical exporter specializing in chronic therapies."
+    }
+  },
+  {
+    "ticker": "CAMPUSCO",
+    "name": "Campus Innovations Ltd",
+    "sector": "Technology",
+    "base_price": 250,
+    "lot_presets": [
+      1,
+      5,
+      10,
+      50,
+      100
+    ],
+    "beta": 1.2,
+    "volatility_factor": 0.005,
+    "min_price": 1,
+    "max_price": 2500,
+    "isEnabled": true,
+    "fundamentals": {
+      "summary": "Student-led tech enterprise"
+    }
+  }
+]

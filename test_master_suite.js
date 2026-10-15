@@ -85,18 +85,29 @@ async function runTests() {
   console.log('================================================================\n');
 
   // Boot server on isolated test port
-  serverProcess = spawn('node', ['server.js', 'test'], {
+  let serverReady = false;
+  serverProcess = spawn(process.execPath, ['server.js', 'test'], {
     cwd: __dirname,
-    env: { ...process.env, PORT: TEST_PORT },
+    env: { ...process.env, PORT: String(TEST_PORT) },
     stdio: 'pipe'
   });
 
   serverProcess.stdout.on('data', (d) => {
-    // console.log(`[SERVER] ${d}`);
+    const str = d.toString();
+    if (str.includes('ONLINE')) {
+      serverReady = true;
+    }
   });
 
-  // Wait for server to boot
-  await new Promise((r) => setTimeout(r, 1600));
+  serverProcess.stderr.on('data', (d) => {
+    console.error(`[SERVER STDERR] ${d.toString()}`);
+  });
+
+  // Wait for server to boot (up to 5 seconds)
+  for (let i = 0; i < 20; i++) {
+    if (serverReady) break;
+    await new Promise((r) => setTimeout(r, 250));
+  }
 
   let hostToken = null;
   let team1Token = null;
@@ -287,6 +298,93 @@ async function runTests() {
       logPass(`Team isolation verified: Team 2 has 0 shares of ${testTicker} (Team 1 trades did not contaminate Team 2).`);
     } else {
       logFail(`Team isolation violated: Team 2 has ${team2Holdings} shares`);
+    }
+
+    // -------------------------------------------------------------
+    // Test 4.6: Dynamic Share Universe Management & Tradeability Enforcement
+    // -------------------------------------------------------------
+    console.log('\n[STAGE 4.6] Share Universe Management & Tradeability Enforcement');
+
+    // 1. Host adds new share CAMPUSCO
+    ws1.send(JSON.stringify({
+      action: 'HOST_ADD_SHARE',
+      session_token: hostToken,
+      ticker: 'CAMPUSCO',
+      name: 'Campus Innovations Ltd',
+      sector: 'Technology',
+      base_price: 250.00,
+      volatility_factor: 0.005,
+      beta: 1.2,
+      summary: 'Student-led tech enterprise'
+    }));
+
+    await new Promise((r) => setTimeout(r, 400));
+    logPass('Host added custom share CAMPUSCO to active universe.');
+
+    // 2. Host disables CAMPUSCO
+    ws1.send(JSON.stringify({
+      action: 'HOST_TOGGLE_SHARE',
+      session_token: hostToken,
+      ticker: 'CAMPUSCO'
+    }));
+
+    await new Promise((r) => setTimeout(r, 400));
+    logPass('Host toggled CAMPUSCO to disabled status.');
+
+    // 3. Team 1 attempts to BUY disabled CAMPUSCO -> Must be rejected!
+    const disabledOrderRes = await sendAndAwait(wsTeam1, {
+      action: 'ORDER',
+      session_token: team1Token,
+      ticker: 'CAMPUSCO',
+      type: 'BUY',
+      quantity: 10
+    }, 'ORDER_REJECTED');
+
+    if (disabledOrderRes.reason && disabledOrderRes.reason.includes('Trading is not enabled')) {
+      logPass(`Disabled share trade rejected correctly: "${disabledOrderRes.reason}"`);
+    } else {
+      logFail('Disabled share trade was not rejected with proper reason', disabledOrderRes);
+    }
+
+    // 4. Host re-enables CAMPUSCO
+    await new Promise((r) => setTimeout(r, 250));
+    ws1.send(JSON.stringify({
+      action: 'HOST_TOGGLE_SHARE',
+      session_token: hostToken,
+      ticker: 'CAMPUSCO'
+    }));
+
+    await new Promise((r) => setTimeout(r, 400));
+    logPass('Host re-enabled CAMPUSCO for live market trading.');
+
+    // 5. Team 1 places BUY order on newly enabled share
+    const enabledOrderRes = await sendAndAwait(wsTeam1, {
+      action: 'ORDER',
+      session_token: team1Token,
+      ticker: 'CAMPUSCO',
+      type: 'BUY',
+      quantity: 5
+    }, 'ORDER_FILLED');
+
+    if (enabledOrderRes.ticker === 'CAMPUSCO' && enabledOrderRes.quantity === 5) {
+      logPass(`BUY order filled successfully on newly enabled share CAMPUSCO (Price: ₹${enabledOrderRes.price}).`);
+    } else {
+      logFail('Failed to execute order on enabled share', enabledOrderRes);
+    }
+
+    // 6. Test Universe Export Endpoints (JSON and CSV)
+    const universeJson = await httpGet('/api/export/universe', hostToken);
+    if (universeJson.status === 200 && universeJson.body.includes('CAMPUSCO')) {
+      logPass('Universe JSON export verified via /api/export/universe.');
+    } else {
+      logFail('Universe JSON export failed', universeJson);
+    }
+
+    const universeCsv = await httpGet('/api/export/universe-csv', hostToken);
+    if (universeCsv.status === 200 && universeCsv.body.includes('CAMPUSCO')) {
+      logPass('Universe CSV export verified via /api/export/universe-csv.');
+    } else {
+      logFail('Universe CSV export failed', universeCsv);
     }
 
     // -------------------------------------------------------------

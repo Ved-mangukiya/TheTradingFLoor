@@ -11,13 +11,14 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
+const DATA_DIR = path.join(__dirname, 'data');
 const LOGS_DIR = path.join(__dirname, 'logs');
 if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // ==========================================
 // 1. CREDENTIALS & SESSION TOKEN REGISTRY
@@ -76,17 +77,15 @@ setInterval(flushAuditLogToDisk, 5000);
 function sanitizeCsvCell(val) {
   if (val === null || val === undefined) return '""';
   let str = String(val);
-  // Guard against spreadsheet formula execution
   if (/^[=+\-@\t\r]/.test(str)) {
     str = `'` + str;
   }
-  // Escape double quotes
   str = str.replace(/"/g, '""');
   return `"${str}"`;
 }
 
 // ==========================================
-// 3. SCENARIO & MARKET STATE INITIALIZATION
+// 3. SCENARIO & SHARE UNIVERSE INITIALIZATION
 // ==========================================
 let activeScenarioMode = 'live'; // 'live' or 'test'
 let scenarioData = null;
@@ -106,7 +105,7 @@ let gameState = {
   totalShiftOffsetSeconds: 0,
   tickIntervalMs: 1500,
   circuitBreakerPercent: 20,
-  transactionFeeBps: 0, // e.g. 10 bps = 0.10%
+  transactionFeeBps: 0,
   activeNewsFlash: null,
   newsHistory: [],
   isConcluded: false,
@@ -115,9 +114,8 @@ let gameState = {
 
 let priceLoopHandle = null;
 
-// Helper to configure teams dynamically
+// Helper to configure default teams
 function setupDefaultTeams(count = 12, startingCash = 500000) {
-  // Clear out old team logins in USERS
   Object.keys(USERS).forEach((key) => {
     if (USERS[key].role === 'TRADER') delete USERS[key];
   });
@@ -168,17 +166,41 @@ function setupDefaultTeams(count = 12, startingCash = 500000) {
   }
 }
 
-function loadScenario(mode = 'live') {
+// Persist customized active universe
+const ACTIVE_UNIVERSE_FILE = path.join(DATA_DIR, 'universe_active.json');
+
+function saveUniverseToDisk() {
+  try {
+    const dataToSave = companies.map((c) => ({
+      ticker: c.ticker,
+      name: c.name,
+      sector: c.sector,
+      base_price: c.base_price,
+      lot_presets: c.lot_presets,
+      beta: c.beta,
+      volatility_factor: c.volatility_factor,
+      min_price: c.min_price || 1,
+      max_price: c.max_price || 50000,
+      isEnabled: c.isEnabled !== false,
+      fundamentals: c.fundamentals || {}
+    }));
+    fs.writeFileSync(ACTIVE_UNIVERSE_FILE, JSON.stringify(dataToSave, null, 2));
+  } catch (err) {
+    console.error('[UNIVERSE SAVE ERROR]', err.message);
+  }
+}
+
+function loadScenario(mode = 'live', forceBaseline = false) {
   activeScenarioMode = mode === 'test' ? 'test' : 'live';
   const fileName = activeScenarioMode === 'test' ? 'scenario_test.json' : 'scenario_live.json';
-  const filePath = path.join(__dirname, 'data', fileName);
+  const filePath = path.join(DATA_DIR, fileName);
 
   if (!fs.existsSync(filePath)) {
     console.error(`[WARN] Missing ${fileName} in /data. Falling back.`);
     activeScenarioMode = activeScenarioMode === 'test' ? 'live' : 'test';
   }
 
-  const resolvedPath = path.join(__dirname, 'data', activeScenarioMode === 'test' ? 'scenario_test.json' : 'scenario_live.json');
+  const resolvedPath = path.join(DATA_DIR, activeScenarioMode === 'test' ? 'scenario_test.json' : 'scenario_live.json');
   const raw = fs.readFileSync(resolvedPath, 'utf-8');
   scenarioData = JSON.parse(raw);
 
@@ -203,24 +225,36 @@ function loadScenario(mode = 'live') {
     winnerData: null
   };
 
-  companies = scenarioData.companies.map((c) => ({
-    ticker: c.ticker,
-    name: c.name,
-    sector: c.sector,
-    base_price: c.base_price,
-    lot_presets: c.lot_presets || [1, 5, 10, 50, 100],
-    beta: c.beta || 1.0,
-    volatility_factor: c.volatility_factor || 0.004,
+  let rawCompanies = scenarioData.companies;
+  if (!forceBaseline && fs.existsSync(ACTIVE_UNIVERSE_FILE) && activeScenarioMode === 'live') {
+    try {
+      rawCompanies = JSON.parse(fs.readFileSync(ACTIVE_UNIVERSE_FILE, 'utf-8'));
+    } catch (e) {
+      rawCompanies = scenarioData.companies;
+    }
+  }
+
+  companies = rawCompanies.map((c) => ({
+    ticker: (c.ticker || '').toUpperCase().trim(),
+    name: c.name || c.ticker,
+    sector: c.sector || 'General',
+    base_price: parseFloat(c.base_price) || 100,
+    lot_presets: Array.isArray(c.lot_presets) && c.lot_presets.length > 0 ? c.lot_presets : [1, 5, 10, 50, 100],
+    beta: parseFloat(c.beta) || 1.0,
+    volatility_factor: parseFloat(c.volatility_factor) || 0.004,
+    min_price: parseFloat(c.min_price) || 1,
+    max_price: parseFloat(c.max_price) || 50000,
+    isEnabled: c.isEnabled !== false,
     fundamentals: c.fundamentals || {},
-    currentPrice: c.base_price,
-    dayOpenPrice: c.base_price,
-    previousClosePrice: c.base_price,
-    dayHigh: c.base_price,
-    dayLow: c.base_price,
+    currentPrice: parseFloat(c.base_price) || 100,
+    dayOpenPrice: parseFloat(c.base_price) || 100,
+    previousClosePrice: parseFloat(c.base_price) || 100,
+    dayHigh: parseFloat(c.base_price) || 100,
+    dayLow: parseFloat(c.base_price) || 100,
     isHalted: false,
     haltDirection: null,
     activeTransition: null,
-    history: [{ time: 0, price: c.base_price }]
+    history: [{ time: 0, price: parseFloat(c.base_price) || 100 }]
   }));
 
   newsEvents = scenarioData.news_events.map((ev) => ({
@@ -228,10 +262,8 @@ function loadScenario(mode = 'live') {
     triggered: false
   }));
 
-  // Configure default 12 teams with starting cash
   setupDefaultTeams(12, gameState.startingCash);
-
-  recordAuditEvent('SCENARIO_LOADED', { mode: activeScenarioMode, title: meta.title });
+  recordAuditEvent('SCENARIO_LOADED', { mode: activeScenarioMode, title: meta.title, companiesCount: companies.length });
   restartEngineInterval();
 }
 
@@ -257,9 +289,8 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     const steps = Math.max(1, Math.round((durationSec * 1000) / tickMs));
 
     companies.forEach((stock) => {
-      if (stock.isHalted) return;
+      if (!stock.isEnabled || stock.isHalted) return;
       const shockPct = basePct * stock.beta;
-      // Compound if transition already exists
       const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
       const targetPrice = +(currentRef * (1 + shockPct / 100)).toFixed(2);
       stock.activeTransition = {
@@ -271,7 +302,7 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   } else {
     Object.keys(impacts).forEach((ticker) => {
       const stock = companies.find((s) => s.ticker === ticker);
-      if (!stock || stock.isHalted) return;
+      if (!stock || !stock.isEnabled || stock.isHalted) return;
       const { delta_pct, duration_sec } = impacts[ticker];
       const steps = Math.max(1, Math.round(((duration_sec || 45) * 1000) / tickMs));
       const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
@@ -316,7 +347,6 @@ function triggerCircuitBreaker(stock, direction) {
   stock.haltDirection = direction;
   stock.activeTransition = null;
 
-  // Clamp price to exact circuit limit
   const limitFactor = direction === 'UPPER'
     ? (1 + gameState.circuitBreakerPercent / 100)
     : (1 - gameState.circuitBreakerPercent / 100);
@@ -341,27 +371,23 @@ function triggerCircuitBreaker(stock, direction) {
 // ==========================================
 // 5. REAL-TIME ENGINE LOOPS
 // ==========================================
-// 1-Second Clock Loop for Market Timer & Scheduled News
 setInterval(() => {
   if (gameState.isPaused || gameState.isConcluded) return;
 
   gameState.elapsedSeconds++;
 
-  // Check for scheduled news events on current day & second
   newsEvents.forEach((ev) => {
     if (!ev.triggered && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
       triggerNewsEvent(ev, 'AUTO_CLOCK');
     }
   });
 
-  // Check if trading day completed
   if (gameState.elapsedSeconds >= gameState.dayDurationSeconds) {
     gameState.isPaused = true;
     gameState.pauseStartedAt = Date.now();
     recordAuditEvent('DAY_CLOSE', { day: gameState.currentDay });
     broadcastAll({ type: 'BELL_EVENT', bell: 'CLOSE', day: gameState.currentDay });
 
-    // If final day completed, offer automatic conclusion check
     if (gameState.currentDay >= gameState.totalDays) {
       const winnerData = getConcludedLeaderboard();
       gameState.isConcluded = true;
@@ -376,7 +402,6 @@ setInterval(() => {
   }
 }, 1000);
 
-// Price Simulation Loop (1500ms)
 function restartEngineInterval() {
   if (priceLoopHandle) clearInterval(priceLoopHandle);
 
@@ -384,12 +409,14 @@ function restartEngineInterval() {
     if (gameState.isPaused || gameState.isConcluded) return;
 
     companies.forEach((stock) => {
+      if (!stock.isEnabled) return;
+
       if (stock.isHalted) {
         stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
         return;
       }
 
-      // 1. Process active news lerp transitions
+      // 1. Process active news transition
       if (stock.activeTransition && stock.activeTransition.stepsRemaining > 0) {
         stock.activeTransition.stepDelta = (stock.activeTransition.targetPrice - stock.currentPrice) / stock.activeTransition.stepsRemaining;
         stock.currentPrice += stock.activeTransition.stepDelta;
@@ -399,20 +426,22 @@ function restartEngineInterval() {
         }
       }
 
-      // 2. Add realistic Gaussian + micro-drift
+      // 2. Realistic Gaussian + micro-drift
       const gaussianComponent = gaussianRandom() * stock.volatility_factor * stock.currentPrice * 0.35;
       const microDrift = (Math.random() - 0.495) * 2 * stock.volatility_factor * stock.currentPrice * 0.65;
       const totalDrift = gaussianComponent + microDrift;
 
-      stock.currentPrice = Math.max(1, +(stock.currentPrice + totalDrift).toFixed(2));
+      const minBound = stock.min_price || 1;
+      const maxBound = stock.max_price || 100000;
+      stock.currentPrice = Math.max(minBound, Math.min(maxBound, +(stock.currentPrice + totalDrift).toFixed(2)));
 
       if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
       if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
 
-      // 3. Track history for charts (preserve smooth sparkline)
+      // 3. Track history
       stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
 
-      // 4. Circuit Breaker Check (+/- configurable % from Day Open)
+      // 4. Circuit Breaker Check
       const dayDelta = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
       if (Math.abs(dayDelta) >= gameState.circuitBreakerPercent && !stock.isHalted) {
         triggerCircuitBreaker(stock, dayDelta > 0 ? 'UPPER' : 'LOWER');
@@ -427,7 +456,7 @@ function restartEngineInterval() {
 function appendSecondLog() {
   const marketPrices = {};
   companies.forEach((s) => {
-    marketPrices[s.ticker] = s.currentPrice;
+    if (s.isEnabled) marketPrices[s.ticker] = s.currentPrice;
   });
   recordAuditEvent('TICK_SNAPSHOT', { market_prices: marketPrices });
 }
@@ -440,6 +469,7 @@ function calculateLeaderboard() {
     let holdingsValue = 0;
     let unrealizedPnl = 0;
     companies.forEach((c) => {
+      if (!c.isEnabled) return;
       const qty = t.holdings[c.ticker] || 0;
       const cost = t.avgBuyPrice[c.ticker] || 0;
       holdingsValue += qty * c.currentPrice;
@@ -467,7 +497,7 @@ function calculateLeaderboard() {
     };
   }).sort((a, b) => {
     if (b.netWorth !== a.netWorth) return b.netWorth - a.netWorth;
-    return b.tradeCount - a.tradeCount; // tie-breaker: higher trading activity
+    return b.tradeCount - a.tradeCount;
   });
 }
 
@@ -483,6 +513,9 @@ function getConcludedLeaderboard() {
 }
 
 function getSanitizedPublicState(role, teamId) {
+  // Publicly visible stocks: only enabled stocks
+  const enabledStocks = companies.filter((c) => c.isEnabled !== false);
+
   const payload = {
     type: 'TICK_UPDATE',
     scenarioMode: activeScenarioMode,
@@ -502,7 +535,7 @@ function getSanitizedPublicState(role, teamId) {
       isConcluded: gameState.isConcluded,
       winnerData: gameState.winnerData
     },
-    companies: companies.map((c) => ({
+    companies: enabledStocks.map((c) => ({
       ticker: c.ticker,
       name: c.name,
       sector: c.sector,
@@ -516,7 +549,7 @@ function getSanitizedPublicState(role, teamId) {
       isHalted: c.isHalted,
       haltDirection: c.haltDirection,
       fundamentals: c.fundamentals,
-      history: c.history.slice(-180) // 180 points for smooth canvas sparkline
+      history: c.history.slice(-180)
     }))
   };
 
@@ -525,6 +558,7 @@ function getSanitizedPublicState(role, teamId) {
     let holdingsValue = 0;
     let unrealizedPnl = 0;
     companies.forEach((c) => {
+      if (!c.isEnabled) return;
       const qty = t.holdings[c.ticker] || 0;
       const cost = t.avgBuyPrice[c.ticker] || 0;
       holdingsValue += qty * c.currentPrice;
@@ -542,7 +576,6 @@ function getSanitizedPublicState(role, teamId) {
       pnlPct,
       unrealizedPnl: +unrealizedPnl.toFixed(2)
     };
-    // Include the team's private executed trades (last 30)
     payload.teamTrades = executedTrades
       .filter((tr) => tr.teamId === teamId)
       .slice(-30)
@@ -553,6 +586,22 @@ function getSanitizedPublicState(role, teamId) {
     payload.leaderboard = calculateLeaderboard();
     payload.newsEvents = newsEvents;
     payload.recentTrades = executedTrades.slice(-25).reverse();
+    // Complete share universe for Host Share Universe Manager
+    payload.allCompaniesUniverse = companies.map((c) => ({
+      ticker: c.ticker,
+      name: c.name,
+      sector: c.sector,
+      base_price: c.base_price,
+      currentPrice: c.currentPrice,
+      dayOpenPrice: c.dayOpenPrice,
+      beta: c.beta,
+      volatility_factor: c.volatility_factor,
+      lot_presets: c.lot_presets,
+      isEnabled: c.isEnabled !== false,
+      isHalted: c.isHalted,
+      haltDirection: c.haltDirection,
+      fundamentals: c.fundamentals
+    }));
     payload.allTeamsList = Object.values(teams).map((t) => {
       const u = t.username || t.id.replace('_', '');
       return {
@@ -605,7 +654,7 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // --- 1. LOGIN HANDLER ---
+    // --- 1. LOGIN ---
     if (data.action === 'LOGIN') {
       const usernameKey = (data.username || '').trim().toLowerCase();
       const userRecord = USERS[usernameKey];
@@ -615,7 +664,7 @@ wss.on('connection', (ws) => {
         return;
       }
 
-      const token = crypto.randomBytes(16).toString('hex'); // 32-char hex session token
+      const token = crypto.randomBytes(16).toString('hex');
       const sessionObj = {
         token,
         role: userRecord.role,
@@ -643,7 +692,7 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // --- 2. RESUME SESSION BY TOKEN ---
+    // --- 2. RESUME SESSION ---
     if (data.action === 'RESUME_SESSION') {
       const existing = sessions.get(data.session_token);
       if (!existing) {
@@ -663,7 +712,7 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // --- 3. LOGOUT / LOCK TERMINAL ---
+    // --- 3. LOGOUT ---
     if (data.action === 'LOGOUT') {
       if (ws.session) {
         sessions.delete(ws.session.token);
@@ -674,7 +723,6 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // Authenticate all subsequent actions via session_token
     const session = sessions.get(data.session_token);
     if (!session) {
       ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Unauthorized or expired session.' }));
@@ -688,7 +736,6 @@ wss.on('connection', (ws) => {
         return;
       }
 
-      // Throttle rapid clicks (prevent double-submit / bot spam within 200ms)
       const nowMs = Date.now();
       if (nowMs - session.lastOrderAt < 200) {
         ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Order rate limit exceeded. Please wait a moment.' }));
@@ -702,6 +749,15 @@ wss.on('connection', (ws) => {
 
       if (!team || !stock || isNaN(qty) || qty <= 0 || qty > 1000000) {
         ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Invalid order parameters.' }));
+        return;
+      }
+
+      // Check if stock is enabled in universe
+      if (stock.isEnabled === false) {
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: `Trading is not enabled for ${stock.ticker} in this market universe.`
+        }));
         return;
       }
 
@@ -758,10 +814,7 @@ wss.on('connection', (ws) => {
         };
         executedTrades.push(tradeRecord);
 
-        recordAuditEvent('ORDER_EXECUTE', {
-          team_id: team.id,
-          trade_record: tradeRecord
-        });
+        recordAuditEvent('ORDER_EXECUTE', { team_id: team.id, trade_record: tradeRecord });
 
         ws.send(JSON.stringify({
           type: 'ORDER_FILLED',
@@ -820,10 +873,7 @@ wss.on('connection', (ws) => {
         };
         executedTrades.push(tradeRecord);
 
-        recordAuditEvent('ORDER_EXECUTE', {
-          team_id: team.id,
-          trade_record: tradeRecord
-        });
+        recordAuditEvent('ORDER_EXECUTE', { team_id: team.id, trade_record: tradeRecord });
 
         ws.send(JSON.stringify({
           type: 'ORDER_FILLED',
@@ -844,24 +894,20 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // --- 5. HOST MATRIX CONTROLS ---
+    // --- 5. HOST MATRIX & ADVANCED SHARE MANAGEMENT ---
     if (session.role === 'HOST') {
-      // 5.1 Pause Market
+      // 5.1 Market Pause
       if (data.action === 'HOST_PAUSE') {
         if (!gameState.isPaused) {
           gameState.isPaused = true;
           gameState.pauseStartedAt = Date.now();
-          recordAuditEvent('EMERGENCY_PAUSE', {
-            triggered_by: 'HOST',
-            pause_mode: 'VISIBLE_FROZEN',
-            shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds
-          });
+          recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
           broadcastAll({ type: 'MARKET_PAUSED' });
           broadcastTick();
         }
       }
 
-      // 5.2 Resume Market with 3-2-1 Countdown
+      // 5.2 Market Resume with 3-2-1
       if (data.action === 'HOST_RESUME_COUNTDOWN') {
         if (gameState.isPaused) {
           const pausedDurationSec = gameState.pauseStartedAt
@@ -887,7 +933,7 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.3 Advance to Next Day
+      // 5.3 Next Day
       if (data.action === 'HOST_NEXT_DAY') {
         if (gameState.currentDay < gameState.totalDays) {
           gameState.currentDay++;
@@ -911,7 +957,7 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.4 Trigger Existing Scheduled News Event
+      // 5.4 Trigger Existing Scheduled News
       if (data.action === 'HOST_TRIGGER_NEWS') {
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
@@ -920,7 +966,7 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.5 Create & Broadcast Custom Breaking News
+      // 5.5 Create Custom Breaking News
       if (data.action === 'HOST_CREATE_CUSTOM_NEWS') {
         const headline = (data.headline || '').trim();
         const explanation = (data.explanation || '').trim();
@@ -934,15 +980,9 @@ wss.on('connection', (ws) => {
           const impacts = {};
 
           if (ticker === 'ALL' || ticker === 'GLOBAL') {
-            impacts.GLOBAL_WEIGHTED = {
-              base_pct: deltaPct,
-              duration_sec: durationSec
-            };
+            impacts.GLOBAL_WEIGHTED = { base_pct: deltaPct, duration_sec: durationSec };
           } else {
-            impacts[ticker] = {
-              delta_pct: deltaPct,
-              duration_sec: durationSec
-            };
+            impacts[ticker] = { delta_pct: deltaPct, duration_sec: durationSec };
           }
 
           const customEventObj = {
@@ -967,64 +1007,252 @@ wss.on('connection', (ws) => {
         if (stock) {
           stock.isHalted = false;
           stock.haltDirection = null;
-          stock.dayOpenPrice = stock.currentPrice; // Reset reference price so it doesn't immediately re-halt
-          recordAuditEvent('CIRCUIT_BREAKER_RELEASED', {
-            ticker: stock.ticker,
-            new_reference_price: stock.currentPrice
-          });
+          stock.dayOpenPrice = stock.currentPrice;
+          recordAuditEvent('CIRCUIT_BREAKER_RELEASED', { ticker: stock.ticker, new_reference_price: stock.currentPrice });
           broadcastTick();
         }
       }
 
-      // 5.7 Switch Scenario
+      // 5.7 Switch Scenario / Reset Universe
       if (data.action === 'HOST_SWITCH_SCENARIO') {
         const targetMode = data.mode === 'test' ? 'test' : 'live';
-        loadScenario(targetMode);
+        loadScenario(targetMode, data.resetToBaseline || false);
         broadcastTick();
       }
 
-      // 5.8 Update Event Title & Global Tournament Settings
+      // ==========================================
+      // ADVANCED SHARE UNIVERSE MANAGEMENT ACTIONS
+      // ==========================================
+      // 5.8 Add Brand New Share
+      if (data.action === 'HOST_ADD_SHARE') {
+        const ticker = (data.ticker || '').toUpperCase().trim();
+        const name = (data.name || ticker).trim();
+        const sector = (data.sector || 'General').trim();
+        const base_price = parseFloat(data.base_price);
+        const beta = parseFloat(data.beta) || 1.0;
+        const volatility_factor = parseFloat(data.volatility_factor) || 0.004;
+        const summary = (data.summary || '').trim();
+
+        if (ticker && !isNaN(base_price) && base_price > 0) {
+          const existing = companies.find((c) => c.ticker === ticker);
+          if (existing) {
+            ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `Stock with symbol ${ticker} already exists.` }));
+            return;
+          }
+
+          const newStock = {
+            ticker,
+            name,
+            sector,
+            base_price,
+            currentPrice: base_price,
+            dayOpenPrice: base_price,
+            previousClosePrice: base_price,
+            dayHigh: base_price,
+            dayLow: base_price,
+            lot_presets: [1, 5, 10, 50, 100],
+            beta,
+            volatility_factor,
+            min_price: 1,
+            max_price: base_price * 10,
+            isEnabled: true,
+            isHalted: false,
+            haltDirection: null,
+            activeTransition: null,
+            history: [{ time: gameState.elapsedSeconds, price: base_price }],
+            fundamentals: { summary }
+          };
+
+          companies.push(newStock);
+
+          // Update existing team holding registries
+          Object.values(teams).forEach((t) => {
+            t.holdings[ticker] = 0;
+            t.avgBuyPrice[ticker] = 0;
+          });
+
+          saveUniverseToDisk();
+          recordAuditEvent('SHARE_ADDED', { ticker, name, sector, base_price });
+          broadcastTick();
+        }
+      }
+
+      // 5.9 Edit Existing Share
+      if (data.action === 'HOST_EDIT_SHARE') {
+        const stock = companies.find((c) => c.ticker === data.ticker);
+        if (stock) {
+          if (data.name) stock.name = data.name.trim();
+          if (data.sector) stock.sector = data.sector.trim();
+          if (data.beta && !isNaN(data.beta)) stock.beta = parseFloat(data.beta);
+          if (data.volatility_factor && !isNaN(data.volatility_factor)) stock.volatility_factor = parseFloat(data.volatility_factor);
+          if (data.summary) stock.fundamentals.summary = data.summary.trim();
+          if (data.base_price && !isNaN(data.base_price)) {
+            stock.base_price = parseFloat(data.base_price);
+            if (gameState.elapsedSeconds === 0) {
+              stock.currentPrice = stock.base_price;
+              stock.dayOpenPrice = stock.base_price;
+            }
+          }
+
+          saveUniverseToDisk();
+          recordAuditEvent('SHARE_EDITED', { ticker: stock.ticker, updates: data });
+          broadcastTick();
+        }
+      }
+
+      // 5.10 Toggle Share Active / Disabled Status
+      if (data.action === 'HOST_TOGGLE_SHARE') {
+        const stock = companies.find((c) => c.ticker === data.ticker);
+        if (stock) {
+          stock.isEnabled = !stock.isEnabled;
+          saveUniverseToDisk();
+          recordAuditEvent('SHARE_TOGGLED', { ticker: stock.ticker, isEnabled: stock.isEnabled });
+          broadcastTick();
+        }
+      }
+
+      // 5.11 Duplicate Existing Share Template
+      if (data.action === 'HOST_DUPLICATE_SHARE') {
+        const source = companies.find((c) => c.ticker === data.ticker);
+        if (source) {
+          let copyNum = 2;
+          let newTicker = `${source.ticker}_${copyNum}`;
+          while (companies.some((c) => c.ticker === newTicker)) {
+            copyNum++;
+            newTicker = `${source.ticker}_${copyNum}`;
+          }
+
+          const dupStock = {
+            ...source,
+            ticker: newTicker,
+            name: `${source.name} (Series ${copyNum})`,
+            history: [{ time: gameState.elapsedSeconds, price: source.currentPrice }]
+          };
+
+          companies.push(dupStock);
+          Object.values(teams).forEach((t) => {
+            t.holdings[newTicker] = 0;
+            t.avgBuyPrice[newTicker] = 0;
+          });
+
+          saveUniverseToDisk();
+          recordAuditEvent('SHARE_DUPLICATED', { source: source.ticker, newTicker });
+          broadcastTick();
+        }
+      }
+
+      // 5.12 Delete Share from Universe
+      if (data.action === 'HOST_DELETE_SHARE') {
+        const idx = companies.findIndex((c) => c.ticker === data.ticker);
+        if (idx !== -1) {
+          if (companies.length <= 2) {
+            ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'At least 2 shares are required in the universe.' }));
+            return;
+          }
+          const removed = companies.splice(idx, 1)[0];
+          Object.values(teams).forEach((t) => {
+            delete t.holdings[removed.ticker];
+            delete t.avgBuyPrice[removed.ticker];
+          });
+
+          saveUniverseToDisk();
+          recordAuditEvent('SHARE_DELETED', { ticker: removed.ticker });
+          broadcastTick();
+        }
+      }
+
+      // 5.13 Sector-Wide Halt / Unhalt
+      if (data.action === 'HOST_SECTOR_HALT') {
+        const targetSector = data.sector;
+        const haltAction = data.isHalted !== false;
+
+        companies.forEach((c) => {
+          if (c.sector === targetSector && c.isEnabled) {
+            c.isHalted = haltAction;
+            c.haltDirection = haltAction ? 'MANUAL' : null;
+            if (!haltAction) c.dayOpenPrice = c.currentPrice;
+          }
+        });
+
+        recordAuditEvent('SECTOR_HALT_CHANGED', { sector: targetSector, isHalted: haltAction });
+        broadcastTick();
+      }
+
+      // 5.14 Randomize Eligible Starting Prices (±5% or ±10%)
+      if (data.action === 'HOST_RANDOMIZE_PRICES') {
+        const variance = Math.max(1, Math.min(25, parseFloat(data.variancePct) || 5));
+        companies.forEach((stock) => {
+          if (!stock.isEnabled) return;
+          const factor = 1 + (Math.random() * 2 - 1) * (variance / 100);
+          stock.base_price = +(stock.base_price * factor).toFixed(2);
+          stock.currentPrice = stock.base_price;
+          stock.dayOpenPrice = stock.base_price;
+          stock.dayHigh = stock.base_price;
+          stock.dayLow = stock.base_price;
+          stock.history = [{ time: gameState.elapsedSeconds, price: stock.base_price }];
+        });
+
+        saveUniverseToDisk();
+        recordAuditEvent('PRICES_RANDOMIZED', { variancePct: variance });
+        broadcastTick();
+      }
+
+      // 5.15 Apply Predefined Market Universe Template
+      if (data.action === 'HOST_APPLY_MARKET_TEMPLATE') {
+        const template = data.templateId; // 'all_active', 'tech_auto_focus', 'high_volatility', 'banking_defensive'
+
+        if (template === 'all_active') {
+          companies.forEach((c) => (c.isEnabled = true));
+        } else if (template === 'tech_auto_focus') {
+          companies.forEach((c) => {
+            c.isEnabled = c.sector.includes('Tech') || c.sector.includes('Auto');
+          });
+        } else if (template === 'high_volatility') {
+          companies.forEach((c) => {
+            c.isEnabled = true;
+            c.volatility_factor = 0.008;
+            c.beta = 1.6;
+          });
+        } else if (template === 'banking_defensive') {
+          companies.forEach((c) => {
+            c.isEnabled = c.sector.includes('Bank') || c.sector.includes('Pharma');
+            c.volatility_factor = 0.003;
+          });
+        }
+
+        saveUniverseToDisk();
+        recordAuditEvent('TEMPLATE_APPLIED', { templateId: template });
+        broadcastTick();
+      }
+
+      // 5.16 Reset Universe to Clean Factory Baseline
+      if (data.action === 'HOST_RESET_UNIVERSE_BASELINE') {
+        if (fs.existsSync(ACTIVE_UNIVERSE_FILE)) {
+          fs.unlinkSync(ACTIVE_UNIVERSE_FILE);
+        }
+        loadScenario('live', true);
+        broadcastTick();
+      }
+
+      // 5.17 Update Event Title & Global Tournament Settings
       if (data.action === 'HOST_UPDATE_EVENT_CONFIG') {
-        if (data.title && typeof data.title === 'string') {
-          gameState.title = data.title.trim();
-        }
-        if (data.dayDurationSeconds && !isNaN(data.dayDurationSeconds)) {
-          gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
-        }
-        if (data.totalDays && !isNaN(data.totalDays)) {
-          gameState.totalDays = parseInt(data.totalDays, 10);
-        }
-        if (data.circuitBreakerPercent && !isNaN(data.circuitBreakerPercent)) {
-          gameState.circuitBreakerPercent = parseFloat(data.circuitBreakerPercent);
-        }
-        if (data.startingCash && !isNaN(data.startingCash)) {
-          gameState.startingCash = parseFloat(data.startingCash);
-        }
+        if (data.title && typeof data.title === 'string') gameState.title = data.title.trim();
+        if (data.dayDurationSeconds && !isNaN(data.dayDurationSeconds)) gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
+        if (data.totalDays && !isNaN(data.totalDays)) gameState.totalDays = parseInt(data.totalDays, 10);
+        if (data.circuitBreakerPercent && !isNaN(data.circuitBreakerPercent)) gameState.circuitBreakerPercent = parseFloat(data.circuitBreakerPercent);
+        if (data.startingCash && !isNaN(data.startingCash)) gameState.startingCash = parseFloat(data.startingCash);
         if (data.transactionFeeBps !== undefined && !isNaN(data.transactionFeeBps)) {
           gameState.transactionFeeBps = Math.max(0, Math.min(200, parseInt(data.transactionFeeBps, 10)));
         }
 
-        recordAuditEvent('EVENT_CONFIG_UPDATED', {
-          title: gameState.title,
-          dayDurationSeconds: gameState.dayDurationSeconds,
-          totalDays: gameState.totalDays,
-          circuitBreakerPercent: gameState.circuitBreakerPercent,
-          startingCash: gameState.startingCash,
-          transactionFeeBps: gameState.transactionFeeBps
-        });
-
-        broadcastAll({
-          type: 'EVENT_CONFIG_CHANGED',
-          title: gameState.title,
-          gameState
-        });
+        recordAuditEvent('EVENT_CONFIG_UPDATED', { gameState });
+        broadcastAll({ type: 'EVENT_CONFIG_CHANGED', title: gameState.title, gameState });
         broadcastTick();
       }
 
-      // 5.9 Custom Team Roster Setup
+      // 5.18 Custom Team Roster Setup
       if (data.action === 'HOST_CONFIGURE_TEAMS') {
         if (Array.isArray(data.teams) && data.teams.length > 0) {
-          // Clear current trader users
           Object.keys(USERS).forEach((key) => {
             if (USERS[key].role === 'TRADER') delete USERS[key];
           });
@@ -1041,14 +1269,7 @@ wss.on('connection', (ws) => {
               ? parseFloat(t.startingCash)
               : gameState.startingCash;
 
-            USERS[username] = {
-              username,
-              password,
-              role: 'TRADER',
-              id: teamId,
-              name,
-              members
-            };
+            USERS[username] = { username, password, role: 'TRADER', id: teamId, name, members };
 
             const existing = teams[teamId];
             const holdings = {};
@@ -1078,7 +1299,7 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.10 Conclude Championship & Launch Winner Podium Ceremony
+      // 5.19 Conclude Championship & Launch Winner Podium
       if (data.action === 'HOST_CONCLUDE_CHAMPIONSHIP') {
         const winnerData = getConcludedLeaderboard();
         gameState.isPaused = true;
@@ -1086,16 +1307,11 @@ wss.on('connection', (ws) => {
         gameState.winnerData = winnerData;
 
         recordAuditEvent('CHAMPIONSHIP_CONCLUDED', { winners: winnerData });
-
-        broadcastAll({
-          type: 'CHAMPIONSHIP_CONCLUDED',
-          winnerData,
-          title: gameState.title
-        });
+        broadcastAll({ type: 'CHAMPIONSHIP_CONCLUDED', winnerData, title: gameState.title });
         broadcastTick();
       }
 
-      // 5.11 Dismiss Podium Ceremony (Return to Normal Desk)
+      // 5.20 Dismiss Podium
       if (data.action === 'HOST_DISMISS_PODIUM') {
         gameState.isConcluded = false;
         gameState.winnerData = null;
@@ -1108,9 +1324,8 @@ wss.on('connection', (ws) => {
 });
 
 // ==========================================
-// 8. REST ENDPOINTS & CSV EXPORTS
+// 8. REST ENDPOINTS & CSV/JSON EXPORTS
 // ==========================================
-// Helper middleware to verify host token for downloads
 function requireHostAuth(req, res, next) {
   const token = req.query.token || req.headers['x-session-token'];
   const session = sessions.get(token);
@@ -1131,7 +1346,8 @@ app.get('/api/health', (req, res) => {
     elapsed_seconds: gameState.elapsedSeconds,
     connected_clients: wss.clients.size,
     total_trades_executed: executedTrades.length,
-    companies_count: companies.length
+    companies_count: companies.length,
+    active_shares_count: companies.filter((c) => c.isEnabled).length
   });
 });
 
@@ -1170,7 +1386,7 @@ app.get('/api/export/standings', requireHostAuth, (req, res) => {
   const dateStr = new Date().toISOString().slice(0, 10);
   res.setHeader('Content-Disposition', `attachment; filename="CHAMPIONSHIP_STANDINGS_${dateStr}.csv"`);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.send('\uFEFF' + csvContent); // Prepend BOM for Excel compatibility
+  res.send('\uFEFF' + csvContent);
 });
 
 // 8.4 CSV Trade History Export
@@ -1228,11 +1444,88 @@ app.get('/api/export/audit-csv', requireHostAuth, (req, res) => {
   res.send('\uFEFF' + csvContent);
 });
 
-// Start with requested CLI mode (e.g. node server.js test or node server.js live)
+// 8.6 Export Share Universe (JSON & CSV)
+app.get('/api/export/universe', requireHostAuth, (req, res) => {
+  const data = companies.map((c) => ({
+    ticker: c.ticker,
+    name: c.name,
+    sector: c.sector,
+    base_price: c.base_price,
+    volatility_factor: c.volatility_factor,
+    beta: c.beta,
+    isEnabled: c.isEnabled !== false,
+    lot_presets: c.lot_presets,
+    fundamentals: c.fundamentals
+  }));
+  res.setHeader('Content-Disposition', `attachment; filename="SHARE_UNIVERSE_${new Date().toISOString().slice(0, 10)}.json"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(data, null, 2));
+});
+
+app.get('/api/export/universe-csv', requireHostAuth, (req, res) => {
+  const headers = ['Ticker', 'Company Name', 'Sector', 'Starting Price (INR)', 'Volatility Factor', 'Beta Multiplier', 'Active Status'];
+  const rows = companies.map((c) => [
+    sanitizeCsvCell(c.ticker),
+    sanitizeCsvCell(c.name),
+    sanitizeCsvCell(c.sector),
+    c.base_price.toFixed(2),
+    c.volatility_factor,
+    c.beta,
+    c.isEnabled ? 'ACTIVE' : 'DISABLED'
+  ]);
+  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+  res.setHeader('Content-Disposition', `attachment; filename="SHARE_UNIVERSE_${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.send('\uFEFF' + csvContent);
+});
+
+// 8.7 Complete Competition Backup & Restore
+app.get('/api/backup', requireHostAuth, (req, res) => {
+  const backupData = {
+    backup_timestamp: new Date().toISOString(),
+    gameState,
+    companies,
+    newsEvents,
+    teams,
+    executedTrades,
+    auditLog
+  };
+  res.setHeader('Content-Disposition', `attachment; filename="COMPETITION_BACKUP_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.json"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(backupData, null, 2));
+});
+
+app.post('/api/restore', requireHostAuth, (req, res) => {
+  try {
+    const backup = req.body;
+    if (!backup || !backup.gameState || !Array.isArray(backup.companies)) {
+      return res.status(400).json({ error: 'Invalid competition backup file format.' });
+    }
+
+    gameState = backup.gameState;
+    companies = backup.companies;
+    if (Array.isArray(backup.newsEvents)) newsEvents = backup.newsEvents;
+    if (backup.teams && typeof backup.teams === 'object') teams = backup.teams;
+    if (Array.isArray(backup.executedTrades)) {
+      executedTrades.length = 0;
+      backup.executedTrades.forEach((t) => executedTrades.push(t));
+      tradeSeqCounter = executedTrades.length;
+    }
+
+    saveUniverseToDisk();
+    recordAuditEvent('COMPETITION_RESTORED', { timestamp: backup.backup_timestamp });
+    broadcastTick();
+    res.json({ success: true, message: 'Championship state restored successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: `Restore failed: ${err.message}` });
+  }
+});
+
+// Boot Initial Scenario
 const cliMode = (process.argv[2] || '').toLowerCase();
 const initialScenario = cliMode === 'test'
   ? 'test'
-  : (fs.existsSync(path.join(__dirname, 'data', 'scenario_live.json')) ? 'live' : 'test');
+  : (fs.existsSync(path.join(DATA_DIR, 'scenario_live.json')) ? 'live' : 'test');
 
 loadScenario(initialScenario);
 
@@ -1258,6 +1551,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(' Credentials:');
   console.log('   Host Matrix:       host / host2026');
   console.log('   Stage Projector:   projector / screen2026');
-  console.log('   Trader Teams:      team1..team12 / trade100..trade1200 (Customizable in Host Panel)');
+  console.log('   Trader Teams:      team1..team16 / trade100..trade1600');
   console.log('================================================================');
 });

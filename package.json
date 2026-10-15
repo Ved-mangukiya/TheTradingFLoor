@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js live",
-    "test-scenario": "node server.js test"
+    "start:live": "node server.js live",
+    "start:test": "node server.js test",
+    "test": "node test_master_suite.js",
+    "pack": "node update_zip.js"
   },
   "dependencies": {
     "express": "^4.19.2",
