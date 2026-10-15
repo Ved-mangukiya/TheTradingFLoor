@@ -1338,29 +1338,135 @@ function quickSellAllStock(ticker, qty) {
 // ==========================================
 // 5. PROJECTOR VIEW RENDERER
 // ==========================================
+// 5. INTELLIGENT PROJECTOR VIEW & MULTI-SCENE CYCLE ENGINE
+// ==========================================
+let localProjectorCycleIndex = 0;
+let lastProjectorCycleSwitchTime = Date.now();
+const PROJECTOR_CYCLE_SCENES = ['SCENE_MARKET_BOARD', 'SCENE_INDICES', 'SCENE_STRATEGY', 'SCENE_LEADERBOARD', 'SCENE_NEWS'];
+
 function renderProjectorView(state) {
-  const { gameState, companies } = state;
+  const { gameState, companies, leaderboard, marketIndices, teamSectorAllocations, projectorState } = state;
   if (!gameState || !companies) return;
 
-  document.getElementById('projDayText').textContent = `DAY ${gameState.currentDay} / ${gameState.totalDays}`;
-  document.getElementById('projClockText').textContent = `CLOCK: ${formatMMSS(gameState.elapsedSeconds)}`;
+  const dayEl = document.getElementById('projDayText');
+  if (dayEl) dayEl.textContent = `DAY ${gameState.currentDay} / ${gameState.totalDays}`;
+
+  const clockEl = document.getElementById('projClockText');
+  if (clockEl) clockEl.textContent = `CLOCK: ${formatMMSS(gameState.elapsedSeconds)}`;
 
   const statusEl = document.getElementById('projStatusText');
-  if (gameState.isPaused) {
-    statusEl.textContent = 'MARKET PAUSED';
-    statusEl.className = 'badge badge-paused';
-  } else {
-    statusEl.textContent = 'ACTIVE TRADING';
-    statusEl.className = 'badge badge-active';
+  if (statusEl) {
+    if (gameState.isPaused) {
+      statusEl.textContent = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'MARKET PAUSED';
+      statusEl.className = 'badge badge-paused';
+    } else {
+      statusEl.textContent = 'ACTIVE TRADING';
+      statusEl.className = 'badge badge-active';
+    }
   }
 
   if (gameState.newsHistory && gameState.newsHistory.length > 0) {
     const latestNews = gameState.newsHistory[0];
-    document.getElementById('projectorTickerText').textContent =
-      `[DAY ${latestNews.day} - ${latestNews.type}] "${latestNews.headline.toUpperCase()}" — ${latestNews.simple_explanation}`;
+    const tickerEl = document.getElementById('projectorTickerText');
+    if (tickerEl) {
+      tickerEl.textContent = `[DAY ${latestNews.day} • ${latestNews.type || 'WIRE'}] "${(latestNews.headline || '').toUpperCase()}" — ${latestNews.simple_explanation || ''}`;
+    }
   }
 
-  const grid = document.getElementById('projectorGrid');
+  const isWinnerActive = (projectorState && projectorState.isWinnerActive) || (gameState.status === 'WINNER_ANNOUNCEMENT');
+  const mainStage = document.getElementById('projectorMainStage');
+  const winnerStage = document.getElementById('projectorWinnerStage');
+
+  // If winner announcement is triggered by host, show embedded winner stage on projector
+  if (isWinnerActive) {
+    if (mainStage) mainStage.classList.add('hidden');
+    if (winnerStage) winnerStage.classList.remove('hidden');
+    const sceneBadge = document.getElementById('projSceneBadge');
+    if (sceneBadge) {
+      sceneBadge.textContent = '👑 AWARDS CEREMONY: GRAND WINNER REVEAL';
+      sceneBadge.className = 'badge badge-champagne';
+    }
+    renderEmbeddedProjectorWinnerStage(state);
+    return;
+  }
+
+  // Live market normal display: show mainStage
+  if (winnerStage) winnerStage.classList.add('hidden');
+  if (mainStage) mainStage.classList.remove('hidden');
+
+  const mode = (projectorState && projectorState.mode) || 'AUTO_CYCLE';
+  const durationSec = (projectorState && projectorState.sceneDurationSeconds) || 12;
+
+  let activeScene = 'SCENE_MARKET_BOARD';
+  if (mode === 'FIXED_SCREEN') {
+    activeScene = (projectorState && projectorState.currentScene) || 'SCENE_MARKET_BOARD';
+  } else {
+    // AUTO_CYCLE: Rotate scenes based on durationSec
+    const now = Date.now();
+    if (now - lastProjectorCycleSwitchTime >= durationSec * 1000) {
+      localProjectorCycleIndex = (localProjectorCycleIndex + 1) % PROJECTOR_CYCLE_SCENES.length;
+      lastProjectorCycleSwitchTime = now;
+    }
+    activeScene = PROJECTOR_CYCLE_SCENES[localProjectorCycleIndex];
+  }
+
+  // Update Scene Badge in header
+  const sceneBadge = document.getElementById('projSceneBadge');
+  if (sceneBadge) {
+    const sceneNames = {
+      SCENE_MARKET_BOARD: 'ALL-STOCKS BOARD',
+      SCENE_INDICES: 'MARKET INDICES',
+      SCENE_STRATEGY: 'SECTOR STRATEGY',
+      SCENE_LEADERBOARD: 'LIVE STANDINGS',
+      SCENE_NEWS: 'BREAKING WIRES'
+    };
+    const sName = sceneNames[activeScene] || activeScene;
+    if (mode === 'AUTO_CYCLE') {
+      const remainingSec = Math.max(1, durationSec - Math.floor((Date.now() - lastProjectorCycleSwitchTime) / 1000));
+      sceneBadge.textContent = `🔄 CYCLE: ${sName} (${remainingSec}s)`;
+      sceneBadge.className = 'badge badge-champagne';
+    } else {
+      sceneBadge.textContent = `📌 FIXED: ${sName}`;
+      sceneBadge.className = 'badge badge-sage';
+    }
+  }
+
+  // Toggle scene visibility
+  const sceneElements = {
+    SCENE_MARKET_BOARD: document.getElementById('projSceneMarketBoard'),
+    SCENE_INDICES: document.getElementById('projSceneIndices'),
+    SCENE_STRATEGY: document.getElementById('projSceneStrategy'),
+    SCENE_LEADERBOARD: document.getElementById('projSceneLeaderboard'),
+    SCENE_NEWS: document.getElementById('projSceneNews')
+  };
+
+  Object.keys(sceneElements).forEach((sKey) => {
+    const el = sceneElements[sKey];
+    if (el) {
+      if (sKey === activeScene) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+    }
+  });
+
+  // Render scene-specific contents
+  if (activeScene === 'SCENE_MARKET_BOARD') {
+    renderProjectorMarketBoard(companies);
+  } else if (activeScene === 'SCENE_INDICES') {
+    renderProjectorIndices(marketIndices || calculateClientIndices(companies));
+  } else if (activeScene === 'SCENE_STRATEGY') {
+    renderProjectorStrategy(teamSectorAllocations || state.teamSectorAllocations || []);
+  } else if (activeScene === 'SCENE_LEADERBOARD') {
+    renderProjectorLeaderboard(leaderboard || state.leaderboard || [], gameState);
+  } else if (activeScene === 'SCENE_NEWS') {
+    renderProjectorNews(gameState.newsHistory || []);
+  }
+}
+
+// Scene 1: All-Stocks High-Visibility Grid
+function renderProjectorMarketBoard(companies) {
+  const grid = document.getElementById('projSceneMarketBoard');
+  if (!grid) return;
+
   if (grid.children.length !== companies.length) {
     grid.innerHTML = companies.map((stock) => `
       <div id="projCard_${stock.ticker}" class="projector-card">
@@ -1371,7 +1477,7 @@ function renderProjectorView(state) {
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
             <span id="projDelta_${stock.ticker}" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700;">+0.00% ▲</span>
-            <span style="font-size: 12px; color: var(--text-muted);">${stock.sector}</span>
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">${stock.sector || ''}</span>
           </div>
         </div>
         <div style="height: 70px; margin-top: 6px;">
@@ -1415,6 +1521,428 @@ function renderProjectorView(state) {
       drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
     }
   });
+}
+
+// Scene 2: Real Market Indices Overview
+function renderProjectorIndices(indicesObj) {
+  const container = document.getElementById('projSceneIndices');
+  if (!container || !indicesObj) return;
+
+  const indexList = Object.values(indicesObj);
+  container.innerHTML = indexList.map((idx) => {
+    const isUp = idx.changePct >= 0;
+    return `
+      <div class="luxury-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid var(--card-border);">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+              <span class="badge badge-champagne" style="font-size: 11px; margin-bottom: 4px;">${idx.sector || 'MARKET BENCHMARK'}</span>
+              <h2 style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin: 0;">${idx.name}</h2>
+            </div>
+            <span class="badge ${isUp ? 'badge-active' : 'badge-halted'}" style="font-size: 13px; font-family: var(--font-mono); font-weight: 800;">
+              ${isUp ? '+' : ''}${idx.changePct.toFixed(2)}% ${isUp ? '▲' : '▼'}
+            </span>
+          </div>
+
+          <div style="margin: 14px 0;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Benchmark Value</div>
+            <div style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; color: var(--text-forest); margin-top: 2px;">
+              ${idx.value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
+              ${isUp ? '+' : ''}${idx.changePoints.toFixed(2)} points from base
+            </div>
+          </div>
+        </div>
+
+        <div class="cream-panel" style="padding: 10px; font-size: 11px;">
+          <div style="display: flex; justify-content: space-between; color: var(--text-muted); margin-bottom: 4px;">
+            <span>Constituents: <strong>${idx.constituentsCount} Stocks</strong></span>
+            <span>Weighting: <strong>${idx.weighting || 'Equal-Weighted'}</strong></span>
+          </div>
+          <div style="color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            Symbols: ${(idx.tickers || []).join(', ')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Scene 3: Team Strategy & Macro Sector Allocations (Audience-Friendly, Zero Stock Leakage)
+function renderProjectorStrategy(allocations) {
+  const container = document.getElementById('projSceneStrategy');
+  if (!container) return;
+
+  if (!allocations || allocations.length === 0) {
+    container.innerHTML = `
+      <div class="luxury-card" style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted);">
+        No team sector positions established yet. Teams are currently evaluating market entry opportunities.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = allocations.map((team) => {
+    const secList = Object.entries(team.sectorAllocations || {});
+    return `
+      <div class="luxury-card" style="padding: 18px; border: 2px solid var(--card-border);">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-champagne" style="font-size: 11px; font-weight: 900;">RANK #${team.rank || '—'}</span>
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">${team.teamName}</h3>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-forest);">
+            ${formatINR(team.portfolioValue)}
+          </span>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <span class="badge ${team.isConcentrated ? 'badge-halted' : 'badge-sage'}" style="font-size: 10px; padding: 3px 8px;">
+            ${team.isConcentrated ? `⚠️ HIGHLY CONCENTRATED (${team.dominantSector} ${team.dominantSectorPct}%)` : `🛡️ DIVERSIFIED PORTFOLIO`}
+          </span>
+        </div>
+
+        <!-- Macro Sector Breakdown Progress Bars -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          ${secList.map(([sec, pct]) => `
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                <span style="color: var(--text-muted); font-weight: 600;">${sec}</span>
+                <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-forest);">${pct.toFixed(1)}%</span>
+              </div>
+              <div style="height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">
+                <div style="height: 100%; width: ${Math.min(100, pct)}%; background: #2563EB; border-radius: 3px;"></div>
+              </div>
+            </div>
+          `).join('')}
+
+          <!-- Cash Reserve -->
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+              <span style="color: #047857; font-weight: 700;">💵 Uninvested Cash Reserves</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: #047857;">${(team.cashPct || 0).toFixed(1)}%</span>
+            </div>
+            <div style="height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; width: ${Math.min(100, team.cashPct || 0)}%; background: #10B981; border-radius: 3px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Scene 4: Daily & Championship Leaderboard
+function renderProjectorLeaderboard(leaderboard, gameState) {
+  const container = document.getElementById('projSceneLeaderboard');
+  if (!container) return;
+
+  const startCash = (gameState && gameState.startingCash) || 500000;
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
+      <div>
+        <h2 style="font-size: 22px; font-weight: 900; color: var(--text-forest); margin: 0; font-family: var(--font-serif);">
+          Championship Leaderboard &bull; Day ${gameState ? gameState.currentDay : 1}
+        </h2>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Audited Net Worth (Cash + Live Stock Holdings Valuation - Deducted Brokerage)
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 6px 14px; font-size: 12px; font-weight: 800; color: var(--champagne-accent);">
+        STARTING CAPITAL: ${formatINR(startCash)}
+      </div>
+    </div>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+            <th style="padding: 10px;">Rank</th>
+            <th style="padding: 10px;">Team Desk</th>
+            <th style="padding: 10px; text-align: right;">Cash Available</th>
+            <th style="padding: 10px; text-align: right;">Stock Valuation</th>
+            <th style="padding: 10px; text-align: right;">Net Portfolio Worth</th>
+            <th style="padding: 10px; text-align: right;">Profit / Loss</th>
+            <th style="padding: 10px; text-align: right;">Return %</th>
+          </tr>
+        </thead>
+        <tbody style="font-family: var(--font-mono);">
+          ${leaderboard.map((item, idx) => {
+            const pnl = item.netWorth - startCash;
+            const retPct = startCash > 0 ? (pnl / startCash) * 100 : 0;
+            const isUp = pnl >= 0;
+            let rankBadge = `<span style="font-weight: 800;">#${idx + 1}</span>`;
+            if (idx === 0) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px;">🥇 #1</span>`;
+            else if (idx === 1) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px;">🥈 #2</span>`;
+            else if (idx === 2) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px;">🥉 #3</span>`;
+
+            return `
+              <tr style="border-bottom: 1px solid var(--subtle-border); ${idx < 3 ? 'background: #FAF9F6;' : ''}">
+                <td style="padding: 10px;">${rankBadge}</td>
+                <td style="padding: 10px; font-family: var(--font-sans); font-weight: 800; color: var(--text-forest);">${item.name}</td>
+                <td style="padding: 10px; text-align: right;">${formatINR(item.cash)}</td>
+                <td style="padding: 10px; text-align: right;">${formatINR(item.holdingsValue)}</td>
+                <td style="padding: 10px; text-align: right; font-weight: 900; color: var(--text-forest); font-size: 15px;">${formatINR(item.netWorth)}</td>
+                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+                  ${isUp ? '+' : ''}${formatINR(pnl)}
+                </td>
+                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+                  ${isUp ? '+' : ''}${retPct.toFixed(2)}%
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Scene 5: Breaking Wire News Feed
+function renderProjectorNews(newsHistory) {
+  const container = document.getElementById('projSceneNews');
+  if (!container) return;
+
+  if (!newsHistory || newsHistory.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 36px; text-align: center; color: var(--text-muted);">
+        No published wires yet. Live market monitoring in progress.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
+      <h2 style="font-size: 22px; font-weight: 900; color: var(--text-forest); margin: 0; font-family: var(--font-serif);">
+        ⚡ Breaking Financial Wires &bull; Official Dispatch Archive
+      </h2>
+      <span class="badge badge-champagne" style="font-size: 12px; font-weight: 800;">VERIFIED REUTERS/BLOOMBERG FORMAT</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      ${newsHistory.map((item) => `
+        <div class="cream-panel" style="padding: 16px; border-left: 4px solid var(--champagne-accent);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-champagne" style="font-size: 11px;">DAY ${item.day}</span>
+              <span class="badge badge-outline" style="font-size: 11px;">${item.type || 'NEWS WIRE'}</span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+              ${item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}
+            </span>
+          </div>
+          <h3 style="font-size: 17px; font-weight: 800; color: var(--text-forest); margin: 0 0 4px 0;">
+            ${item.headline}
+          </h3>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            ${item.simple_explanation || item.article || ''}
+          </p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// Fallback client indices calculation if server payload is brief
+function calculateClientIndices(companies) {
+  if (!companies || companies.length === 0) return {};
+  const base = 10000;
+  const sectorGroups = {
+    'NIFTY_TF20': { name: 'Championship Benchmark 20', sector: 'BROAD MARKET', tickers: companies.map((c) => c.ticker) },
+    'BANK_TF': { name: 'Championship Banking Index', sector: 'BANKING & FINANCE', tickers: ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE'] },
+    'IT_TF': { name: 'Championship IT Index', sector: 'INFORMATION TECHNOLOGY', tickers: ['TCS', 'INFY'] },
+    'AUTO_TF': { name: 'Championship Auto Index', sector: 'AUTOMOTIVE', tickers: ['TATAMOTORS', 'MARUTI', 'M&M'] },
+    'ENERGY_TF': { name: 'Championship Energy Index', sector: 'POWER & ENERGY', tickers: ['RELIANCE', 'NTPC', 'POWERGRID'] },
+    'METALS_TF': { name: 'Championship Metals Index', sector: 'METALS & MINING', tickers: ['TATASTEEL', 'JSWSTEEL'] }
+  };
+
+  const results = {};
+  Object.entries(sectorGroups).forEach(([key, conf]) => {
+    const list = companies.filter((c) => conf.tickers.includes(c.ticker));
+    if (list.length === 0) return;
+    let sumRel = 0;
+    list.forEach((c) => {
+      const b = c.base_price || c.dayOpenPrice || c.currentPrice || 1;
+      sumRel += c.currentPrice / b;
+    });
+    const avgRel = sumRel / list.length;
+    const val = +(base * avgRel).toFixed(2);
+    const chgPoints = +(val - base).toFixed(2);
+    const chgPct = +(((val - base) / base) * 100).toFixed(2);
+
+    results[key] = {
+      id: key,
+      name: conf.name,
+      sector: conf.sector,
+      value: val,
+      changePoints: chgPoints,
+      changePct: chgPct,
+      constituentsCount: list.length,
+      tickers: conf.tickers
+    };
+  });
+  return results;
+}
+
+// Embedded Winner Presentation Stage Renderer (Natively on Projector Screen)
+function renderEmbeddedProjectorWinnerStage(state) {
+  const snapshot = state.finalResultsSnapshot || generateClientSnapshotFromLeaderboard(state);
+  const rankings = snapshot.rankings || snapshot.teams || [];
+  const curScene = (state.projectorState && state.projectorState.winnerScene) ||
+                   (state.presentationState && state.presentationState.scene) ||
+                   'SCENE_INTRO';
+
+  const scenes = ['projSceneIntro', 'projSceneBronze', 'projSceneSilver', 'projSceneChampion', 'projScenePodium', 'projSceneStandings'];
+  scenes.forEach((s) => {
+    const el = document.getElementById(s);
+    if (el) el.classList.add('hidden');
+  });
+
+  const badge = document.getElementById('projWinnerStageBadge');
+  const normalizedScene = curScene.replace('SCENE_', '');
+
+  if (normalizedScene === 'BRONZE') {
+    const bronzeTeam = rankings[2] || rankings[rankings.length - 1] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    const elTeam = document.getElementById('projPresBronzeTeam');
+    if (elTeam) elTeam.textContent = bronzeTeam.teamName;
+    const elMem = document.getElementById('projPresBronzeMembers');
+    if (elMem) elMem.textContent = bronzeTeam.members ? `Traders: ${bronzeTeam.members}` : '';
+    const elVal = document.getElementById('projPresBronzeVal');
+    if (elVal) elVal.textContent = formatINR(bronzeTeam.totalPortfolioValue || bronzeTeam.finalPortfolioValue || 0);
+
+    const pnl = bronzeTeam.netProfitLoss !== undefined ? bronzeTeam.netProfitLoss : (bronzeTeam.netProfitOrLoss || 0);
+    const pnlEl = document.getElementById('projPresBronzePnl');
+    if (pnlEl) {
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+      pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const retPct = bronzeTeam.returnPct !== undefined ? bronzeTeam.returnPct : 0;
+    const retEl = document.getElementById('projPresBronzeReturn');
+    if (retEl) {
+      retEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+      retEl.className = retPct >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const sceneEl = document.getElementById('projSceneBronze');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 2: 🥉 BRONZE MEDALIST';
+  } else if (normalizedScene === 'SILVER') {
+    const silverTeam = rankings[1] || rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    const elTeam = document.getElementById('projPresSilverTeam');
+    if (elTeam) elTeam.textContent = silverTeam.teamName;
+    const elMem = document.getElementById('projPresSilverMembers');
+    if (elMem) elMem.textContent = silverTeam.members ? `Traders: ${silverTeam.members}` : '';
+    const elVal = document.getElementById('projPresSilverVal');
+    if (elVal) elVal.textContent = formatINR(silverTeam.totalPortfolioValue || silverTeam.finalPortfolioValue || 0);
+
+    const pnl = silverTeam.netProfitLoss !== undefined ? silverTeam.netProfitLoss : (silverTeam.netProfitOrLoss || 0);
+    const pnlEl = document.getElementById('projPresSilverPnl');
+    if (pnlEl) {
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+      pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const retPct = silverTeam.returnPct !== undefined ? silverTeam.returnPct : 0;
+    const retEl = document.getElementById('projPresSilverReturn');
+    if (retEl) {
+      retEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+      retEl.className = retPct >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const sceneEl = document.getElementById('projSceneSilver');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 3: 🥈 SILVER RUNNER-UP';
+  } else if (normalizedScene === 'CHAMPION') {
+    const champ = rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    const elTeam = document.getElementById('projPresChampionTeam');
+    if (elTeam) elTeam.textContent = champ.teamName;
+    const elMem = document.getElementById('projPresChampionMembers');
+    if (elMem) elMem.textContent = champ.members ? `Traders: ${champ.members}` : '';
+    const elVal = document.getElementById('projPresChampionVal');
+    if (elVal) elVal.textContent = formatINR(champ.totalPortfolioValue || champ.finalPortfolioValue || 0);
+
+    const pnl = champ.netProfitLoss !== undefined ? champ.netProfitLoss : (champ.netProfitOrLoss || 0);
+    const pnlEl = document.getElementById('projPresChampionPnl');
+    if (pnlEl) {
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+      pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const retPct = champ.returnPct !== undefined ? champ.returnPct : 0;
+    const retEl = document.getElementById('projPresChampionReturn');
+    if (retEl) {
+      retEl.textContent = `${retPct >= 0 ? '+' : ''}${retPct.toFixed(2)}%`;
+      retEl.className = retPct >= 0 ? 'price-up' : 'price-down';
+    }
+
+    const sceneEl = document.getElementById('projSceneChampion');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 4: 🏆 GRAND CHAMPION';
+    createPresentationConfetti();
+  } else if (normalizedScene === 'PODIUM') {
+    const t1 = rankings[0] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+    const t2 = rankings[1] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+    const t3 = rankings[2] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+
+    const p1Team = document.getElementById('projPodium1Team');
+    if (p1Team) p1Team.textContent = t1.teamName;
+    const p1Val = document.getElementById('projPodium1Val');
+    if (p1Val) p1Val.textContent = formatINR(t1.totalPortfolioValue || t1.finalPortfolioValue || 0);
+    const p1Ret = document.getElementById('projPodium1Return');
+    if (p1Ret) p1Ret.textContent = `${(t1.returnPct || 0) >= 0 ? '+' : ''}${(t1.returnPct || 0).toFixed(2)}%`;
+
+    const p2Team = document.getElementById('projPodium2Team');
+    if (p2Team) p2Team.textContent = t2.teamName;
+    const p2Val = document.getElementById('projPodium2Val');
+    if (p2Val) p2Val.textContent = formatINR(t2.totalPortfolioValue || t2.finalPortfolioValue || 0);
+    const p2Ret = document.getElementById('projPodium2Return');
+    if (p2Ret) p2Ret.textContent = `${(t2.returnPct || 0) >= 0 ? '+' : ''}${(t2.returnPct || 0).toFixed(2)}%`;
+
+    const p3Team = document.getElementById('projPodium3Team');
+    if (p3Team) p3Team.textContent = t3.teamName;
+    const p3Val = document.getElementById('projPodium3Val');
+    if (p3Val) p3Val.textContent = formatINR(t3.totalPortfolioValue || t3.finalPortfolioValue || 0);
+    const p3Ret = document.getElementById('projPodium3Return');
+    if (p3Ret) p3Ret.textContent = `${(t3.returnPct || 0) >= 0 ? '+' : ''}${(t3.returnPct || 0).toFixed(2)}%`;
+
+    const sceneEl = document.getElementById('projScenePodium');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 5: 🎖️ GRAND PODIUM';
+  } else if (normalizedScene === 'STANDINGS' || normalizedScene === 'LEADERBOARD') {
+    const tbody = document.getElementById('projPresLeaderboardTbody');
+    if (tbody) {
+      tbody.innerHTML = rankings.map((r, idx) => {
+        const val = r.totalPortfolioValue || r.finalPortfolioValue || 0;
+        const pnl = r.netProfitLoss !== undefined ? r.netProfitLoss : (r.netProfitOrLoss || 0);
+        const retPct = r.returnPct !== undefined ? r.returnPct : 0;
+        const isUp = pnl >= 0;
+        return `
+          <tr style="border-bottom: 1px solid var(--subtle-border); ${idx < 3 ? 'background: #FAF9F6;' : ''}">
+            <td style="padding: 10px; font-weight: 800;">#${r.rank || (idx + 1)}</td>
+            <td style="padding: 10px; font-family: var(--font-sans); font-weight: 800; color: var(--text-forest);">${r.teamName}</td>
+            <td style="padding: 10px; text-align: right;">${formatINR(r.cash || 0)}</td>
+            <td style="padding: 10px; text-align: right;">${formatINR(r.holdingsValue || 0)}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 800;">${formatINR(val)}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+              ${isUp ? '+' : ''}${formatINR(pnl)}
+            </td>
+            <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+              ${isUp ? '+' : ''}${retPct.toFixed(2)}%
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    const sceneEl = document.getElementById('projSceneStandings');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 6: 📋 FULL OFFICIAL CLASSIFICATION';
+  } else {
+    // Default: Intro / Settlement
+    const sceneEl = document.getElementById('projSceneIntro');
+    if (sceneEl) sceneEl.classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 1: ⚖️ FINAL SETTLEMENT AUDIT';
+  }
 }
 
 // ==========================================
@@ -1504,7 +2032,7 @@ function drawSmoothBezierSparkline(canvasId, history, dayOpenPrice, isUp, isLarg
 // ==========================================
 function switchHostTab(tabName) {
   activeHostTab = tabName;
-  ['stocks', 'universe', 'news', 'analysis', 'sound', 'leaderboard', 'trades', 'exports', 'launcher'].forEach((t) => {
+  ['stocks', 'universe', 'news', 'projector', 'commentary', 'day', 'analysis', 'sound', 'leaderboard', 'trades', 'exports', 'launcher'].forEach((t) => {
     const btn = document.getElementById(`hostTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
     const content = document.getElementById(`hostTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
     if (btn) btn.className = t === tabName ? 'btn btn-sage' : 'btn btn-outline';
@@ -1525,11 +2053,46 @@ function renderHostView(state) {
       gameState.isPaused ? (gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED') : 'LIVE'
     } • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
 
+  // Render Configuration Lock Status Banner
+  const lockIcon = document.getElementById('hostConfigLockIcon');
+  const lockTitle = document.getElementById('hostConfigLockTitle');
+  const lockDesc = document.getElementById('hostConfigLockDesc');
+  const lockBadge = document.getElementById('hostConfigLockBadge');
+
+  if (gameState.configLocked) {
+    if (lockIcon) lockIcon.textContent = '🔒';
+    if (lockTitle) lockTitle.textContent = 'EVENT CONFIGURATION LOCKED (LIVE TOURNAMENT ACTIVE)';
+    if (lockDesc) lockDesc.textContent = 'Starting capital, share universe, beta multipliers, and scoring formulas are frozen on the server. Market simulation is authoritative.';
+    if (lockBadge) {
+      lockBadge.textContent = 'CONFIG LOCKED';
+      lockBadge.style.background = '#FEE2E2';
+      lockBadge.style.color = '#991B1B';
+    }
+  } else {
+    if (lockIcon) lockIcon.textContent = '🔓';
+    if (lockTitle) lockTitle.textContent = 'CONFIGURATION UNLOCKED (DRAFT SETUP MODE)';
+    if (lockDesc) lockDesc.textContent = 'Tournament parameters, starting capital, and share universe are currently editable. Launching or scheduling will permanently lock them.';
+    if (lockBadge) {
+      lockBadge.textContent = 'DRAFT MODE';
+      lockBadge.style.background = '#E2E8F0';
+      lockBadge.style.color = '#334155';
+    }
+  }
+
   // 0. Render Universe Market Builder Table
   renderHostUniverseView(allCompaniesUniverse || companies || []);
 
   // 0.1 Render Terminal Launcher & Credentials Table
   renderHostLauncherTab(state);
+
+  // 0.2 Render Intelligent Projector Control Tab
+  renderHostProjectorTab(state);
+
+  // 0.3 Render Anchor Commentary Prompts Tab
+  renderHostCommentaryTab(state);
+
+  // 0.4 Render Day Finalize & Lifecycle Tab
+  renderHostDayTab(state);
 
   // 1. Render Stocks Table
   if (companies) {
@@ -1797,6 +2360,252 @@ function copyAllCredentialsToClipboard() {
   text += `\nGeneral Login: ${origin}/\n`;
 
   copyToClipboard(text);
+}
+
+// ==========================================
+// INTELLIGENT PROJECTOR, COMMENTARY & DAY LIFECYCLE CONTROLLERS
+// ==========================================
+function renderHostProjectorTab(state) {
+  const pState = state.projectorState || { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12 };
+  const modeAutoBtn = document.getElementById('btnProjModeAuto');
+  const modeFixedBtn = document.getElementById('btnProjModeFixed');
+  if (modeAutoBtn && modeFixedBtn) {
+    if (pState.mode === 'FIXED_SCREEN') {
+      modeAutoBtn.className = 'btn btn-outline';
+      modeFixedBtn.className = 'btn btn-sage';
+    } else {
+      modeAutoBtn.className = 'btn btn-sage';
+      modeFixedBtn.className = 'btn btn-outline';
+    }
+  }
+
+  const durationInput = document.getElementById('hostProjDurationInput');
+  if (durationInput && !durationInput.matches(':focus')) {
+    durationInput.value = pState.sceneDurationSeconds || 12;
+  }
+
+  const sceneBtns = {
+    'SCENE_MARKET_BOARD': document.getElementById('btnSceneMarketBoard'),
+    'SCENE_INDICES': document.getElementById('btnSceneIndices'),
+    'SCENE_STRATEGY': document.getElementById('btnSceneStrategy'),
+    'SCENE_LEADERBOARD': document.getElementById('btnSceneLeaderboard'),
+    'SCENE_NEWS': document.getElementById('btnSceneNews')
+  };
+
+  const active = pState.currentScene || 'SCENE_MARKET_BOARD';
+  Object.keys(sceneBtns).forEach((sKey) => {
+    const btn = sceneBtns[sKey];
+    if (btn) {
+      if (sKey === active) {
+        btn.style.borderColor = 'var(--champagne-accent)';
+        btn.style.background = '#FEF3C7';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.style.borderColor = '';
+        btn.style.background = '';
+        btn.style.fontWeight = 'normal';
+      }
+    }
+  });
+}
+
+function renderHostCommentaryTab(state) {
+  const listEl = document.getElementById('hostAnchorCommentaryList');
+  if (!listEl) return;
+
+  const prompts = state.anchorCommentary || [];
+  if (prompts.length === 0) {
+    listEl.innerHTML = `
+      <div class="cream-panel" style="padding: 24px; text-align: center; color: var(--text-muted);">
+        Awaiting live market orders to formulate strategic anchor commentary observations...
+      </div>
+    `;
+    return;
+  }
+
+  listEl.innerHTML = prompts.map((item) => {
+    let catColor = '#2563EB';
+    let catBg = '#EFF6FF';
+    if (item.category === 'CONCENTRATION') {
+      catColor = '#DC2626';
+      catBg = '#FEF2F2';
+    } else if (item.category === 'CASH_POSITION') {
+      catColor = '#059669';
+      catBg = '#ECFDF5';
+    } else if (item.category === 'INDEX_MOMENTUM') {
+      catColor = '#7C3AED';
+      catBg = '#F5F3FF';
+    } else if (item.category === 'RANK_MOVEMENT') {
+      catColor = '#D97706';
+      catBg = '#FFFBEB';
+    }
+
+    return `
+      <div class="cream-panel" style="padding: 16px; border-left: 4px solid ${catColor}; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="badge" style="background: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 800;">
+              ${item.category}
+            </span>
+            <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
+              ${item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}
+            </span>
+          </div>
+          <p style="font-size: 14px; color: var(--text-forest); font-weight: 600; margin: 0; line-height: 1.5;">
+            "${item.prompt}"
+          </p>
+        </div>
+        <button onclick="copyToClipboard('${item.prompt.replace(/'/g, "\\'")}')" class="btn btn-outline" style="padding: 6px 12px; font-size: 11px; flex-shrink: 0;" title="Copy for Host/Anchor Speech">
+          📋 Copy
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHostDayTab(state) {
+  const container = document.getElementById('hostDaySnapshotsContainer');
+  if (!container) return;
+
+  const curDay = (state.gameState && state.gameState.currentDay) || 1;
+  const totalDays = (state.gameState && state.gameState.totalDays) || 3;
+  const snapshots = (state.gameState && state.gameState.dailyLeaderboards) || {};
+
+  let html = `
+    <div style="margin-bottom: 20px;">
+      <div class="cream-panel" style="padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 16px; font-weight: 900; color: var(--text-forest);">ACTIVE TOURNAMENT DAY ${curDay} OF ${totalDays}</span>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            Click 'Finalize Current Day Standings' at the end of each session to freeze the official daily closing snapshot.
+          </div>
+        </div>
+        <span class="badge badge-champagne" style="font-size: 13px; font-weight: 800;">PORTFOLIO MODEL: CONTINUOUS OVERNIGHT</span>
+      </div>
+    </div>
+  `;
+
+  const snapshotKeys = Object.keys(snapshots);
+  if (snapshotKeys.length === 0) {
+    html += `
+      <div style="padding: 32px; text-align: center; color: var(--text-muted); border: 2px dashed var(--subtle-border); border-radius: var(--radius-md);">
+        No completed daily snapshots finalized yet. Day 1 is currently in progress.
+      </div>
+    `;
+  } else {
+    html += snapshotKeys.map((key) => {
+      const snap = snapshots[key];
+      return `
+        <div class="luxury-card" style="margin-bottom: 20px; padding: 18px; border: 2px solid var(--card-border);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--subtle-border); padding-bottom: 10px; margin-bottom: 12px;">
+            <div>
+              <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">
+                📅 Official Finalized Standings &bull; Day ${snap.day}
+              </h3>
+              <span style="font-size: 11px; color: var(--text-muted);">Finalized at ${new Date(snap.finalizedAt).toLocaleTimeString()}</span>
+            </div>
+            <span class="badge badge-sage" style="font-size: 11px; font-weight: 800;">VERIFIED SNAPSHOT</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                  <th style="padding: 6px;">Rank</th>
+                  <th style="padding: 6px;">Desk Name</th>
+                  <th style="padding: 6px; text-align: center;">Rank Delta</th>
+                  <th style="padding: 6px; text-align: right;">Day Open Value</th>
+                  <th style="padding: 6px; text-align: right;">Day Close Value</th>
+                  <th style="padding: 6px; text-align: right;">Daily P&amp;L</th>
+                  <th style="padding: 6px; text-align: right;">Daily Return %</th>
+                  <th style="padding: 6px; text-align: right;">Cumulative Return %</th>
+                </tr>
+              </thead>
+              <tbody style="font-family: var(--font-mono);">
+                ${(snap.rankings || []).map((r) => {
+                  let deltaBadge = '<span style="color: var(--text-muted);">• 0</span>';
+                  if (r.rankDelta > 0) deltaBadge = `<span style="color: var(--price-up); font-weight: 800;">▲ +${r.rankDelta}</span>`;
+                  else if (r.rankDelta < 0) deltaBadge = `<span style="color: var(--price-down); font-weight: 800;">▼ ${r.rankDelta}</span>`;
+
+                  const isDailyUp = r.dailyPnl >= 0;
+                  const isCumUp = r.cumulativeReturnPct >= 0;
+
+                  return `
+                    <tr style="border-bottom: 1px solid var(--subtle-border);">
+                      <td style="padding: 6px; font-weight: 800;">#${r.rank}</td>
+                      <td style="padding: 6px; font-family: var(--font-sans); font-weight: 700; color: var(--text-forest);">${r.teamName}</td>
+                      <td style="padding: 6px; text-align: center;">${deltaBadge}</td>
+                      <td style="padding: 6px; text-align: right;">${formatINR(r.openingPortfolioValue)}</td>
+                      <td style="padding: 6px; text-align: right; font-weight: 800;">${formatINR(r.closingPortfolioValue)}</td>
+                      <td style="padding: 6px; text-align: right; font-weight: 700;" class="${isDailyUp ? 'price-up' : 'price-down'}">
+                        ${isDailyUp ? '+' : ''}${formatINR(r.dailyPnl)}
+                      </td>
+                      <td style="padding: 6px; text-align: right; font-weight: 700;" class="${isDailyUp ? 'price-up' : 'price-down'}">
+                        ${isDailyUp ? '+' : ''}${r.dailyReturnPct.toFixed(2)}%
+                      </td>
+                      <td style="padding: 6px; text-align: right; font-weight: 800;" class="${isCumUp ? 'price-up' : 'price-down'}">
+                        ${isCumUp ? '+' : ''}${r.cumulativeReturnPct.toFixed(2)}%
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  container.innerHTML = html;
+}
+
+function hostSetProjectorMode(mode) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_UPDATE_PROJECTOR_MODE',
+    session_token: sessionToken,
+    mode: mode
+  }));
+}
+
+function hostSetProjectorScene(scene) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_UPDATE_PROJECTOR_MODE',
+    session_token: sessionToken,
+    mode: 'FIXED_SCREEN',
+    scene: scene
+  }));
+}
+
+function hostSaveProjectorDuration() {
+  if (!ws || !sessionToken) return;
+  const input = document.getElementById('hostProjDurationInput');
+  const dur = input ? parseInt(input.value, 10) : 12;
+  ws.send(JSON.stringify({
+    action: 'HOST_UPDATE_PROJECTOR_MODE',
+    session_token: sessionToken,
+    sceneDurationSeconds: dur
+  }));
+  showOrderToast(`✓ Projector scene duration set to ${dur}s`, true);
+}
+
+function hostFinalizeDay() {
+  if (!ws || !sessionToken) return;
+  if (!confirm(`Are you sure you want to finalize Day ${latestState ? latestState.gameState.currentDay : ''} standings? This will record official closing prices and lock daily snapshot.`)) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_FINALIZE_DAY',
+    session_token: sessionToken
+  }));
+  showOrderToast(`✓ Day ${latestState ? latestState.gameState.currentDay : ''} finalized successfully!`, true);
+}
+
+function hostExitWinnerPresentation() {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_EXIT_WINNER_PRESENTATION',
+    session_token: sessionToken
+  }));
+  showOrderToast('✓ Exited winner presentation mode. Restored live market cycle.', true);
 }
 
 function openShareEditorModal(ticker) {
@@ -2886,21 +3695,23 @@ function renderPresentationScene(sceneName, snapshot) {
 }
 
 function createPresentationConfetti() {
-  const container = document.getElementById('presentationConfetti');
-  if (!container) return;
-  container.innerHTML = '';
-  const colors = ['#B49A70', '#218653', '#D4AF37', '#8C9CAE', '#C64B4B', '#FFFFFF'];
-  for (let i = 0; i < 90; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.left = `${Math.random() * 100}%`;
-    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.width = `${Math.random() * 8 + 6}px`;
-    piece.style.height = `${Math.random() * 14 + 10}px`;
-    piece.style.animationDuration = `${Math.random() * 2 + 2}s`;
-    piece.style.animationDelay = `${Math.random() * 1.5}s`;
-    container.appendChild(piece);
-  }
+  ['presentationConfetti', 'projPresentationConfetti'].forEach((id) => {
+    const container = document.getElementById(id);
+    if (!container) return;
+    container.innerHTML = '';
+    const colors = ['#B49A70', '#218653', '#D4AF37', '#8C9CAE', '#C64B4B', '#FFFFFF'];
+    for (let i = 0; i < 90; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.width = `${Math.random() * 8 + 6}px`;
+      piece.style.height = `${Math.random() * 14 + 10}px`;
+      piece.style.animationDuration = `${Math.random() * 2 + 2}s`;
+      piece.style.animationDelay = `${Math.random() * 1.5}s`;
+      container.appendChild(piece);
+    }
+  });
 }
 
 const PRES_SCENE_SEQUENCE = ['INTRO', 'BRONZE', 'SILVER', 'CHAMPION', 'PODIUM', 'LEADERBOARD'];

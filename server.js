@@ -103,6 +103,7 @@ let gameState = {
   subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
   institution: 'SSASIT Surat (GTU 076)',
   status: 'PAUSED',
+  configLocked: false,
   startMode: 'IMMEDIATE',
   scheduledStartTime: null,
   pausePolicy: 'TRADING_TIME',
@@ -124,6 +125,17 @@ let gameState = {
   winnerData: null,
   activeCountdown: null,
   finalResultsSnapshot: null,
+  marketIndices: [],
+  dailyLeaderboards: {},
+  dailyClosingPrices: {},
+  projectorState: {
+    mode: 'AUTO_CYCLE',
+    currentScene: 'SCENE_MARKET_BOARD',
+    sceneDurationSeconds: 12,
+    isWinnerActive: false,
+    winnerScene: 'SCENE_INTRO',
+    updatedAt: new Date().toISOString()
+  },
   presentationState: {
     active: false,
     scene: 'SCENE_INTRO',
@@ -203,6 +215,7 @@ const ACTIVE_UNIVERSE_FILE = path.join(DATA_DIR, 'universe_active.json');
 const LIVE_STATE_FILE = path.join(DATA_DIR, 'live_game_state.json');
 
 function saveUniverseToDisk() {
+  if (activeScenarioMode === 'test') return;
   try {
     const dataToSave = companies.map((c) => ({
       ticker: c.ticker,
@@ -329,6 +342,7 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
     institution: 'SSASIT Surat (GTU 076)',
     status: 'PAUSED',
+    configLocked: false,
     startMode: 'IMMEDIATE',
     scheduledStartTime: null,
     pausePolicy: 'TRADING_TIME',
@@ -350,6 +364,17 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     winnerData: null,
     activeCountdown: null,
     finalResultsSnapshot: null,
+    marketIndices: [],
+    dailyLeaderboards: {},
+    dailyClosingPrices: {},
+    projectorState: {
+      mode: 'AUTO_CYCLE',
+      currentScene: 'SCENE_MARKET_BOARD',
+      sceneDurationSeconds: 12,
+      isWinnerActive: false,
+      winnerScene: 'SCENE_INTRO',
+      updatedAt: new Date().toISOString()
+    },
     presentationState: {
       active: false,
       scene: 'SCENE_INTRO',
@@ -479,23 +504,15 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   }
 
   let sentiment = 'NEUTRAL';
-  let trafficLightBadge = 'ℹ️ GENERAL MARKET UPDATE';
-  if (impacts.GLOBAL_WEIGHTED) {
-    const pct = impacts.GLOBAL_WEIGHTED.base_pct;
-    sentiment = pct > 0 ? 'BULLISH' : (pct < 0 ? 'BEARISH' : 'NEUTRAL');
-    trafficLightBadge = pct > 0
-      ? `🟢 GOOD FOR ALL STOCKS (+${pct}% expected rise)`
-      : `🔴 BAD FOR ALL STOCKS (${pct}% expected drop)`;
-  } else {
-    const tickers = Object.keys(impacts);
-    if (tickers.length > 0) {
-      const first = tickers[0];
-      const d = impacts[first].delta_pct || 0;
-      sentiment = d > 0 ? 'BULLISH' : (d < 0 ? 'BEARISH' : 'NEUTRAL');
-      trafficLightBadge = d > 0
-        ? `🟢 GOOD NEWS FOR ${first} (+${d}% price boost)`
-        : `🔴 BAD NEWS FOR ${first} (${d}% price drop)`;
-    }
+  let trafficLightBadge = '📰 BREAKING WIRE • REGULATORY & INDUSTRY NOTICE';
+  if (eventObj.type === 'SECTOR') {
+    trafficLightBadge = '📰 SECTOR WIRE • INDUSTRY NOTIFICATION';
+  } else if (eventObj.type === 'MACRO' || impacts.GLOBAL_WEIGHTED) {
+    trafficLightBadge = '📰 MACRO WIRE • MONETARY POLICY UPDATE';
+  } else if (eventObj.type && eventObj.type.includes('RUMOR')) {
+    trafficLightBadge = '📰 MARKET DESK • UNVERIFIED TRADING SPECULATION';
+  } else if (eventObj.type && eventObj.type.includes('FACT_CHECK')) {
+    trafficLightBadge = '📰 EXCHANGE FILING • OFFICIAL CORPORATE DISCLOSURE';
   }
 
   const newsRecord = {
@@ -523,9 +540,17 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
 
   broadcastAudioCue('heavy_news_boom', 'news', { headline: eventObj.headline, event_id: eventObj.event_id });
 
-  broadcastAll({
-    type: 'NEWS_FLASH',
-    news: newsRecord
+  // Confidentiality: Broadcast private impacts only to HOST; traders and projector receive neutral text only
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      if (client.session && client.session.role === 'HOST') {
+        client.send(JSON.stringify({ type: 'NEWS_FLASH', news: newsRecord }));
+      } else {
+        const publicNews = { ...newsRecord };
+        delete publicNews.impacts;
+        client.send(JSON.stringify({ type: 'NEWS_FLASH', news: publicNews }));
+      }
+    }
   });
 }
 
@@ -717,9 +742,181 @@ function getConcludedLeaderboard() {
   };
 }
 
+function calculateMarketIndices() {
+  const enabled = companies.filter((c) => c.isEnabled !== false);
+  if (enabled.length === 0) return [];
+
+  const broadBase = 25000;
+  const avgRatio = enabled.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / enabled.length;
+  const broadVal = +(broadBase * avgRatio).toFixed(2);
+  const broadChg = +(broadVal - broadBase).toFixed(2);
+  const broadPct = +(((broadVal - broadBase) / broadBase) * 100).toFixed(2);
+
+  function calcSubIndex(id, name, base, tickers) {
+    const subs = enabled.filter((c) => tickers.includes(c.ticker));
+    if (subs.length === 0) return null;
+    const ratio = subs.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / subs.length;
+    const val = +(base * ratio).toFixed(2);
+    return {
+      id,
+      name,
+      baseValue: base,
+      currentValue: val,
+      change: +(val - base).toFixed(2),
+      changePct: +(((val - base) / base) * 100).toFixed(2),
+      constituents: subs.map((s) => s.ticker)
+    };
+  }
+
+  const list = [
+    {
+      id: 'NIFTY_TF20',
+      name: 'Championship Broad 20',
+      baseValue: broadBase,
+      currentValue: broadVal,
+      change: broadChg,
+      changePct: broadPct,
+      constituents: enabled.map((s) => s.ticker)
+    },
+    calcSubIndex('BANK_TF', 'Banking & Finance Index', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
+    calcSubIndex('IT_TF', 'Information Tech Index', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
+    calcSubIndex('AUTO_TF', 'Automotive Mobility Index', 20000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
+    calcSubIndex('ENERGY_TF', 'Energy & Power Index', 15000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
+    calcSubIndex('METALS_TF', 'Metals & Mining Index', 10000, ['TATASTEEL', 'JSWSTEEL'])
+  ].filter(Boolean);
+
+  return list;
+}
+
+function calculateTeamSectorAllocations() {
+  const standings = calculateLeaderboard();
+  return standings.map((item) => {
+    const t = teams[item.id];
+    if (!t) return null;
+    const cash = t.cash || 0;
+    let totalHoldingsVal = 0;
+    const sectorValues = {};
+
+    companies.forEach((c) => {
+      if (!c.isEnabled) return;
+      const qty = t.holdings[c.ticker] || 0;
+      const val = qty * c.currentPrice;
+      if (val > 0) {
+        totalHoldingsVal += val;
+        const sec = c.sector || 'General';
+        sectorValues[sec] = (sectorValues[sec] || 0) + val;
+      }
+    });
+
+    const totalPortfolio = Math.max(1, cash + totalHoldingsVal);
+    const cashPct = +((cash / totalPortfolio) * 100).toFixed(1);
+    const sectorPcts = {};
+    Object.keys(sectorValues).forEach((sec) => {
+      sectorPcts[sec] = +((sectorValues[sec] / totalPortfolio) * 100).toFixed(1);
+    });
+
+    // Sort sectors by percentage descending
+    const sortedSectors = Object.entries(sectorPcts)
+      .sort((a, b) => b[1] - a[1])
+      .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {});
+
+    return {
+      teamId: t.id,
+      teamName: t.name,
+      rank: standings.findIndex((s) => s.id === t.id) + 1,
+      netWorth: item.netWorth,
+      cashPct,
+      cashAmount: +cash.toFixed(2),
+      sectorPcts: sortedSectors
+    };
+  }).filter(Boolean);
+}
+
+function generateAnchorCommentary() {
+  const commentary = [];
+  const standings = calculateLeaderboard();
+  const allocations = calculateTeamSectorAllocations();
+  const indices = calculateMarketIndices();
+
+  if (standings.length > 0) {
+    const leader = standings[0];
+    const leaderAlloc = allocations.find((a) => a.teamId === leader.id);
+    const topSec = leaderAlloc && Object.keys(leaderAlloc.sectorPcts)[0];
+    commentary.push({
+      type: 'LEADER',
+      badge: '🏆 LEADER FOCUS',
+      text: `${leader.name} commands 1st Place at ₹${leader.netWorth.toLocaleString('en-IN')}${topSec ? ` with heavy ${topSec} weighting (${leaderAlloc.sectorPcts[topSec]}%)` : ''}.`
+    });
+  }
+
+  // High concentration check
+  allocations.forEach((al) => {
+    const entries = Object.entries(al.sectorPcts);
+    if (entries.length > 0 && entries[0][1] >= 45) {
+      commentary.push({
+        type: 'CONCENTRATION',
+        badge: '🎯 HIGH CONVICTION BET',
+        text: `${al.teamName} has allocated ${entries[0][1]}% of their fund directly into ${entries[0][0]}.`
+      });
+    }
+  });
+
+  // High cash reserve check
+  allocations.forEach((al) => {
+    if (al.cashPct >= 40) {
+      commentary.push({
+        type: 'CASH',
+        badge: '💰 DRY POWDER WATCH',
+        text: `${al.teamName} is holding ${al.cashPct}% in pure cash (₹${al.cashAmount.toLocaleString('en-IN')}), poised for market dips.`
+      });
+    }
+  });
+
+  // Macro Index shift
+  indices.forEach((idx) => {
+    if (Math.abs(idx.changePct) >= 1.5) {
+      commentary.push({
+        type: 'INDEX',
+        badge: idx.changePct > 0 ? '📈 INDEX RALLY' : '📉 INDEX DROP',
+        text: `${idx.name} has moved ${idx.changePct > 0 ? '+' : ''}${idx.changePct}% from session open, shifting portfolio valuations.`
+      });
+    }
+  });
+
+  // Multi-Day Rank Movement check if previous day exists
+  const prevDaySnapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${gameState.currentDay - 1}`];
+  if (prevDaySnapshot && prevDaySnapshot.rankings) {
+    standings.slice(0, 5).forEach((curr, idx) => {
+      const prevIdx = prevDaySnapshot.rankings.findIndex((r) => r.teamId === curr.id);
+      if (prevIdx !== -1) {
+        const delta = (prevIdx + 1) - (idx + 1); // positive = moved up
+        if (delta >= 2) {
+          commentary.push({
+            type: 'MOMENTUM',
+            badge: '🚀 RANK SURGE',
+            text: `${curr.name} has surged +${delta} spots on the leaderboard today into Rank #${idx + 1}!`
+          });
+        }
+      }
+    });
+  }
+
+  return commentary.slice(0, 6);
+}
+
 function getSanitizedPublicState(role, teamId) {
-  // Publicly visible stocks: only enabled stocks
   const enabledStocks = companies.filter((c) => c.isEnabled !== false);
+  const marketIndices = calculateMarketIndices();
+  const teamSectorAllocations = calculateTeamSectorAllocations();
+  const isHost = role === 'HOST';
+
+  // Sanitize newsHistory: strip private 'impacts' from non-host screens
+  const sanitizedNewsHistory = gameState.newsHistory.map((n) => {
+    if (isHost) return n;
+    const clean = { ...n };
+    delete clean.impacts;
+    return clean;
+  });
 
   const payload = {
     type: 'TICK_UPDATE',
@@ -731,6 +928,7 @@ function getSanitizedPublicState(role, teamId) {
       subtitle: gameState.subtitle || '',
       institution: gameState.institution || '',
       status: gameState.status || (gameState.isPaused ? 'PAUSED' : 'LIVE'),
+      configLocked: !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN'),
       startMode: gameState.startMode || 'IMMEDIATE',
       scheduledStartTime: gameState.scheduledStartTime,
       pausePolicy: gameState.pausePolicy || 'TRADING_TIME',
@@ -744,17 +942,23 @@ function getSanitizedPublicState(role, teamId) {
       totalShiftOffsetSeconds: gameState.totalShiftOffsetSeconds,
       circuitBreakerPercent: gameState.circuitBreakerPercent,
       transactionFeeBps: gameState.transactionFeeBps,
-      newsHistory: gameState.newsHistory,
+      newsHistory: sanitizedNewsHistory,
       isConcluded: gameState.isConcluded,
       winnerData: gameState.winnerData,
       activeCountdown: gameState.activeCountdown,
       audioSettings: gameState.audioSettings,
-      presentationState: gameState.presentationState
+      presentationState: gameState.presentationState,
+      projectorState: gameState.projectorState,
+      dailyLeaderboards: gameState.dailyLeaderboards,
+      marketIndices,
+      teamSectorAllocations
     },
     companies: enabledStocks.map((c) => ({
       ticker: c.ticker,
       name: c.name,
       sector: c.sector,
+      exchange: c.exchange || 'NSE',
+      currency: c.currency || 'INR',
       base_price: c.base_price,
       currentPrice: c.currentPrice,
       dayOpenPrice: c.dayOpenPrice,
@@ -801,6 +1005,11 @@ function getSanitizedPublicState(role, teamId) {
   if (role === 'HOST') {
     payload.leaderboard = calculateLeaderboard();
     payload.newsEvents = newsEvents;
+    payload.anchorCommentary = generateAnchorCommentary();
+    payload.marketIndices = marketIndices;
+    payload.teamSectorAllocations = teamSectorAllocations;
+    payload.projectorState = gameState.projectorState;
+    payload.dailyLeaderboards = gameState.dailyLeaderboards;
     // Host receives all scheduled news with individual publication countdowns and statuses
     payload.allScheduledNews = newsEvents.map((ev) => {
       let status = 'SCHEDULED';
@@ -852,7 +1061,12 @@ function getSanitizedPublicState(role, teamId) {
   }
 
   if (role === 'PROJECTOR') {
-    payload.leaderboard = calculateLeaderboard().slice(0, 5);
+    payload.leaderboard = calculateLeaderboard(); // Full leaderboard for Projector sceneLeaderboard
+    payload.marketIndices = marketIndices;
+    payload.teamSectorAllocations = teamSectorAllocations;
+    payload.projectorState = gameState.projectorState;
+    payload.finalResultsSnapshot = gameState.finalResultsSnapshot || (gameState.isConcluded ? generateOfficialResultsSnapshot() : null);
+    payload.presentationState = gameState.presentationState;
   }
 
   if (role === 'WINNER_DISPLAY') {
@@ -1531,6 +1745,26 @@ wss.on('connection', (ws) => {
 
     // --- 5. HOST MATRIX & ADVANCED SHARE MANAGEMENT ---
     if (session.role === 'HOST') {
+      const isConfigLocked = !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN');
+
+      // Enforce configuration lock: prevent modifying shares or custom shocks while tournament is active
+      if (gameState.configLocked) {
+        if (['HOST_ADD_SHARE', 'HOST_REMOVE_SHARE', 'HOST_DELETE_SHARE', 'HOST_EDIT_SHARE', 'HOST_CREATE_CUSTOM_NEWS'].includes(data.action)) {
+          ws.send(JSON.stringify({
+            type: 'EVENT_CONFIG_LOCKED',
+            reason: 'EVENT_CONFIG_LOCKED: Configuration is permanently frozen for competition integrity. No new shares or custom news can be modified while tournament is active.'
+          }));
+          return;
+        }
+        if (data.action === 'HOST_UPDATE_EVENT_CONFIG' && (data.startingCash !== undefined || data.totalDays !== undefined)) {
+          ws.send(JSON.stringify({
+            type: 'EVENT_CONFIG_LOCKED',
+            reason: 'EVENT_CONFIG_LOCKED: Starting capital and tournament duration are locked once event is scheduled or live.'
+          }));
+          return;
+        }
+      }
+
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
         const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
@@ -1566,6 +1800,7 @@ wss.on('connection', (ws) => {
         gameState.scheduledStartTime = data.scheduledStartTime; // ISO string e.g. "2026-10-15T09:00:00"
         gameState.pausePolicy = data.pausePolicy === 'ELAPSED_TIME' ? 'ELAPSED_TIME' : 'TRADING_TIME';
         gameState.status = 'SCHEDULED';
+        gameState.configLocked = true;
         gameState.isPaused = true;
         if (data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
         recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy });
@@ -1577,6 +1812,7 @@ wss.on('connection', (ws) => {
       if (data.action === 'HOST_START_EVENT_NOW') {
         gameState.startMode = 'IMMEDIATE';
         gameState.status = 'LIVE';
+        gameState.configLocked = true;
         gameState.isPaused = false;
         gameState.pauseMode = 'NONE';
         gameState.pauseStartedAt = null;
@@ -1656,12 +1892,15 @@ wss.on('connection', (ws) => {
         broadcastAudioCue(cueName, category, { isTest: true });
       }
 
-      // 5.2f Host Winner Presentation Stage Controls
+      // 5.2f Host Winner Presentation Stage Controls (Embedded Directly in Projector)
       if (data.action === 'HOST_START_WINNER_PRESENTATION') {
         const snapshot = generateOfficialResultsSnapshot();
         gameState.isPaused = true;
         gameState.isConcluded = true;
         gameState.status = 'WINNER_ANNOUNCEMENT';
+        if (!gameState.projectorState) gameState.projectorState = {};
+        gameState.projectorState.isWinnerActive = true;
+        gameState.projectorState.winnerScene = 'SCENE_INTRO';
         gameState.presentationState = {
           active: true,
           scene: 'SCENE_INTRO',
@@ -1673,10 +1912,26 @@ wss.on('connection', (ws) => {
         recordAuditEvent('WINNER_PRESENTATION_STARTED', { snapshotId: snapshot.snapshotId });
         broadcastAudioCue('championship_fanfare', 'presentation', { scene: 'SCENE_INTRO' });
         broadcastAll({
+          type: 'PROJECTOR_STATE_UPDATE',
+          projectorState: gameState.projectorState
+        });
+        broadcastAll({
           type: 'PRESENTATION_SCENE_UPDATE',
           scene: 'SCENE_INTRO',
           presentationState: gameState.presentationState,
           snapshot
+        });
+        broadcastTick();
+      }
+
+      if (data.action === 'HOST_EXIT_WINNER_PRESENTATION') {
+        if (!gameState.projectorState) gameState.projectorState = {};
+        gameState.projectorState.isWinnerActive = false;
+        if (gameState.presentationState) gameState.presentationState.active = false;
+        recordAuditEvent('WINNER_PRESENTATION_EXITED', {});
+        broadcastAll({
+          type: 'PROJECTOR_STATE_UPDATE',
+          projectorState: gameState.projectorState
         });
         broadcastTick();
       }
@@ -1688,6 +1943,8 @@ wss.on('connection', (ws) => {
         }
         gameState.presentationState.scene = scene;
         gameState.presentationState.updatedAt = new Date().toISOString();
+        if (!gameState.projectorState) gameState.projectorState = {};
+        gameState.projectorState.winnerScene = scene;
 
         if (scene === 'SCENE_BRONZE') {
           broadcastAudioCue('presentation_bronze', 'presentation', { rank: 3 });
@@ -1701,10 +1958,98 @@ wss.on('connection', (ws) => {
 
         recordAuditEvent('PRESENTATION_SCENE_CHANGED', { scene });
         broadcastAll({
+          type: 'PROJECTOR_STATE_UPDATE',
+          projectorState: gameState.projectorState
+        });
+        broadcastAll({
           type: 'PRESENTATION_SCENE_UPDATE',
           scene,
           presentationState: gameState.presentationState,
           snapshot: gameState.finalResultsSnapshot || generateOfficialResultsSnapshot()
+        });
+        broadcastTick();
+      }
+
+      // 5.2g Host Intelligent Projector Cycle Mode Controls
+      if (data.action === 'HOST_UPDATE_PROJECTOR_MODE') {
+        if (!gameState.projectorState) {
+          gameState.projectorState = { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12, isWinnerActive: false };
+        }
+        if (data.mode) gameState.projectorState.mode = data.mode;
+        if (data.scene) gameState.projectorState.currentScene = data.scene;
+        if (data.sceneDurationSeconds) gameState.projectorState.sceneDurationSeconds = Math.max(3, parseInt(data.sceneDurationSeconds, 10));
+        gameState.projectorState.updatedAt = new Date().toISOString();
+
+        recordAuditEvent('PROJECTOR_MODE_CHANGED', { projectorState: gameState.projectorState });
+        broadcastAll({ type: 'PROJECTOR_STATE_UPDATE', projectorState: gameState.projectorState });
+        broadcastTick();
+      }
+
+      // 5.2h Host Finalize Current Day Results
+      if (data.action === 'HOST_FINALIZE_DAY') {
+        const day = gameState.currentDay;
+        const standings = calculateLeaderboard();
+        const closingPrices = {};
+        companies.forEach((c) => { closingPrices[c.ticker] = c.currentPrice; });
+
+        const prevSnapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${day - 1}`];
+
+        const dailyRankings = standings.map((item, idx) => {
+          const t = teams[item.id] || {};
+          const startingCash = t.startingCash || gameState.startingCash || 500000;
+          const currentPortfolioValue = item.netWorth;
+          const prevClosingValue = prevSnapshot
+            ? (prevSnapshot.rankings.find((r) => r.teamId === item.id)?.closingPortfolioValue || startingCash)
+            : startingCash;
+
+          const dailyPnl = +(currentPortfolioValue - prevClosingValue).toFixed(2);
+          const dailyReturnPct = +(((currentPortfolioValue - prevClosingValue) / prevClosingValue) * 100).toFixed(2);
+          const cumulativePnl = +(currentPortfolioValue - startingCash).toFixed(2);
+          const cumulativeReturnPct = +(((currentPortfolioValue - startingCash) / startingCash) * 100).toFixed(2);
+
+          let prevRank = idx + 1;
+          if (prevSnapshot && prevSnapshot.rankings) {
+            const pIdx = prevSnapshot.rankings.findIndex((r) => r.teamId === item.id);
+            if (pIdx !== -1) prevRank = pIdx + 1;
+          }
+          const rankDelta = prevRank - (idx + 1);
+
+          return {
+            teamId: item.id,
+            teamName: item.name,
+            rank: idx + 1,
+            prevRank,
+            rankDelta,
+            openingPortfolioValue: prevClosingValue,
+            closingPortfolioValue: currentPortfolioValue,
+            dailyPnl,
+            dailyReturnPct,
+            cumulativePnl,
+            cumulativeReturnPct,
+            cash: item.cash,
+            holdingsValue: item.holdingsValue,
+            tradeCount: item.tradeCount
+          };
+        });
+
+        const daySnapshot = {
+          day,
+          finalizedAt: new Date().toISOString(),
+          closingPrices,
+          rankings: dailyRankings
+        };
+
+        if (!gameState.dailyLeaderboards) gameState.dailyLeaderboards = {};
+        if (!gameState.dailyClosingPrices) gameState.dailyClosingPrices = {};
+        gameState.dailyLeaderboards[`day_${day}`] = daySnapshot;
+        gameState.dailyClosingPrices[`day_${day}`] = closingPrices;
+
+        recordAuditEvent('DAY_FINALIZED', { day, teamsCount: dailyRankings.length });
+        broadcastAudioCue('bell_close', 'lifecycle', { day });
+        broadcastAll({
+          type: 'DAY_FINALIZED',
+          day,
+          daySnapshot
         });
         broadcastTick();
       }
@@ -2437,6 +2782,58 @@ app.get('/api/results-snapshot', requireHostAuth, (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="RESULTS_SNAPSHOT_${snapshot.snapshotId}.json"`);
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify(snapshot, null, 2));
+});
+
+// 8.9 Real-Company Market Indices API
+app.get('/api/market-indices', (req, res) => {
+  const list = calculateMarketIndices();
+  const map = {};
+  list.forEach((idx) => { map[idx.id] = idx; });
+  res.json({
+    timestamp: new Date().toISOString(),
+    indices: map,
+    indicesList: list
+  });
+});
+
+// 8.10 Team Macro Sector Allocations API (Public Privacy-Safe, Zero Ticker Leakage)
+app.get('/api/sector-allocations', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    allocations: calculateTeamSectorAllocations()
+  });
+});
+
+// 8.11 Event Anchor Commentary Prompts API
+app.get('/api/anchor-commentary', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    prompts: generateAnchorCommentary()
+  });
+});
+
+// 8.12 Projector State API
+app.get('/api/projector-state', (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    projectorState: gameState.projectorState || {
+      mode: 'AUTO_CYCLE',
+      currentScene: 'SCENE_MARKET_BOARD',
+      sceneDurationSeconds: 12,
+      isWinnerActive: false,
+      winnerScene: 'SCENE_INTRO'
+    }
+  });
+});
+
+// 8.13 Daily Results & Leaderboard Snapshots API
+app.get('/api/daily-snapshot/:day', (req, res) => {
+  const day = req.params.day;
+  const snapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${day}`];
+  if (!snapshot) {
+    return res.status(404).json({ error: `Daily snapshot for Day ${day} not finalized yet.` });
+  }
+  res.json(snapshot);
 });
 
 // 8.7 Complete Competition Backup & Restore

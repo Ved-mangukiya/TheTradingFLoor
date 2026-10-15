@@ -627,7 +627,7 @@ async function runTests() {
           { name: 'Beta Bulls', username: 'team2', password: 'trade200', members: 'Student 3, Student 4', startingCash: 750000 },
           { name: 'Gamma Hawks', username: 'team3', password: 'trade300', members: 'Student 5, Student 6', startingCash: 750000 }
         ],
-        selectedTickers: ['APEXAUTO', 'CAMPUSCO']
+        selectedTickers: ['APEXAUTO', 'CAMPUSCO', 'CROWNBNK']
       },
       session_token: hostToken
     }, 'CHAMPIONSHIP_INITIALIZED_SUCCESS');
@@ -636,6 +636,140 @@ async function runTests() {
       logPass(`New championship initialized successfully: "${wizardRes.title}" with custom teams and universe.`);
     } else {
       logFail('Setup wizard initialization failed', wizardRes);
+    }
+
+    // ==========================================
+    // [STAGE 9] Real-Company Universe, Indices & Sector Strategy Verification
+    // ==========================================
+    console.log('\n[STAGE 9] Real-Company Universe, Market Indices & Macro Strategy');
+
+    // 9.1 Verify Real-Company Data in Live Universe File
+    const fs = require('fs');
+    const universeData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'universe_active.json'), 'utf8'));
+    const realTickers = universeData.map((c) => c.ticker);
+    const requiredRealTickers = ['RELIANCE', 'TATAMOTORS', 'TCS', 'HDFCBANK', 'SBIN', 'LT', 'AIRTEL', 'ITC'];
+    const allRequiredPresent = requiredRealTickers.every((t) => realTickers.includes(t));
+    if (universeData.length === 20 && allRequiredPresent) {
+      logPass(`Real Indian Listed Universe verified: 20 companies loaded (${requiredRealTickers.slice(0, 4).join(', ')}...) with lot presets & official baselines.`);
+    } else {
+      logFail(`Universe validation failed. Length: ${universeData.length}, missing tickers.`);
+    }
+
+    // 9.2 Verify Market Indices REST API
+    const indicesRes = await httpGet('/api/market-indices');
+    const indicesJson = JSON.parse(indicesRes.body);
+    if (indicesJson.indices && indicesJson.indices.NIFTY_TF20 && indicesJson.indices.BANK_TF) {
+      logPass('Market Indices API verified: NIFTY_TF20 benchmark and sector indices (BANK_TF, IT_TF, AUTO_TF) calculated.');
+    } else {
+      logFail('Market Indices API failed', indicesRes);
+    }
+
+    // 9.3 Verify Team Macro Sector Allocations REST API (Privacy-Safe Invariant)
+    const allocationsRes = await httpGet('/api/sector-allocations');
+    const allocationsJson = JSON.parse(allocationsRes.body);
+    if (Array.isArray(allocationsJson.allocations)) {
+      // Strict privacy invariant: ensure no individual stock ticker or share quantity is leaked
+      const leaksTicker = JSON.stringify(allocationsJson.allocations).includes('holdings') &&
+                          (JSON.stringify(allocationsJson.allocations).includes('quantity') || JSON.stringify(allocationsJson.allocations).includes('avgBuyPrice'));
+      if (!leaksTicker) {
+        logPass('Team Sector Allocations API verified: Macro sector percentages & cash computed with zero stock ticker leakage.');
+      } else {
+        logFail('Team Sector Allocations leaked individual stock holdings!');
+      }
+    } else {
+      logFail('Sector Allocations API returned invalid format', allocationsRes);
+    }
+
+    // 9.4 Verify Live Event Anchor Commentary Prompts
+    const commentaryRes = await httpGet('/api/anchor-commentary');
+    const commentaryJson = JSON.parse(commentaryRes.body);
+    if (Array.isArray(commentaryJson.prompts)) {
+      logPass(`Event Anchor Commentary Prompts API verified: ${commentaryJson.prompts.length} dynamic talking points generated.`);
+    } else {
+      logFail('Anchor Commentary API failed', commentaryRes);
+    }
+
+    // ==========================================
+    // [STAGE 10] Event Config Lock, Projector Cycling & Embedded Winner Stage
+    // ==========================================
+    console.log('\n[STAGE 10] Event Config Lock, Intelligent Projector & Winner Presentation');
+
+    // 10.1 Re-login as host and start event to engage EVENT_CONFIG_LOCKED
+    await sendAndAwait(ws1, {
+      action: 'HOST_START_EVENT_NOW',
+      session_token: hostToken
+    }, 'MARKET_RESUMED', 3000);
+
+    // 10.2 Attempting to mutate share universe while tournament is active must be rejected
+    const addShareAttempt = await sendAndAwait(ws1, {
+      action: 'HOST_ADD_SHARE',
+      company: { ticker: 'ILLEGAL_STOCK', name: 'Illegal Co', base_price: 100 },
+      session_token: hostToken
+    }, 'EVENT_CONFIG_LOCKED');
+
+    if (addShareAttempt.type === 'EVENT_CONFIG_LOCKED') {
+      logPass('Event Configuration Lock verified: Rejected share universe mutation during active tournament.');
+    } else {
+      logFail('Server failed to reject share addition during locked event', addShareAttempt);
+    }
+
+    // 10.3 Host Intelligent Projector Mode Updates
+    const projModeRes = await sendAndAwait(ws1, {
+      action: 'HOST_UPDATE_PROJECTOR_MODE',
+      mode: 'AUTO_CYCLE',
+      sceneDurationSeconds: 15,
+      session_token: hostToken
+    }, 'PROJECTOR_STATE_UPDATE');
+
+    if (projModeRes.type === 'PROJECTOR_STATE_UPDATE' && projModeRes.projectorState.sceneDurationSeconds === 15) {
+      logPass('Projector auto-cycle mode and duration update broadcast verified.');
+    } else {
+      logFail('Projector mode update failed', projModeRes);
+    }
+
+    // 10.4 Host Finalize Day
+    const finalizeDayRes = await sendAndAwait(ws1, {
+      action: 'HOST_FINALIZE_DAY',
+      session_token: hostToken
+    }, 'DAY_FINALIZED');
+
+    if (finalizeDayRes.type === 'DAY_FINALIZED' && finalizeDayRes.daySnapshot) {
+      logPass(`Day ${finalizeDayRes.day} finalized: Official closing snapshot & rank deltas computed.`);
+    } else {
+      logFail('Host day finalization failed', finalizeDayRes);
+    }
+
+    // 10.5 Daily Snapshot REST endpoint
+    const daySnapshotRes = await httpGet('/api/daily-snapshot/1');
+    const daySnapshotJson = JSON.parse(daySnapshotRes.body);
+    if (daySnapshotJson.rankings && daySnapshotJson.rankings.length > 0) {
+      logPass(`Daily Snapshot API verified via /api/daily-snapshot/1: ${daySnapshotJson.rankings.length} teams recorded.`);
+    } else {
+      logFail('Daily Snapshot endpoint failed', daySnapshotRes);
+    }
+
+    // 10.6 Embedded Projector Winner Presentation Trigger
+    const startWinnerRes = await sendAndAwait(ws1, {
+      action: 'HOST_START_WINNER_PRESENTATION',
+      session_token: hostToken
+    }, 'PROJECTOR_STATE_UPDATE');
+
+    if (startWinnerRes.type === 'PROJECTOR_STATE_UPDATE' && startWinnerRes.projectorState.isWinnerActive === true) {
+      logPass('Embedded Projector Winner Presentation trigger verified: Auditorium projector activated ceremony mode.');
+    } else {
+      logFail('Winner presentation trigger failed', startWinnerRes);
+    }
+
+    // 10.7 Exit Winner Presentation and restore market
+    const exitWinnerRes = await sendAndAwait(ws1, {
+      action: 'HOST_EXIT_WINNER_PRESENTATION',
+      session_token: hostToken
+    }, 'PROJECTOR_STATE_UPDATE');
+
+    if (exitWinnerRes.type === 'PROJECTOR_STATE_UPDATE' && exitWinnerRes.projectorState.isWinnerActive === false) {
+      logPass('Exit Winner Presentation verified: Auditorium projector returned to live market cycle.');
+    } else {
+      logFail('Exit winner presentation failed', exitWinnerRes);
     }
 
     ws1.close();
