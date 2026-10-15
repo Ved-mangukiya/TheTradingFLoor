@@ -1,676 +1,100 @@
 {
-  "savedAt": "2026-10-15T14:13:16.240Z",
+  "savedAt": "2026-10-15T15:41:29.636Z",
   "activeScenarioMode": "live",
   "gameState": {
     "title": "The Trading Floor - Championship 2026",
     "subtitle": "SSASIT Surat • GTU Intra-College Trading Championship",
     "institution": "SSASIT Surat (GTU 076)",
-    "status": "WINNER_ANNOUNCEMENT",
-    "configLocked": false,
-    "startMode": "IMMEDIATE",
-    "scheduledStartTime": null,
+    "status": "LIVE",
+    "configLocked": true,
+    "startMode": "SCHEDULED",
+    "scheduledStartTime": "2026-10-15T15:33:00.000Z",
     "pausePolicy": "TRADING_TIME",
-    "currentDay": 1,
+    "currentDay": 2,
     "totalDays": 3,
     "dayDurationSeconds": 1800,
     "startingCash": 500000,
-    "elapsedSeconds": 0,
-    "isPaused": true,
-    "pauseMode": "VISIBLE_FROZEN",
-    "pauseStartedAt": 1792073471916,
-    "totalShiftOffsetSeconds": 0,
+    "elapsedSeconds": 22,
+    "isPaused": false,
+    "pauseMode": "NONE",
+    "pauseStartedAt": null,
+    "totalShiftOffsetSeconds": 85,
     "tickIntervalMs": 1500,
     "circuitBreakerPercent": 20,
-    "transactionFeeBps": 10,
-    "activeNewsFlash": null,
-    "newsHistory": [],
+    "transactionFeeBps": 0,
+    "activeNewsFlash": {
+      "event_id": "EVT_D1_01",
+      "day": 1,
+      "second": 400,
+      "type": "SECTOR",
+      "headline": "Ministry of Heavy Industries Revises Production-Linked Incentive Norms for Component Suppliers",
+      "simple_explanation": "Official notification outlines revised localization standards and battery-pack sourcing criteria for domestic vehicle assemblies.",
+      "sentiment": "NEUTRAL",
+      "trafficLightBadge": "📰 SECTOR WIRE • INDUSTRY NOTIFICATION",
+      "impacts": {
+        "TATAMOTORS": {
+          "delta_pct": 11.5,
+          "duration_sec": 45
+        },
+        "M&M": {
+          "delta_pct": 7.5,
+          "duration_sec": 40
+        },
+        "MARUTI": {
+          "delta_pct": -3.5,
+          "duration_sec": 30
+        }
+      },
+      "timestamp": "9:09:42 PM"
+    },
+    "newsHistory": [
+      {
+        "event_id": "EVT_D1_01",
+        "day": 1,
+        "second": 400,
+        "type": "SECTOR",
+        "headline": "Ministry of Heavy Industries Revises Production-Linked Incentive Norms for Component Suppliers",
+        "simple_explanation": "Official notification outlines revised localization standards and battery-pack sourcing criteria for domestic vehicle assemblies.",
+        "sentiment": "NEUTRAL",
+        "trafficLightBadge": "📰 SECTOR WIRE • INDUSTRY NOTIFICATION",
+        "impacts": {
+          "TATAMOTORS": {
+            "delta_pct": 11.5,
+            "duration_sec": 45
+          },
+          "M&M": {
+            "delta_pct": 7.5,
+            "duration_sec": 40
+          },
+          "MARUTI": {
+            "delta_pct": -3.5,
+            "duration_sec": 30
+          }
+        },
+        "timestamp": "9:09:42 PM"
+      }
+    ],
     "isConcluded": false,
     "winnerData": null,
     "activeCountdown": null,
-    "finalResultsSnapshot": {
-      "snapshotId": "SNAP_1792073137044",
-      "generatedAt": "2026-10-15T14:05:37.045Z",
-      "eventTitle": "The Trading Floor - Championship 2026",
-      "closingDay": 1,
-      "totalTeams": 12,
-      "closingPrices": {
-        "RELIANCE": 2950,
-        "TATAMOTORS": 980,
-        "MARUTI": 12400,
-        "M&M": 2850,
-        "TCS": 4150,
-        "INFY": 1880,
-        "HDFCBANK": 1680,
-        "ICICIBANK": 1240,
-        "SBIN": 820,
-        "BAJFINANCE": 7200,
-        "LT": 3600,
-        "AIRTEL": 1550,
-        "ITC": 490,
-        "HINDUNILVR": 2750,
-        "SUNPHARMA": 1720,
-        "NTPC": 410,
-        "POWERGRID": 340,
-        "TATASTEEL": 165,
-        "JSWSTEEL": 980,
-        "TITAN": 3450
-      },
-      "champion": {
-        "rank": 1,
-        "teamId": "team_1",
-        "teamName": "Dalal Street Titans",
-        "members": "Trader 1A, Trader 1B",
-        "startingCash": 500000,
-        "finalCash": 500000,
-        "holdingsValue": 0,
-        "finalPortfolioValue": 500000,
-        "netProfitOrLoss": 0,
-        "returnPct": 0,
-        "tradeCount": 0,
-        "buyCount": 0,
-        "sellCount": 0,
-        "totalInvested": 0,
-        "totalSalesValue": 0,
-        "totalFees": 0,
-        "realizedPnl": 0,
-        "unrealizedPnl": 0,
-        "holdingsBreakdown": [],
-        "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-      },
-      "runnerUp": {
-        "rank": 2,
-        "teamId": "team_2",
-        "teamName": "Bullish Bears",
-        "members": "Trader 2A, Trader 2B",
-        "startingCash": 500000,
-        "finalCash": 500000,
-        "holdingsValue": 0,
-        "finalPortfolioValue": 500000,
-        "netProfitOrLoss": 0,
-        "returnPct": 0,
-        "tradeCount": 0,
-        "buyCount": 0,
-        "sellCount": 0,
-        "totalInvested": 0,
-        "totalSalesValue": 0,
-        "totalFees": 0,
-        "realizedPnl": 0,
-        "unrealizedPnl": 0,
-        "holdingsBreakdown": [],
-        "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-      },
-      "thirdPlace": {
-        "rank": 3,
-        "teamId": "team_3",
-        "teamName": "Alpha Hedge",
-        "members": "Trader 3A, Trader 3B",
-        "startingCash": 500000,
-        "finalCash": 500000,
-        "holdingsValue": 0,
-        "finalPortfolioValue": 500000,
-        "netProfitOrLoss": 0,
-        "returnPct": 0,
-        "tradeCount": 0,
-        "buyCount": 0,
-        "sellCount": 0,
-        "totalInvested": 0,
-        "totalSalesValue": 0,
-        "totalFees": 0,
-        "realizedPnl": 0,
-        "unrealizedPnl": 0,
-        "holdingsBreakdown": [],
-        "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-      },
-      "rankings": [
-        {
-          "rank": 1,
-          "teamId": "team_1",
-          "teamName": "Dalal Street Titans",
-          "members": "Trader 1A, Trader 1B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 2,
-          "teamId": "team_2",
-          "teamName": "Bullish Bears",
-          "members": "Trader 2A, Trader 2B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 3,
-          "teamId": "team_3",
-          "teamName": "Alpha Hedge",
-          "members": "Trader 3A, Trader 3B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 4,
-          "teamId": "team_4",
-          "teamName": "Quantum Traders",
-          "members": "Trader 4A, Trader 4B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 5,
-          "teamId": "team_5",
-          "teamName": "Apex Capital",
-          "members": "Trader 5A, Trader 5B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 6,
-          "teamId": "team_6",
-          "teamName": "Vanguard Vipers",
-          "members": "Trader 6A, Trader 6B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 7,
-          "teamId": "team_7",
-          "teamName": "Sterling Bulls",
-          "members": "Trader 7A, Trader 7B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 8,
-          "teamId": "team_8",
-          "teamName": "Maverick Fund",
-          "members": "Trader 8A, Trader 8B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 9,
-          "teamId": "team_9",
-          "teamName": "Zenith Asset Mgmt",
-          "members": "Trader 9A, Trader 9B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 10,
-          "teamId": "team_10",
-          "teamName": "Phoenix Wealth",
-          "members": "Trader 10A, Trader 10B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 11,
-          "teamId": "team_11",
-          "teamName": "Starlight Equity",
-          "members": "Trader 11A, Trader 11B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 12,
-          "teamId": "team_12",
-          "teamName": "Omega Syndicate",
-          "members": "Trader 12A, Trader 12B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        }
-      ],
-      "teams": [
-        {
-          "rank": 1,
-          "teamId": "team_1",
-          "teamName": "Dalal Street Titans",
-          "members": "Trader 1A, Trader 1B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 2,
-          "teamId": "team_2",
-          "teamName": "Bullish Bears",
-          "members": "Trader 2A, Trader 2B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 3,
-          "teamId": "team_3",
-          "teamName": "Alpha Hedge",
-          "members": "Trader 3A, Trader 3B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 4,
-          "teamId": "team_4",
-          "teamName": "Quantum Traders",
-          "members": "Trader 4A, Trader 4B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 5,
-          "teamId": "team_5",
-          "teamName": "Apex Capital",
-          "members": "Trader 5A, Trader 5B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 6,
-          "teamId": "team_6",
-          "teamName": "Vanguard Vipers",
-          "members": "Trader 6A, Trader 6B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 7,
-          "teamId": "team_7",
-          "teamName": "Sterling Bulls",
-          "members": "Trader 7A, Trader 7B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 8,
-          "teamId": "team_8",
-          "teamName": "Maverick Fund",
-          "members": "Trader 8A, Trader 8B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 9,
-          "teamId": "team_9",
-          "teamName": "Zenith Asset Mgmt",
-          "members": "Trader 9A, Trader 9B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 10,
-          "teamId": "team_10",
-          "teamName": "Phoenix Wealth",
-          "members": "Trader 10A, Trader 10B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 11,
-          "teamId": "team_11",
-          "teamName": "Starlight Equity",
-          "members": "Trader 11A, Trader 11B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        },
-        {
-          "rank": 12,
-          "teamId": "team_12",
-          "teamName": "Omega Syndicate",
-          "members": "Trader 12A, Trader 12B",
-          "startingCash": 500000,
-          "finalCash": 500000,
-          "holdingsValue": 0,
-          "finalPortfolioValue": 500000,
-          "netProfitOrLoss": 0,
-          "returnPct": 0,
-          "tradeCount": 0,
-          "buyCount": 0,
-          "sellCount": 0,
-          "totalInvested": 0,
-          "totalSalesValue": 0,
-          "totalFees": 0,
-          "realizedPnl": 0,
-          "unrealizedPnl": 0,
-          "holdingsBreakdown": [],
-          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
-        }
-      ]
-    },
+    "finalResultsSnapshot": null,
     "marketIndices": [],
     "dailyLeaderboards": {},
     "dailyClosingPrices": {},
     "projectorState": {
-      "mode": "FIXED_SCREEN",
-      "currentScene": "SCENE_INDICES",
+      "mode": "AUTO_CYCLE",
+      "currentScene": "SCENE_MARKET_BOARD",
       "sceneDurationSeconds": 12,
       "isWinnerActive": false,
-      "winnerScene": "INTRO",
-      "updatedAt": "2026-10-15T14:04:05.013Z"
+      "winnerScene": "SCENE_INTRO",
+      "updatedAt": "2026-10-15T15:31:09.515Z"
     },
     "presentationState": {
       "active": false,
-      "scene": "INTRO",
+      "scene": "SCENE_INTRO",
       "currentTeamIndex": 0,
       "revealedRanks": [],
-      "updatedAt": "2026-10-15T14:08:32.377Z"
+      "updatedAt": "2026-10-15T15:31:09.515Z"
     },
     "audioSettings": {
       "masterEnabled": true,
@@ -710,18 +134,78 @@
         "dividend_yield": "0.3%",
         "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes."
       },
-      "currentPrice": 2950,
-      "dayOpenPrice": 2950,
-      "previousClosePrice": 2950,
-      "dayHigh": 2950,
-      "dayLow": 2950,
+      "currentPrice": 2884.96,
+      "dayOpenPrice": 2885.17,
+      "previousClosePrice": 2885.17,
+      "dayHigh": 2890.22,
+      "dayLow": 2883.6,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 2950
+          "price": 2885.17
+        },
+        {
+          "time": 1,
+          "price": 2885.51
+        },
+        {
+          "time": 2,
+          "price": 2890.22
+        },
+        {
+          "time": 4,
+          "price": 2887.6
+        },
+        {
+          "time": 5,
+          "price": 2885.42
+        },
+        {
+          "time": 7,
+          "price": 2883.69
+        },
+        {
+          "time": 8,
+          "price": 2885.57
+        },
+        {
+          "time": 10,
+          "price": 2884.66
+        },
+        {
+          "time": 11,
+          "price": 2885.1
+        },
+        {
+          "time": 13,
+          "price": 2887.08
+        },
+        {
+          "time": 14,
+          "price": 2886.28
+        },
+        {
+          "time": 16,
+          "price": 2885.68
+        },
+        {
+          "time": 17,
+          "price": 2887.72
+        },
+        {
+          "time": 19,
+          "price": 2885.06
+        },
+        {
+          "time": 20,
+          "price": 2883.6
+        },
+        {
+          "time": 22,
+          "price": 2884.96
         }
       ]
     },
@@ -750,18 +234,78 @@
         "dividend_yield": "0.6%",
         "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover."
       },
-      "currentPrice": 980,
-      "dayOpenPrice": 980,
-      "previousClosePrice": 980,
-      "dayHigh": 980,
-      "dayLow": 980,
+      "currentPrice": 1101.87,
+      "dayOpenPrice": 1097.98,
+      "previousClosePrice": 1097.98,
+      "dayHigh": 1108.24,
+      "dayLow": 1095.53,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 980
+          "price": 1097.98
+        },
+        {
+          "time": 1,
+          "price": 1098.97
+        },
+        {
+          "time": 2,
+          "price": 1096.93
+        },
+        {
+          "time": 4,
+          "price": 1095.61
+        },
+        {
+          "time": 5,
+          "price": 1095.53
+        },
+        {
+          "time": 7,
+          "price": 1096.44
+        },
+        {
+          "time": 8,
+          "price": 1096.58
+        },
+        {
+          "time": 10,
+          "price": 1100.32
+        },
+        {
+          "time": 11,
+          "price": 1103.61
+        },
+        {
+          "time": 13,
+          "price": 1105.23
+        },
+        {
+          "time": 14,
+          "price": 1107.94
+        },
+        {
+          "time": 16,
+          "price": 1108.24
+        },
+        {
+          "time": 17,
+          "price": 1106.3
+        },
+        {
+          "time": 19,
+          "price": 1103.63
+        },
+        {
+          "time": 20,
+          "price": 1102.72
+        },
+        {
+          "time": 22,
+          "price": 1101.87
         }
       ]
     },
@@ -870,18 +414,78 @@
         "dividend_yield": "2.8%",
         "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios."
       },
-      "currentPrice": 4150,
-      "dayOpenPrice": 4150,
-      "previousClosePrice": 4150,
-      "dayHigh": 4150,
-      "dayLow": 4150,
+      "currentPrice": 4152.23,
+      "dayOpenPrice": 4159.55,
+      "previousClosePrice": 4159.55,
+      "dayHigh": 4161.39,
+      "dayLow": 4146.93,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 4150
+          "price": 4159.55
+        },
+        {
+          "time": 1,
+          "price": 4153.18
+        },
+        {
+          "time": 2,
+          "price": 4150.95
+        },
+        {
+          "time": 4,
+          "price": 4155.42
+        },
+        {
+          "time": 5,
+          "price": 4158.01
+        },
+        {
+          "time": 7,
+          "price": 4156.87
+        },
+        {
+          "time": 8,
+          "price": 4158.09
+        },
+        {
+          "time": 10,
+          "price": 4157.1
+        },
+        {
+          "time": 11,
+          "price": 4161.39
+        },
+        {
+          "time": 13,
+          "price": 4154.89
+        },
+        {
+          "time": 14,
+          "price": 4156.16
+        },
+        {
+          "time": 16,
+          "price": 4153.71
+        },
+        {
+          "time": 17,
+          "price": 4151.96
+        },
+        {
+          "time": 19,
+          "price": 4146.93
+        },
+        {
+          "time": 20,
+          "price": 4148.19
+        },
+        {
+          "time": 22,
+          "price": 4152.23
         }
       ]
     },
@@ -910,18 +514,78 @@
         "dividend_yield": "2.2%",
         "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe."
       },
-      "currentPrice": 1880,
-      "dayOpenPrice": 1880,
-      "previousClosePrice": 1880,
-      "dayHigh": 1880,
-      "dayLow": 1880,
+      "currentPrice": 1835.65,
+      "dayOpenPrice": 1841.92,
+      "previousClosePrice": 1841.92,
+      "dayHigh": 1844.24,
+      "dayLow": 1834.53,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 1880
+          "price": 1841.92
+        },
+        {
+          "time": 1,
+          "price": 1842.09
+        },
+        {
+          "time": 2,
+          "price": 1841.64
+        },
+        {
+          "time": 4,
+          "price": 1841.4
+        },
+        {
+          "time": 5,
+          "price": 1844.24
+        },
+        {
+          "time": 7,
+          "price": 1841.55
+        },
+        {
+          "time": 8,
+          "price": 1835.84
+        },
+        {
+          "time": 10,
+          "price": 1838.95
+        },
+        {
+          "time": 11,
+          "price": 1839.34
+        },
+        {
+          "time": 13,
+          "price": 1838.65
+        },
+        {
+          "time": 14,
+          "price": 1836.91
+        },
+        {
+          "time": 16,
+          "price": 1840.72
+        },
+        {
+          "time": 17,
+          "price": 1840.54
+        },
+        {
+          "time": 19,
+          "price": 1839.62
+        },
+        {
+          "time": 20,
+          "price": 1834.53
+        },
+        {
+          "time": 22,
+          "price": 1835.65
         }
       ]
     },
@@ -950,18 +614,78 @@
         "dividend_yield": "1.2%",
         "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach."
       },
-      "currentPrice": 1680,
-      "dayOpenPrice": 1680,
-      "previousClosePrice": 1680,
-      "dayHigh": 1680,
-      "dayLow": 1680,
+      "currentPrice": 1686.39,
+      "dayOpenPrice": 1683.81,
+      "previousClosePrice": 1683.81,
+      "dayHigh": 1689.06,
+      "dayLow": 1680.8,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 1680
+          "price": 1683.81
+        },
+        {
+          "time": 1,
+          "price": 1680.8
+        },
+        {
+          "time": 2,
+          "price": 1682.4
+        },
+        {
+          "time": 4,
+          "price": 1682.42
+        },
+        {
+          "time": 5,
+          "price": 1681.98
+        },
+        {
+          "time": 7,
+          "price": 1681.5
+        },
+        {
+          "time": 8,
+          "price": 1682.8
+        },
+        {
+          "time": 10,
+          "price": 1686.99
+        },
+        {
+          "time": 11,
+          "price": 1684.99
+        },
+        {
+          "time": 13,
+          "price": 1686.05
+        },
+        {
+          "time": 14,
+          "price": 1686.08
+        },
+        {
+          "time": 16,
+          "price": 1687.89
+        },
+        {
+          "time": 17,
+          "price": 1685.29
+        },
+        {
+          "time": 19,
+          "price": 1687.7
+        },
+        {
+          "time": 20,
+          "price": 1689.06
+        },
+        {
+          "time": 22,
+          "price": 1686.39
         }
       ]
     },
@@ -1190,18 +914,78 @@
         "dividend_yield": "2.9%",
         "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout."
       },
-      "currentPrice": 490,
-      "dayOpenPrice": 490,
-      "previousClosePrice": 490,
-      "dayHigh": 490,
-      "dayLow": 490,
+      "currentPrice": 493.44,
+      "dayOpenPrice": 491.99,
+      "previousClosePrice": 491.99,
+      "dayHigh": 494.17,
+      "dayLow": 491.99,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
       "history": [
         {
           "time": 0,
-          "price": 490
+          "price": 491.99
+        },
+        {
+          "time": 1,
+          "price": 492.05
+        },
+        {
+          "time": 2,
+          "price": 492.43
+        },
+        {
+          "time": 4,
+          "price": 492.93
+        },
+        {
+          "time": 5,
+          "price": 493.01
+        },
+        {
+          "time": 7,
+          "price": 492.2
+        },
+        {
+          "time": 8,
+          "price": 492.15
+        },
+        {
+          "time": 10,
+          "price": 492.2
+        },
+        {
+          "time": 11,
+          "price": 492.32
+        },
+        {
+          "time": 13,
+          "price": 492.64
+        },
+        {
+          "time": 14,
+          "price": 493.14
+        },
+        {
+          "time": 16,
+          "price": 492.82
+        },
+        {
+          "time": 17,
+          "price": 493.44
+        },
+        {
+          "time": 19,
+          "price": 493.92
+        },
+        {
+          "time": 20,
+          "price": 494.17
+        },
+        {
+          "time": 22,
+          "price": 493.44
         }
       ]
     },
@@ -1259,7 +1043,7 @@
       "volatility_factor": 0.002,
       "min_price": 1,
       "max_price": 500000,
-      "isEnabled": true,
+      "isEnabled": false,
       "fundamentals": {
         "market_cap": "₹4.12 Lakh Cr",
         "pe_ratio": 37.5,
@@ -1379,7 +1163,7 @@
       "volatility_factor": 0.0036,
       "min_price": 1,
       "max_price": 500000,
-      "isEnabled": true,
+      "isEnabled": false,
       "fundamentals": {
         "market_cap": "₹2.06 Lakh Cr",
         "pe_ratio": 38,
@@ -1459,7 +1243,7 @@
       "volatility_factor": 0.0022,
       "min_price": 1,
       "max_price": 500000,
-      "isEnabled": true,
+      "isEnabled": false,
       "fundamentals": {
         "market_cap": "₹3.06 Lakh Cr",
         "pe_ratio": 85,
@@ -1492,7 +1276,7 @@
       "username": "team1",
       "name": "Dalal Street Titans",
       "members": "Trader 1A, Trader 1B",
-      "cash": 500000,
+      "cash": 504763,
       "startingCash": 500000,
       "holdings": {
         "RELIANCE": 0,
@@ -1538,8 +1322,8 @@
         "JSWSTEEL": 0,
         "TITAN": 0
       },
-      "realizedPnl": 0,
-      "tradeCount": 0
+      "realizedPnl": 4762.7,
+      "tradeCount": 18
     },
     "team_2": {
       "id": "team_2",
@@ -1650,8 +1434,355 @@
       "tradeCount": 0
     }
   },
-  "executedTrades": [],
-  "tradeSeqCounter": 0,
+  "executedTrades": [
+    {
+      "tradeId": "TRD_1",
+      "seq": 1,
+      "timestamp": "9:04:08 PM",
+      "exactIso": "2026-10-15T15:34:08.989Z",
+      "day": 1,
+      "second": 66,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "ITC",
+      "quantity": 1018,
+      "price": 490.92,
+      "grossValue": 499756.56,
+      "fee": 0,
+      "totalImpact": 499756.56,
+      "cashBefore": 500000,
+      "cashAfter": 243.44
+    },
+    {
+      "tradeId": "TRD_2",
+      "seq": 2,
+      "timestamp": "9:05:07 PM",
+      "exactIso": "2026-10-15T15:35:07.806Z",
+      "day": 1,
+      "second": 125,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "SELL",
+      "ticker": "ITC",
+      "quantity": 1018,
+      "price": 489.85,
+      "grossValue": 498667.3,
+      "fee": 0,
+      "totalImpact": 498667.3,
+      "cashBefore": 243.44,
+      "cashAfter": 498910.74,
+      "isLiquidation": true
+    },
+    {
+      "tradeId": "TRD_3",
+      "seq": 3,
+      "timestamp": "9:05:11 PM",
+      "exactIso": "2026-10-15T15:35:11.851Z",
+      "day": 1,
+      "second": 129,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 994.78,
+      "grossValue": 29843.4,
+      "fee": 0,
+      "totalImpact": 29843.4,
+      "cashBefore": 498910.74,
+      "cashAfter": 469067.34
+    },
+    {
+      "tradeId": "TRD_4",
+      "seq": 4,
+      "timestamp": "9:05:12 PM",
+      "exactIso": "2026-10-15T15:35:12.115Z",
+      "day": 1,
+      "second": 129,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 994.79,
+      "grossValue": 29843.7,
+      "fee": 0,
+      "totalImpact": 29843.7,
+      "cashBefore": 469067.34,
+      "cashAfter": 439223.64
+    },
+    {
+      "tradeId": "TRD_5",
+      "seq": 5,
+      "timestamp": "9:05:12 PM",
+      "exactIso": "2026-10-15T15:35:12.387Z",
+      "day": 1,
+      "second": 129,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 994.8,
+      "grossValue": 29844,
+      "fee": 0,
+      "totalImpact": 29844,
+      "cashBefore": 439223.64,
+      "cashAfter": 409379.64
+    },
+    {
+      "tradeId": "TRD_6",
+      "seq": 6,
+      "timestamp": "9:05:13 PM",
+      "exactIso": "2026-10-15T15:35:13.267Z",
+      "day": 1,
+      "second": 130,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2961.7,
+      "grossValue": 29617,
+      "fee": 0,
+      "totalImpact": 29617,
+      "cashBefore": 409379.64,
+      "cashAfter": 379762.64
+    },
+    {
+      "tradeId": "TRD_7",
+      "seq": 7,
+      "timestamp": "9:05:13 PM",
+      "exactIso": "2026-10-15T15:35:13.547Z",
+      "day": 1,
+      "second": 130,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2961.71,
+      "grossValue": 29617.1,
+      "fee": 0,
+      "totalImpact": 29617.1,
+      "cashBefore": 379762.64,
+      "cashAfter": 350145.54
+    },
+    {
+      "tradeId": "TRD_8",
+      "seq": 8,
+      "timestamp": "9:05:13 PM",
+      "exactIso": "2026-10-15T15:35:13.844Z",
+      "day": 1,
+      "second": 131,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2961.72,
+      "grossValue": 29617.2,
+      "fee": 0,
+      "totalImpact": 29617.2,
+      "cashBefore": 350145.54,
+      "cashAfter": 320528.34
+    },
+    {
+      "tradeId": "TRD_9",
+      "seq": 9,
+      "timestamp": "9:05:14 PM",
+      "exactIso": "2026-10-15T15:35:14.555Z",
+      "day": 1,
+      "second": 131,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2963.47,
+      "grossValue": 29634.7,
+      "fee": 0,
+      "totalImpact": 29634.7,
+      "cashBefore": 320528.34,
+      "cashAfter": 290893.64
+    },
+    {
+      "tradeId": "TRD_10",
+      "seq": 10,
+      "timestamp": "9:05:14 PM",
+      "exactIso": "2026-10-15T15:35:14.851Z",
+      "day": 1,
+      "second": 132,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2963.48,
+      "grossValue": 29634.8,
+      "fee": 0,
+      "totalImpact": 29634.8,
+      "cashBefore": 290893.64,
+      "cashAfter": 261258.84
+    },
+    {
+      "tradeId": "TRD_11",
+      "seq": 11,
+      "timestamp": "9:05:15 PM",
+      "exactIso": "2026-10-15T15:35:15.139Z",
+      "day": 1,
+      "second": 132,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "RELIANCE",
+      "quantity": 10,
+      "price": 2963.49,
+      "grossValue": 29634.9,
+      "fee": 0,
+      "totalImpact": 29634.9,
+      "cashBefore": 261258.84,
+      "cashAfter": 231623.94
+    },
+    {
+      "tradeId": "TRD_12",
+      "seq": 12,
+      "timestamp": "9:05:15 PM",
+      "exactIso": "2026-10-15T15:35:15.889Z",
+      "day": 1,
+      "second": 133,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 992.74,
+      "grossValue": 29782.2,
+      "fee": 0,
+      "totalImpact": 29782.2,
+      "cashBefore": 231623.94,
+      "cashAfter": 201841.74
+    },
+    {
+      "tradeId": "TRD_13",
+      "seq": 13,
+      "timestamp": "9:05:16 PM",
+      "exactIso": "2026-10-15T15:35:16.201Z",
+      "day": 1,
+      "second": 133,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 992.75,
+      "grossValue": 29782.5,
+      "fee": 0,
+      "totalImpact": 29782.5,
+      "cashBefore": 201841.74,
+      "cashAfter": 172059.24
+    },
+    {
+      "tradeId": "TRD_14",
+      "seq": 14,
+      "timestamp": "9:05:16 PM",
+      "exactIso": "2026-10-15T15:35:16.513Z",
+      "day": 1,
+      "second": 133,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 30,
+      "price": 992.76,
+      "grossValue": 29782.8,
+      "fee": 0,
+      "totalImpact": 29782.8,
+      "cashBefore": 172059.24,
+      "cashAfter": 142276.44
+    },
+    {
+      "tradeId": "TRD_15",
+      "seq": 15,
+      "timestamp": "9:06:09 PM",
+      "exactIso": "2026-10-15T15:36:09.810Z",
+      "day": 1,
+      "second": 187,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "SELL",
+      "ticker": "RELIANCE",
+      "quantity": 60,
+      "price": 2955.05,
+      "grossValue": 177303,
+      "fee": 0,
+      "totalImpact": 177303,
+      "cashBefore": 142276.44,
+      "cashAfter": 319579.44,
+      "isLiquidation": true
+    },
+    {
+      "tradeId": "TRD_16",
+      "seq": 16,
+      "timestamp": "9:06:09 PM",
+      "exactIso": "2026-10-15T15:36:09.810Z",
+      "day": 1,
+      "second": 187,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "SELL",
+      "ticker": "TATAMOTORS",
+      "quantity": 180,
+      "price": 994.37,
+      "grossValue": 178986.6,
+      "fee": 0,
+      "totalImpact": 178986.6,
+      "cashBefore": 319579.44,
+      "cashAfter": 498566.04,
+      "isLiquidation": true
+    },
+    {
+      "tradeId": "TRD_17",
+      "seq": 17,
+      "timestamp": "9:06:23 PM",
+      "exactIso": "2026-10-15T15:36:23.499Z",
+      "day": 1,
+      "second": 200,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "BUY",
+      "ticker": "TATAMOTORS",
+      "quantity": 503,
+      "price": 990,
+      "grossValue": 497970,
+      "fee": 0,
+      "totalImpact": 497970,
+      "cashBefore": 498566.04,
+      "cashAfter": 596.04
+    },
+    {
+      "tradeId": "TRD_18",
+      "seq": 18,
+      "timestamp": "9:08:19 PM",
+      "exactIso": "2026-10-15T15:38:19.473Z",
+      "day": 1,
+      "second": 316,
+      "teamId": "team_1",
+      "teamName": "Dalal Street Titans",
+      "type": "SELL",
+      "ticker": "TATAMOTORS",
+      "quantity": 503,
+      "price": 1002.32,
+      "grossValue": 504166.96,
+      "fee": 0,
+      "totalImpact": 504166.96,
+      "cashBefore": 596.04,
+      "cashAfter": 504763,
+      "isLiquidation": true
+    }
+  ],
+  "tradeSeqCounter": 18,
   "newsEvents": [
     {
       "event_id": "EVT_D1_01",
@@ -1674,7 +1805,7 @@
           "duration_sec": 30
         }
       },
-      "triggered": false
+      "triggered": true
     },
     {
       "event_id": "EVT_D1_02",

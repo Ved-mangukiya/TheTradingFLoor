@@ -377,7 +377,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹4.12 Lakh Cr",
       "pe_ratio": 37.5,
@@ -455,7 +455,7 @@
     "volatility_factor": 0.0036,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹2.06 Lakh Cr",
       "pe_ratio": 38,
@@ -507,7 +507,7 @@
     "volatility_factor": 0.0022,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.06 Lakh Cr",
       "pe_ratio": 85,

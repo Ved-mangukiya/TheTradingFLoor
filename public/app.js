@@ -34,11 +34,33 @@ function escapeHtml(str) {
 // 1. INSTITUTIONAL AUDIO SYNTHESIZER (OFFLINE-READY)
 // ==========================================
 // Self-contained Web Audio API synthesizer — works offline without any external MP3s!
+let sharedAudioCtx = null;
+function getSharedAudioContext() {
+  try {
+    if (!sharedAudioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        sharedAudioCtx = new AudioContextClass();
+      }
+    }
+    if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+  } catch (e) {}
+  return sharedAudioCtx;
+}
+
+// User-gesture listener to immediately unlock Web Audio on first interaction
+['pointerdown', 'keydown', 'touchstart'].forEach((evt) => {
+  window.addEventListener(evt, () => {
+    getSharedAudioContext();
+  }, { once: false, passive: true });
+});
+
 function playInstitutionalSound(cueName) {
   try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
 
     if (cueName === 'bell_open' || cueName === 'bell_close') {
@@ -377,6 +399,21 @@ function connectWebSocket() {
       return;
     }
 
+    if (msg.type === 'EVENT_SCHEDULED') {
+      if (latestState && latestState.gameState) {
+        latestState.gameState.status = 'SCHEDULED';
+        latestState.gameState.startMode = 'SCHEDULED';
+        latestState.gameState.scheduledStartTime = msg.scheduledStartTime;
+        latestState.gameState.pausePolicy = msg.pausePolicy || latestState.gameState.pausePolicy;
+        if (msg.gameState) latestState.gameState = { ...latestState.gameState, ...msg.gameState };
+        handleStateUpdate(latestState);
+      }
+      playInstitutionalSound('order_placed');
+      const timeStr = new Date(msg.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      showOrderToast(`📅 Event scheduled for ${timeStr}. Waiting room countdown armed.`, true);
+      return;
+    }
+
     if (msg.type === 'CHAMPIONSHIP_RESET') {
       playInstitutionalSound('emergency_klaxon');
       if (currentRole !== 'HOST') {
@@ -420,6 +457,16 @@ function connectWebSocket() {
         ? ` (${msg.skippedHalted.length} halted stocks preserved)`
         : '';
       showOrderToast(`⚡ ALL SHARES SOLD: Liquidated ${msg.tradesCount} positions for ₹${Number(msg.totalNetCredit).toLocaleString('en-IN')} net cash! Portfolio is now 100% Cash in Hand.${skipNote}`, true);
+      return;
+    }
+
+    if (msg.type === 'EVENT_CONFIG_LOCKED') {
+      showOrderToast(`🔒 ${msg.reason || 'Configuration is locked for live competition integrity.'}`, false);
+      return;
+    }
+
+    if (msg.type === 'EVENT_CONFIG_CHANGED') {
+      showOrderToast(`⚙️ Tournament settings updated: "${msg.title || 'Settings Updated'}"`, true);
       return;
     }
 
@@ -560,10 +607,17 @@ function handleStateUpdate(state) {
     cancelAuthoritativeCountdown();
   }
 
-  // Handle Dual Pause Overlays
+  // Handle Dual Pause Overlays (Never show pause overlay when event is in pre-event lobby, SCHEDULED waiting room, or COUNTDOWN)
+  const isPreEvent = state.gameState && (
+    state.gameState.status === 'SCHEDULED' ||
+    state.gameState.status === 'PRE_EVENT_COUNTDOWN' ||
+    state.gameState.status === 'COUNTDOWN' ||
+    state.gameState.status === 'NOT_STARTED' ||
+    (state.gameState.elapsedSeconds === 0 && state.gameState.status !== 'LIVE')
+  );
   const softOverlay = document.getElementById('softPauseOverlay');
   const blackoutOverlay = document.getElementById('blackoutOverlay');
-  if (state.gameState && state.gameState.isPaused && !state.gameState.isConcluded) {
+  if (state.gameState && state.gameState.isPaused && !state.gameState.isConcluded && !isPreEvent) {
     if (currentRole !== 'HOST') {
       const mode = state.gameState.pauseMode || 'VISIBLE_FROZEN';
       if (mode === 'BLACKOUT') {
@@ -628,6 +682,52 @@ function filterTraderStocks() {
   }
 }
 
+let traderWaitingRoomTickerHandle = null;
+function ensureTraderWaitingRoomTicker() {
+  if (traderWaitingRoomTickerHandle) return;
+  traderWaitingRoomTickerHandle = setInterval(() => {
+    if (!latestState || !latestState.gameState) return;
+    const gs = latestState.gameState;
+    const isPreEvent = gs.status === 'SCHEDULED' || 
+                       gs.status === 'PRE_EVENT_COUNTDOWN' || 
+                       gs.status === 'NOT_STARTED' ||
+                       (gs.elapsedSeconds === 0 && gs.status !== 'LIVE');
+    if (!isPreEvent) {
+      clearInterval(traderWaitingRoomTickerHandle);
+      traderWaitingRoomTickerHandle = null;
+      const wrOverlay = document.getElementById('traderWaitingRoomOverlay');
+      if (wrOverlay) wrOverlay.classList.add('hidden');
+      return;
+    }
+    if (!gs.scheduledStartTime) return;
+    const targetMs = new Date(gs.scheduledStartTime).getTime();
+    if (isNaN(targetMs)) return;
+    const remainingMs = Math.max(0, targetMs - Date.now());
+    const remSec = Math.floor(remainingMs / 1000);
+    const hrs = Math.floor(remSec / 3600);
+    const mins = Math.floor((remSec % 3600) / 60);
+    const secs = remSec % 60;
+    const formatted = hrs > 0
+      ? `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+      : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    const timerDisplay = document.getElementById('waitingRoomTimerDisplay');
+    if (timerDisplay) timerDisplay.textContent = formatted;
+
+    const dualVal = document.getElementById('traderDualTimerValue');
+    if (dualVal) dualVal.textContent = formatted;
+
+    const timerNote = document.getElementById('waitingRoomTimerNote');
+    if (timerNote) {
+      if (remSec <= 5 && remSec > 0) {
+        timerNote.innerHTML = `<span style="color: #059669; font-weight: 800; font-size: 15px;">🚀 Stand by! Floor opening bell in ${remSec}s...</span>`;
+      } else if (remSec === 0) {
+        timerNote.innerHTML = `<span style="color: #059669; font-weight: 800; font-size: 15px;">🔔 Opening bells ringing! Market is launching...</span>`;
+      }
+    }
+  }, 250);
+}
+
 function renderTraderView(state) {
   const { gameState, companies, portfolio, teamTrades } = state;
   if (!gameState || !companies) return;
@@ -646,38 +746,95 @@ function renderTraderView(state) {
 
   // Dual Timer & Waiting Room Logic
   const waitingRoomOverlay = document.getElementById('traderWaitingRoomOverlay');
-  const closesInTimer = document.getElementById('traderClosesInTimer');
+  const dualTimerLabel = document.getElementById('traderDualTimerLabel');
+  const dualTimerValue = document.getElementById('traderDualTimerValue');
+  const dualTimerWrap = document.getElementById('traderDualTimerWrap');
+  const softPauseOverlay = document.getElementById('softPauseOverlay');
+  const blackoutOverlay = document.getElementById('blackoutOverlay');
 
-  if (gameState.status === 'SCHEDULED' || gameState.status === 'PRE_EVENT_COUNTDOWN') {
+  const isPreEventTrader = gameState.status === 'SCHEDULED' || 
+                           gameState.status === 'PRE_EVENT_COUNTDOWN' || 
+                           gameState.status === 'NOT_STARTED' ||
+                           (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE');
+
+  if (isPreEventTrader) {
     if (waitingRoomOverlay) {
       waitingRoomOverlay.classList.remove('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+
       const wrTitle = document.getElementById('waitingRoomTitle');
+      const wrSub = document.getElementById('waitingRoomSubtitle');
       const wrTeam = document.getElementById('waitingRoomTeamName');
       const wrCash = document.getElementById('waitingRoomCash');
-      const wrTime = document.getElementById('waitingRoomScheduledTime');
-      const wrCountdown = document.getElementById('waitingRoomCountdown');
+      const wrRound = document.getElementById('waitingRoomRound');
+      const wrStatusText = document.getElementById('waitingRoomStatusText');
+      const wrTimeDisplay = document.getElementById('waitingRoomScheduledTimeDisplay');
+      const wrTimerDisplay = document.getElementById('waitingRoomTimerDisplay');
+      const wrTimerNote = document.getElementById('waitingRoomTimerNote');
 
       if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship 2026';
+      if (wrSub) wrSub.textContent = gameState.subtitle || `${gameState.institution || 'SSASIT Surat (GTU 076)'} • Official Trading Terminal`;
       if (wrTeam && portfolio) wrTeam.textContent = portfolio.name;
       if (wrCash) wrCash.textContent = formatINR(gameState.startingCash || 500000);
+      if (wrRound) wrRound.textContent = `Day ${gameState.currentDay} of ${gameState.totalDays}`;
 
       if (gameState.scheduledStartTime) {
         const schDate = new Date(gameState.scheduledStartTime);
-        if (wrTime) wrTime.textContent = schDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const remainingMs = Math.max(0, schDate.getTime() - (Date.now() - serverClockOffsetMs));
+        const timeStr = schDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (wrStatusText) wrStatusText.textContent = '⏳ Official Market Opening Countdown';
+        if (wrTimeDisplay) wrTimeDisplay.textContent = `Scheduled Opening: ${timeStr} (Local Time)`;
+
+        const remainingMs = Math.max(0, schDate.getTime() - Date.now());
         const remSec = Math.floor(remainingMs / 1000);
-        if (wrCountdown) wrCountdown.textContent = formatMMSS(remSec);
-        if (closesInTimer) closesInTimer.textContent = `OPENS IN: ${formatMMSS(remSec)}`;
+        const hrs = Math.floor(remSec / 3600);
+        const mins = Math.floor((remSec % 3600) / 60);
+        const secs = remSec % 60;
+        const formatted = hrs > 0
+          ? `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+          : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        if (wrTimerDisplay) {
+          wrTimerDisplay.textContent = formatted;
+        }
+
+        if (wrTimerNote) {
+          if (remSec <= 5 && remSec > 0) {
+            wrTimerNote.innerHTML = `<span style="color: #059669; font-weight: 800; font-size: 15px;">🚀 Stand by! Floor opening bell in ${remSec}s...</span>`;
+          } else if (remSec === 0) {
+            wrTimerNote.innerHTML = `<span style="color: #059669; font-weight: 800; font-size: 15px;">🔔 Opening bells ringing! Market is launching now...</span>`;
+          } else {
+            wrTimerNote.textContent = 'Trading desks and all 20 NSE stocks will unlock automatically when timer reaches zero.';
+          }
+        }
+
+        if (dualTimerLabel) dualTimerLabel.textContent = 'OPENS IN:';
+        if (dualTimerValue) dualTimerValue.textContent = formatted;
+        if (dualTimerWrap) {
+          dualTimerWrap.style.background = 'rgba(217, 119, 6, 0.1)';
+          dualTimerWrap.style.borderColor = 'rgba(217, 119, 6, 0.3)';
+        }
+
+        ensureTraderWaitingRoomTicker();
       } else {
-        if (wrCountdown) wrCountdown.textContent = 'STANDBY';
-        if (closesInTimer) closesInTimer.textContent = 'WAITING FOR HOST';
+        if (wrStatusText) wrStatusText.textContent = '★ Pre-Market Lobby & Desk Briefing ★';
+        if (wrTimeDisplay) wrTimeDisplay.textContent = 'Awaiting Host Event Schedule / Launch Signal';
+        if (wrTimerDisplay) wrTimerDisplay.textContent = 'STANDBY';
+        if (wrTimerNote) wrTimerNote.textContent = 'Your trading terminal is connected and verified. Review your desk parameters and stand by for host launch.';
+        if (dualTimerLabel) dualTimerLabel.textContent = 'STATUS:';
+        if (dualTimerValue) dualTimerValue.textContent = 'STANDBY';
       }
     }
   } else {
     if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
-    if (closesInTimer) {
+    if (dualTimerLabel) dualTimerLabel.textContent = 'CLOSES IN:';
+    if (dualTimerValue) {
       const remainingSec = Math.max(0, (gameState.dayDurationSeconds || 1800) - gameState.elapsedSeconds);
-      closesInTimer.textContent = `CLOSES IN: ${formatMMSS(remainingSec)}`;
+      dualTimerValue.textContent = formatMMSS(remainingSec);
+    }
+    if (dualTimerWrap) {
+      dualTimerWrap.style.background = 'rgba(33, 134, 83, 0.08)';
+      dualTimerWrap.style.borderColor = 'rgba(33, 134, 83, 0.25)';
     }
   }
 
@@ -745,6 +902,9 @@ function renderTraderView(state) {
         if (heroCard) heroCard.style.borderLeft = '4px solid #DC2626';
       }
     }
+
+    // Render Real-Time Market & Sector Indices Ticker Strip
+    renderAllIndicesBars(state.marketIndices || calculateClientIndices(companies));
 
     // Update team equity timeline history
     if (!teamEquityHistory.length || teamEquityHistory[teamEquityHistory.length - 1].time !== gameState.elapsedSeconds) {
@@ -985,9 +1145,16 @@ function renderTraderView(state) {
   }
 }
 
-// Order Submission
+// Order Submission with Client-Side Anti-Spam Throttle
+let lastClientOrderSubmitTime = 0;
 function sendOrder(ticker, type, quantity) {
   if (!ws || !sessionToken) return;
+  const now = Date.now();
+  if (now - lastClientOrderSubmitTime < 180) {
+    // 180ms client-side anti-spam throttle prevents accidental double clicks
+    return;
+  }
+  lastClientOrderSubmitTime = now;
   ws.send(JSON.stringify({
     action: 'ORDER',
     session_token: sessionToken,
@@ -1329,10 +1496,8 @@ function quickSellAllStock(ticker, qty) {
     return;
   }
 
-  const confirmed = window.confirm(`Sell all ${qty} shares of ${stock.ticker} (${stock.name}) at ₹${stock.currentPrice.toFixed(2)}?`);
-  if (confirmed) {
-    sendOrder(stock.ticker, 'SELL', qty);
-  }
+  // ⚡ Fast 1-Click Execution: Zero blocking browser popups!
+  sendOrder(stock.ticker, 'SELL', qty);
 }
 
 // ==========================================
@@ -1352,11 +1517,23 @@ function renderProjectorView(state) {
   if (dayEl) dayEl.textContent = `DAY ${gameState.currentDay} / ${gameState.totalDays}`;
 
   const clockEl = document.getElementById('projClockText');
-  if (clockEl) clockEl.textContent = `CLOCK: ${formatMMSS(gameState.elapsedSeconds)}`;
+  if (clockEl) {
+    if (gameState.status === 'SCHEDULED' && gameState.scheduledStartTime) {
+      const remMs = Math.max(0, new Date(gameState.scheduledStartTime).getTime() - Date.now());
+      clockEl.textContent = `OPENS IN: ${formatMMSS(Math.floor(remMs / 1000))}`;
+    } else {
+      clockEl.textContent = `CLOCK: ${formatMMSS(gameState.elapsedSeconds)}`;
+    }
+  }
 
   const statusEl = document.getElementById('projStatusText');
   if (statusEl) {
-    if (gameState.isPaused) {
+    if (gameState.status === 'SCHEDULED') {
+      const schDate = gameState.scheduledStartTime ? new Date(gameState.scheduledStartTime) : null;
+      const timeStr = schDate ? schDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      statusEl.textContent = `⏳ PRE-MARKET: OPENS AT ${timeStr}`;
+      statusEl.className = 'badge badge-champagne';
+    } else if (gameState.isPaused) {
       statusEl.textContent = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'MARKET PAUSED';
       statusEl.className = 'badge badge-paused';
     } else {
@@ -1365,7 +1542,13 @@ function renderProjectorView(state) {
     }
   }
 
-  if (gameState.newsHistory && gameState.newsHistory.length > 0) {
+  if (gameState.status === 'SCHEDULED') {
+    const tickerEl = document.getElementById('projectorTickerText');
+    if (tickerEl) {
+      const schTime = gameState.scheduledStartTime ? new Date(gameState.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      tickerEl.textContent = `⏳ PRE-MARKET BRIEFING: All 20 NSE share universes will open automatically at ${schTime}. Review your desk positions and prepare for opening bell!`;
+    }
+  } else if (gameState.newsHistory && gameState.newsHistory.length > 0) {
     const latestNews = gameState.newsHistory[0];
     const tickerEl = document.getElementById('projectorTickerText');
     if (tickerEl) {
@@ -2028,7 +2211,185 @@ function drawSmoothBezierSparkline(canvasId, history, dayOpenPrice, isUp, isLarg
 }
 
 // ==========================================
-// 7. HOST MATRIX CONTROLLER RENDERER & ACTIONS
+// 7. REAL-TIME MARKET INDICES & TOURNAMENT FLOW CONTROLLER
+// ==========================================
+function renderAllIndicesBars(indicesInput) {
+  if (!indicesInput) return;
+  const list = Array.isArray(indicesInput) ? indicesInput : Object.values(indicesInput);
+  if (list.length === 0) return;
+
+  const html = list.map((idx) => {
+    const val = idx.currentValue !== undefined ? idx.currentValue : (idx.value || 0);
+    const pct = idx.changePct !== undefined ? idx.changePct : 0;
+    const pts = idx.change !== undefined ? idx.change : (idx.changePoints || 0);
+    const isUp = pct >= 0;
+    const sign = isUp ? '+' : '';
+    const name = idx.name || idx.id || 'Index';
+
+    let icon = '📊';
+    if (name.includes('NIFTY') || name.includes('Benchmark') || name.includes('Broad')) icon = '🏛️';
+    else if (name.includes('BANK')) icon = '🏦';
+    else if (name.includes('IT') || name.includes('Tech')) icon = '💻';
+    else if (name.includes('AUTO') || name.includes('Mobility')) icon = '🚗';
+    else if (name.includes('ENERGY') || name.includes('Power')) icon = '⚡';
+    else if (name.includes('METALS') || name.includes('Infra')) icon = '🏗️';
+    else if (name.includes('CONSUMER') || name.includes('PHARMA') || name.includes('FMCG')) icon = '🛒';
+
+    return `
+      <div class="index-chip" title="${escapeHtml(name)}: ${val.toFixed(2)} (${sign}${pct.toFixed(2)}%)">
+        <span style="font-size: 13px;">${icon}</span>
+        <span class="index-chip-name">${escapeHtml(name.replace('Championship ', '').replace('Index', ''))}</span>
+        <span class="index-chip-val">${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span class="index-chip-pct ${isUp ? 'up' : 'down'}">${sign}${pct.toFixed(2)}% ${isUp ? '▲' : '▼'}</span>
+      </div>
+    `;
+  }).join('');
+
+  const traderBar = document.getElementById('traderIndicesTickerBar');
+  if (traderBar) traderBar.innerHTML = html;
+
+  const hostBar = document.getElementById('hostIndicesTickerBar');
+  if (hostBar) hostBar.innerHTML = html;
+}
+
+function updateHostTournamentFlow(state) {
+  const gs = state.gameState;
+  if (!gs) return;
+
+  const day = gs.currentDay || 1;
+  const total = gs.totalDays || 3;
+  const isConcluded = gs.isConcluded || (day >= total && gs.elapsedSeconds >= gs.dayDurationSeconds);
+  const isWinnerActive = (gs.presentationState && gs.presentationState.active) || (gs.projectorState && gs.projectorState.isWinnerActive);
+  const isPre = gs.status === 'SCHEDULED' || gs.status === 'PRE_EVENT_COUNTDOWN' || (gs.elapsedSeconds === 0 && gs.status !== 'LIVE');
+  const remSec = Math.max(0, (gs.dayDurationSeconds || 1800) - gs.elapsedSeconds);
+
+  // Update step pills
+  const pPre = document.getElementById('flowStepPre');
+  const pD1 = document.getElementById('flowStepDay1');
+  const pD2 = document.getElementById('flowStepDay2');
+  const pD3 = document.getElementById('flowStepDay3');
+  const pRev = document.getElementById('flowStepReveal');
+
+  if (pPre) pPre.className = `flow-step-pill ${isPre ? 'active' : 'completed'}`;
+  if (pD1) {
+    if (day === 1 && !isConcluded && !isPre) pD1.className = 'flow-step-pill active';
+    else if (day > 1 || isConcluded) pD1.className = 'flow-step-pill completed';
+    else pD1.className = 'flow-step-pill';
+  }
+  if (pD2) {
+    if (day === 2 && !isConcluded) pD2.className = 'flow-step-pill active';
+    else if (day > 2 || isConcluded) pD2.className = 'flow-step-pill completed';
+    else pD2.className = 'flow-step-pill';
+  }
+  if (pD3) {
+    if (day >= 3 && !isConcluded) pD3.className = 'flow-step-pill active';
+    else if (isConcluded) pD3.className = 'flow-step-pill completed';
+    else pD3.className = 'flow-step-pill';
+  }
+  if (pRev) {
+    if (isConcluded || isWinnerActive) pRev.className = 'flow-step-pill active';
+    else pRev.className = 'flow-step-pill';
+  }
+
+  // Update title & subtitle
+  const titleEl = document.getElementById('flowStageTitle');
+  const subEl = document.getElementById('flowStageSub');
+  const btnEl = document.getElementById('btnFlowPrimaryAction');
+
+  if (isWinnerActive) {
+    if (titleEl) titleEl.textContent = '👑 Winner Presentation Active';
+    if (subEl) subEl.textContent = `Current: ${(gs.presentationState?.scene || 'INTRO').replace('SCENE_', '')} • Synchronized with Projector`;
+    if (btnEl) {
+      btnEl.textContent = 'Advance Winner Scene ➔';
+      btnEl.className = 'btn btn-champagne';
+      btnEl.style.backgroundColor = '';
+      btnEl.style.borderColor = '';
+    }
+  } else if (isConcluded) {
+    if (titleEl) titleEl.textContent = '🏆 All 3 Days Completed!';
+    if (subEl) subEl.textContent = 'Books finalized • Ready for Stage Winner Presentation';
+    if (btnEl) {
+      btnEl.textContent = '👑 Launch Winner Reveal ➔';
+      btnEl.className = 'btn btn-champagne';
+      btnEl.style.backgroundColor = '';
+      btnEl.style.borderColor = '';
+    }
+  } else if (isPre) {
+    if (titleEl) titleEl.textContent = '⏱️ Pre-Event Setup & Waiting Room';
+    if (subEl) subEl.textContent = gs.scheduledStartTime ? `Auto-opens at ${new Date(gs.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}` : 'Tournament Draft Ready • Press Start to Ring Bells';
+    if (btnEl) {
+      btnEl.textContent = '▶ Start Market (3-2-1)';
+      btnEl.className = 'btn btn-primary';
+      btnEl.style.backgroundColor = 'var(--price-up)';
+      btnEl.style.borderColor = 'var(--price-up)';
+    }
+  } else if (gs.isPaused) {
+    if (titleEl) titleEl.textContent = `⏸️ Day ${day} Paused`;
+    if (subEl) subEl.textContent = `${formatMMSS(gs.elapsedSeconds)} elapsed • Press Resume to continue trading`;
+    if (btnEl) {
+      btnEl.textContent = '▶ Resume Trading (3-2-1)';
+      btnEl.className = 'btn btn-primary';
+      btnEl.style.backgroundColor = 'var(--price-up)';
+      btnEl.style.borderColor = 'var(--price-up)';
+    }
+  } else {
+    // Active Day
+    if (titleEl) titleEl.textContent = `🟢 Day ${day} of ${total} Live`;
+    if (subEl) subEl.textContent = `${formatMMSS(remSec)} remaining in session • Market Active`;
+    if (btnEl) {
+      if (day < total) {
+        btnEl.textContent = `🔔 Conclude Day ${day} ➔ Advance to Day ${day + 1}`;
+        btnEl.className = 'btn btn-sage';
+        btnEl.style.backgroundColor = '';
+        btnEl.style.borderColor = '';
+      } else {
+        btnEl.textContent = `🔔 Conclude Day 3 ➔ Finalize Champion`;
+        btnEl.className = 'btn btn-champagne';
+        btnEl.style.backgroundColor = '';
+        btnEl.style.borderColor = '';
+      }
+    }
+  }
+}
+
+function handleFlowPrimaryAction() {
+  if (!latestState || !latestState.gameState) return;
+  const gs = latestState.gameState;
+  const isConcluded = gs.isConcluded || (gs.currentDay >= gs.totalDays && gs.elapsedSeconds >= gs.dayDurationSeconds);
+  const isWinnerActive = (gs.presentationState && gs.presentationState.active) || (gs.projectorState && gs.projectorState.isWinnerActive);
+
+  if (isWinnerActive) {
+    presNextScene();
+    return;
+  }
+
+  if (isConcluded) {
+    hostStartWinnerPresentation();
+    return;
+  }
+
+  if (gs.status === 'SCHEDULED' || gs.status === 'PRE_EVENT_COUNTDOWN' || (gs.elapsedSeconds === 0 && gs.status !== 'LIVE')) {
+    hostResumeMarket();
+    return;
+  }
+
+  if (gs.isPaused) {
+    hostResumeMarket();
+    return;
+  }
+
+  // Active trading: advance to next day or finalize
+  if (confirm(`Are you sure you want to conclude Day ${gs.currentDay} and advance the championship?`)) {
+    if (gs.currentDay < gs.totalDays) {
+      hostNextDay();
+    } else {
+      hostFinalizeChampionship();
+    }
+  }
+}
+
+// ==========================================
+// 8. HOST MATRIX CONTROLLER RENDERER & ACTIONS
 // ==========================================
 function switchHostTab(tabName) {
   activeHostTab = tabName;
@@ -2041,17 +2402,31 @@ function switchHostTab(tabName) {
       else content.classList.add('hidden');
     }
   });
+  if (latestState) {
+    renderHostView(latestState);
+  }
 }
 
 function renderHostView(state) {
   const { gameState, companies, leaderboard, newsEvents, recentTrades, allCompaniesUniverse } = state;
   if (!gameState) return;
 
+  // Render Real-Time Market Indices Bar & Tournament Flow Stepper
+  renderAllIndicesBars(state.marketIndices || calculateClientIndices(companies));
+  updateHostTournamentFlow(state);
+
+  let hostStatusText = 'LIVE';
+  if (gameState.status === 'SCHEDULED') {
+    const remMs = gameState.scheduledStartTime ? Math.max(0, new Date(gameState.scheduledStartTime).getTime() - Date.now()) : 0;
+    const schTime = gameState.scheduledStartTime ? new Date(gameState.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    hostStatusText = `SCHEDULED (Opens at ${schTime} • in ${formatMMSS(Math.floor(remMs / 1000))})`;
+  } else if (gameState.isPaused) {
+    hostStatusText = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED';
+  }
+
   document.getElementById('hostScenarioModeBadge').textContent = `${state.scenarioMode.toUpperCase()} MODE`;
   document.getElementById('hostClockInfo').textContent =
-    `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${
-      gameState.isPaused ? (gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED') : 'LIVE'
-    } • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
+    `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${hostStatusText} • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
 
   // Render Configuration Lock Status Banner
   const lockIcon = document.getElementById('hostConfigLockIcon');
@@ -2079,39 +2454,29 @@ function renderHostView(state) {
     }
   }
 
-  // 0. Render Universe Market Builder Table
-  renderHostUniverseView(allCompaniesUniverse || companies || []);
-
-  // 0.1 Render Terminal Launcher & Credentials Table
-  renderHostLauncherTab(state);
-
-  // 0.2 Render Intelligent Projector Control Tab
-  renderHostProjectorTab(state);
-
-  // 0.3 Render Anchor Commentary Prompts Tab
-  renderHostCommentaryTab(state);
-
-  // 0.4 Render Day Finalize & Lifecycle Tab
-  renderHostDayTab(state);
-
-  // 1. Render Stocks Table
-  if (companies) {
-    document.getElementById('hostStocksTbody').innerHTML = companies.map((stock) => {
-      const pctVal = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
+  // 1. Render Stocks Table (Always renders all available universe stocks with live prices)
+  const stockList = (allCompaniesUniverse && allCompaniesUniverse.length > 0) ? allCompaniesUniverse : (companies || []);
+  const stocksTbody = document.getElementById('hostStocksTbody');
+  if (stocksTbody && stockList && stockList.length > 0) {
+    stocksTbody.innerHTML = stockList.map((stock) => {
+      const openPrice = stock.dayOpenPrice !== undefined ? stock.dayOpenPrice : (stock.base_price || stock.currentPrice || 100);
+      const curPrice = stock.currentPrice !== undefined ? stock.currentPrice : (stock.base_price || openPrice);
+      const pctVal = openPrice > 0 ? ((curPrice - openPrice) / openPrice) * 100 : 0;
       const isUp = pctVal >= 0;
+      const isEnabled = stock.isEnabled !== false;
       return `
-        <tr style="border-bottom: 1px solid var(--subtle-border);">
+        <tr style="border-bottom: 1px solid var(--subtle-border); ${!isEnabled ? 'opacity: 0.6; background-color: rgba(0,0,0,0.02);' : ''}">
           <td style="padding: 8px; font-weight: 800; color: var(--text-forest);">${stock.ticker}</td>
-          <td style="padding: 8px;">${stock.name}</td>
-          <td style="padding: 8px; color: var(--text-muted);">${stock.sector}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 700;">₹${stock.currentPrice.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right;">₹${stock.dayOpenPrice.toFixed(2)}</td>
+          <td style="padding: 8px;">${escapeHtml(stock.name || stock.ticker)}</td>
+          <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(stock.sector || 'Equities')}</td>
+          <td style="padding: 8px; text-align: right; font-weight: 700;">₹${curPrice.toFixed(2)}</td>
+          <td style="padding: 8px; text-align: right;">₹${openPrice.toFixed(2)}</td>
           <td style="padding: 8px; text-align: right; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
             ${isUp ? '+' : ''}${pctVal.toFixed(2)}%
           </td>
           <td style="padding: 8px; text-align: center;">
-            <span class="badge ${stock.isHalted ? 'badge-halted' : 'badge-active'}" style="font-size: 10px; padding: 2px 6px;">
-              ${stock.isHalted ? `HALTED (${stock.haltDirection})` : 'ACTIVE'}
+            <span class="badge ${stock.isHalted ? 'badge-halted' : (isEnabled ? 'badge-active' : 'badge-paused')}" style="font-size: 10px; padding: 2px 6px;">
+              ${stock.isHalted ? `HALTED (${stock.haltDirection || 'CIRCUIT'})` : (isEnabled ? 'ACTIVE' : 'DISABLED')}
             </span>
           </td>
           <td style="padding: 8px; text-align: center;">
@@ -2119,21 +2484,35 @@ function renderHostView(state) {
               <button onclick="hostUnhaltStock('${stock.ticker}')" class="btn btn-primary" style="padding: 3px 8px; font-size: 11px;">
                 Release Halt
               </button>
-            ` : '—'}
+            ` : `
+              <button onclick="toggleShareActive('${stock.ticker}')" class="btn btn-outline" style="padding: 2px 6px; font-size: 10px;">
+                ${isEnabled ? 'Disable' : 'Enable'}
+              </button>
+            `}
           </td>
         </tr>
       `;
     }).join('');
   }
 
-  // 2. Render News Deck with individual countdowns & actions
-  renderHostNews(state);
-
-  // 2.1 Render Financial Analysis Table
-  renderHostAnalysis(state);
-
-  // 2.2 Render Audio Console Settings & Connection Status
-  renderHostSoundTab(state);
+  // 2. High-performance selective tab rendering (only updates active tab to prevent DOM lag)
+  if (activeHostTab === 'universe') {
+    renderHostUniverseView(allCompaniesUniverse || companies || []);
+  } else if (activeHostTab === 'launcher') {
+    renderHostLauncherTab(state);
+  } else if (activeHostTab === 'projector') {
+    renderHostProjectorTab(state);
+  } else if (activeHostTab === 'commentary') {
+    renderHostCommentaryTab(state);
+  } else if (activeHostTab === 'day') {
+    renderHostDayTab(state);
+  } else if (activeHostTab === 'analysis') {
+    renderHostAnalysis(state);
+  } else if (activeHostTab === 'sound') {
+    renderHostSoundTab(state);
+  } else if (activeHostTab === 'news') {
+    renderHostNews(state);
+  }
 
   // 3. Render Leaderboard Table
   if (leaderboard) {
@@ -2142,8 +2521,8 @@ function renderHostView(state) {
       return `
         <tr style="border-bottom: 1px solid var(--subtle-border);">
           <td style="padding: 8px; font-weight: 800;">#${idx + 1}</td>
-          <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${t.name}</td>
-          <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${t.members || '—'}</td>
+          <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(t.name)}</td>
+          <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(t.members || '—')}</td>
           <td style="padding: 8px; text-align: right;">${formatINR(t.cash)}</td>
           <td style="padding: 8px; text-align: right;">${formatINR(t.holdingsValue)}</td>
           <td style="padding: 8px; text-align: right; font-weight: 800;">${formatINR(t.netWorth)}</td>
@@ -2156,26 +2535,28 @@ function renderHostView(state) {
     }).join('');
   }
 
-  // 4. Render Trade Stream Table
-  if (recentTrades) {
+  // 4. Render Trade Stream Table (if tab is active or initially)
+  if (recentTrades && (activeHostTab === 'trades' || activeHostTab === 'stocks')) {
     const tradesTbody = document.getElementById('hostRecentTradesTbody');
-    if (recentTrades.length === 0) {
-      tradesTbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No trades executed yet.</td></tr>`;
-    } else {
-      tradesTbody.innerHTML = recentTrades.map((tr) => `
-        <tr style="border-bottom: 1px solid var(--subtle-border);">
-          <td style="padding: 8px;">#${tr.seq}</td>
-          <td style="padding: 8px;">${tr.timestamp}</td>
-          <td style="padding: 8px; font-weight: 700;">${tr.teamName}</td>
-          <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 5px;">${tr.type}</span></td>
-          <td style="padding: 8px; font-weight: 700;">${tr.ticker}</td>
-          <td style="padding: 8px; text-align: right;">${tr.quantity}</td>
-          <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right;">₹${tr.grossValue.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.cashAfter.toFixed(2)}</td>
-        </tr>
-      `).join('');
+    if (tradesTbody) {
+      if (recentTrades.length === 0) {
+        tradesTbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No trades executed yet.</td></tr>`;
+      } else {
+        tradesTbody.innerHTML = recentTrades.map((tr) => `
+          <tr style="border-bottom: 1px solid var(--subtle-border);">
+            <td style="padding: 8px;">#${tr.seq}</td>
+            <td style="padding: 8px;">${tr.timestamp}</td>
+            <td style="padding: 8px; font-weight: 700;">${escapeHtml(tr.teamName)}</td>
+            <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 5px;">${tr.type}</span></td>
+            <td style="padding: 8px; font-weight: 700;">${tr.ticker}</td>
+            <td style="padding: 8px; text-align: right;">${tr.quantity}</td>
+            <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right;">₹${tr.grossValue.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.cashAfter.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      }
     }
   }
 }
@@ -3594,8 +3975,9 @@ function renderPresentationScene(sceneName, snapshot) {
 
   const badge = document.getElementById('presSceneBadge');
   const rankings = snapshot.rankings || [];
+  const normScene = (sceneName || '').replace(/^SCENE_/, '').toUpperCase();
 
-  if (sceneName === 'BRONZE') {
+  if (normScene === 'BRONZE') {
     const bronzeTeam = rankings[2] || rankings[rankings.length - 1] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
     document.getElementById('presBronzeTeam').textContent = bronzeTeam.teamName;
     document.getElementById('presBronzeMembers').textContent = bronzeTeam.members ? `Traders: ${bronzeTeam.members}` : '';
@@ -3609,7 +3991,7 @@ function renderPresentationScene(sceneName, snapshot) {
     retEl.className = bronzeTeam.returnPct >= 0 ? 'price-up' : 'price-down';
     document.getElementById('sceneBronze').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 2: 🥉 BRONZE MEDALIST';
-  } else if (sceneName === 'SILVER') {
+  } else if (normScene === 'SILVER') {
     const silverTeam = rankings[1] || rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
     document.getElementById('presSilverTeam').textContent = silverTeam.teamName;
     document.getElementById('presSilverMembers').textContent = silverTeam.members ? `Traders: ${silverTeam.members}` : '';
@@ -3623,7 +4005,7 @@ function renderPresentationScene(sceneName, snapshot) {
     retEl.className = silverTeam.returnPct >= 0 ? 'price-up' : 'price-down';
     document.getElementById('sceneSilver').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 3: 🥈 SILVER RUNNER-UP';
-  } else if (sceneName === 'CHAMPION') {
+  } else if (normScene === 'CHAMPION' || normScene === 'GOLD') {
     const champ = rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
     document.getElementById('presChampionTeam').textContent = champ.teamName;
     document.getElementById('presChampionMembers').textContent = champ.members ? `Traders: ${champ.members}` : '';
@@ -3638,7 +4020,7 @@ function renderPresentationScene(sceneName, snapshot) {
     document.getElementById('sceneChampion').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 4: 🏆 GRAND CHAMPION';
     createPresentationConfetti();
-  } else if (sceneName === 'PODIUM') {
+  } else if (normScene === 'PODIUM') {
     const t1 = rankings[0] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
     const t2 = rankings[1] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
     const t3 = rankings[2] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
@@ -3660,7 +4042,7 @@ function renderPresentationScene(sceneName, snapshot) {
 
     document.getElementById('scenePodium').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 5: 🎖️ GRAND PODIUM';
-  } else if (sceneName === 'LEADERBOARD') {
+  } else if (normScene === 'LEADERBOARD' || normScene === 'STANDINGS') {
     const tbody = document.getElementById('presLeaderboardTbody');
     if (tbody) {
       tbody.innerHTML = rankings.map((r) => {
@@ -3668,8 +4050,8 @@ function renderPresentationScene(sceneName, snapshot) {
         return `
           <tr style="border-bottom: 1px solid var(--subtle-border);">
             <td style="padding: 10px; font-weight: 800; color: ${r.rank === 1 ? 'var(--champagne-accent)' : 'inherit'};">#${r.rank}</td>
-            <td style="padding: 10px; font-weight: 800; color: var(--text-forest);">${r.teamName}</td>
-            <td style="padding: 10px; color: var(--text-muted); font-size: 11px;">${r.members || '—'}</td>
+            <td style="padding: 10px; font-weight: 800; color: var(--text-forest);">${escapeHtml(r.teamName)}</td>
+            <td style="padding: 10px; color: var(--text-muted); font-size: 11px;">${escapeHtml(r.members || '—')}</td>
             <td style="padding: 10px; text-align: right;">${formatINR(r.startingCash)}</td>
             <td style="padding: 10px; text-align: right;">${formatINR(r.cash)}</td>
             <td style="padding: 10px; text-align: right;">${formatINR(r.holdingsValue)}</td>
@@ -3717,24 +4099,27 @@ function createPresentationConfetti() {
 const PRES_SCENE_SEQUENCE = ['INTRO', 'BRONZE', 'SILVER', 'CHAMPION', 'PODIUM', 'LEADERBOARD'];
 function hostSetPresentationScene(scene) {
   if (!ws || !sessionToken) return;
+  const canonicalScene = scene.startsWith('SCENE_') ? scene : 'SCENE_' + scene;
   ws.send(JSON.stringify({
     action: 'HOST_SET_PRESENTATION_SCENE',
     session_token: sessionToken,
-    scene: scene
+    scene: canonicalScene
   }));
 }
 
 function presNextScene() {
-  const curScene = (latestState && latestState.gameState && latestState.gameState.presentationState && latestState.gameState.presentationState.currentScene) || 'INTRO';
+  const ps = (latestState && latestState.gameState && latestState.gameState.presentationState) || {};
+  let curScene = (ps.scene || ps.currentScene || (latestState.projectorState && latestState.projectorState.winnerScene) || 'INTRO').replace(/^SCENE_/, '').toUpperCase();
   const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
-  const nextScene = PRES_SCENE_SEQUENCE[Math.min(PRES_SCENE_SEQUENCE.length - 1, idx + 1)];
+  const nextScene = PRES_SCENE_SEQUENCE[Math.min(PRES_SCENE_SEQUENCE.length - 1, (idx === -1 ? 0 : idx) + 1)];
   hostSetPresentationScene(nextScene);
 }
 
 function presPrevScene() {
-  const curScene = (latestState && latestState.gameState && latestState.gameState.presentationState && latestState.gameState.presentationState.currentScene) || 'INTRO';
+  const ps = (latestState && latestState.gameState && latestState.gameState.presentationState) || {};
+  let curScene = (ps.scene || ps.currentScene || (latestState.projectorState && latestState.projectorState.winnerScene) || 'INTRO').replace(/^SCENE_/, '').toUpperCase();
   const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
-  const prevScene = PRES_SCENE_SEQUENCE[Math.max(0, idx - 1)];
+  const prevScene = PRES_SCENE_SEQUENCE[Math.max(0, (idx === -1 ? 0 : idx) - 1)];
   hostSetPresentationScene(prevScene);
 }
 
@@ -3798,11 +4183,13 @@ function selectStartMode(mode) {
     if (timeGroup) timeGroup.classList.remove('hidden');
     if (btnSubmit) btnSubmit.textContent = '📅 Confirm Schedule & Arm Waiting Room';
 
-    // Set default scheduled time to 2 minutes from now if empty
+    // Set default scheduled time to 2 minutes from now if empty (formatted for local datetime-local input)
     const dtInput = document.getElementById('scheduledStartTimeInput');
     if (dtInput && !dtInput.value) {
-      const future = new Date(Date.now() + 2 * 60 * 1000);
-      dtInput.value = future.toISOString().slice(0, 16);
+      const now = new Date(Date.now() + 2 * 60 * 1000);
+      const offsetMs = now.getTimezoneOffset() * 60000;
+      const localIso = new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+      dtInput.value = localIso;
     }
   } else {
     if (radioImm) radioImm.checked = true;

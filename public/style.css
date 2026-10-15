@@ -1215,4 +1215,136 @@ h1, h2, h3, .font-serif {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   18. TOURNAMENT FLOW STEPPER & REAL-TIME INDICES TICKER
+   ========================================================================== */
+.host-tournament-flow-card {
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+}
+
+.flow-step-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.flow-step-pill .step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-forest);
+}
+
+.flow-step-pill.active {
+  background: #FFFFFF;
+  border: 2px solid var(--price-up);
+  color: var(--text-forest);
+  box-shadow: 0 2px 8px rgba(33, 134, 83, 0.15);
+}
+
+.flow-step-pill.active .step-num {
+  background: var(--price-up);
+  color: #FFFFFF;
+}
+
+.flow-step-pill.completed {
+  background: rgba(33, 134, 83, 0.08);
+  border: 1px solid rgba(33, 134, 83, 0.3);
+  color: var(--price-up);
+}
+
+.flow-step-pill.completed .step-num {
+  background: var(--price-up);
+  color: #FFFFFF;
+}
+
+.flow-step-arrow {
+  color: #CBD5E1;
+  font-size: 13px;
+  font-weight: 800;
+  user-select: none;
+}
+
+/* Indices Ticker Bar & Chips */
+.indices-ticker-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 8px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  scrollbar-width: none;
+}
+.indices-ticker-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.index-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  white-space: nowrap;
+  font-size: 12px;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.index-chip:hover {
+  border-color: var(--champagne-accent);
+  background: #FAF9F6;
+}
+
+.index-chip-name {
+  font-weight: 800;
+  color: var(--text-forest);
+  letter-spacing: 0.02em;
+}
+
+.index-chip-val {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: var(--text-forest);
+}
+
+.index-chip-pct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.index-chip-pct.up {
+  background: rgba(33, 134, 83, 0.12);
+  color: var(--price-up);
+}
+
+.index-chip-pct.down {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--price-down);
+}
+
+
 

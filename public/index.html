@@ -285,35 +285,47 @@
 
     <!-- Waiting Room Overlay for Pre-Event / Scheduled States -->
     <div id="traderWaitingRoomOverlay" class="hidden modal-overlay" style="z-index: 105;">
-      <div class="modal-content" style="max-width: 680px; text-align: center; padding: 36px 32px;">
-        <div class="brand-icon" style="margin: 0 auto 16px auto; width: 52px; height: 52px; font-size: 26px;">TF</div>
-        <div class="badge badge-champagne" style="font-size: 12px; margin-bottom: 12px;">★ TOURNAMENT WAITING ROOM ★</div>
-        <h2 id="waitingRoomTitle" style="font-size: 28px; color: var(--text-forest); margin-bottom: 8px;">The Trading Floor Championship</h2>
-        <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Welcome to the official trading terminal. Review your desk parameters before opening bell.</p>
+      <div class="modal-content" style="max-width: 680px; text-align: center; padding: 36px 32px; border: 2px solid var(--champagne-accent); box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+        <div class="brand-icon" style="margin: 0 auto 16px auto; width: 54px; height: 54px; font-size: 26px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.12);">TF</div>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="badge badge-champagne" style="font-size: 12px; font-weight: 800; letter-spacing: 0.08em;">★ TOURNAMENT WAITING ROOM ★</span>
+          <span class="badge" style="background: rgba(33, 134, 83, 0.12); color: #047857; font-size: 12px; font-weight: 800; border: 1px solid rgba(33, 134, 83, 0.3);">🟢 DESK CONNECTED & ARMED</span>
+        </div>
+        <h2 id="waitingRoomTitle" style="font-size: 28px; color: var(--text-forest); margin-bottom: 6px; font-family: var(--font-serif); font-weight: 900;">The Trading Floor Championship</h2>
+        <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">SSASIT Surat (GTU 076) • Official Trading Terminal</p>
         
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
-          <div class="cream-panel" style="padding: 14px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Team Name</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Assigned Desk</div>
             <div id="waitingRoomTeamName" style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">Team 1</div>
           </div>
-          <div class="cream-panel" style="padding: 14px;">
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
             <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Starting Capital</div>
             <div id="waitingRoomCash" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--price-up); margin-top: 4px;">₹5,00,000</div>
           </div>
-          <div class="cream-panel" style="padding: 14px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Trading Round</div>
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Round</div>
             <div id="waitingRoomRound" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--champagne-accent); margin-top: 4px;">Day 1 of 3</div>
           </div>
         </div>
 
-        <div class="cream-panel" style="padding: 18px; margin-bottom: 20px; border: 2px dashed var(--champagne-accent);">
-          <div id="waitingRoomStatusText" style="font-size: 14px; font-weight: 700; color: var(--text-forest); margin-bottom: 6px;">⏳ Market Opening Countdown</div>
-          <div id="waitingRoomTimerDisplay" style="font-family: var(--font-mono); font-size: 42px; font-weight: 900; color: var(--text-forest);">00:00:00</div>
-          <p id="waitingRoomTimerNote" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Trading orders will be enabled automatically at market start.</p>
+        <div class="cream-panel" style="padding: 24px; margin-bottom: 20px; border: 2px dashed var(--champagne-accent); background: #FAF9F6; border-radius: 14px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);">
+          <div id="waitingRoomStatusText" style="font-size: 14px; font-weight: 800; color: var(--text-forest); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">⏳ Official Market Opening Countdown</div>
+          <div id="waitingRoomScheduledTimeDisplay" style="font-size: 14px; font-weight: 700; color: #1D4ED8; margin-bottom: 12px; font-family: var(--font-mono);">Scheduled Start: Calculating...</div>
+          <div id="waitingRoomTimerDisplay" style="font-family: var(--font-mono); font-size: 52px; font-weight: 900; color: var(--text-forest); letter-spacing: 3px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.08);">00:00:00</div>
+          <p id="waitingRoomTimerNote" style="font-size: 13px; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">Trading desks and all 20 NSE stocks will unlock automatically when timer reaches zero.</p>
         </div>
 
-        <div style="font-size: 12px; color: var(--text-muted); font-style: italic;">
-          ⚡ Pro-Tip: Monitor breaking news headlines closely. Sector events drive real-time share price adjustments across the market.
+        <div style="display: flex; justify-content: center; gap: 16px; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
+          <span>⚡ 20 Live Stocks Loaded</span>
+          <span>•</span>
+          <span>🔒 Order Security Ready</span>
+          <span>•</span>
+          <span>🔔 Hall Sound Engine Armed</span>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic; border-top: 1px solid var(--subtle-border); padding-top: 14px;">
+          💡 Strategy Tip: Watch breaking news flashes closely. Sector headlines drive immediate share price shifts across the floor.
         </div>
       </div>
     </div>
@@ -393,6 +405,11 @@
           <option value="Pharmaceuticals">Pharmaceuticals</option>
         </select>
       </div>
+    </div>
+
+    <!-- Real-Time Market & Sector Indices Ticker Strip -->
+    <div style="max-width: 1600px; width: 100%; margin: 12px auto 0 auto; padding: 0 24px;">
+      <div id="traderIndicesTickerBar" class="indices-ticker-bar"></div>
     </div>
 
     <!-- 4-Card Beginner-Friendly Hero Summary Ribbon -->
@@ -584,18 +601,6 @@
         <button onclick="openScheduleEventModal()" class="btn btn-outline" style="border-color: #2563EB; color: #1D4ED8; font-weight: 700;" title="Schedule a future start time or launch immediately">
           ⏱️ Schedule / Start
         </button>
-        <button onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber);" title="Freeze trading orders while keeping prices visible">
-          ⏸ Normal Pause
-        </button>
-        <button onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="border-color: #64748B; background: #0F172A; color: #F1F5F9;" title="Blackout Blind: Hides all student/projector screens with dark overlay">
-          🕶️ Blackout Pause
-        </button>
-        <button onclick="hostResumeMarket()" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up);" title="Resume trading with 3-2-1 countdown on all screens">
-          ▶ Resume (3-2-1)
-        </button>
-        <button onclick="hostNextDay()" class="btn btn-outline">
-          ⏭ Next Day
-        </button>
         <button onclick="openCustomNewsModal()" class="btn btn-sage">
           📢 Broadcast News
         </button>
@@ -604,9 +609,6 @@
         </button>
         <button onclick="openEventSettingsModal()" class="btn btn-outline">
           ⚙️ Settings
-        </button>
-        <button onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;" title="Launch dramatic full-screen presentation mode for all screens">
-          👑 Winner Presentation
         </button>
         <button onclick="openResetChampionshipModal()" class="btn btn-outline" style="border-color: var(--error-red); color: var(--error-red);" title="Safely reset all championship data and configure a new championship">
           ⚠️ Reset Game
@@ -617,44 +619,99 @@
       </div>
     </header>
 
-    <!-- Host Navigation Sub-Bar -->
-    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; gap: 8px;">
-      <button id="hostTabBtnStocks" onclick="switchHostTab('stocks')" class="btn btn-sage" style="padding: 6px 14px; font-size: 12px;">
-        📈 Stock Engine &amp; Halts
+    <!-- TOURNAMENT MASTER FLOW CONTROLLER (Day 1 -> Day 2 -> Day 3 -> Winners) -->
+    <div class="luxury-card host-tournament-flow-card" style="margin: 16px 24px 0 24px; padding: 16px 24px; background: linear-gradient(135deg, #FAF8F5 0%, #FFFFFF 100%); border: 2px solid var(--champagne-accent); box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+        <!-- Flow Stepper -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">FLOW:</span>
+          
+          <div id="flowStepPre" class="flow-step-pill active">
+            <span class="step-num">0</span>
+            <span class="step-label">Pre-Event</span>
+          </div>
+          <div class="flow-step-arrow">➔</div>
+
+          <div id="flowStepDay1" class="flow-step-pill">
+            <span class="step-num">1</span>
+            <span class="step-label">Day 1 (Kickoff)</span>
+          </div>
+          <div class="flow-step-arrow">➔</div>
+
+          <div id="flowStepDay2" class="flow-step-pill">
+            <span class="step-num">2</span>
+            <span class="step-label">Day 2 (Volatility)</span>
+          </div>
+          <div class="flow-step-arrow">➔</div>
+
+          <div id="flowStepDay3" class="flow-step-pill">
+            <span class="step-num">3</span>
+            <span class="step-label">Day 3 (Climax)</span>
+          </div>
+          <div class="flow-step-arrow">➔</div>
+
+          <div id="flowStepReveal" class="flow-step-pill">
+            <span class="step-num">👑</span>
+            <span class="step-label">Winner Reveal</span>
+          </div>
+        </div>
+
+        <!-- Flow Guidance & Contextual Action -->
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div id="flowStageStatusWrap" style="text-align: right;">
+            <div id="flowStageTitle" style="font-size: 14px; font-weight: 800; color: var(--text-forest);">Day 1 In Flow</div>
+            <div id="flowStageSub" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">Floor Ready • Awaiting Start</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btnFlowPrimaryAction" onclick="handleFlowPrimaryAction()" class="btn btn-primary" style="padding: 10px 20px; font-weight: 800; font-size: 13px; background-color: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 12px rgba(33,134,83,0.25);">
+              ▶ Start Market (3-2-1)
+            </button>
+            <button onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber); padding: 8px 12px; font-size: 12px;" title="Freeze trading orders while keeping prices visible">
+              ⏸ Pause
+            </button>
+            <button onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="border-color: #64748B; background: #0F172A; color: #F1F5F9; padding: 8px 12px; font-size: 12px;" title="Blackout Blind">
+              🕶️ Blackout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Streamlined Host Navigation Sub-Bar (5 Core Tabs) -->
+    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <button id="hostTabBtnStocks" onclick="switchHostTab('stocks')" class="btn btn-sage" style="padding: 6px 16px; font-size: 12px; font-weight: 800;">
+          📈 Live Floor &amp; Stocks
+        </button>
+        <button id="hostTabBtnNews" onclick="switchHostTab('news')" class="btn btn-outline" style="padding: 6px 16px; font-size: 12px; font-weight: 800;">
+          ⚡ Breaking News &amp; Shocks
+        </button>
+        <button id="hostTabBtnLeaderboard" onclick="switchHostTab('leaderboard')" class="btn btn-outline" style="padding: 6px 16px; font-size: 12px; font-weight: 800;">
+          🏆 Standings, Ledger &amp; Audit
+        </button>
+        <button id="hostTabBtnProjector" onclick="switchHostTab('projector')" class="btn btn-outline" style="padding: 6px 16px; font-size: 12px; font-weight: 800; color: #1D4ED8; border-color: #93C5FD;">
+          🖥️ Projector &amp; AV Remote
+        </button>
+        <button id="hostTabBtnUniverse" onclick="switchHostTab('universe')" class="btn btn-outline" style="padding: 6px 16px; font-size: 12px; font-weight: 800;">
+          🏛️ Share Universe Builder
+        </button>
+      </div>
+
+      <!-- Quick Winner Presentation Trigger -->
+      <button onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800; padding: 6px 16px; font-size: 12px;" title="Launch dramatic full-screen presentation mode for all screens">
+        👑 Winner Presentation Mode
       </button>
-      <button id="hostTabBtnUniverse" onclick="switchHostTab('universe')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        🏛️ Market Builder (Share Universe)
-      </button>
-      <button id="hostTabBtnNews" onclick="switchHostTab('news')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        ⚡ News Control Centre
-      </button>
-      <button id="hostTabBtnProjector" onclick="switchHostTab('projector')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #1D4ED8; border-color: #93C5FD;">
-        🖥️ Projector Control
-      </button>
-      <button id="hostTabBtnCommentary" onclick="switchHostTab('commentary')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #B45309; border-color: #FCD34D;">
-        🎙️ Anchor Commentary
-      </button>
-      <button id="hostTabBtnDay" onclick="switchHostTab('day')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #7C3AED; border-color: #C4B5FD;">
-        📅 Day Finalize &amp; Lifecycle
-      </button>
-      <button id="hostTabBtnAnalysis" onclick="switchHostTab('analysis')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #047857; border-color: #6EE7B7;">
-        📊 Financial Analysis
-      </button>
-      <button id="hostTabBtnSound" onclick="switchHostTab('sound')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #6D28D9; border-color: #C4B5FD;">
-        🔊 Hall Audio Console
-      </button>
-      <button id="hostTabBtnLeaderboard" onclick="switchHostTab('leaderboard')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        🏆 Live Standings
-      </button>
-      <button id="hostTabBtnTrades" onclick="switchHostTab('trades')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        📝 Real-Time Trade Stream
-      </button>
-      <button id="hostTabBtnExports" onclick="switchHostTab('exports')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        📥 Reports &amp; CSV Exports
-      </button>
-      <button id="hostTabBtnLauncher" onclick="switchHostTab('launcher')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #2563EB; border-color: #93C5FD;">
-        🚀 Terminal Launcher &amp; Logins
-      </button>
+
+      <!-- Hidden compatibility tab buttons (prevent null reference errors from any legacy code) -->
+      <div style="display: none;">
+        <button id="hostTabBtnCommentary" onclick="switchHostTab('commentary')"></button>
+        <button id="hostTabBtnDay" onclick="switchHostTab('day')"></button>
+        <button id="hostTabBtnAnalysis" onclick="switchHostTab('analysis')"></button>
+        <button id="hostTabBtnSound" onclick="switchHostTab('sound')"></button>
+        <button id="hostTabBtnTrades" onclick="switchHostTab('trades')"></button>
+        <button id="hostTabBtnExports" onclick="switchHostTab('exports')"></button>
+        <button id="hostTabBtnLauncher" onclick="switchHostTab('launcher')"></button>
+      </div>
     </div>
 
     <!-- Host Main Panels -->
@@ -680,6 +737,10 @@
             <button onclick="hostSwitchScenario('live')" class="btn btn-outline" style="padding: 5px 10px; font-size: 11px;">Load Live Scenario</button>
           </div>
         </div>
+
+        <!-- Real-Time Market & Sector Indices Ticker Strip -->
+        <div id="hostIndicesTickerBar" class="indices-ticker-bar" style="margin-bottom: 16px;"></div>
+
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
             <thead>
@@ -2394,10 +2455,17 @@
       </div>
 
       <!-- Action Buttons -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <button onclick="closeLiquidateModal()" class="btn btn-outline" style="padding: 12px; font-size: 13px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+        <button type="button" onclick="closeLiquidateModal()" class="btn btn-outline" style="padding: 13px; font-size: 13px; font-weight: 600;">
           Keep Holdings (Cancel)
         </button>
+        <button type="button" id="btnConfirmLiquidate" onclick="executeLiquidateAll()" class="btn btn-primary" style="background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); border-color: #991B1B; color: #FFFFFF; padding: 13px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);">
+          🚨 Sell Everything Now
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal K: Event Schedule & Start Configuration Modal -->
   <div id="scheduleEventModal" class="hidden modal-overlay">
     <div class="modal-content" style="max-width: 580px;">

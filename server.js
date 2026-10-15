@@ -427,7 +427,7 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     triggered: false
   }));
 
-  setupDefaultTeams(12, gameState.startingCash);
+  setupDefaultTeams(16, gameState.startingCash);
   recordAuditEvent('SCENARIO_LOADED', { mode: activeScenarioMode, title: meta.title, companiesCount: companies.length });
   restartEngineInterval();
 }
@@ -589,9 +589,14 @@ setInterval(() => {
   // Check for Scheduled Event Auto-Start
   if (gameState.status === 'SCHEDULED' && gameState.scheduledStartTime) {
     const targetMs = new Date(gameState.scheduledStartTime).getTime();
-    if (!isNaN(targetMs) && Date.now() >= targetMs) {
-      gameState.status = 'COUNTDOWN';
-      startResumeCountdown('SCHEDULED_TIMER');
+    if (!isNaN(targetMs)) {
+      if (Date.now() >= targetMs) {
+        gameState.status = 'COUNTDOWN';
+        startResumeCountdown('SCHEDULED_TIMER');
+      } else {
+        // Broadcast tick every second so all screens and waiting room timers stay live and synced
+        broadcastTick();
+      }
     }
   }
 
@@ -771,18 +776,19 @@ function calculateMarketIndices() {
   const list = [
     {
       id: 'NIFTY_TF20',
-      name: 'Championship Broad 20',
+      name: 'TTF NIFTY 20 (Benchmark)',
       baseValue: broadBase,
       currentValue: broadVal,
       change: broadChg,
       changePct: broadPct,
       constituents: enabled.map((s) => s.ticker)
     },
-    calcSubIndex('BANK_TF', 'Banking & Finance Index', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
-    calcSubIndex('IT_TF', 'Information Tech Index', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
-    calcSubIndex('AUTO_TF', 'Automotive Mobility Index', 20000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
-    calcSubIndex('ENERGY_TF', 'Energy & Power Index', 15000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
-    calcSubIndex('METALS_TF', 'Metals & Mining Index', 10000, ['TATASTEEL', 'JSWSTEEL'])
+    calcSubIndex('BANK_TF', 'TTF BANK NIFTY', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
+    calcSubIndex('IT_TF', 'TTF IT (Tech)', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
+    calcSubIndex('AUTO_TF', 'TTF AUTO (Mobility)', 22000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
+    calcSubIndex('ENERGY_TF', 'TTF ENERGY & POWER', 18000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
+    calcSubIndex('METALS_TF', 'TTF METALS & INFRA', 12000, ['LT', 'TATASTEEL', 'JSWSTEEL']),
+    calcSubIndex('CONSUMER_TF', 'TTF CONSUMER & PHARMA', 16000, ['ITC', 'HINDUNILVR', 'SUNPHARMA', 'TITAN'])
   ].filter(Boolean);
 
   return list;
@@ -1756,12 +1762,17 @@ wss.on('connection', (ws) => {
           }));
           return;
         }
-        if (data.action === 'HOST_UPDATE_EVENT_CONFIG' && (data.startingCash !== undefined || data.totalDays !== undefined)) {
-          ws.send(JSON.stringify({
-            type: 'EVENT_CONFIG_LOCKED',
-            reason: 'EVENT_CONFIG_LOCKED: Starting capital and tournament duration are locked once event is scheduled or live.'
-          }));
-          return;
+        if (data.action === 'HOST_UPDATE_EVENT_CONFIG') {
+          const cashChanged = data.startingCash !== undefined && !isNaN(data.startingCash) && parseFloat(data.startingCash) !== gameState.startingCash;
+          const daysChanged = data.totalDays !== undefined && !isNaN(data.totalDays) && parseInt(data.totalDays, 10) !== gameState.totalDays;
+          if (cashChanged || daysChanged) {
+            ws.send(JSON.stringify({
+              type: 'EVENT_CONFIG_LOCKED',
+              reason: 'Starting capital and total days cannot be changed mid-tournament while the market is live. Title, duration, fee, and circuit breaker were updated.'
+            }));
+            delete data.startingCash;
+            delete data.totalDays;
+          }
         }
       }
 
@@ -1802,9 +1813,14 @@ wss.on('connection', (ws) => {
         gameState.status = 'SCHEDULED';
         gameState.configLocked = true;
         gameState.isPaused = true;
-        if (data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
-        recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy });
-        broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy });
+        gameState.isConcluded = false;
+        gameState.winnerData = null;
+        gameState.elapsedSeconds = 0;
+        if (data.durationSec || data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.durationSec || data.dayDurationSeconds, 10);
+        if (data.eventTitle) gameState.title = data.eventTitle;
+        if (data.institution) gameState.institution = data.institution;
+        recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, title: gameState.title });
+        broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, gameState });
         broadcastTick();
       }
 
@@ -1814,10 +1830,15 @@ wss.on('connection', (ws) => {
         gameState.status = 'LIVE';
         gameState.configLocked = true;
         gameState.isPaused = false;
+        gameState.isConcluded = false;
+        gameState.winnerData = null;
         gameState.pauseMode = 'NONE';
         gameState.pauseStartedAt = null;
         gameState.elapsedSeconds = 0;
-        recordAuditEvent('EVENT_STARTED_NOW', { triggered_by: 'HOST' });
+        if (data.durationSec || data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.durationSec || data.dayDurationSeconds, 10);
+        if (data.eventTitle) gameState.title = data.eventTitle;
+        if (data.institution) gameState.institution = data.institution;
+        recordAuditEvent('EVENT_STARTED_NOW', { triggered_by: 'HOST', title: gameState.title });
         broadcastAudioCue('bell_open', 'lifecycle', { day: gameState.currentDay });
         broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
         broadcastAll({ type: 'MARKET_RESUMED' });
@@ -1937,33 +1958,38 @@ wss.on('connection', (ws) => {
       }
 
       if (data.action === 'HOST_SET_PRESENTATION_SCENE') {
-        const scene = data.scene || 'SCENE_INTRO';
+        const rawScene = data.scene || 'INTRO';
+        const sceneKey = rawScene.replace(/^SCENE_/, '');
+        const normalizedScene = 'SCENE_' + sceneKey;
         if (!gameState.presentationState) {
-          gameState.presentationState = { active: true, scene, currentTeamIndex: 0, revealedRanks: [] };
+          gameState.presentationState = { active: true, scene: normalizedScene, currentScene: normalizedScene, currentTeamIndex: 0, revealedRanks: [] };
         }
-        gameState.presentationState.scene = scene;
+        gameState.presentationState.scene = normalizedScene;
+        gameState.presentationState.currentScene = normalizedScene;
+        gameState.presentationState.rawScene = sceneKey;
         gameState.presentationState.updatedAt = new Date().toISOString();
         if (!gameState.projectorState) gameState.projectorState = {};
-        gameState.projectorState.winnerScene = scene;
+        gameState.projectorState.winnerScene = normalizedScene;
 
-        if (scene === 'SCENE_BRONZE') {
+        if (sceneKey === 'BRONZE') {
           broadcastAudioCue('presentation_bronze', 'presentation', { rank: 3 });
-        } else if (scene === 'SCENE_SILVER') {
+        } else if (sceneKey === 'SILVER') {
           broadcastAudioCue('presentation_silver', 'presentation', { rank: 2 });
-        } else if (scene === 'SCENE_CHAMPION') {
+        } else if (sceneKey === 'CHAMPION') {
           broadcastAudioCue('winner_trumpet', 'presentation', { rank: 1 });
-        } else if (scene === 'SCENE_PODIUM') {
+        } else if (sceneKey === 'PODIUM') {
           broadcastAudioCue('championship_fanfare', 'presentation');
         }
 
-        recordAuditEvent('PRESENTATION_SCENE_CHANGED', { scene });
+        recordAuditEvent('PRESENTATION_SCENE_CHANGED', { scene: normalizedScene });
         broadcastAll({
           type: 'PROJECTOR_STATE_UPDATE',
           projectorState: gameState.projectorState
         });
         broadcastAll({
           type: 'PRESENTATION_SCENE_UPDATE',
-          scene,
+          scene: rawScene,
+          normalizedScene,
           presentationState: gameState.presentationState,
           snapshot: gameState.finalResultsSnapshot || generateOfficialResultsSnapshot()
         });
