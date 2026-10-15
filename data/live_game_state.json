@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-10-15T15:41:29.636Z",
+  "savedAt": "2026-10-15T15:41:49.637Z",
   "activeScenarioMode": "live",
   "gameState": {
     "title": "The Trading Floor - Championship 2026",
@@ -14,7 +14,7 @@
     "totalDays": 3,
     "dayDurationSeconds": 1800,
     "startingCash": 500000,
-    "elapsedSeconds": 22,
+    "elapsedSeconds": 42,
     "isPaused": false,
     "pauseMode": "NONE",
     "pauseStartedAt": null,
@@ -134,11 +134,11 @@
         "dividend_yield": "0.3%",
         "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes."
       },
-      "currentPrice": 2884.96,
+      "currentPrice": 2880.46,
       "dayOpenPrice": 2885.17,
       "previousClosePrice": 2885.17,
       "dayHigh": 2890.22,
-      "dayLow": 2883.6,
+      "dayLow": 2876.96,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
@@ -206,6 +206,58 @@
         {
           "time": 22,
           "price": 2884.96
+        },
+        {
+          "time": 23,
+          "price": 2887.92
+        },
+        {
+          "time": 25,
+          "price": 2885.55
+        },
+        {
+          "time": 26,
+          "price": 2887.73
+        },
+        {
+          "time": 28,
+          "price": 2888.73
+        },
+        {
+          "time": 29,
+          "price": 2883.94
+        },
+        {
+          "time": 31,
+          "price": 2882.66
+        },
+        {
+          "time": 32,
+          "price": 2887.44
+        },
+        {
+          "time": 34,
+          "price": 2886.32
+        },
+        {
+          "time": 35,
+          "price": 2886.42
+        },
+        {
+          "time": 37,
+          "price": 2884.93
+        },
+        {
+          "time": 38,
+          "price": 2876.96
+        },
+        {
+          "time": 40,
+          "price": 2880.85
+        },
+        {
+          "time": 41,
+          "price": 2880.46
         }
       ]
     },
@@ -234,11 +286,11 @@
         "dividend_yield": "0.6%",
         "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover."
       },
-      "currentPrice": 1101.87,
+      "currentPrice": 1097.59,
       "dayOpenPrice": 1097.98,
       "previousClosePrice": 1097.98,
       "dayHigh": 1108.24,
-      "dayLow": 1095.53,
+      "dayLow": 1092.32,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
@@ -306,6 +358,58 @@
         {
           "time": 22,
           "price": 1101.87
+        },
+        {
+          "time": 23,
+          "price": 1100.08
+        },
+        {
+          "time": 25,
+          "price": 1101.1
+        },
+        {
+          "time": 26,
+          "price": 1101.41
+        },
+        {
+          "time": 28,
+          "price": 1098.47
+        },
+        {
+          "time": 29,
+          "price": 1098.28
+        },
+        {
+          "time": 31,
+          "price": 1097.61
+        },
+        {
+          "time": 32,
+          "price": 1094.77
+        },
+        {
+          "time": 34,
+          "price": 1093.55
+        },
+        {
+          "time": 35,
+          "price": 1092.32
+        },
+        {
+          "time": 37,
+          "price": 1094.24
+        },
+        {
+          "time": 38,
+          "price": 1094.13
+        },
+        {
+          "time": 40,
+          "price": 1092.8
+        },
+        {
+          "time": 41,
+          "price": 1097.59
         }
       ]
     },
@@ -414,11 +518,11 @@
         "dividend_yield": "2.8%",
         "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios."
       },
-      "currentPrice": 4152.23,
+      "currentPrice": 4163.18,
       "dayOpenPrice": 4159.55,
       "previousClosePrice": 4159.55,
-      "dayHigh": 4161.39,
-      "dayLow": 4146.93,
+      "dayHigh": 4163.18,
+      "dayLow": 4144.79,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
@@ -486,6 +590,58 @@
         {
           "time": 22,
           "price": 4152.23
+        },
+        {
+          "time": 23,
+          "price": 4156.84
+        },
+        {
+          "time": 25,
+          "price": 4152.99
+        },
+        {
+          "time": 26,
+          "price": 4148.05
+        },
+        {
+          "time": 28,
+          "price": 4144.79
+        },
+        {
+          "time": 29,
+          "price": 4150.58
+        },
+        {
+          "time": 31,
+          "price": 4151.9
+        },
+        {
+          "time": 32,
+          "price": 4149.77
+        },
+        {
+          "time": 34,
+          "price": 4148.27
+        },
+        {
+          "time": 35,
+          "price": 4151.88
+        },
+        {
+          "time": 37,
+          "price": 4159.9
+        },
+        {
+          "time": 38,
+          "price": 4161.03
+        },
+        {
+          "time": 40,
+          "price": 4159.53
+        },
+        {
+          "time": 41,
+          "price": 4163.18
         }
       ]
     },
@@ -514,11 +670,11 @@
         "dividend_yield": "2.2%",
         "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe."
       },
-      "currentPrice": 1835.65,
+      "currentPrice": 1836.36,
       "dayOpenPrice": 1841.92,
       "previousClosePrice": 1841.92,
-      "dayHigh": 1844.24,
-      "dayLow": 1834.53,
+      "dayHigh": 1844.56,
+      "dayLow": 1831.71,
       "isHalted": false,
       "haltDirection": null,
       "activeTransition": null,
@@ -586,6 +742,58 @@
         {
           "time": 22,
           "price": 1835.65
+        },
+        {
+          "time": 23,
+          "price": 1838.02
+        },
+        {
+          "time": 25,
+          "price": 1836.99
+        },
+        {
+          "time": 26,
+          "price": 1835.34
+        },
+        {
+          "time": 28,
+          "price": 1831.71
+        },
+        {
+          "time": 29,
+          "price": 1834.78
+        },
+        {
+          "time": 31,
+          "price": 1836.52
+        },
+        {
+          "time": 32,
+          "price": 1839.06
+        },
+        {
+          "time": 34,
+          "price": 1837.69
+        },
+        {
+          "time": 35,
+          "price": 1841.69
+        },
+        {
+          "time": 37,
+          "price": 1840.28
+        },
+        {
+          "time": 38,
+          "price": 1844.56
+        },
+        {
+          "time": 40,
+          "price": 1840.51
+        },
+        {
+          "time": 41,
+          "price": 1836.36
         }
       ]
     },
@@ -614,7 +822,7 @@
         "dividend_yield": "1.2%",
         "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach."
       },
-      "currentPrice": 1686.39,
+      "currentPrice": 1683.8,
       "dayOpenPrice": 1683.81,
       "previousClosePrice": 1683.81,
       "dayHigh": 1689.06,
@@ -686,6 +894,58 @@
         {
           "time": 22,
           "price": 1686.39
+        },
+        {
+          "time": 23,
+          "price": 1687.68
+        },
+        {
+          "time": 25,
+          "price": 1686.2
+        },
+        {
+          "time": 26,
+          "price": 1683.04
+        },
+        {
+          "time": 28,
+          "price": 1685.26
+        },
+        {
+          "time": 29,
+          "price": 1684.6
+        },
+        {
+          "time": 31,
+          "price": 1686.12
+        },
+        {
+          "time": 32,
+          "price": 1686.88
+        },
+        {
+          "time": 34,
+          "price": 1686.94
+        },
+        {
+          "time": 35,
+          "price": 1688.09
+        },
+        {
+          "time": 37,
+          "price": 1686.57
+        },
+        {
+          "time": 38,
+          "price": 1686.81
+        },
+        {
+          "time": 40,
+          "price": 1684.75
+        },
+        {
+          "time": 41,
+          "price": 1683.8
         }
       ]
     },
@@ -914,7 +1174,7 @@
         "dividend_yield": "2.9%",
         "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout."
       },
-      "currentPrice": 493.44,
+      "currentPrice": 493.95,
       "dayOpenPrice": 491.99,
       "previousClosePrice": 491.99,
       "dayHigh": 494.17,
@@ -986,6 +1246,58 @@
         {
           "time": 22,
           "price": 493.44
+        },
+        {
+          "time": 23,
+          "price": 493.12
+        },
+        {
+          "time": 25,
+          "price": 493.43
+        },
+        {
+          "time": 26,
+          "price": 492.95
+        },
+        {
+          "time": 28,
+          "price": 493.23
+        },
+        {
+          "time": 29,
+          "price": 493.2
+        },
+        {
+          "time": 31,
+          "price": 493.43
+        },
+        {
+          "time": 32,
+          "price": 493.67
+        },
+        {
+          "time": 34,
+          "price": 493.9
+        },
+        {
+          "time": 35,
+          "price": 494.04
+        },
+        {
+          "time": 37,
+          "price": 493.4
+        },
+        {
+          "time": 38,
+          "price": 493.25
+        },
+        {
+          "time": 40,
+          "price": 493.77
+        },
+        {
+          "time": 41,
+          "price": 493.95
         }
       ]
     },
