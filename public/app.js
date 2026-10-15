@@ -20,6 +20,16 @@ let traderSectorFilterVal = 'ALL';
 let currentTradeModalTicker = null;
 let teamEquityHistory = [];
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ==========================================
 // 1. INSTITUTIONAL AUDIO SYNTHESIZER (OFFLINE-READY)
 // ==========================================
@@ -44,33 +54,75 @@ function playInstitutionalSound(cueName) {
         osc.start(now + idx * 0.12);
         osc.stop(now + idx * 0.12 + 1.4);
       });
-    } else if (cueName === 'news_siren') {
+    } else if (cueName === 'news_siren' || cueName === 'heavy_news_boom') {
+      // 1. Deep cinematic sub-bass boom
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(90, now);
+      subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.9);
+      subGain.gain.setValueAtTime(0.4, now);
+      subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 1.1);
+
+      // 2. High-tension triple sonar alert
       for (let i = 0; i < 3; i++) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(440, now + i * 0.35);
-        osc.frequency.linearRampToValueAtTime(880, now + i * 0.35 + 0.3);
-        gain.gain.setValueAtTime(0.18, now + i * 0.35);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.35 + 0.32);
+        osc.frequency.setValueAtTime(520, now + 0.15 + i * 0.32);
+        osc.frequency.linearRampToValueAtTime(980, now + 0.15 + i * 0.32 + 0.28);
+        gain.gain.setValueAtTime(0.22, now + 0.15 + i * 0.32);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15 + i * 0.32 + 0.3);
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(now + i * 0.35);
-        osc.stop(now + i * 0.35 + 0.32);
+        osc.start(now + 0.15 + i * 0.32);
+        osc.stop(now + 0.15 + i * 0.32 + 0.3);
       }
-    } else if (cueName === 'circuit_alarm') {
-      for (let i = 0; i < 4; i++) {
+    } else if (cueName === 'circuit_alarm' || cueName === 'emergency_klaxon') {
+      // Oscillating urgent 6-burst two-tone klaxon
+      for (let i = 0; i < 6; i++) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(620, now + i * 0.22);
-        gain.gain.setValueAtTime(0.2, now + i * 0.22);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.22 + 0.18);
+        const f = i % 2 === 0 ? 820 : 600;
+        osc.frequency.setValueAtTime(f, now + i * 0.18);
+        gain.gain.setValueAtTime(0.25, now + i * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.18 + 0.16);
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(now + i * 0.22);
-        osc.stop(now + i * 0.22 + 0.18);
+        osc.start(now + i * 0.18);
+        osc.stop(now + i * 0.18 + 0.16);
       }
+    } else if (cueName === 'order_fill') {
+      // Crisp mechanical double-register cash execution click
+      [1480, 1960].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.2);
+      });
+    } else if (cueName === 'countdown_tick') {
+      // High-pressure woodblock tick
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(920, now);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.06);
     } else if (cueName === 'championship_fanfare') {
       const notes = [392.00, 523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, idx) => {
@@ -162,13 +214,20 @@ function connectWebSocket() {
     }
 
     if (msg.type === 'NEWS_FLASH') {
-      playInstitutionalSound('news_siren');
+      playInstitutionalSound('heavy_news_boom');
       showNewsFlashModal(msg.news);
       return;
     }
 
     if (msg.type === 'CIRCUIT_BREAKER_ALERT') {
-      playInstitutionalSound('circuit_alarm');
+      playInstitutionalSound('emergency_klaxon');
+      document.body.classList.add('circuit-strobe-active');
+      setTimeout(() => { document.body.classList.remove('circuit-strobe-active'); }, 5000);
+      const banner = document.getElementById('circuitBreakerAlertBanner');
+      if (banner) {
+        document.getElementById('circuitAlertText').textContent = `${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`;
+        banner.classList.remove('hidden');
+      }
       showOrderToast(`🚨 CIRCUIT BREAKER: ${msg.ticker} halted (${msg.direction} limit at ₹${msg.price.toFixed(2)})`, false);
       return;
     }
@@ -180,6 +239,31 @@ function connectWebSocket() {
 
     if (msg.type === 'COUNTDOWN_START') {
       runResumeCountdown(msg.seconds || 3);
+      return;
+    }
+
+    if (msg.type === 'CHAMPIONSHIP_RESET') {
+      playInstitutionalSound('emergency_klaxon');
+      if (currentRole !== 'HOST') {
+        logoutTerminal();
+        alert(msg.message || 'The championship has been reset by the Host. All terminals have returned to login.');
+      }
+      return;
+    }
+
+    if (msg.type === 'CHAMPIONSHIP_RESET_ACK') {
+      if (currentRole === 'HOST') {
+        openChampionshipWizardModal();
+        showOrderToast('Championship wiped. Configure and launch your new tournament.', true);
+      }
+      return;
+    }
+
+    if (msg.type === 'CHAMPIONSHIP_INITIALIZED_SUCCESS') {
+      if (currentRole === 'HOST') {
+        closeChampionshipWizardModal();
+        showOrderToast(msg.message || 'New championship configured! Market is ready.', true);
+      }
       return;
     }
 
@@ -195,6 +279,7 @@ function connectWebSocket() {
     }
 
     if (msg.type === 'ORDER_FILLED') {
+      playInstitutionalSound('order_fill');
       showOrderToast(`✓ ${msg.orderType} FILLED: ${msg.quantity} ${msg.ticker} @ ₹${msg.price.toFixed(2)} (Net: ₹${msg.totalImpact.toFixed(2)})`, true);
       closeTradeModal();
       return;
@@ -1630,16 +1715,261 @@ function runResumeCountdown(seconds) {
   overlay.classList.remove('hidden');
   let counter = seconds;
   numEl.textContent = counter;
+  playInstitutionalSound('countdown_tick');
 
   const timer = setInterval(() => {
     counter--;
     if (counter > 0) {
       numEl.textContent = counter;
+      playInstitutionalSound('countdown_tick');
     } else {
       clearInterval(timer);
       overlay.classList.add('hidden');
+      playInstitutionalSound('bell_open');
     }
   }, 1000);
+}
+
+function dismissCircuitAlertBanner() {
+  const banner = document.getElementById('circuitBreakerAlertBanner');
+  if (banner) banner.classList.add('hidden');
+  document.body.classList.remove('circuit-strobe-active');
+}
+
+// ==========================================
+// 10. CHAMPIONSHIP RESET & SETUP WIZARD
+// ==========================================
+function openResetChampionshipModal() {
+  const modal = document.getElementById('resetChampionshipModal');
+  const input = document.getElementById('resetConfirmInput');
+  const btn = document.getElementById('btnConfirmResetChampionship');
+  if (input) input.value = '';
+  if (btn) btn.disabled = true;
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeResetChampionshipModal() {
+  const modal = document.getElementById('resetChampionshipModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function onResetInputChange(val) {
+  const btn = document.getElementById('btnConfirmResetChampionship');
+  if (btn) {
+    btn.disabled = (val || '').trim().toUpperCase() !== 'RESET';
+  }
+}
+
+function confirmResetChampionship() {
+  const input = document.getElementById('resetConfirmInput');
+  if ((input.value || '').trim().toUpperCase() !== 'RESET') return;
+
+  if (ws && sessionToken && currentRole === 'HOST') {
+    ws.send(JSON.stringify({
+      action: 'HOST_RESET_ENTIRE_CHAMPIONSHIP',
+      confirmation: 'RESET',
+      session_token: sessionToken
+    }));
+  }
+  closeResetChampionshipModal();
+}
+
+function openChampionshipWizardModal() {
+  const modal = document.getElementById('championshipWizardModal');
+  if (!modal) return;
+
+  // 1. Populate current/default settings
+  if (latestState && latestState.gameState) {
+    const gs = latestState.gameState;
+    const titleEl = document.getElementById('wizardEventTitle');
+    const cashEl = document.getElementById('wizardStartingCash');
+    const daysEl = document.getElementById('wizardTotalDays');
+    const durEl = document.getElementById('wizardDayDuration');
+    const feeEl = document.getElementById('wizardTransactionFee');
+    const cbEl = document.getElementById('wizardCircuitBreaker');
+
+    if (titleEl) titleEl.value = gs.title || 'The Trading Floor Championship 2026';
+    if (cashEl) cashEl.value = gs.startingCash || 500000;
+    if (daysEl) daysEl.value = String(gs.totalDays || 3);
+    if (durEl) durEl.value = String(gs.dayDurationSeconds || 1800);
+    if (feeEl) feeEl.value = String(gs.transactionFeeBps || 0);
+    if (cbEl) cbEl.value = String(gs.circuitBreakerPercent || 20);
+  }
+
+  // 2. Populate Teams Table
+  setWizardTeamCount(12);
+
+  // 3. Populate Universe Checkboxes
+  renderWizardUniverseCheckboxes();
+
+  modal.classList.remove('hidden');
+}
+
+function closeChampionshipWizardModal() {
+  const modal = document.getElementById('championshipWizardModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+const WIZARD_PRESET_NAMES = [
+  'Dalal Street Titans', 'Bullish Bears', 'Alpha Hedge', 'Quantum Traders',
+  'Apex Capital', 'Vanguard Vipers', 'Sterling Bulls', 'Maverick Fund',
+  'Zenith Asset Mgmt', 'Phoenix Wealth', 'Starlight Equity', 'Omega Syndicate',
+  'Matrix Capital', 'Falcon Traders', 'Centurion Wealth', 'Ironclad Asset',
+  'Optima Quant', 'Aura Securities', 'Equinox Fund', 'Pinnacle Trading',
+  'Taurus Capital', 'Frontier Hedge', 'Sigma Alpha', 'Hyperion Wealth'
+];
+
+function setWizardTeamCount(count) {
+  const tbody = document.getElementById('wizardTeamsTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  for (let i = 1; i <= count; i++) {
+    const name = WIZARD_PRESET_NAMES[i - 1] || `Team ${i}`;
+    const username = `team${i}`;
+    const password = `trade${i}00`;
+    const members = `Trader ${i}A, Trader ${i}B`;
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--subtle-border)';
+    tr.innerHTML = `
+      <td style="padding: 6px; font-weight: 700; color: var(--champagne-accent);">${i}</td>
+      <td style="padding: 6px;"><input type="text" value="${escapeHtml(name)}" class="form-input wizard-team-name" style="padding: 4px 8px; font-size: 12px;" /></td>
+      <td style="padding: 6px;"><input type="text" value="${username}" class="form-input wizard-team-username" style="padding: 4px 8px; font-size: 12px; font-family: var(--font-mono);" /></td>
+      <td style="padding: 6px;"><input type="text" value="${password}" class="form-input wizard-team-password" style="padding: 4px 8px; font-size: 12px; font-family: var(--font-mono);" /></td>
+      <td style="padding: 6px;"><input type="text" value="${escapeHtml(members)}" class="form-input wizard-team-members" style="padding: 4px 8px; font-size: 12px;" /></td>
+      <td style="padding: 6px; text-align: center;"><button type="button" onclick="removeWizardTeamRow(this)" class="btn btn-outline" style="padding: 2px 6px; font-size: 11px; color: var(--error-red);">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function addWizardTeamRow() {
+  const tbody = document.getElementById('wizardTeamsTbody');
+  if (!tbody) return;
+  const i = tbody.children.length + 1;
+  const name = WIZARD_PRESET_NAMES[i - 1] || `Team ${i}`;
+  const username = `team${i}`;
+  const password = `trade${i}00`;
+  const members = `Trader ${i}A, Trader ${i}B`;
+
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid var(--subtle-border)';
+  tr.innerHTML = `
+    <td style="padding: 6px; font-weight: 700; color: var(--champagne-accent);">${i}</td>
+    <td style="padding: 6px;"><input type="text" value="${escapeHtml(name)}" class="form-input wizard-team-name" style="padding: 4px 8px; font-size: 12px;" /></td>
+    <td style="padding: 6px;"><input type="text" value="${username}" class="form-input wizard-team-username" style="padding: 4px 8px; font-size: 12px; font-family: var(--font-mono);" /></td>
+    <td style="padding: 6px;"><input type="text" value="${password}" class="form-input wizard-team-password" style="padding: 4px 8px; font-size: 12px; font-family: var(--font-mono);" /></td>
+    <td style="padding: 6px;"><input type="text" value="${escapeHtml(members)}" class="form-input wizard-team-members" style="padding: 4px 8px; font-size: 12px;" /></td>
+    <td style="padding: 6px; text-align: center;"><button type="button" onclick="removeWizardTeamRow(this)" class="btn btn-outline" style="padding: 2px 6px; font-size: 11px; color: var(--error-red);">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function removeWizardTeamRow(btn) {
+  const row = btn.closest('tr');
+  if (row) row.remove();
+}
+
+function renderWizardUniverseCheckboxes() {
+  const container = document.getElementById('wizardUniverseContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const universe = (latestState && (latestState.allCompaniesUniverse || latestState.companies)) || [];
+  universe.forEach((c) => {
+    const card = document.createElement('label');
+    card.className = 'cream-panel';
+    card.style.cssText = 'padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm);';
+    card.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" value="${c.ticker}" class="wizard-universe-checkbox" ${c.isEnabled !== false ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: var(--price-up);" />
+        <div>
+          <span style="font-weight: 800; font-family: var(--font-mono); color: var(--text-forest);">${escapeHtml(c.ticker)}</span>
+          <span style="font-size: 11px; color: var(--text-muted); display: block;">${escapeHtml(c.name)} • ${escapeHtml(c.sector)}</span>
+        </div>
+      </div>
+      <div style="text-align: right; font-family: var(--font-mono);">
+        <span style="font-weight: 700; color: var(--text-forest);">${formatRupee(c.base_price || c.currentPrice)}</span>
+        <span style="font-size: 10px; color: var(--champagne-accent); display: block;">Beta: ${(c.beta || 1.0).toFixed(2)}</span>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function toggleAllWizardUniverse(enabled) {
+  document.querySelectorAll('.wizard-universe-checkbox').forEach((cb) => {
+    cb.checked = !!enabled;
+  });
+}
+
+function selectWizardUniversePreset(preset) {
+  const checkboxes = document.querySelectorAll('.wizard-universe-checkbox');
+  checkboxes.forEach((cb) => {
+    if (preset === 'top6') {
+      const top6 = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'TATAMOTORS', 'ITC'];
+      cb.checked = top6.includes(cb.value);
+    } else if (preset === 'balanced') {
+      const balanced = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'TATAMOTORS', 'SUNPHARMA', 'HINDUNILVR', 'LICI'];
+      cb.checked = balanced.includes(cb.value);
+    }
+  });
+}
+
+function submitChampionshipWizard() {
+  const title = (document.getElementById('wizardEventTitle').value || '').trim();
+  const startingCash = parseFloat(document.getElementById('wizardStartingCash').value) || 500000;
+  const totalDays = parseInt(document.getElementById('wizardTotalDays').value, 10) || 3;
+  const dayDurationSeconds = parseInt(document.getElementById('wizardDayDuration').value, 10) || 1800;
+  const transactionFeeBps = parseInt(document.getElementById('wizardTransactionFee').value, 10) || 0;
+  const circuitBreakerPercent = parseFloat(document.getElementById('wizardCircuitBreaker').value) || 20;
+
+  // Gather Teams
+  const teamRows = document.querySelectorAll('#wizardTeamsTbody tr');
+  const teams = [];
+  teamRows.forEach((tr, idx) => {
+    const name = tr.querySelector('.wizard-team-name').value.trim() || `Team ${idx + 1}`;
+    const username = tr.querySelector('.wizard-team-username').value.trim() || `team${idx + 1}`;
+    const password = tr.querySelector('.wizard-team-password').value.trim() || `trade${idx + 1}00`;
+    const members = tr.querySelector('.wizard-team-members').value.trim() || `Trader ${idx + 1}A, Trader ${idx + 1}B`;
+    teams.push({ name, username, password, members, startingCash });
+  });
+
+  if (teams.length < 2) {
+    alert('At least 2 teams are required to launch a championship.');
+    return;
+  }
+
+  // Gather Selected Tickers
+  const selectedTickers = [];
+  document.querySelectorAll('.wizard-universe-checkbox:checked').forEach((cb) => {
+    selectedTickers.push(cb.value);
+  });
+
+  if (selectedTickers.length < 2) {
+    alert('Please select at least 2 companies for the tradeable market universe.');
+    return;
+  }
+
+  const config = {
+    title,
+    startingCash,
+    totalDays,
+    dayDurationSeconds,
+    transactionFeeBps,
+    circuitBreakerPercent,
+    teams,
+    selectedTickers
+  };
+
+  if (ws && sessionToken && currentRole === 'HOST') {
+    ws.send(JSON.stringify({
+      action: 'HOST_INITIALIZE_NEW_CHAMPIONSHIP',
+      config,
+      session_token: sessionToken
+    }));
+  }
 }
 
 // Initialize connection on load

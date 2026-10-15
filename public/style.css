@@ -876,3 +876,97 @@ h1, h2, h3, .font-serif {
     min-height: 220px;
   }
 }
+
+/* ==========================================================================
+   16. HIGH-IMPACT ALERTS, SUSPENSE STROBES & DANGER ZONE
+   ========================================================================== */
+/* Screen-edge pulsating alert on circuit breaker */
+@keyframes circuitStrobe {
+  0% { box-shadow: inset 0 0 0 0 rgba(198, 75, 75, 0); }
+  50% { box-shadow: inset 0 0 40px 10px rgba(198, 75, 75, 0.45); }
+  100% { box-shadow: inset 0 0 0 0 rgba(198, 75, 75, 0); }
+}
+
+.circuit-strobe-active {
+  animation: circuitStrobe 0.8s ease-in-out infinite;
+}
+
+/* Top Urgency Floating Banner */
+.circuit-alert-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(90deg, #A82020 0%, #C64B4B 50%, #A82020 100%);
+  color: #FFFFFF;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(184, 40, 40, 0.4);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  animation: slideBannerDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideBannerDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+/* Danger Zone Cards */
+.danger-card {
+  background-color: #FFF8F8;
+  border: 1px solid #F1BABA;
+  border-left: 4px solid var(--error-red);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.btn-danger {
+  background-color: var(--error-red);
+  color: #FFFFFF;
+  border: 1px solid #991B1B;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #991B1B;
+  box-shadow: 0 2px 8px rgba(184, 40, 40, 0.3);
+}
+
+.btn-danger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* Wizard Steps & Badges */
+.wizard-step {
+  background-color: var(--card-white);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.wizard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--champagne-accent);
+  color: #FFFFFF;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  margin-right: 8px;
+}
+

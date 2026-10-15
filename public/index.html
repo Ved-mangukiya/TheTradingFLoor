@@ -156,6 +156,20 @@
   <!-- 1.4 Floating Order Toast Notification -->
   <div id="orderToast" class="hidden toast-notice"></div>
 
+  <!-- 1.5 High-Impact Circuit Breaker Alert Banner -->
+  <div id="circuitBreakerAlertBanner" class="hidden circuit-alert-banner">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <span style="font-size: 22px;">⛔</span>
+      <div>
+        <div style="text-transform: uppercase; font-size: 13px; font-weight: 800; letter-spacing: 0.08em;">CIRCUIT BREAKER TRIGGERED</div>
+        <div id="circuitAlertText" style="font-size: 12px; font-weight: 500; opacity: 0.95;">Trading halted due to 20% limit breach.</div>
+      </div>
+    </div>
+    <button onclick="dismissCircuitAlertBanner()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.45); color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
+      DISMISS
+    </button>
+  </div>
+
 
   <!-- ==========================================================================
        VIEW 1: UNIVERSAL AUTHENTICATION TERMINAL (#loginView)
@@ -404,6 +418,9 @@
         </button>
         <button onclick="hostConcludeChampionship()" class="btn btn-champagne">
           🏆 Crown Winners
+        </button>
+        <button onclick="openResetChampionshipModal()" class="btn btn-outline" style="border-color: var(--error-red); color: var(--error-red);" title="Safely reset all championship data and configure a new championship">
+          ⚠️ Reset Game
         </button>
         <button onclick="logoutTerminal()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">
           Exit
@@ -1120,6 +1137,174 @@
 
       <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
         <button onclick="closeRulesHelpModal()" class="btn btn-sage">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal H: Reset Championship Security Confirmation Modal -->
+  <div id="resetChampionshipModal" class="hidden modal-overlay" style="z-index: 130;">
+    <div class="modal-content" style="max-width: 520px; border-top: 4px solid var(--error-red);">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">⚠️</span>
+          <h2 style="font-size: 18px; color: var(--error-red);">Reset Entire Championship</h2>
+        </div>
+        <button onclick="closeResetChampionshipModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div class="danger-card" style="margin-bottom: 16px;">
+        <h4 style="font-size: 13px; font-weight: 800; color: var(--error-red); margin-bottom: 6px;">DANGER: Destructive Action</h4>
+        <p style="font-size: 12px; color: #7F1D1D; line-height: 1.5; margin: 0;">
+          This will immediately terminate the active championship, disconnect all student team terminals, delete all executed trade history, and wipe portfolio balances. All team screens will be locked and redirected to login.
+        </p>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+        To prevent accidental reset, type <strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 13px;">RESET</strong> into the box below to unlock the button:
+      </p>
+
+      <div class="form-group" style="margin-bottom: 20px;">
+        <input id="resetConfirmInput" type="text" placeholder="Type RESET to confirm" class="form-input" style="font-family: var(--font-mono); font-weight: 700; text-transform: uppercase;" oninput="onResetInputChange(this.value)" autocomplete="off" />
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="closeResetChampionshipModal()" class="btn btn-outline">Cancel</button>
+        <button id="btnConfirmResetChampionship" onclick="confirmResetChampionship()" class="btn btn-danger" disabled>
+          Permanently Wipe & Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal I: New Championship Setup Wizard Modal -->
+  <div id="championshipWizardModal" class="hidden modal-overlay" style="z-index: 125; overflow-y: auto;">
+    <div class="modal-content" style="max-width: 920px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">🏛️</span>
+            <div>
+              <h2 style="font-size: 20px; margin: 0;">New Championship Setup Wizard</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Configure tournament parameters, team roster, and share universe in 3 simple steps.</p>
+            </div>
+          </div>
+        </div>
+        <button onclick="closeChampionshipWizardModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 20px;">
+        <!-- STEP 1: Tournament Parameters -->
+        <div class="wizard-step">
+          <div style="display: flex; align-items: center; margin-bottom: 14px;">
+            <span class="wizard-step-num">1</span>
+            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Event Brand & Trading Rules</h3>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="wizardEventTitle">Championship Event Title</label>
+              <input id="wizardEventTitle" type="text" value="The Trading Floor Championship 2026" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="wizardStartingCash">Starting Cash per Team (INR)</label>
+              <input id="wizardStartingCash" type="number" value="500000" step="50000" class="form-input" style="font-family: var(--font-mono);" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="wizardTotalDays">Total Trading Days</label>
+              <select id="wizardTotalDays" class="form-input">
+                <option value="1">1 Day (Sprint Final)</option>
+                <option value="2">2 Days (Qualifier + Final)</option>
+                <option value="3" selected>3 Days (Full Championship)</option>
+                <option value="5">5 Days (Week Tournament)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="wizardDayDuration">Trading Session Duration (per Day)</label>
+              <select id="wizardDayDuration" class="form-input">
+                <option value="300">5 Minutes (Ultra Rapid Dry-Run)</option>
+                <option value="600">10 Minutes (Fast Round)</option>
+                <option value="1200">20 Minutes (Standard College Round)</option>
+                <option value="1800" selected>30 Minutes (Championship Official)</option>
+                <option value="2700">45 Minutes (Extended Market)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="wizardTransactionFee">Transaction Fee (Basis Points)</label>
+              <select id="wizardTransactionFee" class="form-input">
+                <option value="0" selected>0 bps (Zero Commission)</option>
+                <option value="5">5 bps (0.05% Institutional)</option>
+                <option value="10">10 bps (0.10% Standard Brokerage)</option>
+                <option value="20">20 bps (0.20% High Friction)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="wizardCircuitBreaker">Circuit Breaker Limit (%)</label>
+              <select id="wizardCircuitBreaker" class="form-input">
+                <option value="15">15% Limit (Strict Exchange)</option>
+                <option value="20" selected>20% Limit (Official GTU Default)</option>
+                <option value="25">25% Limit (Wide Band)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Team Roster Builder -->
+        <div class="wizard-step">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center;">
+              <span class="wizard-step-num">2</span>
+              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Participating Teams & Passwords</h3>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Quick Count:</span>
+              <button type="button" onclick="setWizardTeamCount(4)" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">4 Teams</button>
+              <button type="button" onclick="setWizardTeamCount(8)" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">8 Teams</button>
+              <button type="button" onclick="setWizardTeamCount(12)" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">12 Teams</button>
+              <button type="button" onclick="setWizardTeamCount(16)" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">16 Teams</button>
+              <button type="button" onclick="addWizardTeamRow()" class="btn btn-sage" style="padding: 3px 8px; font-size: 11px;">+ Add Team</button>
+            </div>
+          </div>
+          <div style="overflow-x: auto; max-height: 260px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
+                  <th style="padding: 6px;">ID</th>
+                  <th style="padding: 6px;">Team Display Name</th>
+                  <th style="padding: 6px;">Username</th>
+                  <th style="padding: 6px;">Password / PIN</th>
+                  <th style="padding: 6px;">Student Members</th>
+                  <th style="padding: 6px; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="wizardTeamsTbody" style="font-family: var(--font-mono);"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STEP 3: Share Universe Selection -->
+        <div class="wizard-step">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center;">
+              <span class="wizard-step-num">3</span>
+              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Tradeable Share Universe</h3>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button type="button" onclick="toggleAllWizardUniverse(true)" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">Select All</button>
+              <button type="button" onclick="selectWizardUniversePreset('balanced')" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">Balanced Mix</button>
+              <button type="button" onclick="selectWizardUniversePreset('top6')" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;">Top 6 Only</button>
+            </div>
+          </div>
+          <div id="wizardUniverseContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Wizard Modal Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--subtle-border); margin-top: 14px;">
+        <button type="button" onclick="closeChampionshipWizardModal()" class="btn btn-outline">Close Wizard</button>
+        <button type="button" onclick="submitChampionshipWizard()" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px;">
+          🚀 Initialize & Launch New Championship
+        </button>
       </div>
     </div>
   </div>

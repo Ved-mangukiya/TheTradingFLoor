@@ -168,6 +168,7 @@ function setupDefaultTeams(count = 12, startingCash = 500000) {
 
 // Persist customized active universe
 const ACTIVE_UNIVERSE_FILE = path.join(DATA_DIR, 'universe_active.json');
+const LIVE_STATE_FILE = path.join(DATA_DIR, 'live_game_state.json');
 
 function saveUniverseToDisk() {
   try {
@@ -189,6 +190,92 @@ function saveUniverseToDisk() {
     console.error('[UNIVERSE SAVE ERROR]', err.message);
   }
 }
+
+function saveLiveGameState() {
+  if (activeScenarioMode === 'test') return;
+  try {
+    const traderUsers = {};
+    Object.keys(USERS).forEach((k) => {
+      if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
+    });
+
+    const stateToSave = {
+      savedAt: new Date().toISOString(),
+      activeScenarioMode,
+      gameState,
+      companies,
+      teams,
+      executedTrades,
+      tradeSeqCounter,
+      newsEvents,
+      traderUsers
+    };
+    fs.writeFileSync(LIVE_STATE_FILE, JSON.stringify(stateToSave, null, 2));
+  } catch (err) {
+    console.error('[LIVE STATE SAVE ERROR]', err.message);
+  }
+}
+
+function restoreLiveGameState() {
+  if (!fs.existsSync(LIVE_STATE_FILE)) return false;
+  try {
+    const raw = fs.readFileSync(LIVE_STATE_FILE, 'utf-8');
+    const data = JSON.parse(raw);
+    if (!data || !data.gameState || !Array.isArray(data.companies) || !data.teams) {
+      return false;
+    }
+
+    activeScenarioMode = data.activeScenarioMode || 'live';
+    gameState = data.gameState;
+    // ALWAYS pause on crash recovery so the market waits for Host to resume
+    gameState.isPaused = true;
+    gameState.pauseStartedAt = Date.now();
+
+    companies = data.companies;
+    teams = data.teams;
+    if (Array.isArray(data.executedTrades)) {
+      executedTrades.length = 0;
+      data.executedTrades.forEach((t) => executedTrades.push(t));
+      tradeSeqCounter = data.tradeSeqCounter || executedTrades.length;
+    }
+    if (Array.isArray(data.newsEvents)) {
+      newsEvents = data.newsEvents;
+    }
+    if (data.traderUsers && typeof data.traderUsers === 'object') {
+      Object.keys(USERS).forEach((k) => {
+        if (USERS[k].role === 'TRADER') delete USERS[k];
+      });
+      Object.assign(USERS, data.traderUsers);
+    }
+
+    console.log('----------------------------------------------------------------');
+    console.log(' ⚡ [CRASH RECOVERY] Previous live session detected and restored cleanly!');
+    console.log(` • Title:           ${gameState.title}`);
+    console.log(` • Day & Second:    Day ${gameState.currentDay} / ${gameState.totalDays} (${gameState.elapsedSeconds}s elapsed)`);
+    console.log(` • Teams Loaded:    ${Object.keys(teams).length}`);
+    console.log(` • Trades Restored: ${executedTrades.length}`);
+    console.log(' • Market Status:   PAUSED (Host must press Resume to continue)');
+    console.log('----------------------------------------------------------------');
+
+    restartEngineInterval();
+    recordAuditEvent('CRASH_RECOVERY_RESTORED', {
+      day: gameState.currentDay,
+      elapsedSeconds: gameState.elapsedSeconds,
+      tradesCount: executedTrades.length
+    });
+    return true;
+  } catch (e) {
+    console.error('[CRASH RECOVERY RESTORE ERROR]', e.message);
+    return false;
+  }
+}
+
+// Auto-save live state every 4 seconds
+setInterval(() => {
+  if (activeScenarioMode !== 'test') {
+    saveLiveGameState();
+  }
+}, 4000);
 
 function loadScenario(mode = 'live', forceBaseline = false) {
   activeScenarioMode = mode === 'test' ? 'test' : 'live';
@@ -1331,6 +1418,166 @@ wss.on('connection', (ws) => {
         broadcastAll({ type: 'PODIUM_DISMISSED' });
         broadcastTick();
       }
+
+      // 5.21 Host Reset Entire Championship (Dangerous & Secure)
+      if (data.action === 'HOST_RESET_ENTIRE_CHAMPIONSHIP') {
+        // High-friction verification phrase check
+        if ((data.confirmation || '').trim().toUpperCase() !== 'RESET') {
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Confirmation phrase "RESET" required.' }));
+          return;
+        }
+
+        // 1. Delete persistent live game state so a reboot won't resurrect old game
+        if (fs.existsSync(LIVE_STATE_FILE)) {
+          try { fs.unlinkSync(LIVE_STATE_FILE); } catch (e) {}
+        }
+
+        // 2. Broadcast reset to all connected clients
+        broadcastAll({
+          type: 'CHAMPIONSHIP_RESET',
+          message: 'The championship has been reset by the Host. All terminals are returning to the login screen.'
+        });
+
+        // 3. Clear all non-host sessions
+        sessions.forEach((sess, tok) => {
+          if (sess.role !== 'HOST') sessions.delete(tok);
+        });
+
+        // 4. Pause and clear in-memory state
+        gameState.isPaused = true;
+        gameState.elapsedSeconds = 0;
+        gameState.currentDay = 1;
+        gameState.isConcluded = false;
+        gameState.winnerData = null;
+        gameState.activeNewsFlash = null;
+        gameState.newsHistory = [];
+        executedTrades.length = 0;
+        tradeSeqCounter = 0;
+
+        recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST' });
+
+        // 5. Confirm to Host and launch Setup Wizard
+        ws.send(JSON.stringify({
+          type: 'CHAMPIONSHIP_RESET_ACK',
+          message: 'Championship reset successfully. Launching Setup Wizard.'
+        }));
+        broadcastTick();
+      }
+
+      // 5.22 Host Initialize & Launch New Championship from Setup Wizard
+      if (data.action === 'HOST_INITIALIZE_NEW_CHAMPIONSHIP') {
+        const config = data.config || {};
+        const title = (config.title || 'The Trading Floor Championship 2026').trim();
+        const totalDays = Math.max(1, Math.min(10, parseInt(config.totalDays, 10) || 3));
+        const dayDurationSeconds = Math.max(60, Math.min(7200, parseInt(config.dayDurationSeconds, 10) || 1800));
+        const startingCash = Math.max(1000, parseFloat(config.startingCash) || 500000);
+        const transactionFeeBps = Math.max(0, Math.min(200, parseInt(config.transactionFeeBps, 10) || 0));
+        const circuitBreakerPercent = Math.max(5, Math.min(50, parseFloat(config.circuitBreakerPercent) || 20));
+
+        // 1. Configure Game State
+        gameState.title = title;
+        gameState.totalDays = totalDays;
+        gameState.dayDurationSeconds = dayDurationSeconds;
+        gameState.startingCash = startingCash;
+        gameState.transactionFeeBps = transactionFeeBps;
+        gameState.circuitBreakerPercent = circuitBreakerPercent;
+        gameState.currentDay = 1;
+        gameState.elapsedSeconds = 0;
+        gameState.isPaused = true;
+        gameState.pauseStartedAt = Date.now();
+        gameState.totalShiftOffsetSeconds = 0;
+        gameState.isConcluded = false;
+        gameState.winnerData = null;
+        gameState.activeNewsFlash = null;
+        gameState.newsHistory = [];
+
+        // 2. Clear Executed Trades & Audit
+        executedTrades.length = 0;
+        tradeSeqCounter = 0;
+
+        // 3. Reset Company Universe
+        const selectedTickers = Array.isArray(config.selectedTickers) && config.selectedTickers.length > 0
+          ? config.selectedTickers.map((t) => t.toUpperCase())
+          : null;
+
+        companies.forEach((c) => {
+          if (selectedTickers) {
+            c.isEnabled = selectedTickers.includes(c.ticker);
+          }
+          c.currentPrice = c.base_price;
+          c.dayOpenPrice = c.base_price;
+          c.previousClosePrice = c.base_price;
+          c.dayHigh = c.base_price;
+          c.dayLow = c.base_price;
+          c.isHalted = false;
+          c.haltDirection = null;
+          c.activeTransition = null;
+          c.history = [{ time: 0, price: c.base_price }];
+        });
+
+        // 4. Configure Teams & Passwords
+        if (Array.isArray(config.teams) && config.teams.length > 0) {
+          Object.keys(USERS).forEach((key) => {
+            if (USERS[key].role === 'TRADER') delete USERS[key];
+          });
+
+          const newTeams = {};
+          config.teams.forEach((t, idx) => {
+            const teamNum = idx + 1;
+            const teamId = `team_${teamNum}`;
+            const username = (t.username || `team${teamNum}`).toLowerCase().trim();
+            const password = t.password || `trade${teamNum}00`;
+            const name = (t.name || `Team ${teamNum}`).trim();
+            const members = (t.members || `Trader ${teamNum}A, Trader ${teamNum}B`).trim();
+            const teamCash = (t.startingCash && !isNaN(t.startingCash)) ? parseFloat(t.startingCash) : startingCash;
+
+            USERS[username] = { username, password, role: 'TRADER', id: teamId, name, members };
+
+            const holdings = {};
+            const avgBuyPrice = {};
+            companies.forEach((c) => {
+              holdings[c.ticker] = 0;
+              avgBuyPrice[c.ticker] = 0;
+            });
+
+            newTeams[teamId] = {
+              id: teamId,
+              username,
+              name,
+              members,
+              cash: teamCash,
+              startingCash: teamCash,
+              holdings,
+              avgBuyPrice,
+              realizedPnl: 0,
+              tradeCount: 0
+            };
+          });
+          teams = newTeams;
+        } else {
+          setupDefaultTeams(12, startingCash);
+        }
+
+        // 5. Reset news events triggered status
+        newsEvents.forEach((ev) => { ev.triggered = false; });
+
+        // 6. Persist to disk
+        saveUniverseToDisk();
+        saveLiveGameState();
+
+        recordAuditEvent('NEW_CHAMPIONSHIP_INITIALIZED', {
+          title,
+          teamsCount: Object.keys(teams).length,
+          activeSharesCount: companies.filter((c) => c.isEnabled).length
+        });
+
+        ws.send(JSON.stringify({
+          type: 'CHAMPIONSHIP_INITIALIZED_SUCCESS',
+          title: gameState.title,
+          message: 'New championship configured and ready for live trading.'
+        }));
+        broadcastTick();
+      }
     }
   });
 });
@@ -1539,7 +1786,11 @@ const initialScenario = cliMode === 'test'
   ? 'test'
   : (fs.existsSync(path.join(DATA_DIR, 'scenario_live.json')) ? 'live' : 'test');
 
-loadScenario(initialScenario);
+if (cliMode !== 'test' && restoreLiveGameState()) {
+  // Restored from crash recovery cleanly
+} else {
+  loadScenario(initialScenario);
+}
 
 // Detect LAN IP for projector and student laptops/phones
 server.listen(PORT, '0.0.0.0', () => {

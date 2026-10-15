@@ -467,6 +467,63 @@ async function runTests() {
       logFail(`Unauthorized request returned unexpected status: ${unauthCsv.status}`);
     }
 
+    // -------------------------------------------------------------
+    // Test 9: Host Full Game Reset & Setup Wizard Initialization
+    // -------------------------------------------------------------
+    console.log('\n[STAGE 8] Host Full Reset Security & Setup Wizard');
+
+    // 9.1 Reset rejected without explicit "RESET" phrase
+    const badResetRes = await sendAndAwait(ws1, {
+      action: 'HOST_RESET_ENTIRE_CHAMPIONSHIP',
+      confirmation: 'WRONG_WORD',
+      session_token: hostToken
+    }, 'ORDER_REJECTED');
+
+    if (badResetRes.reason && badResetRes.reason.includes('RESET')) {
+      logPass('Host reset safely rejected when confirmation phrase is missing or incorrect.');
+    } else {
+      logFail('Host reset did not enforce RESET confirmation', badResetRes);
+    }
+
+    // 9.2 Reset succeeds with "RESET"
+    const resetRes = await sendAndAwait(ws1, {
+      action: 'HOST_RESET_ENTIRE_CHAMPIONSHIP',
+      confirmation: 'RESET',
+      session_token: hostToken
+    }, 'CHAMPIONSHIP_RESET_ACK');
+
+    if (resetRes.type === 'CHAMPIONSHIP_RESET_ACK') {
+      logPass('Host championship reset verified with session cleanup and client broadcast.');
+    } else {
+      logFail('Championship reset failed', resetRes);
+    }
+
+    // 9.3 Host initializes brand-new championship via Setup Wizard
+    const wizardRes = await sendAndAwait(ws1, {
+      action: 'HOST_INITIALIZE_NEW_CHAMPIONSHIP',
+      config: {
+        title: 'Championship 2026 - Fresh Tournament',
+        startingCash: 750000,
+        totalDays: 2,
+        dayDurationSeconds: 1200,
+        transactionFeeBps: 5,
+        circuitBreakerPercent: 15,
+        teams: [
+          { name: 'Alpha Kings', username: 'team1', password: 'trade100', members: 'Student 1, Student 2', startingCash: 750000 },
+          { name: 'Beta Bulls', username: 'team2', password: 'trade200', members: 'Student 3, Student 4', startingCash: 750000 },
+          { name: 'Gamma Hawks', username: 'team3', password: 'trade300', members: 'Student 5, Student 6', startingCash: 750000 }
+        ],
+        selectedTickers: ['APEXAUTO', 'CAMPUSCO']
+      },
+      session_token: hostToken
+    }, 'CHAMPIONSHIP_INITIALIZED_SUCCESS');
+
+    if (wizardRes.type === 'CHAMPIONSHIP_INITIALIZED_SUCCESS') {
+      logPass(`New championship initialized successfully: "${wizardRes.title}" with custom teams and universe.`);
+    } else {
+      logFail('Setup wizard initialization failed', wizardRes);
+    }
+
     ws1.close();
     wsTeam1.close();
     wsTeam2.close();

@@ -88,3 +88,31 @@ graph TD
    - `Standings CSV` (Official team marksheet and ranking).
    - `Trades Log CSV` (Timestamped ledger of every transaction).
    - `Audit Log JSON` (Complete institutional audit trail).
+
+---
+
+## 5. Host Reset, Setup Wizard & Crash Recovery Flows
+
+### 5.1 Safe Championship Reset Journey
+1. **Initiation**: Host clicks **⚠️ Reset Game** on the top command ribbon.
+2. **Security Confirmation**:
+   - The **Reset Entire Championship** modal appears with a danger warning.
+   - The **Permanently Wipe & Reset** button is strictly locked until the Host types `"RESET"`.
+3. **Execution**:
+   - Once `"RESET"` is typed and confirmed, the server deletes `live_game_state.json`.
+   - The server broadcasts `CHAMPIONSHIP_RESET` to all connected screens. All student desks and projectors are immediately logged out and returned to the authentication terminal.
+   - The Host Control Panel launches the **New Championship Setup Wizard**.
+
+### 5.2 3-Step Setup Wizard Journey
+1. **Step 1: Event Brand & Rules**: Configure Championship Title, Starting Cash per Team, Trading Days, Session Duration, Brokerage Fees (bps), and Circuit Breaker Limits.
+2. **Step 2: Team Roster Builder**: Click quick count presets (4, 8, 12, 16, or 24 teams) or dynamically add rows to configure Team Names, Usernames, Passwords/PINs, and Student Members.
+3. **Step 3: Share Universe Selection**: Check/uncheck companies or click presets (Balanced Mix, Top 6 Only, All 12).
+4. **Launch**: Click **🚀 Initialize & Launch New Championship**. The exchange engine resets prices to baseline, configures team registries, saves state to disk, and places the market in a clean paused state ready for Host Resume.
+
+### 5.3 Crash Recovery & Mid-Game Resumption Flow
+1. **Periodic Auto-Save**: In active live mode, the server automatically flushes the entire state to `data/live_game_state.json` every 4 seconds and immediately after every trade, news shock, or circuit halt.
+2. **Crash Resumption**: If the server process or computer abruptly restarts mid-event:
+   - Upon launching `node server.js live`, the engine detects `live_game_state.json`.
+   - All portfolios, current prices, price histories, and trade logs are restored 100% intact.
+   - The market is automatically locked in `isPaused = true`.
+   - The Host simply re-opens the Host Panel and clicks **▶ Resume (3-2-1)** to continue the tournament seamlessly without lost data.

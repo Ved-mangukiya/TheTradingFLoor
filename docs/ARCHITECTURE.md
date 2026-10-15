@@ -51,16 +51,23 @@ All real-time interaction occurs over a persistent WebSocket connection:
   - `PROJECTOR`: Receives public enabled stocks, top 5 leaderboard rankings, and active news flashes.
   - `HOST`: Receives full administrative state including `allCompaniesUniverse` (both enabled and disabled shares), all teams' raw balances, all executed trades, and audit counters.
 
-### 2.3 Offline Institutional Audio Engine
+### 2.3 Offline Institutional Audio Engine (High-Suspense Synthesis)
 To operate without internet and without external audio assets:
 - Implemented in `public/app.js` using the standard browser **Web Audio API** (`AudioContext`).
-- Generates 4 distinct synthetic cues entirely in code:
+- Generates 6 distinct synthetic cues entirely in code to build intense auditorium pressure:
   1. `bell_open` / `bell_close`: Multi-harmonic chime (C5-E5-G5-C6) with exponential decay.
-  2. `news_siren`: Two-tone frequency modulated sawtooth siren (440Hz -> 880Hz).
-  3. `circuit_alarm`: Rapid 4-burst square wave alarm (620Hz).
-  4. `championship_fanfare`: Grand victory fanfare (G4-C5-E5-G5-C6) for the winner podium.
+  2. `heavy_news_boom`: Cinematic 90Hz->32Hz sub-bass rumble combined with a high-tension triple sonar alert (520Hz->980Hz).
+  3. `emergency_klaxon`: Oscillating 6-burst alternating dual-pitch square-wave alarm (820Hz / 600Hz) triggered during circuit breaker limit halts.
+  4. `order_fill`: Mechanical double-register cash execution click (1480Hz & 1960Hz) on filled orders.
+  5. `countdown_tick`: High-pressure woodblock tick (920Hz) driving the 3-2-1 resume overlay and final seconds of each day.
+  6. `championship_fanfare`: Grand victory fanfare (G4-C5-E5-G5-C6) for the winner podium.
 
-### 2.4 Data Persistence & Crash Recovery
+### 2.4 Data Persistence, Crash Recovery & Host Tournament Reset
+- **Live Crash Recovery Auto-Save**: In active live mode, the engine automatically serializes the full in-memory state (`gameState`, `companies`, `teams`, `executedTrades`, `tradeSeqCounter`, `newsEvents`, `USERS`) to `data/live_game_state.json` every 4 seconds and immediately upon critical events (trades, news, circuit breaker, day transition).
+  - **Reboot Resumption**: If the server crashes or restarts, it detects `live_game_state.json`, restores portfolios, prices, and trade logs, and automatically sets `gameState.isPaused = true`. The Host simply opens the Host Panel and presses "▶ Resume".
+- **Safe Championship Reset & Setup Wizard**:
+  - `HOST_RESET_ENTIRE_CHAMPIONSHIP`: Enforces high-friction typing security (`"RESET"` required). Destroys `live_game_state.json`, disconnects all student sessions, broadcasts `CHAMPIONSHIP_RESET`, and launches the Host Setup Wizard.
+  - `HOST_INITIALIZE_NEW_CHAMPIONSHIP`: Configures tournament parameters (title, starting cash, days, session duration, transaction fees, circuit breaker band), custom team roster (names, usernames, passwords, student members), and tradeable share universe.
 - **Active Share Universe**: Stored in `data/universe_active.json`. Created or modified whenever the host adds, edits, toggles, duplicates, or randomizes shares.
 - **Audit Ledger**: Stored in `logs/AUDIT_LOG_<timestamp>.json`. Written periodically and on every trade/pause/halt event using non-blocking asynchronous disk writes.
 - **Full State Backup & Restore API**:
