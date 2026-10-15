@@ -970,3 +970,246 @@ h1, h2, h3, .font-serif {
   margin-right: 8px;
 }
 
+/* ==========================================================================
+   17. SCREEN IDENTIFICATION, DUAL PAUSE MODES, DAY TRANSITIONS & STUDENT HERO
+   ========================================================================== */
+
+/* 17.1 Bold Centered Screen Identification Pill */
+.screen-id-pill {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 95;
+  padding: 4px 18px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(26, 48, 38, 0.14);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  animation: pillFadeIn 0.3s ease;
+}
+
+@keyframes pillFadeIn {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.screen-id-host {
+  background: linear-gradient(135deg, #1A3026 0%, #264A3B 100%);
+  color: #F7E7CE;
+  border: 1px solid #8E6D3B;
+}
+
+.screen-id-projector {
+  background: linear-gradient(135deg, #8E6D3B 0%, #B88E4B 100%);
+  color: #FFFFFF;
+  border: 1px solid #F4EFE6;
+}
+
+.screen-id-trader {
+  background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+  color: #FFFFFF;
+  border: 1px solid #93C5FD;
+}
+
+.screen-id-login {
+  background: #FFFFFF;
+  color: #1A3026;
+  border: 1px solid var(--subtle-border);
+}
+
+/* 17.2 Full Screen Blackout Blind Overlay (Screen Hidden Mode) */
+.blackout-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: #0A120E;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  text-align: center;
+  padding: 24px;
+}
+
+.blackout-card {
+  max-width: 580px;
+  background: rgba(26, 48, 38, 0.7);
+  border: 1px solid rgba(142, 109, 59, 0.4);
+  border-radius: 20px;
+  padding: 44px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  animation: pulseGently 3s ease-in-out infinite;
+}
+
+@keyframes pulseGently {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* 17.3 Normal Soft Pause Overlay (Trading Frozen Banner) */
+.soft-pause-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(26, 48, 38, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 9980;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.soft-pause-card {
+  max-width: 540px;
+  background: #FFFFFF;
+  border: 2px solid var(--warning-amber);
+  border-radius: 16px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(200, 122, 24, 0.25);
+}
+
+/* 17.4 Cinematic Day Transition Overlay */
+.day-transition-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1A3026 0%, #2A1F0C 100%);
+  z-index: 9995;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  padding: 24px;
+}
+
+.day-transition-card {
+  text-align: center;
+  max-width: 620px;
+  animation: transitionZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes transitionZoom {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 17.5 Student 4-Card Hero Summary Grid */
+.trader-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+  .trader-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .trader-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hero-metric-card {
+  background: #FFFFFF;
+  border: 1px solid var(--subtle-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 10px rgba(26, 48, 38, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hero-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 48, 38, 0.08);
+}
+
+.hero-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.hero-icon-blue   { background-color: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE; }
+.hero-icon-gold   { background-color: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; }
+.hero-icon-green  { background-color: #DCFCE7; color: #16A34A; border: 1px solid #BBF7D0; }
+.hero-icon-red    { background-color: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
+
+/* 17.6 High-Vibrancy 3-Color Tokens */
+.val-profit  { color: #16A34A !important; font-weight: 800; }
+.val-loss    { color: #DC2626 !important; font-weight: 800; }
+.val-neutral { color: #2563EB !important; font-weight: 800; }
+
+.badge-news-good {
+  background-color: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.badge-news-bad {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.badge-news-neutral {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #93C5FD;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+/* 17.7 Launcher & Credentials Table in Host Panel */
+.launcher-link-card {
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-forest);
+  transition: all 0.15s ease;
+}
+
+.launcher-link-card:hover {
+  background-color: #FFFFFF;
+  border-color: var(--champagne-accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+

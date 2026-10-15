@@ -51,3 +51,29 @@
 - [x] `CONTRIBUTING.md` & `CHANGELOG.md`
 - [x] `.env.example` & `.gitignore`
 - [x] `docs/` (17 comprehensive specification documents)
+
+### 1.5 Student Experience, Color Theory & Master Host Launcher
+- [x] **Bold Centered Screen Identification Floating Pills**: Visible from 20+ feet away across all screens (`👑 HOST MASTER CONTROL PANEL`, `🖥️ AUDITORIUM PROJECTOR • LIVE BOARD`, `💼 TRADING DESK • TEAM X`, `🔑 TERMINAL AUTHENTICATION • ALL DESKS`).
+- [x] **Dual Pause Architecture**:
+  - `Normal Soft Pause` (`pauseMode: 'VISIBLE_FROZEN'`): Prices & portfolios remain visible, buy/sell orders blocked, `#softPauseOverlay` displayed.
+  - `Blackout Blind Pause` (`pauseMode: 'BLACKOUT'`): Stage-focus dark overlay (`#blackoutOverlay`) blinds all student desks and auditorium projector so students cannot peek, while Host panel remains fully functional with status badge.
+- [x] **4-Card Beginner-Friendly Hero Summary Ribbon**:
+  - Plain English terminology designed for first-year college students with zero finance experience.
+  - Clean inline SVG icons: Wallet (Cash in Hand), Trend Line (Money in Shares), Gem (Total Team Worth), Gauge (Today's Profit / Loss).
+  - High-vibrancy 3-Color Theory: Emerald Green (`#16A34A` / `.val-profit`) for Profit/Gain, Ruby Red (`#DC2626` / `.val-loss`) for Loss/Drawdown, Royal Blue (`#2563EB` / `.val-neutral`) for Neutral/Cash/Break-Even.
+- [x] **4-Second Cinematic Day Transition Overlay**:
+  - `#dayTransitionOverlay` with closing bell audio, zoom animation, and sunrise into next day upon host "Next Day" signal.
+- [x] **Traffic-Light Breaking News Badges**:
+  - Immediate beginner interpretation: `🟢 GOOD NEWS (PRICE UP)` vs `🔴 BAD NEWS (PRICE DOWN)` vs `🔵 NEUTRAL UPDATE`.
+- [x] **Host Terminal Launcher & Team Credentials Tab**:
+  - Dedicated tab in Host view (`hostTabContentLauncher`).
+  - 1-Click direct launch cards for Host, Projector, and Login screens with direct URL copy buttons.
+  - Full credentials table for all 16 desks (Desk #, Team Name, Members, Username, Password, Launch Desk, Copy Link).
+  - "Copy All Credentials to Clipboard" button for instant coordinator distribution.
+
+---
+
+## 2. Verification & Automated Test Status
+- **Test Suite**: `test_master_suite.js` (29 automated stages, 100% passing)
+- **Visual Browser Verification**: `ui_upgrade_verification_1792064892981.webp`
+- **Offline Invariant**: 100% verified — zero external CDN dependencies, self-contained Web Audio API synthesizer, inline SVG icons.

@@ -402,6 +402,26 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     });
   }
 
+  let sentiment = 'NEUTRAL';
+  let trafficLightBadge = 'ℹ️ GENERAL MARKET UPDATE';
+  if (impacts.GLOBAL_WEIGHTED) {
+    const pct = impacts.GLOBAL_WEIGHTED.base_pct;
+    sentiment = pct > 0 ? 'BULLISH' : (pct < 0 ? 'BEARISH' : 'NEUTRAL');
+    trafficLightBadge = pct > 0
+      ? `🟢 GOOD FOR ALL STOCKS (+${pct}% expected rise)`
+      : `🔴 BAD FOR ALL STOCKS (${pct}% expected drop)`;
+  } else {
+    const tickers = Object.keys(impacts);
+    if (tickers.length > 0) {
+      const first = tickers[0];
+      const d = impacts[first].delta_pct;
+      sentiment = d > 0 ? 'BULLISH' : (d < 0 ? 'BEARISH' : 'NEUTRAL');
+      trafficLightBadge = d > 0
+        ? `🟢 GOOD NEWS FOR ${first} (+${d}% price boost)`
+        : `🔴 BAD NEWS FOR ${first} (${d}% price drop)`;
+    }
+  }
+
   const newsRecord = {
     event_id: eventObj.event_id,
     day: gameState.currentDay,
@@ -409,6 +429,8 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     type: eventObj.type,
     headline: eventObj.headline,
     simple_explanation: eventObj.simple_explanation,
+    sentiment,
+    trafficLightBadge,
     impacts: eventObj.impacts,
     timestamp: new Date().toLocaleTimeString()
   };
@@ -995,15 +1017,15 @@ wss.on('connection', (ws) => {
 
     // --- 5. HOST MATRIX & ADVANCED SHARE MANAGEMENT ---
     if (session.role === 'HOST') {
-      // 5.1 Market Pause
+      // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
-        if (!gameState.isPaused) {
-          gameState.isPaused = true;
-          gameState.pauseStartedAt = Date.now();
-          recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
-          broadcastAll({ type: 'MARKET_PAUSED' });
-          broadcastTick();
-        }
+        const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
+        gameState.isPaused = true;
+        gameState.pauseMode = mode;
+        gameState.pauseStartedAt = Date.now();
+        recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', pauseMode: mode, shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
+        broadcastAll({ type: 'MARKET_PAUSED', pauseMode: mode });
+        broadcastTick();
       }
 
       // 5.2 Market Resume with 3-2-1
@@ -1018,6 +1040,7 @@ wss.on('connection', (ws) => {
 
           setTimeout(() => {
             gameState.isPaused = false;
+            gameState.pauseMode = 'NONE';
             gameState.pauseStartedAt = null;
             recordAuditEvent('MARKET_RESUMED', {
               triggered_by: 'HOST',
@@ -1027,6 +1050,7 @@ wss.on('connection', (ws) => {
             if (gameState.elapsedSeconds === 0) {
               broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
             }
+            broadcastAll({ type: 'MARKET_RESUMED' });
             broadcastTick();
           }, 3000);
         }
@@ -1035,9 +1059,11 @@ wss.on('connection', (ws) => {
       // 5.3 Next Day
       if (data.action === 'HOST_NEXT_DAY') {
         if (gameState.currentDay < gameState.totalDays) {
+          const oldDay = gameState.currentDay;
           gameState.currentDay++;
           gameState.elapsedSeconds = 0;
           gameState.isPaused = true;
+          gameState.pauseMode = 'VISIBLE_FROZEN';
           gameState.pauseStartedAt = Date.now();
 
           companies.forEach((stock) => {
@@ -1052,6 +1078,12 @@ wss.on('connection', (ws) => {
           });
 
           recordAuditEvent('ADVANCE_DAY', { new_day: gameState.currentDay });
+          broadcastAll({
+            type: 'DAY_TRANSITION',
+            oldDay,
+            newDay: gameState.currentDay,
+            totalDays: gameState.totalDays
+          });
           broadcastTick();
         }
       }

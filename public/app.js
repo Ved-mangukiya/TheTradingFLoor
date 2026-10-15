@@ -242,6 +242,52 @@ function connectWebSocket() {
       return;
     }
 
+    if (msg.type === 'MARKET_PAUSED') {
+      playInstitutionalSound('emergency_klaxon');
+      const pauseMode = msg.pauseMode || 'VISIBLE_FROZEN';
+      const softOverlay = document.getElementById('softPauseOverlay');
+      const blackoutOverlay = document.getElementById('blackoutOverlay');
+      if (currentRole !== 'HOST') {
+        if (pauseMode === 'BLACKOUT') {
+          if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
+          if (softOverlay) softOverlay.classList.add('hidden');
+        } else {
+          if (softOverlay) softOverlay.classList.remove('hidden');
+          if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+        }
+      }
+      showOrderToast(pauseMode === 'BLACKOUT' ? '🕶️ BLACKOUT PAUSE: Host has paused trading and blinded screens.' : '⏸️ MARKET PAUSED: Orders temporarily frozen.', false);
+      return;
+    }
+
+    if (msg.type === 'MARKET_RESUMED') {
+      const softOverlay = document.getElementById('softPauseOverlay');
+      const blackoutOverlay = document.getElementById('blackoutOverlay');
+      if (softOverlay) softOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      playInstitutionalSound('bell_open');
+      showOrderToast('▶️ MARKET RESUMED: Trading floor is live!', true);
+      return;
+    }
+
+    if (msg.type === 'DAY_TRANSITION') {
+      playInstitutionalSound('bell_close');
+      const dtOverlay = document.getElementById('dayTransitionOverlay');
+      if (dtOverlay) {
+        const titleEl = document.getElementById('dayTransitionTitle');
+        const subEl = document.getElementById('dayTransitionSubtitle');
+        if (titleEl) titleEl.textContent = `Day ${msg.oldDay} Concluded`;
+        if (subEl) subEl.textContent = `Day ${msg.oldDay} books settled. Opening Day ${msg.newDay} Trading Bells...`;
+        dtOverlay.classList.remove('hidden');
+        setTimeout(() => {
+          dtOverlay.classList.add('hidden');
+          playInstitutionalSound('bell_open');
+          showOrderToast(`🌅 Day ${msg.newDay} has officially opened!`, true);
+        }, 4000);
+      }
+      return;
+    }
+
     if (msg.type === 'CHAMPIONSHIP_RESET') {
       playInstitutionalSound('emergency_klaxon');
       if (currentRole !== 'HOST') {
@@ -381,6 +427,28 @@ function handleStateUpdate(state) {
     if (projTitleEl) projTitleEl.textContent = state.gameState.title;
   }
 
+  // Handle Dual Pause Overlays
+  const softOverlay = document.getElementById('softPauseOverlay');
+  const blackoutOverlay = document.getElementById('blackoutOverlay');
+  if (state.gameState && state.gameState.isPaused && !state.gameState.isConcluded) {
+    if (currentRole !== 'HOST') {
+      const mode = state.gameState.pauseMode || 'VISIBLE_FROZEN';
+      if (mode === 'BLACKOUT') {
+        if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
+        if (softOverlay) softOverlay.classList.add('hidden');
+      } else {
+        if (softOverlay) softOverlay.classList.remove('hidden');
+        if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      }
+    } else {
+      if (softOverlay) softOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+    }
+  } else {
+    if (softOverlay) softOverlay.classList.add('hidden');
+    if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+  }
+
   // Check if championship concluded and show podium
   if (state.gameState && state.gameState.isConcluded && state.gameState.winnerData) {
     showWinnerPodium(state.gameState.winnerData, state.gameState.title);
@@ -448,6 +516,12 @@ function renderTraderView(state) {
       membersDisplay.textContent = portfolio.members ? `Members: ${portfolio.members}` : '';
     }
 
+    const deskPill = document.getElementById('traderDeskPill');
+    if (deskPill) {
+      deskPill.textContent = `💼 TRADING DESK • ${portfolio.name.toUpperCase()}`;
+    }
+
+    // Top ribbon values
     document.getElementById('traderCash').textContent = formatINR(portfolio.cash);
     document.getElementById('traderEquity').textContent = formatINR(portfolio.holdingsValue);
     document.getElementById('traderNetWorth').textContent = formatINR(portfolio.netWorth);
@@ -456,6 +530,49 @@ function renderTraderView(state) {
     const isUp = portfolio.pnlPct >= 0;
     retEl.textContent = `${isUp ? '+' : ''}${portfolio.pnlPct.toFixed(2)}%`;
     retEl.className = `metric-value ${isUp ? 'price-up' : 'price-down'}`;
+
+    // 4-Card Beginner-Friendly Hero Summary Cards
+    const heroCash = document.getElementById('heroCashInHand');
+    if (heroCash) heroCash.textContent = formatINR(portfolio.cash);
+
+    const heroShares = document.getElementById('heroMoneyInvested');
+    if (heroShares) heroShares.textContent = formatINR(portfolio.holdingsValue);
+
+    const heroWorth = document.getElementById('heroTotalTeamWorth');
+    if (heroWorth) heroWorth.textContent = formatINR(portfolio.netWorth);
+
+    const heroPill = document.getElementById('heroPerformancePill');
+    const heroSub = document.getElementById('heroPerformanceSubtext');
+    const heroIconBox = document.getElementById('heroProfitLossIconBox');
+    const heroCard = document.getElementById('heroProfitLossCard');
+
+    const startCash = gameState.startingCash || 500000;
+    const totalPnL = portfolio.netWorth - startCash;
+    const isZero = Math.abs(totalPnL) < 1;
+    const isProfit = totalPnL > 0;
+    const pnlPct = startCash > 0 ? (totalPnL / startCash) * 100 : 0;
+
+    if (heroPill) {
+      if (isZero) {
+        heroPill.textContent = '₹0.00 (+0.00%)';
+        heroPill.className = 'val-neutral';
+        if (heroSub) heroSub.textContent = 'Break-even vs starting cash';
+        if (heroIconBox) heroIconBox.className = 'hero-icon-box hero-icon-blue';
+        if (heroCard) heroCard.style.borderLeft = '4px solid #2563EB';
+      } else if (isProfit) {
+        heroPill.textContent = `+${formatINR(totalPnL)} (+${pnlPct.toFixed(2)}%)`;
+        heroPill.className = 'val-profit';
+        if (heroSub) heroSub.textContent = 'Net profit earned today 📈';
+        if (heroIconBox) heroIconBox.className = 'hero-icon-box hero-icon-green';
+        if (heroCard) heroCard.style.borderLeft = '4px solid #16A34A';
+      } else {
+        heroPill.textContent = `-${formatINR(Math.abs(totalPnL))} (${pnlPct.toFixed(2)}%)`;
+        heroPill.className = 'val-loss';
+        if (heroSub) heroSub.textContent = 'Current drawdown (manage risk) 📉';
+        if (heroIconBox) heroIconBox.className = 'hero-icon-box hero-icon-red';
+        if (heroCard) heroCard.style.borderLeft = '4px solid #DC2626';
+      }
+    }
 
     // Update team equity timeline history
     if (!teamEquityHistory.length || teamEquityHistory[teamEquityHistory.length - 1].time !== gameState.elapsedSeconds) {
@@ -1002,7 +1119,7 @@ function drawSmoothBezierSparkline(canvasId, history, dayOpenPrice, isUp, isLarg
 // ==========================================
 function switchHostTab(tabName) {
   activeHostTab = tabName;
-  ['stocks', 'universe', 'news', 'leaderboard', 'trades', 'exports'].forEach((t) => {
+  ['stocks', 'universe', 'news', 'leaderboard', 'trades', 'exports', 'launcher'].forEach((t) => {
     const btn = document.getElementById(`hostTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
     const content = document.getElementById(`hostTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
     if (btn) btn.className = t === tabName ? 'btn btn-sage' : 'btn btn-outline';
@@ -1020,11 +1137,14 @@ function renderHostView(state) {
   document.getElementById('hostScenarioModeBadge').textContent = `${state.scenarioMode.toUpperCase()} MODE`;
   document.getElementById('hostClockInfo').textContent =
     `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${
-      gameState.isPaused ? 'PAUSED' : 'LIVE'
+      gameState.isPaused ? (gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED') : 'LIVE'
     } • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
 
   // 0. Render Universe Market Builder Table
   renderHostUniverseView(allCompaniesUniverse || companies || []);
+
+  // 0.1 Render Terminal Launcher & Credentials Table
+  renderHostLauncherTab(state);
 
   // 1. Render Stocks Table
   if (companies) {
@@ -1121,9 +1241,9 @@ function renderHostView(state) {
 }
 
 // Host Matrix Actions
-function hostPauseMarket() {
+function hostPauseMarket(mode = 'VISIBLE_FROZEN') {
   if (!ws || !sessionToken) return;
-  ws.send(JSON.stringify({ action: 'HOST_PAUSE', session_token: sessionToken }));
+  ws.send(JSON.stringify({ action: 'HOST_PAUSE', session_token: sessionToken, pauseMode: mode }));
 }
 
 function hostResumeMarket() {
@@ -1226,6 +1346,80 @@ function renderHostUniverseView(universe) {
 function toggleShareActive(ticker) {
   if (!ws || !sessionToken) return;
   ws.send(JSON.stringify({ action: 'HOST_TOGGLE_SHARE', session_token: sessionToken, ticker }));
+}
+
+// Terminal Launcher & Logins Manager
+function renderHostLauncherTab(state) {
+  const tbody = document.getElementById('hostLauncherTbody');
+  if (!tbody) return;
+
+  const origin = window.location.origin;
+  const teamsList = state.teams || state.leaderboard || [];
+  const maxTeams = Math.max(16, teamsList.length);
+  const rows = [];
+
+  for (let i = 1; i <= maxTeams; i++) {
+    const username = `team${i}`;
+    const password = `trade${i}00`;
+    const foundTeam = teamsList.find((t) => t.id === username || t.id === `team_${i}` || t.name === `Team ${i}` || t.name === `TEAM ${i}`) || {};
+    const teamName = foundTeam.name || `Team ${i}`;
+    const members = foundTeam.members || '—';
+    const directUrl = `${origin}/?team=${username}`;
+
+    rows.push(`
+      <tr style="border-bottom: 1px solid var(--subtle-border);">
+        <td style="padding: 8px; font-weight: 700; color: var(--champagne-accent);">Desk #${i}</td>
+        <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(teamName)}</td>
+        <td style="padding: 8px; font-family: var(--font-sans); color: var(--text-muted); font-size: 11px;">${escapeHtml(members)}</td>
+        <td style="padding: 8px; font-weight: 800; color: #1E40AF;">${username}</td>
+        <td style="padding: 8px; color: var(--text-charcoal); background-color: var(--surface-cream); border-radius: 4px;">${password}</td>
+        <td style="padding: 8px; text-align: center;">
+          <button onclick="openTerminalTab('/?team=${username}')" class="btn btn-sage" style="padding: 3px 10px; font-size: 11px;">
+            Launch Desk
+          </button>
+        </td>
+        <td style="padding: 8px; text-align: center;">
+          <button onclick="copyToClipboard('${directUrl}')" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;" title="Copy Desk Link">
+            🔗 Copy Link
+          </button>
+        </td>
+      </tr>
+    `);
+  }
+
+  tbody.innerHTML = rows.join('');
+}
+
+function openTerminalTab(path) {
+  window.open(path, '_blank');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showOrderToast('✓ Copied to clipboard!', true);
+    }).catch(() => {
+      prompt('Copy this link:', text);
+    });
+  } else {
+    prompt('Copy this link:', text);
+  }
+}
+
+function copyAllCredentialsToClipboard() {
+  const origin = window.location.origin;
+  let text = `==========================================================\n`;
+  text += `THE TRADING FLOOR CHAMPIONSHIP 2026 — TERMINAL CREDENTIALS\n`;
+  text += `==========================================================\n\n`;
+  text += `[HOST MASTER CONTROL]\nURL: ${origin}/?role=host\nUsername: host\nPassword: host2026\n\n`;
+  text += `[AUDITORIUM STAGE PROJECTOR]\nURL: ${origin}/?role=projector\nUsername: projector\nPassword: screen2026\n\n`;
+  text += `[TRADER TERMINALS (TEAMS 1 - 16)]\n`;
+  for (let i = 1; i <= 16; i++) {
+    text += `Team ${i}: Username: team${i} | Password: trade${i}00 | Direct Link: ${origin}/?team=team${i}\n`;
+  }
+  text += `\nGeneral Login: ${origin}/\n`;
+
+  copyToClipboard(text);
 }
 
 function openShareEditorModal(ticker) {
@@ -1688,6 +1882,22 @@ function showNewsFlashModal(news) {
   document.getElementById('flashEventType').textContent = `DAY ${news.day} • ${news.type}`;
   document.getElementById('flashHeadline').textContent = news.headline;
   document.getElementById('flashExplanation').textContent = news.simple_explanation;
+
+  const trafficBadge = document.getElementById('flashTrafficBadge');
+  if (trafficBadge) {
+    const isGood = (news.sentiment === 'POSITIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('GOOD')) || (news.deltaPct > 0);
+    const isBad = (news.sentiment === 'NEGATIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('BAD')) || (news.deltaPct < 0);
+    if (isGood) {
+      trafficBadge.textContent = '🟢 GOOD NEWS (PRICE UP)';
+      trafficBadge.className = 'badge-news-good';
+    } else if (isBad) {
+      trafficBadge.textContent = '🔴 BAD NEWS (PRICE DOWN)';
+      trafficBadge.className = 'badge-news-bad';
+    } else {
+      trafficBadge.textContent = '🔵 NEUTRAL UPDATE';
+      trafficBadge.className = 'badge-news-neutral';
+    }
+  }
   modal.classList.remove('hidden');
 
   let remaining = 20;

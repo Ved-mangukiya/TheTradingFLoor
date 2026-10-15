@@ -37,6 +37,7 @@
           <span class="badge" style="background-color: var(--error-bg); color: var(--error-red); border: 1px solid var(--error-border);">
             🚨 BREAKING MARKET WIRE
           </span>
+          <span id="flashTrafficBadge" class="badge-news-good">🟢 GOOD NEWS</span>
           <span id="flashEventType" style="font-family: var(--font-mono); font-weight: 700; color: var(--champagne-accent); font-size: 12px;">
             SECTOR SHOCK
           </span>
@@ -170,11 +171,73 @@
     </button>
   </div>
 
+  <!-- 1.6 Full Screen Blackout Blind Overlay (Screen Hidden Mode) -->
+  <div id="blackoutOverlay" class="hidden blackout-overlay">
+    <div class="blackout-card">
+      <div style="font-size: 54px; margin-bottom: 14px;">🕶️</div>
+      <div class="badge badge-champagne" style="margin-bottom: 12px; font-size: 12px; letter-spacing: 0.1em;">
+        STAGE FOCUS &bull; SCREENS BLINDED
+      </div>
+      <h2 style="font-size: 28px; color: #FFFFFF; margin-bottom: 10px; font-family: var(--font-serif);">
+        Market In Recess
+      </h2>
+      <p style="color: #CBD5E1; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+        Trading desks are paused and confidential numbers hidden by Host Master Control.<br />
+        Please direct your attention to the main stage and podium.
+      </p>
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--champagne-accent); background: rgba(0,0,0,0.3); padding: 8px 16px; border-radius: 999px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#F59E0B; animation: pulseGently 1s infinite;"></span>
+        TRADING RESUMES MOMENTARILY UPON HOST SIGNAL
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.7 Normal Soft Pause Overlay (Trading Frozen Banner) -->
+  <div id="softPauseOverlay" class="hidden soft-pause-overlay">
+    <div class="soft-pause-card">
+      <div style="font-size: 46px; margin-bottom: 12px;">⏸️</div>
+      <div class="badge badge-paused" style="margin-bottom: 10px; font-size: 13px; font-weight: 800;">
+        MARKET TEMPORARILY FROZEN
+      </div>
+      <h2 style="font-size: 24px; color: var(--text-forest); margin-bottom: 8px;">
+        Trading Orders Suspended
+      </h2>
+      <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        The host has paused the clock. Prices and portfolio values remain visible, but buy/sell orders are temporarily disabled.
+      </p>
+      <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--warning-amber);">
+        STAND BY FOR HOST RESUME ANNOUNCEMENT
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.8 Cinematic Day Transition Overlay -->
+  <div id="dayTransitionOverlay" class="hidden day-transition-overlay">
+    <div class="day-transition-card">
+      <div style="font-size: 58px; margin-bottom: 16px;">🔔</div>
+      <div class="badge badge-champagne" style="font-size: 13px; font-weight: 900; letter-spacing: 0.12em; margin-bottom: 14px;">
+        MARKET CLOSING BELL
+      </div>
+      <h1 id="dayTransitionTitle" style="font-size: 38px; color: #FFFFFF; margin-bottom: 8px; font-family: var(--font-serif);">
+        Day 1 Concluded
+      </h1>
+      <p id="dayTransitionSubtitle" style="font-size: 18px; color: #F7E7CE; line-height: 1.5; margin-bottom: 24px;">
+        Day Open books settled. Opening Day 2 Trading Bells...
+      </p>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 12px;">
+        <span class="badge" style="background: rgba(255,255,255,0.15); color: #FFFFFF; font-family: var(--font-mono); font-size: 13px; padding: 6px 16px;">
+          🌅 NEXT TRADING SESSION BEGINS NOW
+        </span>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ==========================================================================
        VIEW 1: UNIVERSAL AUTHENTICATION TERMINAL (#loginView)
        ========================================================================== -->
   <section id="loginView" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="screen-id-pill screen-id-login">🔑 TERMINAL AUTHENTICATION &bull; ALL DESKS</div>
     <div class="luxury-card" style="max-width: 440px; width: 100%; padding: 36px;">
       <div style="text-align: center; margin-bottom: 28px;">
         <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 22px;">TF</div>
@@ -218,6 +281,7 @@
        VIEW 2: STUDENT TRADING DESK (#traderView)
        ========================================================================== -->
   <section id="traderView" class="hidden ttf-app">
+    <div class="screen-id-pill screen-id-trader" id="traderDeskPill">💼 TRADING DESK &bull; TEAM 1</div>
     <!-- Top Header Ribbon -->
     <header class="app-header">
       <div class="header-brand">
@@ -289,6 +353,59 @@
           <option value="Renewable Energy">Renewable Energy</option>
           <option value="Pharmaceuticals">Pharmaceuticals</option>
         </select>
+      </div>
+    </div>
+
+    <!-- 4-Card Beginner-Friendly Hero Summary Ribbon -->
+    <div style="max-width: 1600px; width: 100%; margin: 16px auto 0 auto; padding: 0 24px;">
+      <div class="trader-hero-grid">
+        <!-- Card 1: Cash in Hand -->
+        <div class="hero-metric-card" style="border-left: 4px solid #2563EB;">
+          <div class="hero-icon-box hero-icon-blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Cash in Hand</div>
+            <div id="heroCashInHand" style="font-family: var(--font-mono); font-size: 22px; font-weight: 800; color: #2563EB; line-height: 1.2;">₹5,00,000.00</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Ready to spend on shares</div>
+          </div>
+        </div>
+
+        <!-- Card 2: Money in Shares -->
+        <div class="hero-metric-card" style="border-left: 4px solid #D97706;">
+          <div class="hero-icon-box hero-icon-gold">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Money in Shares</div>
+            <div id="heroMoneyInvested" style="font-family: var(--font-mono); font-size: 22px; font-weight: 800; color: var(--text-charcoal); line-height: 1.2;">₹0.00</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Total invested value</div>
+          </div>
+        </div>
+
+        <!-- Card 3: Total Team Worth -->
+        <div class="hero-metric-card" style="border-left: 4px solid #16A34A;">
+          <div class="hero-icon-box hero-icon-green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Total Team Worth</div>
+            <div id="heroTotalTeamWorth" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--text-forest); line-height: 1.2;">₹5,00,000.00</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Cash + shares combined</div>
+          </div>
+        </div>
+
+        <!-- Card 4: Today's Profit / Loss -->
+        <div class="hero-metric-card" id="heroProfitLossCard" style="border-left: 4px solid #2563EB;">
+          <div id="heroProfitLossIconBox" class="hero-icon-box hero-icon-blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Today's Profit / Loss</div>
+            <div id="heroPerformancePill" style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; line-height: 1.2;" class="val-neutral">₹0.00 (+0.00%)</div>
+            <div id="heroPerformanceSubtext" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Break-even vs day start</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -381,6 +498,7 @@
        VIEW 3: HOST CONTROL CENTRE (#hostView)
        ========================================================================== -->
   <section id="hostView" class="hidden ttf-app">
+    <div class="screen-id-pill screen-id-host">👑 HOST MASTER CONTROL PANEL</div>
     <!-- Top Command Ribbon -->
     <header class="app-header">
       <div class="header-brand">
@@ -398,10 +516,13 @@
 
       <!-- Host Action Buttons -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <button onclick="hostPauseMarket()" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber);">
-          ⏸ Pause
+        <button onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber);" title="Freeze trading orders while keeping prices visible">
+          ⏸ Normal Pause
         </button>
-        <button onclick="hostResumeMarket()" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up);">
+        <button onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="border-color: #64748B; background: #0F172A; color: #F1F5F9;" title="Blackout Blind: Hides all student/projector screens with dark overlay">
+          🕶️ Blackout Pause
+        </button>
+        <button onclick="hostResumeMarket()" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up);" title="Resume trading with 3-2-1 countdown on all screens">
           ▶ Resume (3-2-1)
         </button>
         <button onclick="hostNextDay()" class="btn btn-outline">
@@ -447,6 +568,9 @@
       </button>
       <button id="hostTabBtnExports" onclick="switchHostTab('exports')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
         📥 Reports & CSV Exports
+      </button>
+      <button id="hostTabBtnLauncher" onclick="switchHostTab('launcher')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #2563EB; border-color: #93C5FD;">
+        🚀 Terminal Launcher & Logins
       </button>
     </div>
 
@@ -669,6 +793,83 @@
           </div>
         </div>
       </div>
+
+      <!-- TAB 6: Terminal Launcher & Logins -->
+      <div id="hostTabContentLauncher" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <div>
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">🚀 Terminal Launcher & Access Credentials</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Instant 1-click launch links and secure credentials for all tournament screens. Coordinators can launch desks or copy passwords.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="copyAllCredentialsToClipboard()" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">
+              📋 Copy All Credentials to Clipboard
+            </button>
+          </div>
+        </div>
+
+        <!-- Master View Quick Launch Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div class="cream-panel" style="padding: 16px; border: 2px solid var(--champagne-accent);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="badge badge-champagne" style="font-weight: 800;">👑 HOST MASTER</span>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">PW: host2026</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Host master panel with full control over market, stocks, and news.</p>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="openTerminalTab('/?role=host')" class="btn btn-sage" style="flex: 1; padding: 6px; font-size: 12px;">Open Host Tab</button>
+              <button onclick="copyToClipboard(window.location.origin + '/?role=host')" class="btn btn-outline" style="padding: 6px 10px; font-size: 12px;" title="Copy Direct URL">🔗</button>
+            </div>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px; border: 2px solid #8E6D3B;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="badge" style="background: #FEF3C7; color: #92400E; font-weight: 800;">🖥️ AUDITORIUM PROJECTOR</span>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">PW: screen2026</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Stage screen for large projector showing live prices and charts.</p>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="openTerminalTab('/?role=projector')" class="btn btn-champagne" style="flex: 1; padding: 6px; font-size: 12px;">Open Projector Tab</button>
+              <button onclick="copyToClipboard(window.location.origin + '/?role=projector')" class="btn btn-outline" style="padding: 6px 10px; font-size: 12px;" title="Copy Direct URL">🔗</button>
+            </div>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px; border: 2px solid #93C5FD;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="badge" style="background: #EFF6FF; color: #1E40AF; font-weight: 800;">🔑 UNIVERSAL LOGIN</span>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">All Desks</span>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">General login screen where any team can sign in manually.</p>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="openTerminalTab('/')" class="btn btn-outline" style="flex: 1; padding: 6px; font-size: 12px;">Open Login Screen</button>
+              <button onclick="copyToClipboard(window.location.origin + '/')" class="btn btn-outline" style="padding: 6px 10px; font-size: 12px;" title="Copy Base URL">🔗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 16 Team Desks Table with 1-Click Launch & Passwords -->
+        <h3 style="font-size: 16px; font-weight: 800; text-transform: uppercase; color: var(--text-forest); margin-bottom: 12px;">
+          💼 Team Trading Terminals & Credentials (Teams 1 - 16)
+        </h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px;">Desk</th>
+                <th style="padding: 8px;">Team Name</th>
+                <th style="padding: 8px;">Registered Members</th>
+                <th style="padding: 8px;">Username</th>
+                <th style="padding: 8px;">Password</th>
+                <th style="padding: 8px; text-align: center;">One-Click Launch</th>
+                <th style="padding: 8px; text-align: center;">Copy Link</th>
+              </tr>
+            </thead>
+            <tbody id="hostLauncherTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
     </main>
   </section>
 
@@ -677,6 +878,7 @@
        VIEW 4: PUBLIC STAGE PROJECTOR VIEW (#projectorView)
        ========================================================================== -->
   <section id="projectorView" class="hidden projector-container tf-projector">
+    <div class="screen-id-pill screen-id-projector">🖥️ AUDITORIUM PROJECTOR &bull; LIVE BOARD</div>
     <!-- Top Status Header -->
     <header class="projector-header">
       <div style="display: flex; align-items: center; gap: 24px;">
