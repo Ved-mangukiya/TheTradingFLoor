@@ -10,13 +10,20 @@ The system is in a stable, verified, and complete state. All requirements from t
 
 ## 2. Priority Next Actions (Next 3–5 Tasks)
 
-1. **Task 1: Verify & Expand Test Suite**:
-   Run `npm test` (`node test_master_suite.js`). Ensure tests for share creation, share toggling, trade rejection on disabled shares, and export endpoints pass 100%.
-2. **Task 2: Refresh Distribution ZIP Archive**:
-   Run `node update_zip.js` to re-package `the-trading-floor.zip` with the latest files, batch launchers, and documentation.
+1. **Task 1: Automated Verification**:
+   Run `npm test` (`node test_master_suite.js`). Ensure all 26 test stages pass with 0 errors.
+2. **Task 2: Institutional Charting Visual Integrity**:
+   Verify chart responsiveness and crosshair scrubbing across extreme price shock events and multi-resolution viewports.
 3. **Task 3: Git Synchronization**:
-   Stage, commit, and push all new documentation, batch files, and code upgrades to `https://github.com/Ved-mangukiya/TheTradingFLoor.git`.
+   Keep all changes committed and pushed to `https://github.com/Ved-mangukiya/TheTradingFLoor.git`.
 4. **Task 4 (Future Enhancement): Multi-Day Cumulative Equity View**:
    Implement an optional toggle on the Host Dashboard to review cumulative equity curves across Days 1, 2, and 3 simultaneously.
 5. **Task 5 (Future Enhancement): Bot Simulation Harness**:
    Add an optional bot trader generator in `test_master_suite.js` to simulate 16 automated teams placing concurrent orders for stress-testing campus Wi-Fi routers.
+
+---
+
+## 3. Strict Development Invariants
+- **NO ZIP FILES**: Never create, package, or generate `.zip` archives. The Git repository is the sole distribution mechanism.
+- **Offline-First Zero-CDN**: All charting (`TFCharts`), fonts, styles, audio cues (`AudioContext`), and icons must operate locally with zero internet access.
+- **Authoritative Server Math**: The client never calculates prices, balances, circuit halts, or fees independently. All accounting is server-authoritative.

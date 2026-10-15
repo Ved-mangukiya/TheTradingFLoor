@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TF Charts Demo</title>
+<link rel="stylesheet" href="tf-charts.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--tf-bg); color: var(--tf-text); font-family: system-ui, sans-serif; }
+  h2 { margin: 28px 0 10px; font-size: 1rem; color: var(--tf-gold); letter-spacing: .08em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  #mainWrap { max-width: 880px; }
+  button { font: inherit; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--tf-grid); background: var(--tf-cream); cursor: pointer; }
+</style>
+</head>
+<body>
+<h1 style="margin:0">Trading Floor charts: live demo</h1>
+
+<h2>Mini sparklines (click a card to open the full chart)</h2>
+<div class="grid" id="cards"></div>
+
+<h2>Full chart: hover to scrub</h2>
+<div id="mainWrap" class="tf-chart-wrap"><canvas id="largeChartCanvas" width="800" height="320"></canvas></div>
+<p><button id="halt">Toggle halt</button></p>
+
+<h2>Team equity curve</h2>
+<div class="tf-chart-wrap" style="max-width:700px"><canvas id="equityCanvas" width="680" height="260"></canvas></div>
+
+<script src="tf-charts.js"></script>
+<script>
+  // Simulated feed: a tick every 1.5 s, time axis in seconds (matches the server loop)
+  var names = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'TATAMOTORS', 'ITC'];
+  var stocks = {};
+  names.forEach(function (n, i) {
+    var p = 500 + i * 650 + Math.random() * 200;
+    stocks[n] = { ticker: n, currentPrice: p, dayOpenPrice: p, dayHigh: p, dayLow: p, isHalted: false, history: [{ time: 0, price: p }] };
+  });
+  var equity = [{ time: 0, netWorth: 500000 }], t = 0, selected = names[0];
+
+  var cards = document.getElementById('cards');
+  names.forEach(function (n) {
+    var d = document.createElement('div'); d.className = 'tf-stock-card';
+    d.innerHTML = '<div style="display:flex;justify-content:space-between"><span class="tf-ticker">' + n +
+      '</span><span class="tf-price" id="p_' + n + '"></span></div><canvas id="cardCanvas_' + n + '" width="220" height="60"></canvas>';
+    d.onclick = function () { selected = n; draw(); };
+    cards.appendChild(d);
+  });
+
+  function tick() {
+    t += 1.5;
+    names.forEach(function (n) {
+      var s = stocks[n]; if (s.isHalted) return;
+      s.currentPrice = Math.max(1, s.currentPrice * (1 + (Math.random() - 0.48) * 0.006));
+      s.dayHigh = Math.max(s.dayHigh, s.currentPrice); s.dayLow = Math.min(s.dayLow, s.currentPrice);
+      s.history.push({ time: t, price: s.currentPrice });
+    });
+    equity.push({ time: t, netWorth: equity[equity.length - 1].netWorth * (1 + (Math.random() - 0.48) * 0.004) });
+    draw();
+  }
+  function draw() {
+    names.forEach(function (n) {
+      var s = stocks[n];
+      drawSmoothMiniSparkline('cardCanvas_' + n, s.history, s.dayOpenPrice, s.currentPrice >= s.dayOpenPrice);
+      var el = document.getElementById('p_' + n);
+      el.textContent = TFCharts.formatRupee(s.currentPrice);
+      el.className = 'tf-price ' + (s.currentPrice >= s.dayOpenPrice ? 'tf-up' : 'tf-down');
+    });
+    drawInteractiveMainChart('largeChartCanvas', stocks[selected], document.getElementById('mainWrap'));
+    drawPortfolioEquityCurve('equityCanvas', equity);
+  }
+  document.getElementById('halt').onclick = function () { stocks[selected].isHalted = !stocks[selected].isHalted; draw(); };
+
+  for (var i = 0; i < 40; i++) tick();   // seed some history
+  setInterval(tick, 1500);
+</script>
+</body>
+</html>

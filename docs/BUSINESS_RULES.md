@@ -37,6 +37,19 @@
      $$\text{Realized P&L}_{\text{new}} = \text{Realized P&L}_{\text{old}} + \text{Profit on Sold} - \text{Fee}$$
   7. If $\text{Holdings}_{\text{new}} == 0$, reset $\bar{P} = 0$.
 
+### 1.3 Dynamic Order-Flow Market Impact (Supply / Demand Liquidity Pressure)
+To reflect realistic institutional market micro-structure without lagging the server, executed orders dynamically adjust the underlying asset price:
+$$\text{Gross Trade Value} = Q \times P_{\text{current}}$$
+$$\Delta P_{\text{raw}} = \text{Gross Trade Value} \times 0.000002$$
+$$\Delta P_{\text{clamped}} = \min(\Delta P_{\text{raw}}, P_{\text{current}} \times 0.008)$$
+
+- **Buy Orders (Demand Injection)**:
+  $$P_{\text{new}} = P_{\text{current}} + \Delta P_{\text{clamped}}$$
+- **Sell Orders (Supply Dumping)**:
+  $$P_{\text{new}} = \max(1.0, P_{\text{current}} - \Delta P_{\text{clamped}})$$
+
+This ensures large institutional block orders create realistic upward pressure on buys and downward pressure on sells (capped at $\pm 0.8\%$ per single trade), while high-frequency retail orders produce organic micro-fluctuations.
+
 ---
 
 ## 2. Valuation & Performance Scoring

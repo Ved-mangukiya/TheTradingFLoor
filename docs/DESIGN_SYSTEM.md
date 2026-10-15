@@ -95,3 +95,17 @@ To maintain 100% offline autonomy without external CDN font requests:
 - Large numerical price and cash display.
 - One-click Max Buy and Max Sell calculation shortcuts.
 - Real-time gross value, transaction fee, and remaining cash live simulation.
+
+### 4.4 Institutional Chart Containers & Micro-Badges (`tf-charts.css`)
+- **Card Containers (`.tf-stock-card`)**: Muted cream card (`var(--surface-cream)`), subtle border, smooth hover elevation with champagne glow. Holds `<canvas>` sparkline with dynamic price typography.
+- **Chart Wrappers (`.tf-chart-wrap`)**: Crisp white elevated container (`var(--surface-card)`) with 12px border radius, 1px institutional grid border, and soft elevation shadow (`0 6px 24px rgba(26, 48, 38, 0.06)`).
+- **Status & P&L Chips (`.tf-chip`)**:
+  - `.tf-chip--profit`: Subtle emerald glow fill (`rgba(33, 134, 83, 0.12)`), forest green text (`#218653`).
+  - `.tf-chip--drawdown`: Subtle crimson glow fill (`rgba(198, 75, 75, 0.12)`), crimson text (`#C64B4B`).
+  - `.tf-chip--halted`: Solid crimson background, stark white text, pulsing alert animation.
+- **Crosshair Coordinates**: Snapping dashed hairline crosshair with high-contrast floating tooltip badge displaying precise timestamp and price coordinate.
+
+### 4.5 50-Foot Stage Projector Variant (`.tf-projector`)
+- Targets high-resolution auditorium projection screens and large event displays.
+- Applied automatically to the `#projectorView` container.
+- Scales card padding (`18px 20px`), sparkline canvas height (`110px`), and ticker price font size (`2rem`) for instant legibility at 50-foot distances.

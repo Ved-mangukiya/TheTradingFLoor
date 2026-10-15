@@ -33,11 +33,12 @@ The Trading Floor Championship is architected as an offline-first, client-server
 
 ### 2.1 Authoritative Market Price Engine
 - **Tick Interval**: Runs on an atomic 1500ms `setInterval` loop in `server.js`.
-- **Geometric Random Walk with Mean Reversion**:
-  $$P_{t+1} = P_t \times \left(1 + \mu \cdot dt + \sigma \cdot \epsilon \cdot \sqrt{dt} - \kappa (P_t - P_{\text{baseline}})\right)$$
+- **Geometric Random Walk with Mean Reversion & Order Flow Impact**:
+  $$P_{t+1} = P_t \times \left(1 + \mu \cdot dt + \sigma \cdot \epsilon \cdot \sqrt{dt} - \kappa (P_t - P_{\text{baseline}})\right) + \Delta P_{\text{flow}}$$
   - $\sigma$: Stock-specific volatility factor (default: `0.004` to `0.012`).
   - $\epsilon$: Normal Gaussian perturbation using Box-Muller transform.
-  - $\kappa$: Mean reversion force anchoring extreme drifts back towards economic reality.
+  - $\kappa$: Mean reversion force anchoring extreme drifts back towards economic baseline (`0.0004`).
+  - $\Delta P_{\text{flow}}$: Instantaneous order-flow liquidity pressure ($+Q \times P \times 2\times 10^{-6}$ on BUY, $-Q \times P \times 2\times 10^{-6}$ on SELL, capped at $\pm 0.8\%$ per trade).
 - **Active Transition Shock Engine**: When news breaks, target stocks undergo exponential price adjustments over 30–60 seconds, weighted by each company's $\beta$ (news sensitivity).
 - **Circuit Breakers**: Evaluated on every tick. If $|P_t - P_{\text{day\_open}}| / P_{\text{day\_open}} \ge \text{Limit}$ (default: 20%), trading in that stock is immediately frozen, setting `isHalted = true` and broadcasting a circuit breaker alarm.
 
@@ -65,3 +66,14 @@ To operate without internet and without external audio assets:
 - **Full State Backup & Restore API**:
   - `GET /api/backup`: Serializes game state, teams, companies, and executed trades into a complete JSON snapshot.
   - `POST /api/restore`: Ingests a previously exported snapshot and re-establishes server state cleanly.
+
+### 2.5 High-Performance Institutional Charting Engine (`TFCharts`)
+Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is handled by a bespoke vanilla Canvas 2D engine (`public/tf-charts.js` + `public/tf-charts.css`):
+- **Monotone Cubic Splines (Fritsch-Carlson)**: Unlike standard Catmull-Rom or Bezier curves which notoriously overshoot market peaks and troughs, monotone tangents guarantee the price curve never dips below the true low or breaches the true high.
+- **HiDPI Screen Scaling**: Automatically rescales backing store based on `window.devicePixelRatio`, preventing blurry lines on Retina, Apple Silicon, and 4K auditorium projectors.
+- **Shared 60 FPS RAF Loop**: Single `requestAnimationFrame` loop driven by an internal `Map` registry. Automatically cleans up event listeners and unregisters canvases when removed from the DOM.
+- **Component Signatures**:
+  1. `drawSmoothMiniSparkline(canvasId, history, dayOpenPrice, isUp)`: Renders market cards with green/red gradient area fill, dashed Day Open baseline, and continuous harmonic pulse dot on the latest price tick.
+  2. `drawInteractiveMainChart(canvasId, stock, containerElement)`: High-fidelity interactive chart modal with snapping hover crosshair, floating coordinates tooltip, Day High/Low dashed guides, Day Open right-axis badge, live price pill, and prominent `TRADING HALTED` banner. Automatically resizes via `ResizeObserver`.
+  3. `drawPortfolioEquityCurve(canvasId, equityHistory, opts)`: Real-time team net worth tracker against the ₹5,00,000 baseline, featuring dual-zone P&L fills (green profit zone / red drawdown zone) and live `IN PROFIT` / `DRAWDOWN` badges.
+  4. **Auditorium Projector Variant (`.tf-projector`)**: High-contrast, double-thickness typography and canvas scaling engineered for 50-foot viewing distances.

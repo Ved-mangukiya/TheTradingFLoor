@@ -18,6 +18,7 @@ let traderSectorFilterVal = 'ALL';
 
 // Modal Trade State
 let currentTradeModalTicker = null;
+let teamEquityHistory = [];
 
 // ==========================================
 // 1. INSTITUTIONAL AUDIO SYNTHESIZER (OFFLINE-READY)
@@ -234,6 +235,7 @@ function logoutTerminal() {
   sessionStorage.removeItem('ttf_session_token');
   sessionToken = null;
   currentRole = null;
+  teamEquityHistory = [];
   switchSpaView(null);
 }
 
@@ -369,6 +371,16 @@ function renderTraderView(state) {
     const isUp = portfolio.pnlPct >= 0;
     retEl.textContent = `${isUp ? '+' : ''}${portfolio.pnlPct.toFixed(2)}%`;
     retEl.className = `metric-value ${isUp ? 'price-up' : 'price-down'}`;
+
+    // Update team equity timeline history
+    if (!teamEquityHistory.length || teamEquityHistory[teamEquityHistory.length - 1].time !== gameState.elapsedSeconds) {
+      teamEquityHistory.push({ time: gameState.elapsedSeconds, netWorth: portfolio.netWorth });
+      if (teamEquityHistory.length > 400) teamEquityHistory.shift();
+    }
+    if (window.drawPortfolioEquityCurve && document.getElementById('traderEquityCanvas')) {
+      const startCash = gameState.startingCash || 500000;
+      drawPortfolioEquityCurve('traderEquityCanvas', teamEquityHistory, { startingCash: startCash });
+    }
 
     // Render Tab 2: Positions Table
     const positionsTbody = document.getElementById('traderPositionsTbody');
@@ -542,7 +554,11 @@ function renderTraderView(state) {
   // Render organic Bezier sparkline curves on each stock card
   filteredCompanies.forEach((stock) => {
     const isUp = stock.currentPrice >= stock.dayOpenPrice;
-    drawSmoothBezierSparkline(`traderCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
+    if (window.drawSmoothMiniSparkline) {
+      drawSmoothMiniSparkline(`traderCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp);
+    } else {
+      drawSmoothBezierSparkline(`traderCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
+    }
   });
 
   // Render Market Wire Feed
@@ -708,7 +724,11 @@ function updateFullChartModalData(ticker) {
   document.getElementById('chartModalLow').textContent = `₹${stock.dayLow.toFixed(2)}`;
   document.getElementById('chartModalBeta').textContent = stock.beta;
 
-  drawSmoothBezierSparkline('largeChartCanvas', stock.history, stock.dayOpenPrice, isUp, true);
+  if (window.drawInteractiveMainChart) {
+    drawInteractiveMainChart('largeChartCanvas', stock, document.getElementById('largeChartWrap'));
+  } else {
+    drawSmoothBezierSparkline('largeChartCanvas', stock.history, stock.dayOpenPrice, isUp, true);
+  }
 }
 
 // Rules & Help Modal
@@ -802,7 +822,11 @@ function renderProjectorView(state) {
       deltaEl.className = isUp ? 'price-up' : 'price-down';
     }
 
-    drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
+    if (window.drawSmoothMiniSparkline) {
+      drawSmoothMiniSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp);
+    } else {
+      drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
+    }
   });
 }
 
