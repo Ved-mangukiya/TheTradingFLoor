@@ -146,15 +146,30 @@ function playInstitutionalSound(cueName) {
 // ==========================================
 // 2. WEBSOCKET ROUTING & SPA SESSION MANAGER
 // ==========================================
-function getAutoCredentials(roleQuery) {
-  if (!roleQuery) return null;
-  const lower = roleQuery.toLowerCase().trim();
-  if (lower === 'host') return { u: 'host', p: 'host2026' };
-  if (lower === 'projector') return { u: 'projector', p: 'screen2026' };
+function getAutoCredentials(paramVal, allParams) {
+  if (allParams) {
+    const customUser = allParams.get('username') || allParams.get('user') || allParams.get('u');
+    const customPass = allParams.get('password') || allParams.get('pass') || allParams.get('p');
+    if (customUser && customPass) {
+      return { u: customUser.trim(), p: customPass.trim() };
+    }
+  }
+
+  if (!paramVal) return null;
+  const lower = paramVal.toLowerCase().trim();
+  if (lower === 'host') {
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'host2026';
+    return { u: 'host', p: pass };
+  }
+  if (lower === 'projector') {
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'screen2026';
+    return { u: 'projector', p: pass };
+  }
   const teamMatch = lower.match(/^team(\d+)$/);
   if (teamMatch) {
     const num = teamMatch[1];
-    return { u: `team${num}`, p: `trade${num}00` };
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || `trade${num}00`;
+    return { u: `team${num}`, p: pass };
   }
   return null;
 }
@@ -165,12 +180,30 @@ function connectWebSocket() {
 
   ws.onopen = () => {
     const params = new URLSearchParams(window.location.search);
-    const autoRole = params.get('autologin');
-    const creds = getAutoCredentials(autoRole);
+    const targetQuery = params.get('role') || params.get('team') || params.get('autologin') || params.get('user');
 
-    if (creds) {
-      window.history.replaceState(null, '', window.location.pathname);
-      ws.send(JSON.stringify({ action: 'LOGIN', username: creds.u, password: creds.p }));
+    if (targetQuery) {
+      if (targetQuery.toLowerCase() === 'login' || params.get('logout') === 'true') {
+        sessionToken = null;
+        sessionStorage.removeItem('ttf_session_token');
+        switchSpaView(null);
+        return;
+      }
+
+      const creds = getAutoCredentials(targetQuery, params);
+      if (creds) {
+        // Discard any inherited parent/tab session token to authenticate requested role cleanly
+        sessionToken = null;
+        sessionStorage.removeItem('ttf_session_token');
+        ws.send(JSON.stringify({ action: 'LOGIN', username: creds.u, password: creds.p }));
+        return;
+      }
+    }
+
+    if (params.get('logout') === 'true') {
+      sessionToken = null;
+      sessionStorage.removeItem('ttf_session_token');
+      switchSpaView(null);
       return;
     }
 
@@ -412,6 +445,10 @@ function formatINR(num) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function formatRupee(num) {
+  return formatINR(num);
 }
 
 function handleStateUpdate(state) {
@@ -1364,7 +1401,7 @@ function renderHostLauncherTab(state) {
     const foundTeam = teamsList.find((t) => t.id === username || t.id === `team_${i}` || t.name === `Team ${i}` || t.name === `TEAM ${i}`) || {};
     const teamName = foundTeam.name || `Team ${i}`;
     const members = foundTeam.members || '—';
-    const directUrl = `${origin}/?team=${username}`;
+    const directUrl = `${origin}/?team=${username}&pass=${password}`;
 
     rows.push(`
       <tr style="border-bottom: 1px solid var(--subtle-border);">
@@ -1374,7 +1411,7 @@ function renderHostLauncherTab(state) {
         <td style="padding: 8px; font-weight: 800; color: #1E40AF;">${username}</td>
         <td style="padding: 8px; color: var(--text-charcoal); background-color: var(--surface-cream); border-radius: 4px;">${password}</td>
         <td style="padding: 8px; text-align: center;">
-          <button onclick="openTerminalTab('/?team=${username}')" class="btn btn-sage" style="padding: 3px 10px; font-size: 11px;">
+          <button onclick="openTerminalTab('/?team=${username}&pass=${password}')" class="btn btn-sage" style="padding: 3px 10px; font-size: 11px;">
             Launch Desk
           </button>
         </td>
@@ -2100,7 +2137,7 @@ function renderWizardUniverseCheckboxes() {
         </div>
       </div>
       <div style="text-align: right; font-family: var(--font-mono);">
-        <span style="font-weight: 700; color: var(--text-forest);">${formatRupee(c.base_price || c.currentPrice)}</span>
+        <span style="font-weight: 700; color: var(--text-forest);">${formatINR(c.base_price || c.currentPrice)}</span>
         <span style="font-size: 10px; color: var(--champagne-accent); display: block;">Beta: ${(c.beta || 1.0).toFixed(2)}</span>
       </div>
     `;
