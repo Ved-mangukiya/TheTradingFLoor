@@ -1,27 +1,27 @@
 # NEXT SESSION HANDOVER & ACTION PLAN — THE TRADING FLOOR CHAMPIONSHIP 2026
 
 ## 1. Handover Summary for Future Developers & AI Agents
-The system is in a stable, verified, and complete state. All requirements from the Master Specification and Upgrade Addendum have been implemented:
-1. **Portable, Self-Documenting Repository**: Fully documented across `README.md`, `AGENTS.md`, and 17 guides in `docs/`.
-2. **Advanced Share Universe Manager**: Complete host builder tab, templates, active toggling, editing, price randomization, and persistence in `data/universe_active.json`.
-3. **1-Click Software Launch Experience**: Desktop batch files (`Launch_The_Trading_Floor.bat`) allowing non-technical organizers to launch without typing terminal commands.
-4. **Full Portfolio Liquidation & Quick Sell**: Added `LIQUIDATE_ALL` action to atomically convert all active holdings into 100% Cash in Hand, confirmation modal (`#liquidateModal`), asset allocation summary bar, per-stock `⚡ Sell All (${qty})` button, and percentage shortcuts (`25%`, `50%`, `75%`, `Sell All Held`, `Max Buy`).
-5. **Anti-Cryptic Educational Error System**: Plain-English educational guidance detailing exact cash required, available balance, shortfalls, circuit breaker limits, and max affordable shares, accompanied by auditory cues (`order_rejected`, `portfolio_liquidated`) and extended-duration toasts.
+The system is in a stable, verified, and complete state. All requirements from the Master Implementation Prompt have been engineered:
+1. **Authoritative Synchronized Resume Countdown**: Server-owned 3-second countdown broadcast with millisecond target timestamps (`targetServerTimeMs`). Fixed the multi-screen drift/skip bug. Supports mid-countdown late joins and tab-visibility recovery.
+2. **Event Setup, Scheduling & Waiting Room**: Host Schedule & Launch Modal supporting immediate starts vs scheduled future starts with local datetime pickers, round duration selector, and configurable pause policies (`TRADING_TIME` vs `ELAPSED_TIME`). Student Waiting Room with live opening countdown (`OPENS IN: MM:SS`).
+3. **News Control Centre & Sector Price Impact**: Per-item card countdowns derived from server clock, host immediate publication triggers, sector-wide price shocks (`SECTOR_AUTO`, `SECTOR_TECH`, etc.) mapped through Beta sensitivities, and confidential scheduled wires.
+4. **Team Financial Analysis & Results Snapshot**: Complete audited financial performance table, rupee profit/loss calculations, return on capital, trade fees, and `/api/results-snapshot` REST endpoint.
+5. **Cinematic Winner Announcement Presentation**: Dedicated view (`/?role=winner` / View 6) with 6 synchronized scenes (Verification, Bronze, Silver, Grand Champion with gold trophy and confetti, 3-tier podium, full standings) remotely controllable by the Host.
+6. **Dedicated Event-Hall Sound System**: Dedicated laptop view (`/?role=sound` / View 5) connecting to venue PA amplifiers with browser autoplay unlock, host remote volume controls, category toggles, and verified server-side audio cue dispatches.
+7. **Comprehensive Test Suite**: All 37 automated tests pass with 100% success (`node test_master_suite.js`).
 
 ---
 
-## 2. Priority Next Actions (Next 3–5 Tasks)
+## 2. Priority Next Actions (Next Tasks)
 
 1. **Task 1: Automated Verification**:
-   Run `npm test` (`node test_master_suite.js`). Ensure all 31 test stages pass with 0 errors.
-2. **Task 2: Institutional Charting Visual Integrity**:
-   Verify chart responsiveness and crosshair scrubbing across extreme price shock events and multi-resolution viewports.
-3. **Task 3: Git Synchronization**:
+   Run `npm test` (`node test_master_suite.js`). Ensure all 37 test stages pass with 0 errors.
+2. **Task 2: Git Synchronization**:
    Keep all changes committed and pushed to `https://github.com/Ved-mangukiya/TheTradingFLoor.git`.
+3. **Task 3: Production Rehearsal on Campus LAN**:
+   Conduct an end-to-end dry run across 3 physical devices: Host Laptop, Event-Hall Sound Laptop (`/?role=sound`), and Auditorium Projector (`/?role=projector`).
 4. **Task 4 (Future Enhancement): Multi-Day Cumulative Equity View**:
    Implement an optional toggle on the Host Dashboard to review cumulative equity curves across Days 1, 2, and 3 simultaneously.
-5. **Task 5 (Future Enhancement): Bot Simulation Harness**:
-   Add an optional bot trader generator in `test_master_suite.js` to simulate 16 automated teams placing concurrent orders for stress-testing campus Wi-Fi routers.
 
 ---
 

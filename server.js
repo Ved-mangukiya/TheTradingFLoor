@@ -25,11 +25,17 @@ app.use(express.json({ limit: '10mb' }));
 // ==========================================
 const USERS = {
   host: { username: 'host', password: 'host2026', role: 'HOST', id: 'host', name: 'Master Control' },
-  projector: { username: 'projector', password: 'screen2026', role: 'PROJECTOR', id: 'PROJECTOR', name: 'Main Stage Projector' }
+  projector: { username: 'projector', password: 'screen2026', role: 'PROJECTOR', id: 'PROJECTOR', name: 'Main Stage Projector' },
+  sound: { username: 'sound', password: 'sound2026', role: 'SOUND_CONSOLE', id: 'SOUND_CONSOLE', name: 'Hall Sound System' },
+  winner: { username: 'winner', password: 'winner2026', role: 'WINNER_DISPLAY', id: 'WINNER_DISPLAY', name: 'Winner Presentation Stage' }
 };
 
 // token -> { token, role, id, name, username, members, lastOrderAt }
 const sessions = new Map();
+
+// Dedicated event-hall sound system output clients registry
+const soundClients = new Set();
+let activeCountdownTimer = null;
 
 // ==========================================
 // 2. AUDIT LOGGING & TRADE LEDGER ENGINE
@@ -94,6 +100,12 @@ let newsEvents = [];
 let teams = {};
 let gameState = {
   title: 'The Trading Floor - Championship 2026',
+  subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
+  institution: 'SSASIT Surat (GTU 076)',
+  status: 'PAUSED',
+  startMode: 'IMMEDIATE',
+  scheduledStartTime: null,
+  pausePolicy: 'TRADING_TIME',
   currentDay: 1,
   totalDays: 3,
   dayDurationSeconds: 1800,
@@ -109,7 +121,27 @@ let gameState = {
   activeNewsFlash: null,
   newsHistory: [],
   isConcluded: false,
-  winnerData: null
+  winnerData: null,
+  activeCountdown: null,
+  finalResultsSnapshot: null,
+  presentationState: {
+    active: false,
+    scene: 'SCENE_INTRO',
+    currentTeamIndex: 0,
+    revealedRanks: [],
+    updatedAt: new Date().toISOString()
+  },
+  audioSettings: {
+    masterEnabled: true,
+    masterVolume: 85,
+    categories: {
+      lifecycle: true,
+      news: true,
+      alerts: true,
+      presentation: true
+    },
+    muted: false
+  }
 };
 
 let priceLoopHandle = null;
@@ -294,6 +326,12 @@ function loadScenario(mode = 'live', forceBaseline = false) {
   const meta = scenarioData.scenario_metadata;
   gameState = {
     title: meta.title || 'The Trading Floor - Championship 2026',
+    subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
+    institution: 'SSASIT Surat (GTU 076)',
+    status: 'PAUSED',
+    startMode: 'IMMEDIATE',
+    scheduledStartTime: null,
+    pausePolicy: 'TRADING_TIME',
     currentDay: 1,
     totalDays: meta.total_days || 3,
     dayDurationSeconds: meta.day_duration_seconds || 1800,
@@ -309,7 +347,22 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     activeNewsFlash: null,
     newsHistory: [],
     isConcluded: false,
-    winnerData: null
+    winnerData: null,
+    activeCountdown: null,
+    finalResultsSnapshot: null,
+    presentationState: {
+      active: false,
+      scene: 'SCENE_INTRO',
+      currentTeamIndex: 0,
+      revealedRanks: [],
+      updatedAt: new Date().toISOString()
+    },
+    audioSettings: gameState.audioSettings || {
+      masterEnabled: true,
+      masterVolume: 85,
+      categories: { lifecycle: true, news: true, alerts: true, presentation: true },
+      muted: false
+    }
   };
 
   let rawCompanies = scenarioData.companies;
@@ -387,7 +440,9 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
       };
     });
   } else {
+    // 1. Process specific company impacts
     Object.keys(impacts).forEach((ticker) => {
+      if (ticker.startsWith('SECTOR_')) return; // handled below
       const stock = companies.find((s) => s.ticker === ticker);
       if (!stock || !stock.isEnabled || stock.isHalted) return;
       const { delta_pct, duration_sec } = impacts[ticker];
@@ -399,6 +454,27 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
         stepsRemaining: steps,
         stepDelta: (targetPrice - stock.currentPrice) / steps
       };
+    });
+
+    // 2. Process sector-wide impacts (e.g., SECTOR_AUTO, SECTOR_TECH, SECTOR_BANKING)
+    Object.keys(impacts).forEach((key) => {
+      if (!key.startsWith('SECTOR_')) return;
+      const targetSector = key.replace('SECTOR_', '').toLowerCase();
+      const { delta_pct, duration_sec } = impacts[key];
+      const steps = Math.max(1, Math.round(((duration_sec || 45) * 1000) / tickMs));
+      companies.forEach((stock) => {
+        if (!stock.isEnabled || stock.isHalted) return;
+        if (stock.sector && stock.sector.toLowerCase().includes(targetSector)) {
+          const sectorShock = delta_pct * (stock.beta || 1.0);
+          const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
+          const targetPrice = +(currentRef * (1 + sectorShock / 100)).toFixed(2);
+          stock.activeTransition = {
+            targetPrice,
+            stepsRemaining: steps,
+            stepDelta: (targetPrice - stock.currentPrice) / steps
+          };
+        }
+      });
     });
   }
 
@@ -414,7 +490,7 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     const tickers = Object.keys(impacts);
     if (tickers.length > 0) {
       const first = tickers[0];
-      const d = impacts[first].delta_pct;
+      const d = impacts[first].delta_pct || 0;
       sentiment = d > 0 ? 'BULLISH' : (d < 0 ? 'BEARISH' : 'NEUTRAL');
       trafficLightBadge = d > 0
         ? `🟢 GOOD NEWS FOR ${first} (+${d}% price boost)`
@@ -445,6 +521,8 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     impacts: eventObj.impacts
   });
 
+  broadcastAudioCue('heavy_news_boom', 'news', { headline: eventObj.headline, event_id: eventObj.event_id });
+
   broadcastAll({
     type: 'NEWS_FLASH',
     news: newsRecord
@@ -468,6 +546,8 @@ function triggerCircuitBreaker(stock, direction) {
     day_open_price: stock.dayOpenPrice
   });
 
+  broadcastAudioCue('circuit_alarm', 'alerts', { ticker: stock.ticker, direction, price: stock.currentPrice });
+
   broadcastAll({
     type: 'CIRCUIT_BREAKER_ALERT',
     ticker: stock.ticker,
@@ -481,29 +561,43 @@ function triggerCircuitBreaker(stock, direction) {
 // 5. REAL-TIME ENGINE LOOPS
 // ==========================================
 setInterval(() => {
+  // Check for Scheduled Event Auto-Start
+  if (gameState.status === 'SCHEDULED' && gameState.scheduledStartTime) {
+    const targetMs = new Date(gameState.scheduledStartTime).getTime();
+    if (!isNaN(targetMs) && Date.now() >= targetMs) {
+      gameState.status = 'COUNTDOWN';
+      startResumeCountdown('SCHEDULED_TIMER');
+    }
+  }
+
   if (gameState.isPaused || gameState.isConcluded) return;
 
   gameState.elapsedSeconds++;
 
   newsEvents.forEach((ev) => {
-    if (!ev.triggered && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
+    if (!ev.triggered && !ev.cancelled && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
       triggerNewsEvent(ev, 'AUTO_CLOCK');
     }
   });
 
   if (gameState.elapsedSeconds >= gameState.dayDurationSeconds) {
     gameState.isPaused = true;
+    gameState.status = 'MARKET_CLOSED';
     gameState.pauseStartedAt = Date.now();
     recordAuditEvent('DAY_CLOSE', { day: gameState.currentDay });
+    broadcastAudioCue('bell_close', 'lifecycle', { day: gameState.currentDay });
     broadcastAll({ type: 'BELL_EVENT', bell: 'CLOSE', day: gameState.currentDay });
 
     if (gameState.currentDay >= gameState.totalDays) {
       const winnerData = getConcludedLeaderboard();
+      const snapshot = generateOfficialResultsSnapshot();
       gameState.isConcluded = true;
       gameState.winnerData = winnerData;
+      gameState.status = 'FINAL_ANALYSIS';
       broadcastAll({
         type: 'CHAMPIONSHIP_CONCLUDED',
         winnerData,
+        snapshot,
         title: gameState.title
       });
     }
@@ -630,8 +724,16 @@ function getSanitizedPublicState(role, teamId) {
   const payload = {
     type: 'TICK_UPDATE',
     scenarioMode: activeScenarioMode,
+    serverTimeMs: Date.now(),
+    soundConsoleConnected: soundClients.size > 0,
     gameState: {
       title: gameState.title,
+      subtitle: gameState.subtitle || '',
+      institution: gameState.institution || '',
+      status: gameState.status || (gameState.isPaused ? 'PAUSED' : 'LIVE'),
+      startMode: gameState.startMode || 'IMMEDIATE',
+      scheduledStartTime: gameState.scheduledStartTime,
+      pausePolicy: gameState.pausePolicy || 'TRADING_TIME',
       currentDay: gameState.currentDay,
       totalDays: gameState.totalDays,
       dayDurationSeconds: gameState.dayDurationSeconds,
@@ -644,7 +746,10 @@ function getSanitizedPublicState(role, teamId) {
       transactionFeeBps: gameState.transactionFeeBps,
       newsHistory: gameState.newsHistory,
       isConcluded: gameState.isConcluded,
-      winnerData: gameState.winnerData
+      winnerData: gameState.winnerData,
+      activeCountdown: gameState.activeCountdown,
+      audioSettings: gameState.audioSettings,
+      presentationState: gameState.presentationState
     },
     companies: enabledStocks.map((c) => ({
       ticker: c.ticker,
@@ -696,6 +801,24 @@ function getSanitizedPublicState(role, teamId) {
   if (role === 'HOST') {
     payload.leaderboard = calculateLeaderboard();
     payload.newsEvents = newsEvents;
+    // Host receives all scheduled news with individual publication countdowns and statuses
+    payload.allScheduledNews = newsEvents.map((ev) => {
+      let status = 'SCHEDULED';
+      let appearsInSeconds = Math.max(0, (ev.trigger_second || 0) - gameState.elapsedSeconds);
+      if (ev.cancelled) {
+        status = 'CANCELLED';
+      } else if (ev.triggered) {
+        status = 'PUBLISHED';
+        appearsInSeconds = 0;
+      }
+      return {
+        ...ev,
+        status,
+        appearsInSeconds
+      };
+    });
+    payload.finalResultsSnapshot = gameState.finalResultsSnapshot;
+    payload.soundClientsCount = soundClients.size;
     payload.recentTrades = executedTrades.slice(-25).reverse();
     // Complete share universe for Host Share Universe Manager
     payload.allCompaniesUniverse = companies.map((c) => ({
@@ -732,7 +855,226 @@ function getSanitizedPublicState(role, teamId) {
     payload.leaderboard = calculateLeaderboard().slice(0, 5);
   }
 
+  if (role === 'WINNER_DISPLAY') {
+    payload.finalResultsSnapshot = gameState.finalResultsSnapshot || (gameState.isConcluded ? generateOfficialResultsSnapshot() : null);
+    payload.presentationState = gameState.presentationState;
+  }
+
+  if (role === 'SOUND_CONSOLE') {
+    payload.audioSettings = gameState.audioSettings;
+  }
+
   return payload;
+}
+
+function broadcastAudioCue(cueName, category = 'lifecycle', metadata = {}) {
+  const cueId = `CUE_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+  const vol = (gameState.audioSettings && gameState.audioSettings.masterVolume !== undefined)
+    ? gameState.audioSettings.masterVolume
+    : 85;
+
+  const payload = {
+    type: 'AUDIO_CUE',
+    cueId,
+    cueName,
+    category,
+    volume: vol,
+    serverTimeMs: Date.now(),
+    metadata
+  };
+
+  soundClients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(payload));
+    }
+  });
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN && !soundClients.has(client)) {
+      client.send(JSON.stringify(payload));
+    }
+  });
+
+  recordAuditEvent('AUDIO_CUE_DISPATCHED', { cueId, cueName, category });
+  return cueId;
+}
+
+function startResumeCountdown(triggeredBy = 'HOST') {
+  if (gameState.activeCountdown) {
+    return { ok: false, reason: 'A resume countdown is already active in progress' };
+  }
+  if (!gameState.isPaused) {
+    return { ok: false, reason: 'Market is already live and running' };
+  }
+
+  const now = Date.now();
+  const durationMs = 3000;
+  const targetServerTimeMs = now + durationMs;
+  const countdownId = `CD_${now}`;
+
+  gameState.activeCountdown = {
+    id: countdownId,
+    type: 'RESUME',
+    seconds: 3,
+    startServerTimeMs: now,
+    targetServerTimeMs,
+    totalDurationMs: durationMs
+  };
+
+  const pausedDurationSec = gameState.pauseStartedAt
+    ? Math.round((now - gameState.pauseStartedAt) / 1000)
+    : 0;
+
+  if (gameState.pausePolicy !== 'ELAPSED_TIME') {
+    gameState.totalShiftOffsetSeconds += pausedDurationSec;
+  }
+
+  broadcastAudioCue('countdown_tick', 'lifecycle', { countdownId, second: 3 });
+
+  broadcastAll({
+    type: 'COUNTDOWN_START',
+    countdownId,
+    seconds: 3,
+    startServerTimeMs: now,
+    targetServerTimeMs,
+    serverTimeMs: now
+  });
+
+  if (activeCountdownTimer) clearTimeout(activeCountdownTimer);
+
+  activeCountdownTimer = setTimeout(() => {
+    activeCountdownTimer = null;
+    gameState.activeCountdown = null;
+    gameState.isPaused = false;
+    gameState.pauseMode = 'NONE';
+    gameState.status = 'LIVE';
+    gameState.pauseStartedAt = null;
+
+    recordAuditEvent('MARKET_RESUMED', {
+      triggered_by: triggeredBy,
+      countdown_id: countdownId,
+      shift_offset_applied_seconds: pausedDurationSec,
+      cumulative_shift_offset_seconds: gameState.totalShiftOffsetSeconds
+    });
+
+    if (gameState.elapsedSeconds === 0) {
+      broadcastAudioCue('bell_open', 'lifecycle', { day: gameState.currentDay });
+      broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
+    }
+
+    broadcastAll({
+      type: 'COUNTDOWN_FINISH',
+      countdownId,
+      serverTimeMs: Date.now()
+    });
+    broadcastAll({ type: 'MARKET_RESUMED' });
+    broadcastTick();
+  }, durationMs);
+
+  return { ok: true, countdownId, targetServerTimeMs };
+}
+
+function generateOfficialResultsSnapshot() {
+  const standings = calculateLeaderboard();
+  const snapshotId = `SNAP_${Date.now()}`;
+  const closingPrices = {};
+  companies.forEach((c) => {
+    closingPrices[c.ticker] = c.currentPrice;
+  });
+
+  const teamAnalysis = standings.map((item, idx) => {
+    const t = teams[item.id] || {};
+    const startingCash = t.startingCash || gameState.startingCash || 500000;
+    const finalCash = +(t.cash || 0).toFixed(2);
+    let holdingsValue = 0;
+    let unrealizedPnl = 0;
+    const holdingsBreakdown = [];
+
+    companies.forEach((c) => {
+      const qty = (t.holdings && t.holdings[c.ticker]) || 0;
+      const cost = (t.avgBuyPrice && t.avgBuyPrice[c.ticker]) || 0;
+      const val = +(qty * c.currentPrice).toFixed(2);
+      holdingsValue += val;
+      if (qty > 0) {
+        const uPnl = +(qty * (c.currentPrice - cost)).toFixed(2);
+        unrealizedPnl += uPnl;
+        holdingsBreakdown.push({
+          ticker: c.ticker,
+          name: c.name,
+          quantity: qty,
+          avgBuyPrice: cost,
+          closingPrice: c.currentPrice,
+          marketValue: val,
+          unrealizedPnl: uPnl
+        });
+      }
+    });
+
+    holdingsValue = +holdingsValue.toFixed(2);
+    const finalPortfolioValue = +(finalCash + holdingsValue).toFixed(2);
+    const netProfitOrLoss = +(finalPortfolioValue - startingCash).toFixed(2);
+    const returnPct = +((netProfitOrLoss / startingCash) * 100).toFixed(2);
+
+    const teamTrades = executedTrades.filter((tr) => tr.teamId === item.id);
+    const buys = teamTrades.filter((tr) => tr.type === 'BUY');
+    const sells = teamTrades.filter((tr) => tr.type === 'SELL');
+    let totalInvested = 0;
+    let totalSalesValue = 0;
+    let totalFees = 0;
+    buys.forEach((b) => { totalInvested += b.grossValue || 0; totalFees += b.fee || 0; });
+    sells.forEach((s) => { totalSalesValue += s.grossValue || 0; totalFees += s.fee || 0; });
+
+    let summaryText = '';
+    if (returnPct > 15) {
+      summaryText = `Outstanding aggressive alpha generation with +${returnPct}% return. Mastered market momentum and volatility.`;
+    } else if (returnPct > 0) {
+      summaryText = `Disciplined profitable performance gaining +₹${netProfitOrLoss.toLocaleString('en-IN')} (+${returnPct}%). Strong risk balance.`;
+    } else if (returnPct === 0) {
+      summaryText = `Neutral capital preservation. Retained 100% principal safe without portfolio drawdown.`;
+    } else {
+      summaryText = `Defensive capital drawdown of ${returnPct}%. Impacted by late market price corrections.`;
+    }
+
+    return {
+      rank: idx + 1,
+      teamId: item.id,
+      teamName: item.name,
+      members: item.members,
+      startingCash,
+      finalCash,
+      holdingsValue,
+      finalPortfolioValue,
+      netProfitOrLoss,
+      returnPct,
+      tradeCount: teamTrades.length,
+      buyCount: buys.length,
+      sellCount: sells.length,
+      totalInvested: +totalInvested.toFixed(2),
+      totalSalesValue: +totalSalesValue.toFixed(2),
+      totalFees: +totalFees.toFixed(2),
+      realizedPnl: +(t.realizedPnl || 0).toFixed(2),
+      unrealizedPnl: +unrealizedPnl.toFixed(2),
+      holdingsBreakdown,
+      summaryText
+    };
+  });
+
+  const snapshot = {
+    snapshotId,
+    generatedAt: new Date().toISOString(),
+    eventTitle: gameState.title,
+    closingDay: gameState.currentDay,
+    totalTeams: teamAnalysis.length,
+    closingPrices,
+    champion: teamAnalysis[0] || null,
+    runnerUp: teamAnalysis[1] || null,
+    thirdPlace: teamAnalysis[2] || null,
+    rankings: teamAnalysis,
+    teams: teamAnalysis
+  };
+
+  gameState.finalResultsSnapshot = snapshot;
+  return snapshot;
 }
 
 function broadcastTick() {
@@ -789,6 +1131,11 @@ wss.on('connection', (ws) => {
       sessions.set(token, sessionObj);
       ws.session = sessionObj;
 
+      if (sessionObj.role === 'SOUND_CONSOLE') {
+        soundClients.add(ws);
+        recordAuditEvent('SOUND_CONSOLE_ATTACHED', { id: sessionObj.id });
+      }
+
       recordAuditEvent('CLIENT_LOGIN', { role: sessionObj.role, id: sessionObj.id });
 
       ws.send(JSON.stringify({
@@ -811,6 +1158,9 @@ wss.on('connection', (ws) => {
         return;
       }
       ws.session = existing;
+      if (existing.role === 'SOUND_CONSOLE') {
+        soundClients.add(ws);
+      }
       ws.send(JSON.stringify({
         type: 'LOGIN_SUCCESS',
         session_token: existing.token,
@@ -826,6 +1176,9 @@ wss.on('connection', (ws) => {
     // --- 3. LOGOUT ---
     if (data.action === 'LOGOUT') {
       if (ws.session) {
+        if (ws.session.role === 'SOUND_CONSOLE') {
+          soundClients.delete(ws);
+        }
         sessions.delete(ws.session.token);
         recordAuditEvent('CLIENT_LOGOUT', { role: ws.session.role, id: ws.session.id });
         ws.session = null;
@@ -1181,40 +1534,179 @@ wss.on('connection', (ws) => {
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
         const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
+        if (activeCountdownTimer) {
+          clearTimeout(activeCountdownTimer);
+          activeCountdownTimer = null;
+        }
+        const cancelledCountdownId = gameState.activeCountdown ? gameState.activeCountdown.id : null;
+        gameState.activeCountdown = null;
         gameState.isPaused = true;
         gameState.pauseMode = mode;
+        gameState.status = mode === 'BLACKOUT' ? 'BLACKOUT' : 'PAUSED';
         gameState.pauseStartedAt = Date.now();
         recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', pauseMode: mode, shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
+        if (cancelledCountdownId) {
+          broadcastAll({ type: 'COUNTDOWN_CANCELLED', countdownId: cancelledCountdownId });
+        }
         broadcastAll({ type: 'MARKET_PAUSED', pauseMode: mode });
         broadcastTick();
       }
 
-      // 5.2 Market Resume with 3-2-1
+      // 5.2 Market Resume with Authoritative 3-2-1 Server Countdown
       if (data.action === 'HOST_RESUME_COUNTDOWN') {
-        if (gameState.isPaused) {
-          const pausedDurationSec = gameState.pauseStartedAt
-            ? Math.round((Date.now() - gameState.pauseStartedAt) / 1000)
-            : 0;
-          gameState.totalShiftOffsetSeconds += pausedDurationSec;
-
-          broadcastAll({ type: 'COUNTDOWN_START', seconds: 3 });
-
-          setTimeout(() => {
-            gameState.isPaused = false;
-            gameState.pauseMode = 'NONE';
-            gameState.pauseStartedAt = null;
-            recordAuditEvent('MARKET_RESUMED', {
-              triggered_by: 'HOST',
-              shift_offset_applied_seconds: pausedDurationSec,
-              cumulative_shift_offset_seconds: gameState.totalShiftOffsetSeconds
-            });
-            if (gameState.elapsedSeconds === 0) {
-              broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
-            }
-            broadcastAll({ type: 'MARKET_RESUMED' });
-            broadcastTick();
-          }, 3000);
+        const res = startResumeCountdown('HOST');
+        if (!res.ok) {
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: res.reason }));
         }
+      }
+
+      // 5.2b Schedule Event for future date/time
+      if (data.action === 'HOST_SCHEDULE_EVENT') {
+        gameState.startMode = 'SCHEDULED';
+        gameState.scheduledStartTime = data.scheduledStartTime; // ISO string e.g. "2026-10-15T09:00:00"
+        gameState.pausePolicy = data.pausePolicy === 'ELAPSED_TIME' ? 'ELAPSED_TIME' : 'TRADING_TIME';
+        gameState.status = 'SCHEDULED';
+        gameState.isPaused = true;
+        if (data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
+        recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy });
+        broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy });
+        broadcastTick();
+      }
+
+      // 5.2c Start Event Now (Immediate Launch)
+      if (data.action === 'HOST_START_EVENT_NOW') {
+        gameState.startMode = 'IMMEDIATE';
+        gameState.status = 'LIVE';
+        gameState.isPaused = false;
+        gameState.pauseMode = 'NONE';
+        gameState.pauseStartedAt = null;
+        gameState.elapsedSeconds = 0;
+        recordAuditEvent('EVENT_STARTED_NOW', { triggered_by: 'HOST' });
+        broadcastAudioCue('bell_open', 'lifecycle', { day: gameState.currentDay });
+        broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
+        broadcastAll({ type: 'MARKET_RESUMED' });
+        broadcastTick();
+      }
+
+      // 5.2d News Control Center: Publish Now, Cancel, Edit, Duplicate
+      if (data.action === 'HOST_PUBLISH_NEWS_NOW') {
+        const ev = newsEvents.find((e) => e.event_id === data.event_id);
+        if (ev) {
+          triggerNewsEvent(ev, 'HOST_MANUAL');
+          broadcastTick();
+        }
+      }
+
+      if (data.action === 'HOST_CANCEL_NEWS') {
+        const ev = newsEvents.find((e) => e.event_id === data.event_id);
+        if (ev) {
+          ev.cancelled = true;
+          recordAuditEvent('NEWS_CANCELLED', { event_id: ev.event_id });
+          broadcastTick();
+        }
+      }
+
+      if (data.action === 'HOST_EDIT_NEWS') {
+        const ev = newsEvents.find((e) => e.event_id === data.event_id);
+        if (ev) {
+          if (data.headline) ev.headline = data.headline.trim();
+          if (data.explanation) ev.simple_explanation = data.explanation.trim();
+          if (data.trigger_second !== undefined) ev.trigger_second = parseInt(data.trigger_second, 10);
+          if (data.impacts) ev.impacts = data.impacts;
+          recordAuditEvent('NEWS_EDITED', { event_id: ev.event_id });
+          broadcastTick();
+        }
+      }
+
+      if (data.action === 'HOST_DUPLICATE_NEWS') {
+        const ev = newsEvents.find((e) => e.event_id === data.event_id);
+        if (ev) {
+          const clone = {
+            ...ev,
+            event_id: `NEWS_COPY_${Date.now().toString().slice(-4)}`,
+            headline: `${ev.headline} (Follow-Up)`,
+            triggered: false,
+            cancelled: false,
+            trigger_second: gameState.elapsedSeconds + 60
+          };
+          newsEvents.push(clone);
+          recordAuditEvent('NEWS_DUPLICATED', { original: ev.event_id, clone: clone.event_id });
+          broadcastTick();
+        }
+      }
+
+      // 5.2e Host Audio Controls (Remote Event Hall Audio Console)
+      if (data.action === 'HOST_UPDATE_AUDIO_SETTINGS') {
+        if (!gameState.audioSettings) {
+          gameState.audioSettings = { masterEnabled: true, masterVolume: 85, categories: { lifecycle: true, news: true, alerts: true, presentation: true }, muted: false };
+        }
+        if (data.masterVolume !== undefined) gameState.audioSettings.masterVolume = Math.max(0, Math.min(100, parseInt(data.masterVolume, 10)));
+        if (data.masterEnabled !== undefined) gameState.audioSettings.masterEnabled = !!data.masterEnabled;
+        if (data.muted !== undefined) gameState.audioSettings.muted = !!data.muted;
+        if (data.categories) gameState.audioSettings.categories = { ...gameState.audioSettings.categories, ...data.categories };
+
+        recordAuditEvent('AUDIO_SETTINGS_UPDATED', { audioSettings: gameState.audioSettings });
+        broadcastAll({ type: 'AUDIO_SETTINGS_UPDATED', audioSettings: gameState.audioSettings });
+        broadcastTick();
+      }
+
+      if (data.action === 'HOST_TEST_SOUND_CUE') {
+        const cueName = data.cueName || 'countdown_tick';
+        const category = data.category || 'lifecycle';
+        broadcastAudioCue(cueName, category, { isTest: true });
+      }
+
+      // 5.2f Host Winner Presentation Stage Controls
+      if (data.action === 'HOST_START_WINNER_PRESENTATION') {
+        const snapshot = generateOfficialResultsSnapshot();
+        gameState.isPaused = true;
+        gameState.isConcluded = true;
+        gameState.status = 'WINNER_ANNOUNCEMENT';
+        gameState.presentationState = {
+          active: true,
+          scene: 'SCENE_INTRO',
+          currentTeamIndex: 0,
+          revealedRanks: [],
+          updatedAt: new Date().toISOString()
+        };
+
+        recordAuditEvent('WINNER_PRESENTATION_STARTED', { snapshotId: snapshot.snapshotId });
+        broadcastAudioCue('championship_fanfare', 'presentation', { scene: 'SCENE_INTRO' });
+        broadcastAll({
+          type: 'PRESENTATION_SCENE_UPDATE',
+          scene: 'SCENE_INTRO',
+          presentationState: gameState.presentationState,
+          snapshot
+        });
+        broadcastTick();
+      }
+
+      if (data.action === 'HOST_SET_PRESENTATION_SCENE') {
+        const scene = data.scene || 'SCENE_INTRO';
+        if (!gameState.presentationState) {
+          gameState.presentationState = { active: true, scene, currentTeamIndex: 0, revealedRanks: [] };
+        }
+        gameState.presentationState.scene = scene;
+        gameState.presentationState.updatedAt = new Date().toISOString();
+
+        if (scene === 'SCENE_BRONZE') {
+          broadcastAudioCue('presentation_bronze', 'presentation', { rank: 3 });
+        } else if (scene === 'SCENE_SILVER') {
+          broadcastAudioCue('presentation_silver', 'presentation', { rank: 2 });
+        } else if (scene === 'SCENE_CHAMPION') {
+          broadcastAudioCue('winner_trumpet', 'presentation', { rank: 1 });
+        } else if (scene === 'SCENE_PODIUM') {
+          broadcastAudioCue('championship_fanfare', 'presentation');
+        }
+
+        recordAuditEvent('PRESENTATION_SCENE_CHANGED', { scene });
+        broadcastAll({
+          type: 'PRESENTATION_SCENE_UPDATE',
+          scene,
+          presentationState: gameState.presentationState,
+          snapshot: gameState.finalResultsSnapshot || generateOfficialResultsSnapshot()
+        });
+        broadcastTick();
       }
 
       // 5.3 Next Day
@@ -1773,6 +2265,14 @@ wss.on('connection', (ws) => {
       }
     }
   });
+
+  ws.on('close', () => {
+    if (ws.session && ws.session.role === 'SOUND_CONSOLE') {
+      soundClients.delete(ws);
+      recordAuditEvent('SOUND_CONSOLE_DETACHED', { id: ws.session.id });
+      broadcastTick();
+    }
+  });
 });
 
 // ==========================================
@@ -1929,6 +2429,14 @@ app.get('/api/export/universe-csv', requireHostAuth, (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="SHARE_UNIVERSE_${new Date().toISOString().slice(0, 10)}.csv"`);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.send('\uFEFF' + csvContent);
+});
+
+// 8.8 Official Results Snapshot
+app.get('/api/results-snapshot', requireHostAuth, (req, res) => {
+  const snapshot = gameState.finalResultsSnapshot || generateOfficialResultsSnapshot();
+  res.setHeader('Content-Disposition', `attachment; filename="RESULTS_SNAPSHOT_${snapshot.snapshotId}.json"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(snapshot, null, 2));
 });
 
 // 8.7 Complete Competition Backup & Restore

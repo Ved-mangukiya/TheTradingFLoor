@@ -193,6 +193,14 @@ function getAutoCredentials(paramVal, allParams) {
     const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'screen2026';
     return { u: 'projector', p: pass };
   }
+  if (lower === 'sound') {
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'sound2026';
+    return { u: 'sound', p: pass };
+  }
+  if (lower === 'winner') {
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'winner2026';
+    return { u: 'winner', p: pass };
+  }
   const teamMatch = lower.match(/^team(\d+)$/);
   if (teamMatch) {
     const num = teamMatch[1];
@@ -298,8 +306,28 @@ function connectWebSocket() {
       return;
     }
 
+    if (msg.type === 'AUDIO_CUE') {
+      handleIncomingAudioCue(msg);
+      return;
+    }
+
+    if (msg.type === 'PRESENTATION_SCENE_UPDATE') {
+      renderPresentationScene(msg.scene, msg.snapshot);
+      return;
+    }
+
     if (msg.type === 'COUNTDOWN_START') {
-      runResumeCountdown(msg.seconds || 3);
+      syncAuthoritativeCountdown(msg);
+      return;
+    }
+
+    if (msg.type === 'COUNTDOWN_CANCELLED') {
+      cancelAuthoritativeCountdown();
+      return;
+    }
+
+    if (msg.type === 'COUNTDOWN_FINISH') {
+      cancelAuthoritativeCountdown();
       return;
     }
 
@@ -425,7 +453,7 @@ function connectWebSocket() {
 }
 
 function switchSpaView(role) {
-  ['loginView', 'traderView', 'hostView', 'projectorView'].forEach((id) => {
+  ['loginView', 'traderView', 'hostView', 'projectorView', 'soundConsoleView', 'winnerPresentationView'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -436,6 +464,10 @@ function switchSpaView(role) {
     document.getElementById('hostView').classList.remove('hidden');
   } else if (role === 'PROJECTOR') {
     document.getElementById('projectorView').classList.remove('hidden');
+  } else if (role === 'SOUND_CONSOLE') {
+    document.getElementById('soundConsoleView').classList.remove('hidden');
+  } else if (role === 'WINNER_DISPLAY') {
+    document.getElementById('winnerPresentationView').classList.remove('hidden');
   } else {
     document.getElementById('loginView').classList.remove('hidden');
   }
@@ -504,6 +536,10 @@ function handleStateUpdate(state) {
   if (!state) return;
   latestState = state;
 
+  if (state.serverTimeMs) {
+    serverClockOffsetMs = Date.now() - state.serverTimeMs;
+  }
+
   // Sync custom Event Title across all views
   if (state.gameState && state.gameState.title) {
     document.title = state.gameState.title;
@@ -511,6 +547,17 @@ function handleStateUpdate(state) {
     if (loginTitleEl) loginTitleEl.textContent = state.gameState.title;
     const projTitleEl = document.getElementById('projEventTitleHeader');
     if (projTitleEl) projTitleEl.textContent = state.gameState.title;
+    const presTitleEl = document.getElementById('presEventTitle');
+    if (presTitleEl) presTitleEl.textContent = state.gameState.title;
+  }
+
+  // Synchronize Authoritative Resume Countdown if active on server
+  if (state.gameState && state.gameState.activeCountdown) {
+    if (!currentCountdownId || currentCountdownId !== state.gameState.activeCountdown.countdownId) {
+      syncAuthoritativeCountdown(state.gameState.activeCountdown);
+    }
+  } else if (currentCountdownId) {
+    cancelAuthoritativeCountdown();
   }
 
   // Handle Dual Pause Overlays
@@ -543,6 +590,8 @@ function handleStateUpdate(state) {
   if (currentRole === 'TRADER') renderTraderView(state);
   else if (currentRole === 'HOST') renderHostView(state);
   else if (currentRole === 'PROJECTOR') renderProjectorView(state);
+  else if (currentRole === 'SOUND_CONSOLE') renderSoundConsoleView(state);
+  else if (currentRole === 'WINNER_DISPLAY') renderWinnerPresentationView(state);
 
   // If full chart modal is open, keep updating it live
   if (currentSelectedTickerForChart && !document.getElementById('fullChartModal').classList.contains('hidden')) {
@@ -593,6 +642,43 @@ function renderTraderView(state) {
   } else {
     statusEl.textContent = 'ACTIVE TRADING';
     statusEl.className = 'badge badge-active';
+  }
+
+  // Dual Timer & Waiting Room Logic
+  const waitingRoomOverlay = document.getElementById('traderWaitingRoomOverlay');
+  const closesInTimer = document.getElementById('traderClosesInTimer');
+
+  if (gameState.status === 'SCHEDULED' || gameState.status === 'PRE_EVENT_COUNTDOWN') {
+    if (waitingRoomOverlay) {
+      waitingRoomOverlay.classList.remove('hidden');
+      const wrTitle = document.getElementById('waitingRoomTitle');
+      const wrTeam = document.getElementById('waitingRoomTeamName');
+      const wrCash = document.getElementById('waitingRoomCash');
+      const wrTime = document.getElementById('waitingRoomScheduledTime');
+      const wrCountdown = document.getElementById('waitingRoomCountdown');
+
+      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship 2026';
+      if (wrTeam && portfolio) wrTeam.textContent = portfolio.name;
+      if (wrCash) wrCash.textContent = formatINR(gameState.startingCash || 500000);
+
+      if (gameState.scheduledStartTime) {
+        const schDate = new Date(gameState.scheduledStartTime);
+        if (wrTime) wrTime.textContent = schDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const remainingMs = Math.max(0, schDate.getTime() - (Date.now() - serverClockOffsetMs));
+        const remSec = Math.floor(remainingMs / 1000);
+        if (wrCountdown) wrCountdown.textContent = formatMMSS(remSec);
+        if (closesInTimer) closesInTimer.textContent = `OPENS IN: ${formatMMSS(remSec)}`;
+      } else {
+        if (wrCountdown) wrCountdown.textContent = 'STANDBY';
+        if (closesInTimer) closesInTimer.textContent = 'WAITING FOR HOST';
+      }
+    }
+  } else {
+    if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+    if (closesInTimer) {
+      const remainingSec = Math.max(0, (gameState.dayDurationSeconds || 1800) - gameState.elapsedSeconds);
+      closesInTimer.textContent = `CLOSES IN: ${formatMMSS(remainingSec)}`;
+    }
   }
 
   if (portfolio) {
@@ -1418,7 +1504,7 @@ function drawSmoothBezierSparkline(canvasId, history, dayOpenPrice, isUp, isLarg
 // ==========================================
 function switchHostTab(tabName) {
   activeHostTab = tabName;
-  ['stocks', 'universe', 'news', 'leaderboard', 'trades', 'exports', 'launcher'].forEach((t) => {
+  ['stocks', 'universe', 'news', 'analysis', 'sound', 'leaderboard', 'trades', 'exports', 'launcher'].forEach((t) => {
     const btn = document.getElementById(`hostTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
     const content = document.getElementById(`hostTabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
     if (btn) btn.className = t === tabName ? 'btn btn-sage' : 'btn btn-outline';
@@ -1477,22 +1563,14 @@ function renderHostView(state) {
     }).join('');
   }
 
-  // 2. Render News Deck
-  if (newsEvents) {
-    document.getElementById('hostNewsList').innerHTML = newsEvents.map((ev) => `
-      <div class="cream-panel" style="padding: 14px; border: 1px solid ${ev.triggered ? 'var(--subtle-border)' : 'var(--champagne-accent)'};">
-        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-family: var(--font-mono); color: var(--champagne-accent);">
-          <span>${ev.event_id} • Day ${ev.day}</span>
-          <span class="badge badge-champagne" style="font-size: 9px; padding: 1px 5px;">${ev.type}</span>
-        </div>
-        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-forest); margin: 6px 0;">${ev.headline}</h4>
-        <p style="font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px;">${ev.simple_explanation}</p>
-        <button onclick="hostTriggerNews('${ev.event_id}')" class="btn ${ev.triggered ? 'btn-outline' : 'btn-sage'}" style="width: 100%; padding: 5px; font-size: 11px;">
-          ${ev.triggered ? 'Re-Trigger Wire Shock' : 'Fire Wire Shock Now'}
-        </button>
-      </div>
-    `).join('');
-  }
+  // 2. Render News Deck with individual countdowns & actions
+  renderHostNews(state);
+
+  // 2.1 Render Financial Analysis Table
+  renderHostAnalysis(state);
+
+  // 2.2 Render Audio Console Settings & Connection Status
+  renderHostSoundTab(state);
 
   // 3. Render Leaderboard Table
   if (leaderboard) {
@@ -2218,25 +2296,771 @@ function dismissNewsFlash() {
   document.getElementById('newsFlashModal').classList.add('hidden');
 }
 
-function runResumeCountdown(seconds) {
+// ==========================================
+// AUTHORITATIVE SYNCHRONIZED RESUME COUNTDOWN ENGINE
+// ==========================================
+let currentCountdownId = null;
+let countdownAnimFrameHandle = null;
+let lastAnnouncedSecond = null;
+let serverClockOffsetMs = 0; // localTime - serverTime
+
+function syncAuthoritativeCountdown(countdownData) {
+  if (!countdownData) return;
+  const { countdownId, targetServerTimeMs, serverTimeMs } = countdownData;
+  if (serverTimeMs) {
+    serverClockOffsetMs = Date.now() - serverTimeMs;
+  }
+
+  currentCountdownId = countdownId;
   const overlay = document.getElementById('countdownOverlay');
   const numEl = document.getElementById('countdownNumber');
-  overlay.classList.remove('hidden');
-  let counter = seconds;
-  numEl.textContent = counter;
-  playInstitutionalSound('countdown_tick');
+  if (!overlay || !numEl) return;
 
-  const timer = setInterval(() => {
-    counter--;
-    if (counter > 0) {
-      numEl.textContent = counter;
-      playInstitutionalSound('countdown_tick');
+  overlay.classList.remove('hidden');
+
+  if (countdownAnimFrameHandle) {
+    cancelAnimationFrame(countdownAnimFrameHandle);
+    countdownAnimFrameHandle = null;
+  }
+
+  lastAnnouncedSecond = null;
+
+  function updateCountdownTick() {
+    const estimatedServerNow = Date.now() - serverClockOffsetMs;
+    const remainingMs = targetServerTimeMs - estimatedServerNow;
+
+    if (remainingMs > 2000) {
+      if (lastAnnouncedSecond !== 3) {
+        lastAnnouncedSecond = 3;
+        numEl.textContent = '3';
+        numEl.style.transform = 'scale(1.2)';
+        setTimeout(() => { if (numEl) numEl.style.transform = 'scale(1)'; }, 150);
+        playInstitutionalSound('countdown_tick');
+      }
+    } else if (remainingMs > 1000) {
+      if (lastAnnouncedSecond !== 2) {
+        lastAnnouncedSecond = 2;
+        numEl.textContent = '2';
+        numEl.style.transform = 'scale(1.2)';
+        setTimeout(() => { if (numEl) numEl.style.transform = 'scale(1)'; }, 150);
+        playInstitutionalSound('countdown_tick');
+      }
+    } else if (remainingMs > 0) {
+      if (lastAnnouncedSecond !== 1) {
+        lastAnnouncedSecond = 1;
+        numEl.textContent = '1';
+        numEl.style.transform = 'scale(1.2)';
+        setTimeout(() => { if (numEl) numEl.style.transform = 'scale(1)'; }, 150);
+        playInstitutionalSound('countdown_tick');
+      }
+    } else if (remainingMs > -800) {
+      if (lastAnnouncedSecond !== 'GO') {
+        lastAnnouncedSecond = 'GO';
+        numEl.textContent = 'GO!';
+        numEl.style.transform = 'scale(1.35)';
+        numEl.style.color = 'var(--price-up)';
+        playInstitutionalSound('bell_open');
+      }
     } else {
-      clearInterval(timer);
-      overlay.classList.add('hidden');
-      playInstitutionalSound('bell_open');
+      cancelAuthoritativeCountdown();
+      return;
     }
-  }, 1000);
+
+    countdownAnimFrameHandle = requestAnimationFrame(updateCountdownTick);
+  }
+
+  countdownAnimFrameHandle = requestAnimationFrame(updateCountdownTick);
+}
+
+function cancelAuthoritativeCountdown() {
+  if (countdownAnimFrameHandle) {
+    cancelAnimationFrame(countdownAnimFrameHandle);
+    countdownAnimFrameHandle = null;
+  }
+  currentCountdownId = null;
+  lastAnnouncedSecond = null;
+  const overlay = document.getElementById('countdownOverlay');
+  const numEl = document.getElementById('countdownNumber');
+  if (overlay) overlay.classList.add('hidden');
+  if (numEl) {
+    numEl.style.transform = 'scale(1)';
+    numEl.style.color = '';
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && latestState && latestState.gameState) {
+    if (latestState.gameState.activeCountdown) {
+      syncAuthoritativeCountdown(latestState.gameState.activeCountdown);
+    }
+  }
+});
+
+// ==========================================
+// NEWS CONTROL CENTRE (HOST CONTROLLERS)
+// ==========================================
+function renderHostNews(state) {
+  const newsContainer = document.getElementById('hostNewsList');
+  if (!newsContainer) return;
+
+  const newsItems = state.allScheduledNews || state.newsEvents || [];
+  if (newsItems.length === 0) {
+    newsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No breaking news scheduled. Click "+ Create Breaking News" to broadcast wire items.</div>`;
+    return;
+  }
+
+  const elapsedSec = (state.gameState && state.gameState.elapsedSeconds) || 0;
+
+  newsContainer.innerHTML = newsItems.map((ev) => {
+    const isTriggered = ev.triggered || ev.status === 'PUBLISHED';
+    const isCancelled = ev.status === 'CANCELLED';
+    const scheduledSec = ev.scheduledTimeSec !== undefined ? ev.scheduledTimeSec : (ev.scheduledDaySec || 0);
+    const remSec = Math.max(0, scheduledSec - elapsedSec);
+    const impactVal = ev.deltaPct !== undefined ? ev.deltaPct : (ev.targetPriceMultiplier ? (ev.targetPriceMultiplier - 1) * 100 : 0);
+    const isUp = impactVal >= 0;
+
+    let statusBadge = '';
+    if (isCancelled) {
+      statusBadge = '<span class="badge" style="background:#FEE2E2; color:#991B1B;">CANCELLED</span>';
+    } else if (isTriggered) {
+      statusBadge = '<span class="badge badge-active">🟢 PUBLISHED • ACTIVE IMPACT</span>';
+    } else {
+      statusBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏳ Appears in ${formatMMSS(remSec)}</span>`;
+    }
+
+    return `
+      <div class="cream-panel" style="padding: 16px; border: 1px solid ${isTriggered ? 'var(--subtle-border)' : 'var(--champagne-accent)'}; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); font-weight: 700;">${ev.event_id || ev.id}</span>
+            ${statusBadge}
+          </div>
+          <h4 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0 0 6px 0;">${ev.headline}</h4>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;">${ev.simple_explanation || ev.explanation || ''}</p>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 11px; margin-bottom: 14px;">
+            <div class="cream-panel" style="padding: 6px 10px;">
+              <span style="color: var(--text-muted); display: block; font-size: 9px; text-transform: uppercase;">Affected Target</span>
+              <strong style="color: var(--text-forest);">${ev.ticker || ev.scope || 'Broad Market'}</strong>
+            </div>
+            <div class="cream-panel" style="padding: 6px 10px;">
+              <span style="color: var(--text-muted); display: block; font-size: 9px; text-transform: uppercase;">Engine Price Shock</span>
+              <strong class="${isUp ? 'price-up' : 'price-down'}">${isUp ? '+' : ''}${Number(impactVal).toFixed(1)}%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+          ${!isTriggered && !isCancelled ? `
+            <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-sage" style="flex: 2; padding: 6px 10px; font-size: 11px; font-weight: 700;">
+              ⚡ Publish Now
+            </button>
+            <button onclick="hostCancelNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 8px; font-size: 11px; color: var(--error-red);">
+              Cancel
+            </button>
+          ` : `
+            <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 10px; font-size: 11px;">
+              Re-Trigger Wire
+            </button>
+          `}
+          <button onclick="hostDuplicateNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="padding: 6px 8px; font-size: 11px;" title="Duplicate News Item">
+            📋
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function hostPublishNewsNow(newsId) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({ action: 'HOST_PUBLISH_NEWS_NOW', session_token: sessionToken, newsId }));
+}
+
+function hostCancelNews(newsId) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({ action: 'HOST_CANCEL_NEWS', session_token: sessionToken, newsId }));
+}
+
+function hostDuplicateNews(newsId) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({ action: 'HOST_DUPLICATE_NEWS', session_token: sessionToken, newsId }));
+}
+
+// ==========================================
+// FINANCIAL ANALYSIS CONTROLLERS
+// ==========================================
+function renderHostAnalysis(state) {
+  const tbody = document.getElementById('hostFinancialAnalysisTbody');
+  if (!tbody) return;
+
+  const snapshot = state.finalResultsSnapshot || generateClientSnapshotFromLeaderboard(state);
+  const rankings = snapshot.rankings || [];
+
+  if (rankings.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" style="padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No team portfolios active yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rankings.map((team) => {
+    const isProfit = team.netProfitLoss >= 0;
+    return `
+      <tr style="border-bottom: 1px solid var(--subtle-border);">
+        <td style="padding: 10px; font-weight: 800; color: ${team.rank === 1 ? 'var(--champagne-accent)' : 'inherit'};">#${team.rank}</td>
+        <td style="padding: 10px; font-weight: 700; color: var(--text-forest);">${team.teamName}</td>
+        <td style="padding: 10px; color: var(--text-muted); font-size: 11px;">${team.members || '—'}</td>
+        <td style="padding: 10px; text-align: right;">${formatINR(team.startingCash)}</td>
+        <td style="padding: 10px; text-align: right;">${formatINR(team.cash)}</td>
+        <td style="padding: 10px; text-align: right;">${formatINR(team.holdingsValue)}</td>
+        <td style="padding: 10px; text-align: right; font-weight: 800;">${formatINR(team.totalPortfolioValue)}</td>
+        <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isProfit ? 'price-up' : 'price-down'}">
+          ${isProfit ? '+' : ''}${formatINR(team.netProfitLoss)}
+        </td>
+        <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isProfit ? 'price-up' : 'price-down'}">
+          ${isProfit ? '+' : ''}${team.returnPct.toFixed(2)}%
+        </td>
+        <td style="padding: 10px; text-align: center;">${team.tradeCount}</td>
+        <td style="padding: 10px; text-align: right; color: var(--text-muted);">${formatINR(team.brokerageFees || 0)}</td>
+        <td style="padding: 10px; text-align: center;">
+          <span class="badge ${isProfit ? 'badge-active' : 'badge-paused'}" style="font-size: 10px; padding: 2px 8px;">
+            ${team.summaryReview || (isProfit ? 'Bullish Outperformance' : 'Defensive Position')}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function downloadResultsSnapshotJSON() {
+  if (!latestState) return;
+  const snapshot = latestState.finalResultsSnapshot || generateClientSnapshotFromLeaderboard(latestState);
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(snapshot, null, 2));
+  const a = document.createElement('a');
+  a.setAttribute('href', dataStr);
+  a.setAttribute('download', `Championship_Final_Financial_Analysis_${new Date().toISOString().slice(0, 10)}.json`);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+// ==========================================
+// DEDICATED SOUND SYSTEM & AUDIO CONTROLLERS
+// ==========================================
+function renderSoundConsoleView(state) {
+  if (!state || !state.gameState) return;
+  const audioSettings = state.gameState.audioSettings || {};
+  const volDisplay = document.getElementById('soundConsoleVolumeDisplay');
+  if (volDisplay) {
+    const volPct = Math.round((audioSettings.masterVolume !== undefined ? audioSettings.masterVolume : 0.85) * 100);
+    volDisplay.textContent = `${volPct}%${audioSettings.muted ? ' (Muted)' : ''}`;
+  }
+}
+
+function renderHostSoundTab(state) {
+  if (!state || !state.gameState) return;
+  const audio = state.gameState.audioSettings || { masterVolume: 0.85, muted: false, categories: {} };
+
+  const slider = document.getElementById('hostSoundMasterVolSlider');
+  const valDisplay = document.getElementById('hostSoundMasterVolVal');
+  if (slider && document.activeElement !== slider) {
+    slider.value = Math.round(audio.masterVolume * 100);
+  }
+  if (valDisplay) {
+    valDisplay.textContent = Math.round(audio.masterVolume * 100) + '%';
+  }
+
+  const btnMute = document.getElementById('btnHostToggleMute');
+  if (btnMute) {
+    btnMute.textContent = audio.muted ? '🔊 Unmute All Audio' : '🔇 Mute All Audio';
+    btnMute.className = audio.muted ? 'btn btn-primary' : 'btn btn-outline';
+  }
+
+  const connBadge = document.getElementById('hostSoundConsoleConnBadge');
+  if (connBadge) {
+    if (state.gameState.soundConsoleConnected) {
+      connBadge.className = 'badge badge-active';
+      connBadge.style.background = '#ECFDF5';
+      connBadge.style.color = '#065F46';
+      connBadge.textContent = '🟢 Dedicated Sound Laptop Connected (Hardware Active)';
+    } else {
+      connBadge.className = 'badge';
+      connBadge.style.background = '#FEE2E2';
+      connBadge.style.color = '#991B1B';
+      connBadge.textContent = '⚠️ No Dedicated Sound Laptop Connected';
+    }
+  }
+}
+
+function updateHostAudioSettings() {
+  const slider = document.getElementById('hostSoundMasterVolSlider');
+  const vol = slider ? Number(slider.value) / 100 : 0.85;
+  const valDisplay = document.getElementById('hostSoundMasterVolVal');
+  if (valDisplay) valDisplay.textContent = slider.value + '%';
+
+  const catLifecycle = document.getElementById('audioCatLifecycle') ? document.getElementById('audioCatLifecycle').checked : true;
+  const catNews = document.getElementById('audioCatNews') ? document.getElementById('audioCatNews').checked : true;
+  const catAlerts = document.getElementById('audioCatAlerts') ? document.getElementById('audioCatAlerts').checked : true;
+  const catPres = document.getElementById('audioCatPresentation') ? document.getElementById('audioCatPresentation').checked : true;
+
+  if (ws && sessionToken && currentRole === 'HOST') {
+    ws.send(JSON.stringify({
+      action: 'HOST_UPDATE_AUDIO_SETTINGS',
+      session_token: sessionToken,
+      masterVolume: vol,
+      categories: {
+        lifecycle: catLifecycle,
+        news: catNews,
+        alerts: catAlerts,
+        presentation: catPres
+      }
+    }));
+  }
+}
+
+function toggleHostAudioMute() {
+  if (!latestState || !latestState.gameState) return;
+  const currentMuted = !!(latestState.gameState.audioSettings && latestState.gameState.audioSettings.muted);
+  if (ws && sessionToken && currentRole === 'HOST') {
+    ws.send(JSON.stringify({
+      action: 'HOST_UPDATE_AUDIO_SETTINGS',
+      session_token: sessionToken,
+      muted: !currentMuted
+    }));
+  }
+}
+
+function testRemoteAudioCue(cueName, category) {
+  if (ws && sessionToken && currentRole === 'HOST') {
+    ws.send(JSON.stringify({
+      action: 'HOST_TEST_SOUND_CUE',
+      session_token: sessionToken,
+      cueName: cueName,
+      category: category
+    }));
+    showOrderToast(`Dispatched test cue [${cueName}] to all authorized sound outputs`, true);
+  }
+}
+
+function testLocalSoundCue(cueName) {
+  playInstitutionalSound(cueName);
+}
+
+let audioEngineContext = null;
+function unlockAudioSystem() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!audioEngineContext) {
+      audioEngineContext = new AudioCtx();
+    }
+    if (audioEngineContext.state === 'suspended') {
+      audioEngineContext.resume();
+    }
+    const banner = document.getElementById('soundUnlockBanner');
+    if (banner) banner.classList.add('hidden');
+    const badge = document.getElementById('soundConsoleStatusBadge');
+    if (badge) {
+      badge.textContent = '🟢 Audio Engine Armed & Ready';
+      badge.style.background = '#ECFDF5';
+      badge.style.color = '#065F46';
+      badge.style.borderColor = '#A7F3D0';
+    }
+    const ctxStatus = document.getElementById('soundConsoleContextStatus');
+    if (ctxStatus) {
+      ctxStatus.textContent = 'Running (Unlocked)';
+      ctxStatus.style.color = 'var(--price-up)';
+    }
+    playInstitutionalSound('bell_open');
+    showOrderToast('🔊 Audio Engine Activated! PA Speaker connection verified.', true);
+  } catch (e) {
+    console.error('Audio unlock error:', e);
+  }
+}
+
+const processedCueIds = new Set();
+let soundConsoleCueCounter = 0;
+function handleIncomingAudioCue(msg) {
+  if (!msg || !msg.cueId) return;
+  if (processedCueIds.has(msg.cueId)) return;
+  processedCueIds.add(msg.cueId);
+  if (processedCueIds.size > 200) {
+    const first = processedCueIds.values().next().value;
+    processedCueIds.delete(first);
+  }
+
+  appendSoundConsoleLog(msg);
+
+  // Check audio settings
+  if (latestState && latestState.gameState && latestState.gameState.audioSettings) {
+    const audio = latestState.gameState.audioSettings;
+    if (audio.muted) return;
+    if (msg.category && audio.categories && audio.categories[msg.category] === false) return;
+  }
+
+  playInstitutionalSound(msg.cueName);
+}
+
+function appendSoundConsoleLog(msg) {
+  const tbody = document.getElementById('soundCueTableBody');
+  if (!tbody) return;
+  soundConsoleCueCounter++;
+  const counterEl = document.getElementById('soundConsoleCuesCount');
+  if (counterEl) counterEl.textContent = soundConsoleCueCounter;
+
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid var(--subtle-border)';
+  tr.innerHTML = `
+    <td style="padding: 8px;">${timeStr}</td>
+    <td style="padding: 8px; color: var(--text-muted);">${msg.cueId.slice(0, 8)}...</td>
+    <td style="padding: 8px; font-weight: 700; color: #5B21B6;">${msg.cueName}</td>
+    <td style="padding: 8px;"><span class="badge" style="font-size: 9px;">${msg.category || 'general'}</span></td>
+    <td style="padding: 8px; text-align: center;">${Math.round((msg.volume || 0.85) * 100)}%</td>
+    <td style="padding: 8px; text-align: right; color: var(--price-up); font-weight: 700;">✓ Played</td>
+  `;
+  if (tbody.children.length === 1 && tbody.children[0].textContent.includes('No audio cues')) {
+    tbody.innerHTML = '';
+  }
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+// ==========================================
+// CINEMATIC WINNER PRESENTATION STAGE
+// ==========================================
+function renderWinnerPresentationView(state) {
+  if (!state || !state.gameState) return;
+  const presState = state.gameState.presentationState || { currentScene: 'INTRO' };
+  const snapshot = state.finalResultsSnapshot || generateClientSnapshotFromLeaderboard(state);
+
+  // Show / hide host toolbar depending on whether user is HOST
+  const hostToolbar = document.getElementById('presHostToolbar');
+  if (hostToolbar) {
+    if (currentRole === 'HOST') hostToolbar.classList.remove('hidden');
+    else hostToolbar.classList.add('hidden');
+  }
+
+  renderPresentationScene(presState.currentScene, snapshot);
+}
+
+function generateClientSnapshotFromLeaderboard(state) {
+  const lb = state.leaderboard || [];
+  const startCash = (state.gameState && state.gameState.startingCash) || 500000;
+  const rankings = lb.map((t, idx) => {
+    const cash = t.cash !== undefined ? t.cash : 0;
+    const holdingsVal = t.holdingsValue !== undefined ? t.holdingsValue : 0;
+    const netWorth = t.netWorth !== undefined ? t.netWorth : (cash + holdingsVal);
+    const pnl = netWorth - startCash;
+    const retPct = startCash > 0 ? (pnl / startCash) * 100 : 0;
+    return {
+      rank: idx + 1,
+      teamId: t.id || t.username,
+      teamName: t.name,
+      members: t.members || '',
+      startingCash: startCash,
+      cash: cash,
+      holdingsValue: holdingsVal,
+      totalPortfolioValue: netWorth,
+      netProfitLoss: pnl,
+      returnPct: retPct,
+      tradeCount: t.tradeCount || 0,
+      brokerageFees: t.brokerageFees || 0,
+      summaryReview: pnl > 0 ? 'Profitable Equity Growth' : 'Capital Preservation'
+    };
+  });
+  return {
+    championshipTitle: (state.gameState && state.gameState.title) || 'The Trading Floor Championship 2026',
+    finalizedAt: new Date().toISOString(),
+    rankings: rankings
+  };
+}
+
+function renderPresentationScene(sceneName, snapshot) {
+  if (!snapshot || !snapshot.rankings) return;
+  const scenes = ['sceneIntro', 'sceneBronze', 'sceneSilver', 'sceneChampion', 'scenePodium', 'sceneLeaderboard'];
+  scenes.forEach((s) => {
+    const el = document.getElementById(s);
+    if (el) el.classList.add('hidden');
+  });
+
+  const badge = document.getElementById('presSceneBadge');
+  const rankings = snapshot.rankings || [];
+
+  if (sceneName === 'BRONZE') {
+    const bronzeTeam = rankings[2] || rankings[rankings.length - 1] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    document.getElementById('presBronzeTeam').textContent = bronzeTeam.teamName;
+    document.getElementById('presBronzeMembers').textContent = bronzeTeam.members ? `Traders: ${bronzeTeam.members}` : '';
+    document.getElementById('presBronzeVal').textContent = formatINR(bronzeTeam.totalPortfolioValue);
+    const pnl = bronzeTeam.netProfitLoss;
+    const pnlEl = document.getElementById('presBronzePnl');
+    pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+    pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    const retEl = document.getElementById('presBronzeReturn');
+    retEl.textContent = `${bronzeTeam.returnPct >= 0 ? '+' : ''}${bronzeTeam.returnPct.toFixed(2)}%`;
+    retEl.className = bronzeTeam.returnPct >= 0 ? 'price-up' : 'price-down';
+    document.getElementById('sceneBronze').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 2: 🥉 BRONZE MEDALIST';
+  } else if (sceneName === 'SILVER') {
+    const silverTeam = rankings[1] || rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    document.getElementById('presSilverTeam').textContent = silverTeam.teamName;
+    document.getElementById('presSilverMembers').textContent = silverTeam.members ? `Traders: ${silverTeam.members}` : '';
+    document.getElementById('presSilverVal').textContent = formatINR(silverTeam.totalPortfolioValue);
+    const pnl = silverTeam.netProfitLoss;
+    const pnlEl = document.getElementById('presSilverPnl');
+    pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+    pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    const retEl = document.getElementById('presSilverReturn');
+    retEl.textContent = `${silverTeam.returnPct >= 0 ? '+' : ''}${silverTeam.returnPct.toFixed(2)}%`;
+    retEl.className = silverTeam.returnPct >= 0 ? 'price-up' : 'price-down';
+    document.getElementById('sceneSilver').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 3: 🥈 SILVER RUNNER-UP';
+  } else if (sceneName === 'CHAMPION') {
+    const champ = rankings[0] || { teamName: '—', totalPortfolioValue: 0, netProfitLoss: 0, returnPct: 0 };
+    document.getElementById('presChampionTeam').textContent = champ.teamName;
+    document.getElementById('presChampionMembers').textContent = champ.members ? `Traders: ${champ.members}` : '';
+    document.getElementById('presChampionVal').textContent = formatINR(champ.totalPortfolioValue);
+    const pnl = champ.netProfitLoss;
+    const pnlEl = document.getElementById('presChampionPnl');
+    pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatINR(pnl)}`;
+    pnlEl.className = pnl >= 0 ? 'price-up' : 'price-down';
+    const retEl = document.getElementById('presChampionReturn');
+    retEl.textContent = `${champ.returnPct >= 0 ? '+' : ''}${champ.returnPct.toFixed(2)}%`;
+    retEl.className = champ.returnPct >= 0 ? 'price-up' : 'price-down';
+    document.getElementById('sceneChampion').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 4: 🏆 GRAND CHAMPION';
+    createPresentationConfetti();
+  } else if (sceneName === 'PODIUM') {
+    const t1 = rankings[0] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+    const t2 = rankings[1] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+    const t3 = rankings[2] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
+
+    document.getElementById('podium1Team').textContent = t1.teamName;
+    document.getElementById('podium1Members').textContent = t1.members || '';
+    document.getElementById('podium1Val').textContent = formatINR(t1.totalPortfolioValue);
+    document.getElementById('podium1Return').textContent = `${t1.returnPct >= 0 ? '+' : ''}${t1.returnPct.toFixed(2)}%`;
+
+    document.getElementById('podium2Team').textContent = t2.teamName;
+    document.getElementById('podium2Members').textContent = t2.members || '';
+    document.getElementById('podium2Val').textContent = formatINR(t2.totalPortfolioValue);
+    document.getElementById('podium2Return').textContent = `${t2.returnPct >= 0 ? '+' : ''}${t2.returnPct.toFixed(2)}%`;
+
+    document.getElementById('podium3Team').textContent = t3.teamName;
+    document.getElementById('podium3Members').textContent = t3.members || '';
+    document.getElementById('podium3Val').textContent = formatINR(t3.totalPortfolioValue);
+    document.getElementById('podium3Return').textContent = `${t3.returnPct >= 0 ? '+' : ''}${t3.returnPct.toFixed(2)}%`;
+
+    document.getElementById('scenePodium').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 5: 🎖️ GRAND PODIUM';
+  } else if (sceneName === 'LEADERBOARD') {
+    const tbody = document.getElementById('presLeaderboardTbody');
+    if (tbody) {
+      tbody.innerHTML = rankings.map((r) => {
+        const isUp = r.returnPct >= 0;
+        return `
+          <tr style="border-bottom: 1px solid var(--subtle-border);">
+            <td style="padding: 10px; font-weight: 800; color: ${r.rank === 1 ? 'var(--champagne-accent)' : 'inherit'};">#${r.rank}</td>
+            <td style="padding: 10px; font-weight: 800; color: var(--text-forest);">${r.teamName}</td>
+            <td style="padding: 10px; color: var(--text-muted); font-size: 11px;">${r.members || '—'}</td>
+            <td style="padding: 10px; text-align: right;">${formatINR(r.startingCash)}</td>
+            <td style="padding: 10px; text-align: right;">${formatINR(r.cash)}</td>
+            <td style="padding: 10px; text-align: right;">${formatINR(r.holdingsValue)}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 800;">${formatINR(r.totalPortfolioValue)}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 700;" class="${r.netProfitLoss >= 0 ? 'price-up' : 'price-down'}">
+              ${r.netProfitLoss >= 0 ? '+' : ''}${formatINR(r.netProfitLoss)}
+            </td>
+            <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+              ${isUp ? '+' : ''}${r.returnPct.toFixed(2)}%
+            </td>
+            <td style="padding: 10px; text-align: center;">${r.tradeCount}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+    document.getElementById('sceneLeaderboard').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 6: 📋 FULL OFFICIAL STANDINGS';
+  } else {
+    // Default INTRO
+    document.getElementById('sceneIntro').classList.remove('hidden');
+    if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 1: VERIFICATION & AUDIT';
+  }
+}
+
+function createPresentationConfetti() {
+  const container = document.getElementById('presentationConfetti');
+  if (!container) return;
+  container.innerHTML = '';
+  const colors = ['#B49A70', '#218653', '#D4AF37', '#8C9CAE', '#C64B4B', '#FFFFFF'];
+  for (let i = 0; i < 90; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = `${Math.random() * 8 + 6}px`;
+    piece.style.height = `${Math.random() * 14 + 10}px`;
+    piece.style.animationDuration = `${Math.random() * 2 + 2}s`;
+    piece.style.animationDelay = `${Math.random() * 1.5}s`;
+    container.appendChild(piece);
+  }
+}
+
+const PRES_SCENE_SEQUENCE = ['INTRO', 'BRONZE', 'SILVER', 'CHAMPION', 'PODIUM', 'LEADERBOARD'];
+function hostSetPresentationScene(scene) {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_SET_PRESENTATION_SCENE',
+    session_token: sessionToken,
+    scene: scene
+  }));
+}
+
+function presNextScene() {
+  const curScene = (latestState && latestState.gameState && latestState.gameState.presentationState && latestState.gameState.presentationState.currentScene) || 'INTRO';
+  const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
+  const nextScene = PRES_SCENE_SEQUENCE[Math.min(PRES_SCENE_SEQUENCE.length - 1, idx + 1)];
+  hostSetPresentationScene(nextScene);
+}
+
+function presPrevScene() {
+  const curScene = (latestState && latestState.gameState && latestState.gameState.presentationState && latestState.gameState.presentationState.currentScene) || 'INTRO';
+  const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
+  const prevScene = PRES_SCENE_SEQUENCE[Math.max(0, idx - 1)];
+  hostSetPresentationScene(prevScene);
+}
+
+function hostStartWinnerPresentation() {
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_START_WINNER_PRESENTATION',
+    session_token: sessionToken
+  }));
+  switchSpaView('WINNER_DISPLAY');
+}
+
+// ==========================================
+// SCHEDULE EVENT MODAL CONTROLLERS
+// ==========================================
+function openScheduleEventModal() {
+  const modal = document.getElementById('scheduleEventModal');
+  if (!modal) return;
+
+  if (latestState && latestState.gameState) {
+    const gs = latestState.gameState;
+    const titleInput = document.getElementById('scheduleEventTitleInput');
+    const instInput = document.getElementById('scheduleInstitutionInput');
+    const durInput = document.getElementById('scheduleDurationSecInput');
+    const policySelect = document.getElementById('schedulePausePolicySelect');
+
+    if (titleInput) titleInput.value = gs.title || 'The Trading Floor Championship 2026';
+    if (instInput) instInput.value = gs.institution || 'SSASIT Surat (GTU 076)';
+    if (durInput) {
+      durInput.value = gs.dayDurationSeconds || 1800;
+      updateScheduleDurationDisplay();
+    }
+    if (policySelect) policySelect.value = gs.pausePolicy || 'TRADING_TIME';
+  }
+
+  // Default to immediate
+  selectStartMode('IMMEDIATE');
+  modal.classList.remove('hidden');
+}
+
+function closeScheduleEventModal() {
+  const modal = document.getElementById('scheduleEventModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+let currentScheduleMode = 'IMMEDIATE';
+function selectStartMode(mode) {
+  currentScheduleMode = mode;
+  const cardImm = document.getElementById('modeCardImmediate');
+  const cardSch = document.getElementById('modeCardScheduled');
+  const timeGroup = document.getElementById('scheduleTimeGroup');
+  const btnSubmit = document.getElementById('btnConfirmScheduleStart');
+
+  const radioImm = document.querySelector('input[name="eventStartMode"][value="IMMEDIATE"]');
+  const radioSch = document.querySelector('input[name="eventStartMode"][value="SCHEDULED"]');
+
+  if (mode === 'SCHEDULED') {
+    if (radioSch) radioSch.checked = true;
+    if (cardSch) cardSch.style.border = '2px solid var(--champagne-accent)';
+    if (cardImm) cardImm.style.border = '1px solid var(--subtle-border)';
+    if (timeGroup) timeGroup.classList.remove('hidden');
+    if (btnSubmit) btnSubmit.textContent = '📅 Confirm Schedule & Arm Waiting Room';
+
+    // Set default scheduled time to 2 minutes from now if empty
+    const dtInput = document.getElementById('scheduledStartTimeInput');
+    if (dtInput && !dtInput.value) {
+      const future = new Date(Date.now() + 2 * 60 * 1000);
+      dtInput.value = future.toISOString().slice(0, 16);
+    }
+  } else {
+    if (radioImm) radioImm.checked = true;
+    if (cardImm) cardImm.style.border = '2px solid var(--champagne-accent)';
+    if (cardSch) cardSch.style.border = '1px solid var(--subtle-border)';
+    if (timeGroup) timeGroup.classList.add('hidden');
+    if (btnSubmit) btnSubmit.textContent = '🚀 Start Event Now';
+  }
+}
+
+function setScheduleDuration(sec) {
+  const durInput = document.getElementById('scheduleDurationSecInput');
+  if (durInput) {
+    durInput.value = sec;
+    updateScheduleDurationDisplay();
+  }
+}
+
+function updateScheduleDurationDisplay() {
+  const durInput = document.getElementById('scheduleDurationSecInput');
+  const disp = document.getElementById('scheduleDurationMinDisplay');
+  if (durInput && disp) {
+    const mins = (Number(durInput.value) / 60).toFixed(1).replace('.0', '');
+    disp.textContent = `${mins} minutes`;
+  }
+}
+
+function confirmScheduleOrStartEvent() {
+  if (!ws || !sessionToken || currentRole !== 'HOST') return;
+
+  const durInput = document.getElementById('scheduleDurationSecInput');
+  const durationSec = durInput ? Number(durInput.value) : 1800;
+  const policySelect = document.getElementById('schedulePausePolicySelect');
+  const pausePolicy = policySelect ? policySelect.value : 'TRADING_TIME';
+  const titleInput = document.getElementById('scheduleEventTitleInput');
+  const eventTitle = titleInput ? titleInput.value.trim() : 'The Trading Floor Championship 2026';
+  const instInput = document.getElementById('scheduleInstitutionInput');
+  const institution = instInput ? instInput.value.trim() : 'SSASIT Surat (GTU 076)';
+
+  if (currentScheduleMode === 'SCHEDULED') {
+    const dtInput = document.getElementById('scheduledStartTimeInput');
+    const scheduledStartTime = dtInput ? dtInput.value : null;
+    if (!scheduledStartTime) {
+      alert('Please select a scheduled start date and time.');
+      return;
+    }
+    ws.send(JSON.stringify({
+      action: 'HOST_SCHEDULE_EVENT',
+      session_token: sessionToken,
+      startMode: 'SCHEDULED',
+      scheduledStartTime: new Date(scheduledStartTime).toISOString(),
+      durationSec: durationSec,
+      pausePolicy: pausePolicy,
+      eventTitle: eventTitle,
+      institution: institution
+    }));
+    showOrderToast(`📅 Event scheduled for ${new Date(scheduledStartTime).toLocaleTimeString()}. Waiting room active on all screens.`, true);
+  } else {
+    ws.send(JSON.stringify({
+      action: 'HOST_START_EVENT_NOW',
+      session_token: sessionToken,
+      durationSec: durationSec,
+      pausePolicy: pausePolicy,
+      eventTitle: eventTitle,
+      institution: institution
+    }));
+    showOrderToast('🚀 Event launched immediately! Synchronized market opening broadcast.', true);
+  }
+  closeScheduleEventModal();
 }
 
 function dismissCircuitAlertBanner() {

@@ -185,6 +185,37 @@ async function runTests() {
     }
     wsResume.close();
 
+    // 2.6 Dedicated Event-Hall Sound Console Login
+    const wsSound = await connectWs();
+    const soundLogin = await sendAndAwait(wsSound, { action: 'LOGIN', username: 'sound', password: 'sound2026' }, 'LOGIN_SUCCESS');
+    if (soundLogin.role === 'SOUND_CONSOLE') {
+      logPass('Dedicated Sound Console authenticated successfully on separate client connection.');
+    } else {
+      logFail('Sound console login failed', soundLogin);
+    }
+
+    // 2.7 Authoritative Audio Cue Dispatch & Reception
+    const testAudioPromise = new Promise((resolve) => {
+      wsSound.on('message', (data) => {
+        try {
+          const m = JSON.parse(data);
+          if (m.type === 'AUDIO_CUE' && m.cueName === 'test_hall_chime') resolve(m);
+        } catch (e) {}
+      });
+    });
+    ws1.send(JSON.stringify({
+      action: 'HOST_TEST_SOUND_CUE',
+      session_token: hostToken,
+      cueName: 'test_hall_chime',
+      category: 'lifecycle'
+    }));
+    const audioCueReceived = await testAudioPromise;
+    if (audioCueReceived && audioCueReceived.cueName === 'test_hall_chime') {
+      logPass('Authoritative audio cue dispatched from host and received by dedicated sound console.');
+    } else {
+      logFail('Sound console failed to receive audio cue', audioCueReceived);
+    }
+
     // -------------------------------------------------------------
     // Test 3: Market State, Pausing & Resuming
     // -------------------------------------------------------------
@@ -204,18 +235,41 @@ async function runTests() {
       logFail('Order was not rejected while paused', pausedOrder);
     }
 
-    // 3.2 Host unpauses with countdown
+    // 3.2 Host unpauses with authoritative countdown
     const resumeCountdown = await sendAndAwait(ws1, {
       action: 'HOST_RESUME_COUNTDOWN',
       session_token: hostToken
     }, 'COUNTDOWN_START');
-    if (resumeCountdown.seconds === 3) {
-      logPass('Host triggered resume countdown. Market resumed after countdown buffer.');
+    if (resumeCountdown.seconds === 3 && resumeCountdown.targetServerTimeMs) {
+      logPass('Host triggered resume countdown with authoritative server target timestamp.');
     } else {
       logFail('Countdown did not trigger properly', resumeCountdown);
     }
 
-    // Wait 3.2s for countdown to complete and market to activate
+    // 3.3 Repeated resume click during active countdown must be rejected
+    const dupCountdown = await sendAndAwait(ws1, {
+      action: 'HOST_RESUME_COUNTDOWN',
+      session_token: hostToken
+    }, 'ORDER_REJECTED');
+    if (dupCountdown.reason && dupCountdown.reason.includes('already active')) {
+      logPass('Overlapping resume countdown rejected: Server enforces single authoritative countdown.');
+    } else {
+      logFail('Did not reject duplicate countdown', dupCountdown);
+    }
+
+    // 3.4 Host pause cancels active countdown
+    const cancelCountdown = await sendAndAwait(ws1, {
+      action: 'HOST_PAUSE',
+      session_token: hostToken
+    }, 'COUNTDOWN_CANCELLED');
+    if (cancelCountdown.type === 'COUNTDOWN_CANCELLED') {
+      logPass('Host pause during countdown immediately broadcasts COUNTDOWN_CANCELLED.');
+    } else {
+      logFail('Countdown was not cancelled on pause', cancelCountdown);
+    }
+
+    // 3.5 Restart countdown and wait for market to resume
+    await sendAndAwait(ws1, { action: 'HOST_RESUME_COUNTDOWN', session_token: hostToken }, 'COUNTDOWN_START');
     await new Promise((r) => setTimeout(r, 3400));
 
     // -------------------------------------------------------------
@@ -491,6 +545,40 @@ async function runTests() {
       logPass('Unauthorized CSV download correctly rejected with 403 Forbidden.');
     } else {
       logFail(`Unauthorized request returned unexpected status: ${unauthCsv.status}`);
+    }
+
+    // 8.4 Official Audited Results Snapshot API
+    const snapRes = await httpGet('/api/results-snapshot', hostToken);
+    if (snapRes.status === 200) {
+      const snapJson = JSON.parse(snapRes.body);
+      if (snapJson.rankings && snapJson.rankings.length > 0 && snapJson.rankings[0].startingCash) {
+        logPass(`Official audited results snapshot verified: ${snapJson.rankings.length} teams audited with starting cash, net profit, and return %.`);
+      } else {
+        logFail('Snapshot format invalid', snapJson);
+      }
+    } else {
+      logFail(`Snapshot endpoint failed with status ${snapRes.status}`);
+    }
+
+    // 8.5 Host Stage Presentation Remote Synchronization
+    const presPromise = new Promise((resolve) => {
+      wsTeam1.on('message', (data) => {
+        try {
+          const m = JSON.parse(data);
+          if (m.type === 'PRESENTATION_SCENE_UPDATE' && m.scene === 'CHAMPION') resolve(m);
+        } catch (e) {}
+      });
+    });
+    ws1.send(JSON.stringify({
+      action: 'HOST_SET_PRESENTATION_SCENE',
+      session_token: hostToken,
+      scene: 'CHAMPION'
+    }));
+    const presUpdate = await presPromise;
+    if (presUpdate && presUpdate.scene === 'CHAMPION') {
+      logPass('Host stage presentation remote sync: All connected terminals transitioned to CHAMPION scene.');
+    } else {
+      logFail('Presentation scene sync failed', presUpdate);
     }
 
     // -------------------------------------------------------------

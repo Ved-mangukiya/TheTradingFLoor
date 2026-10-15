@@ -282,6 +282,41 @@
        ========================================================================== -->
   <section id="traderView" class="hidden ttf-app">
     <div class="screen-id-pill screen-id-trader" id="traderDeskPill">💼 TRADING DESK &bull; TEAM 1</div>
+
+    <!-- Waiting Room Overlay for Pre-Event / Scheduled States -->
+    <div id="traderWaitingRoomOverlay" class="hidden modal-overlay" style="z-index: 105;">
+      <div class="modal-content" style="max-width: 680px; text-align: center; padding: 36px 32px;">
+        <div class="brand-icon" style="margin: 0 auto 16px auto; width: 52px; height: 52px; font-size: 26px;">TF</div>
+        <div class="badge badge-champagne" style="font-size: 12px; margin-bottom: 12px;">★ TOURNAMENT WAITING ROOM ★</div>
+        <h2 id="waitingRoomTitle" style="font-size: 28px; color: var(--text-forest); margin-bottom: 8px;">The Trading Floor Championship</h2>
+        <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">Welcome to the official trading terminal. Review your desk parameters before opening bell.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Team Name</div>
+            <div id="waitingRoomTeamName" style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">Team 1</div>
+          </div>
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Starting Capital</div>
+            <div id="waitingRoomCash" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--price-up); margin-top: 4px;">₹5,00,000</div>
+          </div>
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Trading Round</div>
+            <div id="waitingRoomRound" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--champagne-accent); margin-top: 4px;">Day 1 of 3</div>
+          </div>
+        </div>
+
+        <div class="cream-panel" style="padding: 18px; margin-bottom: 20px; border: 2px dashed var(--champagne-accent);">
+          <div id="waitingRoomStatusText" style="font-size: 14px; font-weight: 700; color: var(--text-forest); margin-bottom: 6px;">⏳ Market Opening Countdown</div>
+          <div id="waitingRoomTimerDisplay" style="font-family: var(--font-mono); font-size: 42px; font-weight: 900; color: var(--text-forest);">00:00:00</div>
+          <p id="waitingRoomTimerNote" style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Trading orders will be enabled automatically at market start.</p>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-muted); font-style: italic;">
+          ⚡ Pro-Tip: Monitor breaking news headlines closely. Sector events drive real-time share price adjustments across the market.
+        </div>
+      </div>
+    </div>
     <!-- Top Header Ribbon -->
     <header class="app-header">
       <div class="header-brand">
@@ -296,6 +331,10 @@
         <div class="header-clock-pill">
           <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">CLOCK:</span>
           <span id="traderClock" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--text-forest);">00:00</span>
+        </div>
+        <div class="header-clock-pill" id="traderDualTimerWrap" style="background: rgba(33, 134, 83, 0.08); border-color: rgba(33, 134, 83, 0.25);">
+          <span id="traderDualTimerLabel" style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--price-up);">CLOSES IN:</span>
+          <span id="traderDualTimerValue" style="font-family: var(--font-mono); font-size: 15px; font-weight: 800; color: var(--price-up);">30:00</span>
         </div>
         <span id="traderMarketStatus" class="badge badge-paused">MARKET PAUSED</span>
       </div>
@@ -542,6 +581,9 @@
 
       <!-- Host Action Buttons -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <button onclick="openScheduleEventModal()" class="btn btn-outline" style="border-color: #2563EB; color: #1D4ED8; font-weight: 700;" title="Schedule a future start time or launch immediately">
+          ⏱️ Schedule / Start
+        </button>
         <button onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber);" title="Freeze trading orders while keeping prices visible">
           ⏸ Normal Pause
         </button>
@@ -563,8 +605,8 @@
         <button onclick="openEventSettingsModal()" class="btn btn-outline">
           ⚙️ Settings
         </button>
-        <button onclick="hostConcludeChampionship()" class="btn btn-champagne">
-          🏆 Crown Winners
+        <button onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;" title="Launch dramatic full-screen presentation mode for all screens">
+          👑 Winner Presentation
         </button>
         <button onclick="openResetChampionshipModal()" class="btn btn-outline" style="border-color: var(--error-red); color: var(--error-red);" title="Safely reset all championship data and configure a new championship">
           ⚠️ Reset Game
@@ -578,13 +620,19 @@
     <!-- Host Navigation Sub-Bar -->
     <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; gap: 8px;">
       <button id="hostTabBtnStocks" onclick="switchHostTab('stocks')" class="btn btn-sage" style="padding: 6px 14px; font-size: 12px;">
-        📈 Stock Engine & Halts
+        📈 Stock Engine &amp; Halts
       </button>
       <button id="hostTabBtnUniverse" onclick="switchHostTab('universe')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
         🏛️ Market Builder (Share Universe)
       </button>
       <button id="hostTabBtnNews" onclick="switchHostTab('news')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        ⚡ News Control Deck
+        ⚡ News Control Centre
+      </button>
+      <button id="hostTabBtnAnalysis" onclick="switchHostTab('analysis')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #047857; border-color: #6EE7B7;">
+        📊 Financial Analysis
+      </button>
+      <button id="hostTabBtnSound" onclick="switchHostTab('sound')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #6D28D9; border-color: #C4B5FD;">
+        🔊 Hall Audio Console
       </button>
       <button id="hostTabBtnLeaderboard" onclick="switchHostTab('leaderboard')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
         🏆 Live Standings
@@ -593,10 +641,10 @@
         📝 Real-Time Trade Stream
       </button>
       <button id="hostTabBtnExports" onclick="switchHostTab('exports')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
-        📥 Reports & CSV Exports
+        📥 Reports &amp; CSV Exports
       </button>
       <button id="hostTabBtnLauncher" onclick="switchHostTab('launcher')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px; font-weight: 700; color: #2563EB; border-color: #93C5FD;">
-        🚀 Terminal Launcher & Logins
+        🚀 Terminal Launcher &amp; Logins
       </button>
     </div>
 
@@ -703,15 +751,139 @@
         </div>
       </div>
 
-      <!-- TAB 2: News Control Deck -->
+      <!-- TAB 2: News Control Centre -->
       <div id="hostTabContentNews" class="hidden luxury-card" style="padding: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="font-size: 18px;">Scheduled & Custom Breaking News Deck</h2>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-size: 18px; margin-bottom: 4px;">⚡ News Control Centre (Authoritative Scheduling &amp; Price Impact)</h2>
+            <p style="font-size: 12px; color: var(--text-muted);">
+              Every news wire card maintains its own authoritative server countdown. Published news dynamically shocks prices and sectors through the simulation engine.
+            </p>
+          </div>
           <button onclick="openCustomNewsModal()" class="btn btn-champagne" style="padding: 6px 14px; font-size: 12px;">
             + Create Breaking News
           </button>
         </div>
-        <div id="hostNewsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px;"></div>
+        <div id="hostNewsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;"></div>
+      </div>
+
+      <!-- TAB: Team Financial Analysis -->
+      <div id="hostTabContentAnalysis" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">📊 Team-by-Team Financial Analysis</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Audited performance ledger: Starting capital, cash balances, equity holdings at closing prices, net P&amp;L (₹), and return percentages.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="downloadResultsSnapshotJSON()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Export Analysis JSON</button>
+            <button onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="padding: 6px 12px; font-size: 12px; font-weight: 800;">👑 Launch Stage Presentation</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 10px;">Rank</th>
+                <th style="padding: 10px;">Team Name</th>
+                <th style="padding: 10px;">Members</th>
+                <th style="padding: 10px; text-align: right;">Starting Capital</th>
+                <th style="padding: 10px; text-align: right;">Cash in Hand</th>
+                <th style="padding: 10px; text-align: right;">Holdings Value</th>
+                <th style="padding: 10px; text-align: right;">Final Portfolio</th>
+                <th style="padding: 10px; text-align: right;">Net P&amp;L (₹)</th>
+                <th style="padding: 10px; text-align: right;">Return %</th>
+                <th style="padding: 10px; text-align: center;">Trades</th>
+                <th style="padding: 10px; text-align: right;">Brokerage Fees</th>
+                <th style="padding: 10px; text-align: center;">Performance Review</th>
+              </tr>
+            </thead>
+            <tbody id="hostFinancialAnalysisTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB: Event-Hall Audio Console -->
+      <div id="hostTabContentSound" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-size: 20px; color: #5B21B6; margin-bottom: 4px;">🔊 Auditorium Sound &amp; Event Audio Console</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+              Manage external speakers on the second laptop. Broadcast synchronized audio cues without opening host controls on the audio machine.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="hostSoundConsoleConnBadge" class="badge" style="background: #FEE2E2; color: #991B1B; font-size: 12px; padding: 4px 10px;">
+              ⚠️ No Dedicated Sound Laptop Connected
+            </div>
+            <button onclick="openTerminalTab('/?role=sound&pass=sound2026')" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; border-color: #8B5CF6; color: #6D28D9;">
+              🚀 Open Sound Console Tab
+            </button>
+          </div>
+        </div>
+
+        <!-- Master Sound Controls -->
+        <div class="cream-panel" style="padding: 18px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: center;">
+          <div>
+            <label style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Master Volume Level: <span id="hostSoundMasterVolVal">85%</span>
+            </label>
+            <input type="range" id="hostSoundMasterVolSlider" min="0" max="100" value="85" oninput="updateHostAudioSettings()" style="width: 100%; accent-color: #7C3AED;" />
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button id="btnHostToggleMute" onclick="toggleHostAudioMute()" class="btn btn-outline" style="flex: 1; padding: 10px; font-weight: 700;">
+              🔇 Mute All Audio
+            </button>
+            <button onclick="testRemoteAudioCue('bell_open', 'lifecycle')" class="btn btn-sage" style="flex: 1; padding: 10px; font-weight: 700;">
+              🔔 Test Bell Cue
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Volume & Routing Toggles -->
+        <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--text-forest); margin-bottom: 10px;">
+          Audio Category Channels &amp; Screen Routing
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 12px;">
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; color: var(--text-forest);">Event Lifecycle Cues</span>
+              <input type="checkbox" id="audioCatLifecycle" checked onchange="updateHostAudioSettings()" />
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Market open, close bells, 3-2-1 countdown ticks</div>
+            <button onclick="testRemoteAudioCue('countdown_tick', 'lifecycle')" class="btn btn-outline" style="padding: 3px 8px; font-size: 10px;">Test Tick</button>
+          </div>
+
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; color: var(--text-forest);">News Flash Cues</span>
+              <input type="checkbox" id="audioCatNews" checked onchange="updateHostAudioSettings()" />
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Cinematic sub-bass boom and sonar wire alarms</div>
+            <button onclick="testRemoteAudioCue('heavy_news_boom', 'news')" class="btn btn-outline" style="padding: 3px 8px; font-size: 10px;">Test Boom</button>
+          </div>
+
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; color: var(--text-forest);">Circuit Breaker Alerts</span>
+              <input type="checkbox" id="audioCatAlerts" checked onchange="updateHostAudioSettings()" />
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Emergency klaxon on ±20% price limit breaches</div>
+            <button onclick="testRemoteAudioCue('circuit_alarm', 'alerts')" class="btn btn-outline" style="padding: 3px 8px; font-size: 10px;">Test Klaxon</button>
+          </div>
+
+          <div class="cream-panel" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 700; color: var(--text-forest);">Winner &amp; Fanfare Cues</span>
+              <input type="checkbox" id="audioCatPresentation" checked onchange="updateHostAudioSettings()" />
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Bronze, Silver, Grand Champion brass fanfares</div>
+            <button onclick="testRemoteAudioCue('championship_fanfare', 'presentation')" class="btn btn-champagne" style="padding: 3px 8px; font-size: 10px;">Test Fanfare</button>
+          </div>
+        </div>
       </div>
 
       <!-- TAB 3: Live Standings -->
@@ -943,6 +1115,305 @@
         <div id="projectorTickerText" class="news-marquee-text">
           WELCOME TO THE TRADING FLOOR CHAMPIONSHIP 2026 — ALL SYSTEMS SYNCHRONIZED
         </div>
+      </div>
+    </footer>
+  </section>
+
+
+  <!-- ==========================================================================
+       VIEW 5: DEDICATED EVENT-HALL SOUND CONSOLE (#soundConsoleView)
+       ========================================================================== -->
+  <section id="soundConsoleView" class="hidden ttf-app" style="min-height: 100vh; padding: 24px; max-width: 1200px; margin: 0 auto;">
+    <div class="screen-id-pill" style="background: #4C1D95; color: #EDE9FE; border: 1px solid #7C3AED;">🔊 DEDICATED EVENT-HALL AUDIO CONSOLE</div>
+    
+    <header class="app-header" style="margin-bottom: 20px;">
+      <div class="header-brand">
+        <div class="brand-icon" style="background: #6D28D9; color: #FFF;">🔊</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px; font-weight: 800; color: var(--text-forest);">AUDITORIUM SOUND &amp; EVENT AUDIO CONSOLE</span>
+            <span id="soundConsoleStatusBadge" class="badge" style="background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5;">⚠️ Audio Locked (Click Below)</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            Dedicated venue sound laptop connected to hall PA speakers. Controlled remotely by Host Master Control.
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="logoutTerminal()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Exit Terminal</button>
+      </div>
+    </header>
+
+    <!-- Browser Autoplay Unlock Notice Banner -->
+    <div id="soundUnlockBanner" class="luxury-card" style="padding: 24px; text-align: center; margin-bottom: 20px; background: #FAF5FF; border: 2px solid #8B5CF6;">
+      <div style="font-size: 48px; margin-bottom: 10px;">🔊</div>
+      <h2 style="font-size: 22px; color: #5B21B6; margin-bottom: 8px;">Activate Event-Hall Speaker Audio Engine</h2>
+      <p style="font-size: 14px; color: #6D28D9; max-width: 600px; margin: 0 auto 18px auto; line-height: 1.5;">
+        Modern web browsers require one user gesture before allowing programmatic audio playback through external PA speakers. Click the button below once to initialize the Web Audio institutional synthesizer.
+      </p>
+      <button id="btnUnlockAudio" onclick="unlockAudioSystem()" class="btn btn-primary" style="background: #7C3AED; border-color: #6D28D9; padding: 14px 28px; font-size: 16px; font-weight: 800;">
+        🔊 Click to Unlock &amp; Test Hall Speakers
+      </button>
+    </div>
+
+    <!-- Active Sound Console Dashboard -->
+    <div class="luxury-card" style="padding: 24px; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px;">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">Audio Engine Status &amp; Hardware Link</h3>
+          <div style="font-size: 12px; color: var(--text-muted);">Ensure 3.5mm AUX or HDMI audio cable is plugged into hall amplifier</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="testLocalSoundCue('countdown_tick')" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px;">Test Tick</button>
+          <button onclick="testLocalSoundCue('bell_open')" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px;">Test Bell</button>
+          <button onclick="testLocalSoundCue('heavy_news_boom')" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px;">Test News Boom</button>
+          <button onclick="testLocalSoundCue('championship_fanfare')" class="btn btn-champagne" style="font-size: 11px; padding: 4px 10px;">Test Winner Fanfare</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px;">
+        <div class="cream-panel" style="padding: 12px;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Connection</div>
+          <div id="soundConsoleConnStatus" style="font-size: 14px; font-weight: 800; color: var(--price-up); margin-top: 4px;">🟢 WebSocket Connected</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Audio Context</div>
+          <div id="soundConsoleContextStatus" style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">Suspended</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Master Volume</div>
+          <div id="soundConsoleVolumeDisplay" style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">85%</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Cues Received</div>
+          <div id="soundConsoleCuesCount" style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--champagne-accent); margin-top: 4px;">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Audio Cue Stream Table -->
+    <div class="luxury-card" style="padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">Live Audio Transmission Monitor</h3>
+        <span style="font-size: 12px; color: var(--text-muted);">Authoritative server audio cue dispatch log</span>
+      </div>
+      <div style="overflow-x: auto; max-height: 380px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
+              <th style="padding: 8px;">Time</th>
+              <th style="padding: 8px;">Cue ID</th>
+              <th style="padding: 8px;">Sound Cue</th>
+              <th style="padding: 8px;">Category</th>
+              <th style="padding: 8px; text-align: center;">Volume</th>
+              <th style="padding: 8px; text-align: right;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="soundCueTableBody" style="font-family: var(--font-mono);">
+            <tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted); font-style: italic;">No audio cues dispatched yet. Stand by for event cues.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==========================================================================
+       VIEW 6: CINEMATIC WINNER PRESENTATION STAGE (#winnerPresentationView)
+       ========================================================================== -->
+  <section id="winnerPresentationView" class="hidden ttf-app" style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg-cream); position: relative; overflow-y: auto;">
+    <div id="presentationConfetti" class="confetti-container"></div>
+    <div class="screen-id-pill" style="background: #B45309; color: #FEF3C7; border: 1px solid #D97706;">👑 WINNER PRESENTATION STAGE</div>
+
+    <!-- Presentation Top Ribbon -->
+    <header class="projector-header" style="background: rgba(255,255,255,0.9); border-bottom: 2px solid var(--champagne-accent);">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="brand-icon" style="width: 40px; height: 40px; font-size: 18px;">🏆</div>
+        <div>
+          <h2 id="presEventTitle" style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin: 0;">The Trading Floor Championship 2026</h2>
+          <div id="presSceneBadge" class="badge badge-champagne" style="font-size: 11px; margin-top: 2px;">STAGE PRESENTATION • SCENE 1</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button onclick="toggleProjectorFullscreen()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">⛶ Fullscreen</button>
+        <button onclick="logoutTerminal()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">Exit [ESC]</button>
+      </div>
+    </header>
+
+    <!-- Main Presentation Container (Switches between Scenes) -->
+    <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 20px;">
+      
+      <!-- Scene 1: Introduction & Verification -->
+      <div id="sceneIntro" class="luxury-card" style="max-width: 820px; width: 100%; text-align: center; padding: 48px 36px;">
+        <div style="font-size: 64px; margin-bottom: 16px;">⚖️</div>
+        <div class="badge badge-champagne" style="font-size: 13px; font-weight: 800; letter-spacing: 0.12em; margin-bottom: 12px;">FINAL MARKET SETTLEMENT</div>
+        <h1 style="font-size: 36px; color: var(--text-forest); margin-bottom: 10px; font-family: var(--font-serif);">All Trading Desks Concluded</h1>
+        <p style="font-size: 16px; color: var(--text-muted); line-height: 1.6; max-width: 600px; margin: 0 auto 24px auto;">
+          Final closing prices have been officially locked. Every team's starting cash, portfolio holdings, brokerage deductions, and return percentages have been audited and verified.
+        </p>
+        <div class="cream-panel" style="display: inline-flex; align-items: center; gap: 12px; padding: 12px 24px;">
+          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--price-up);"></span>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-forest);">VERIFIED OFFICIAL AUDIT SNAPSHOT READY</span>
+        </div>
+      </div>
+
+      <!-- Scene 2: 3rd Place Bronze Reveal -->
+      <div id="sceneBronze" class="hidden luxury-card" style="max-width: 760px; width: 100%; text-align: center; padding: 48px 36px; border: 3px solid #D97706;">
+        <div style="font-size: 72px; margin-bottom: 12px;">🥉</div>
+        <div class="badge" style="background: #FEF3C7; color: #92400E; font-size: 14px; font-weight: 900; letter-spacing: 0.12em; margin-bottom: 12px;">THIRD PLACE • BRONZE MEDALIST</div>
+        <h1 id="presBronzeTeam" style="font-size: 38px; color: var(--text-forest); margin-bottom: 4px;">Team Name</h1>
+        <p id="presBronzeMembers" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;"></p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px;">
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Final Valuation</div>
+            <div id="presBronzeVal" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--text-forest); margin-top: 4px;">₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Net Profit / Loss</div>
+            <div id="presBronzePnl" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Return on Capital</div>
+            <div id="presBronzeReturn" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+0.00%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: 2nd Place Silver Reveal -->
+      <div id="sceneSilver" class="hidden luxury-card" style="max-width: 760px; width: 100%; text-align: center; padding: 48px 36px; border: 3px solid #94A3B8;">
+        <div style="font-size: 72px; margin-bottom: 12px;">🥈</div>
+        <div class="badge" style="background: #F1F5F9; color: #475569; font-size: 14px; font-weight: 900; letter-spacing: 0.12em; margin-bottom: 12px;">SECOND PLACE • SILVER RUNNER-UP</div>
+        <h1 id="presSilverTeam" style="font-size: 38px; color: var(--text-forest); margin-bottom: 4px;">Team Name</h1>
+        <p id="presSilverMembers" style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;"></p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px;">
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Final Valuation</div>
+            <div id="presSilverVal" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--text-forest); margin-top: 4px;">₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Net Profit / Loss</div>
+            <div id="presSilverPnl" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 16px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Return on Capital</div>
+            <div id="presSilverReturn" style="font-family: var(--font-mono); font-size: 22px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+0.00%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 4: 1st Place Gold Champion Reveal -->
+      <div id="sceneChampion" class="hidden luxury-card" style="max-width: 860px; width: 100%; text-align: center; padding: 48px 36px; border: 4px solid var(--champagne-accent); box-shadow: 0 20px 50px rgba(180, 83, 9, 0.2);">
+        <div class="trophy-bounce" style="font-size: 96px; margin-bottom: 12px;">🏆</div>
+        <div class="badge badge-champagne" style="font-size: 15px; font-weight: 900; letter-spacing: 0.15em; padding: 6px 20px; margin-bottom: 14px;">★ GRAND CHAMPION 2026 ★</div>
+        <h1 id="presChampionTeam" style="font-size: 46px; color: var(--text-forest); margin-bottom: 4px; font-family: var(--font-serif);">Team Name</h1>
+        <p id="presChampionMembers" style="font-size: 16px; color: var(--text-muted); font-weight: 600; margin-bottom: 28px;"></p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+            <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Final Net Worth</div>
+            <div id="presChampionVal" style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--text-forest); margin-top: 4px;">₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+            <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Total Profit Generated</div>
+            <div id="presChampionPnl" style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+            <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Total Return %</div>
+            <div id="presChampionReturn" style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--price-up); margin-top: 4px;">+0.00%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 5: Grand Podium (Top 3) -->
+      <div id="scenePodium" class="hidden luxury-card" style="max-width: 1040px; width: 100%; padding: 36px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div class="badge badge-champagne" style="font-size: 13px; font-weight: 900; margin-bottom: 8px;">★ THE CHAMPIONSHIP PODIUM ★</div>
+          <h2 style="font-size: 32px; color: var(--text-forest); margin: 0; font-family: var(--font-serif);">Official Top 3 Performers</h2>
+        </div>
+        <div class="podium-container" style="margin-bottom: 20px;">
+          <!-- Silver #2 -->
+          <div class="podium-card podium-second">
+            <div style="font-size: 46px; margin-bottom: 6px;">🥈</div>
+            <div class="badge badge-sage" style="margin-bottom: 8px;">RUNNER-UP #2</div>
+            <h3 id="podium2Team" style="font-size: 20px; color: var(--text-forest); margin-bottom: 2px;">Team</h3>
+            <p id="podium2Members" style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;"></p>
+            <div class="cream-panel" style="width: 100%; padding: 10px; font-family: var(--font-mono);">
+              <div id="podium2Val" style="font-size: 18px; font-weight: 800;">₹0.00</div>
+              <div id="podium2Return" style="font-size: 12px; font-weight: 700; color: var(--price-up);">+0.00% Return</div>
+            </div>
+          </div>
+
+          <!-- Gold #1 -->
+          <div class="podium-card podium-first">
+            <div class="trophy-bounce" style="font-size: 64px; margin-bottom: 6px;">🏆</div>
+            <div class="badge badge-champagne" style="margin-bottom: 8px; font-weight: 900;">★ GRAND CHAMPION ★</div>
+            <h2 id="podium1Team" style="font-size: 24px; color: var(--text-forest); margin-bottom: 2px;">Team</h2>
+            <p id="podium1Members" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600;"></p>
+            <div class="cream-panel" style="width: 100%; padding: 14px; font-family: var(--font-mono); border-color: var(--champagne-accent);">
+              <div id="podium1Val" style="font-size: 22px; font-weight: 900; color: var(--text-forest);">₹0.00</div>
+              <div id="podium1Return" style="font-size: 14px; font-weight: 800; color: var(--price-up);">+0.00% Return</div>
+            </div>
+          </div>
+
+          <!-- Bronze #3 -->
+          <div class="podium-card podium-third">
+            <div style="font-size: 42px; margin-bottom: 6px;">🥉</div>
+            <div class="badge" style="background: #FEF3C7; color: #92400E; margin-bottom: 8px;">THIRD PLACE #3</div>
+            <h3 id="podium3Team" style="font-size: 20px; color: var(--text-forest); margin-bottom: 2px;">Team</h3>
+            <p id="podium3Members" style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;"></p>
+            <div class="cream-panel" style="width: 100%; padding: 10px; font-family: var(--font-mono);">
+              <div id="podium3Val" style="font-size: 18px; font-weight: 800;">₹0.00</div>
+              <div id="podium3Return" style="font-size: 12px; font-weight: 700; color: var(--price-up);">+0.00% Return</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 6: Complete Championship Leaderboard -->
+      <div id="sceneLeaderboard" class="hidden luxury-card" style="max-width: 1100px; width: 100%; padding: 32px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h2 style="font-size: 28px; color: var(--text-forest); margin: 0 0 6px 0; font-family: var(--font-serif);">Complete Official Standings</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">Audited results ranked by final portfolio valuation</p>
+        </div>
+        <div style="overflow-x: auto; max-height: 480px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 10px;">Rank</th>
+                <th style="padding: 10px;">Team Name</th>
+                <th style="padding: 10px;">Student Members</th>
+                <th style="padding: 10px; text-align: right;">Starting Capital</th>
+                <th style="padding: 10px; text-align: right;">Cash in Hand</th>
+                <th style="padding: 10px; text-align: right;">Holdings Value</th>
+                <th style="padding: 10px; text-align: right;">Final Portfolio</th>
+                <th style="padding: 10px; text-align: right;">Profit / Loss</th>
+                <th style="padding: 10px; text-align: right;">Return %</th>
+                <th style="padding: 10px; text-align: center;">Trades</th>
+              </tr>
+            </thead>
+            <tbody id="presLeaderboardTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Presentation Host Remote Control Bar -->
+    <footer id="presHostToolbar" style="background: rgba(255,255,255,0.96); border-top: 2px solid var(--champagne-accent); padding: 12px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; position: sticky; bottom: 0; z-index: 50;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge badge-champagne" style="font-weight: 800;">👑 HOST REMOTE</span>
+        <button onclick="presPrevScene()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">◀ Previous Scene</button>
+        <button onclick="presNextScene()" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; font-weight: 800;">Next Scene ▶</button>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <button onclick="hostSetPresentationScene('INTRO')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">1. Verification</button>
+        <button onclick="hostSetPresentationScene('BRONZE')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">2. 🥉 Bronze</button>
+        <button onclick="hostSetPresentationScene('SILVER')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">3. 🥈 Silver</button>
+        <button onclick="hostSetPresentationScene('CHAMPION')" class="btn btn-champagne" style="padding: 4px 10px; font-size: 11px; font-weight: 800;">4. 🏆 Champion</button>
+        <button onclick="hostSetPresentationScene('PODIUM')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">5. 🎖️ Grand Podium</button>
+        <button onclick="hostSetPresentationScene('LEADERBOARD')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">6. 📋 Standings</button>
+      </div>
+      <div>
+        <button onclick="switchSpaView('HOST')" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Exit Stage to Host Panel</button>
       </div>
     </footer>
   </section>
@@ -1609,8 +2080,100 @@
         <button onclick="closeLiquidateModal()" class="btn btn-outline" style="padding: 12px; font-size: 13px;">
           Keep Holdings (Cancel)
         </button>
-        <button id="btnConfirmLiquidate" onclick="executeLiquidateAll()" class="btn btn-primary" style="background-color: #DC2626; border-color: #DC2626; color: #FFF; padding: 12px; font-size: 13px; font-weight: 800;">
-          ⚡ Yes, Sell All Shares Now
+  <!-- Modal K: Event Schedule & Start Configuration Modal -->
+  <div id="scheduleEventModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+            ⏱️
+          </div>
+          <div>
+            <h2 style="font-size: 18px; margin: 0; color: var(--text-forest);">Championship Schedule & Market Launch</h2>
+            <div style="font-size: 11px; color: var(--text-muted);">Configure authoritative market opening schedule, duration, and pause policies</div>
+          </div>
+        </div>
+        <button onclick="closeScheduleEventModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div style="margin: 16px 0;">
+        <!-- Start Mode Selection -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+          <div id="modeCardImmediate" class="cream-panel" style="padding: 14px; cursor: pointer; border: 2px solid var(--champagne-accent);" onclick="selectStartMode('IMMEDIATE')">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer; color: var(--text-forest);">
+              <input type="radio" name="eventStartMode" value="IMMEDIATE" checked onchange="selectStartMode('IMMEDIATE')" />
+              🚀 Start Immediately
+            </label>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; margin-left: 24px; line-height: 1.4;">
+              Locks settings and launches the competition now with a synchronized opening countdown.
+            </p>
+          </div>
+
+          <div id="modeCardScheduled" class="cream-panel" style="padding: 14px; cursor: pointer; border: 1px solid var(--subtle-border);" onclick="selectStartMode('SCHEDULED')">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer; color: var(--text-forest);">
+              <input type="radio" name="eventStartMode" value="SCHEDULED" onchange="selectStartMode('SCHEDULED')" />
+              📅 Schedule Future Start
+            </label>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px; margin-left: 24px; line-height: 1.4;">
+              Places teams in Waiting Room with live opening countdown until scheduled start time.
+            </p>
+          </div>
+        </div>
+
+        <!-- Scheduled Time Picker (Visible only if SCHEDULED) -->
+        <div id="scheduleTimeGroup" class="hidden cream-panel" style="padding: 14px; margin-bottom: 16px; border: 1px dashed #2563EB; background: #F8FAFC;">
+          <label class="form-label" for="scheduledStartTimeInput" style="font-weight: 700; color: #1E40AF;">Scheduled Market Start Time (Local)</label>
+          <input id="scheduledStartTimeInput" type="datetime-local" class="form-input" style="font-family: var(--font-mono); font-size: 14px;" />
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+            The server automatically opens trading at this precise instant across all connected screens.
+          </div>
+        </div>
+
+        <!-- Duration Settings -->
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label">Market Round Duration</label>
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <button type="button" onclick="setScheduleDuration(900)" class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;">15 Mins</button>
+            <button type="button" onclick="setScheduleDuration(1800)" class="btn btn-sage" style="padding: 5px 10px; font-size: 12px;">30 Mins (Standard)</button>
+            <button type="button" onclick="setScheduleDuration(2700)" class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;">45 Mins</button>
+            <button type="button" onclick="setScheduleDuration(3600)" class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;">60 Mins</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <input id="scheduleDurationSecInput" type="number" min="60" step="30" value="1800" oninput="updateScheduleDurationDisplay()" class="form-input" style="font-family: var(--font-mono); max-width: 140px;" />
+            <span style="font-size: 12px; color: var(--text-muted);">seconds (<span id="scheduleDurationMinDisplay">30 minutes</span>)</span>
+          </div>
+        </div>
+
+        <!-- Pause Policy Selection -->
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Competition Pause Policy</label>
+          <select id="schedulePausePolicySelect" class="form-input">
+            <option value="TRADING_TIME" selected>Trading-Time Mode (Recommended: Pauses freeze round clock; total trade time is preserved)</option>
+            <option value="ELAPSED_TIME">Elapsed-Time Mode (Fixed schedule: Pauses freeze trades, but clock continues toward closing time)</option>
+          </select>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+            Determines how the closing timer handles administrative pauses or blackout periods.
+          </div>
+        </div>
+
+        <!-- Event Metadata Details -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="scheduleEventTitleInput">Tournament Title</label>
+            <input id="scheduleEventTitleInput" type="text" class="form-input" value="The Trading Floor Championship 2026" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleInstitutionInput">Host Institution / Chapter</label>
+            <input id="scheduleInstitutionInput" type="text" class="form-input" value="SSASIT Surat (GTU 076)" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--subtle-border); padding-top: 14px;">
+        <button onclick="closeScheduleEventModal()" class="btn btn-outline">Cancel</button>
+        <button id="btnConfirmScheduleStart" onclick="confirmScheduleOrStartEvent()" class="btn btn-primary" style="padding: 10px 20px; font-weight: 800;">
+          🚀 Start Event Now
         </button>
       </div>
     </div>
