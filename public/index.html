@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Trading Floor - Championship 2026</title>
+  <!-- Institutional Design System (100% Offline-First, Zero External CDN Dependency) -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="ttf-app">
+
+  <!-- ==========================================================================
+       1. GLOBAL OVERLAYS: RESUME COUNTDOWN, BREAKING NEWS & WINNER PODIUM
+       ========================================================================== -->
+
+  <!-- 1.1 3-2-1 Market Resume Countdown Overlay -->
+  <div id="countdownOverlay" class="hidden modal-overlay" style="z-index: 120;">
+    <div style="text-align: center; color: var(--text-forest);">
+      <p style="font-size: 16px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 8px;">
+        Trading Resuming In
+      </p>
+      <div id="countdownNumber" style="font-family: var(--font-mono); font-size: 140px; font-weight: 900; line-height: 1; color: var(--text-forest);">
+        3
+      </div>
+      <p style="font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: 14px; letter-spacing: 0.05em; text-transform: uppercase;">
+        Prepare Orders On Terminals
+      </p>
+    </div>
+  </div>
+
+  <!-- 1.2 Breaking News Flashover Modal -->
+  <div id="newsFlashModal" class="hidden modal-overlay" style="z-index: 110;">
+    <div class="modal-content" style="max-width: 720px; border: 3px solid var(--champagne-accent);">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="badge" style="background-color: var(--error-bg); color: var(--error-red); border: 1px solid var(--error-border);">
+            🚨 BREAKING MARKET WIRE
+          </span>
+          <span id="flashEventType" style="font-family: var(--font-mono); font-weight: 700; color: var(--champagne-accent); font-size: 12px;">
+            SECTOR SHOCK
+          </span>
+        </div>
+        <span id="flashCountdownBadge" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+          Closing in 20s
+        </span>
+      </div>
+
+      <h2 id="flashHeadline" style="font-size: 26px; line-height: 1.25; margin-bottom: 14px;"></h2>
+
+      <div class="cream-panel" style="padding: 16px; margin-bottom: 18px;">
+        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">
+          Impact Analysis
+        </span>
+        <p id="flashExplanation" style="font-size: 16px; font-weight: 600; color: var(--text-forest); line-height: 1.45;"></p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button onclick="dismissNewsFlash()" class="btn btn-sage">
+          Dismiss & Return to Terminal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.3 Grand Finale Winner Podium Modal -->
+  <div id="winnerPodiumModal" class="hidden modal-overlay" style="z-index: 115; overflow-y: auto;">
+    <div id="confettiContainer" class="confetti-container"></div>
+    <div class="modal-content" style="max-width: 980px; padding: 32px; margin: auto;">
+      <!-- Ceremony Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="badge badge-champagne" style="margin-bottom: 10px;">
+          👑 OFFICIAL CHAMPIONSHIP GRAND FINALE
+        </div>
+        <h1 id="podiumEventTitle" style="font-size: 34px; margin-bottom: 6px;">The Trading Floor Championship</h1>
+        <p style="color: var(--text-muted); font-size: 14px;">Official Settlement & Verified Performance Standings</p>
+      </div>
+
+      <!-- 3-Tier Luxury Podium (Silver #2 | Gold #1 | Bronze #3) -->
+      <div class="podium-container">
+        <!-- 2nd Place Silver -->
+        <div class="podium-card podium-second">
+          <div style="font-size: 42px; margin-bottom: 6px;">🥈</div>
+          <div class="badge badge-sage" style="margin-bottom: 8px;">2ND PLACE • RUNNER-UP</div>
+          <h3 id="silverTeamName" style="font-size: 20px; color: var(--text-forest); margin-bottom: 2px;">Team 2</h3>
+          <p id="silverTeamMembers" style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;"></p>
+          <div class="cream-panel" style="width: 100%; padding: 10px; font-family: var(--font-mono);">
+            <div id="silverNetWorth" style="font-size: 18px; font-weight: 800; color: var(--text-charcoal);">₹0.00</div>
+            <div id="silverPnl" style="font-size: 12px; font-weight: 700; color: var(--price-up);">+0.00% Return</div>
+          </div>
+        </div>
+
+        <!-- 1st Place Gold Champion -->
+        <div class="podium-card podium-first">
+          <div class="trophy-bounce" style="font-size: 64px; margin-bottom: 6px;">🏆</div>
+          <div class="badge badge-champagne" style="margin-bottom: 8px; font-weight: 900;">★ GRAND CHAMPION ★</div>
+          <h2 id="goldTeamName" style="font-size: 24px; color: var(--text-forest); margin-bottom: 2px;">Team 1</h2>
+          <p id="goldTeamMembers" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600;"></p>
+          <div class="cream-panel" style="width: 100%; padding: 14px; font-family: var(--font-mono); border-color: var(--champagne-accent);">
+            <div id="goldNetWorth" style="font-size: 24px; font-weight: 900; color: var(--text-forest);">₹0.00</div>
+            <div id="goldPnl" style="font-size: 14px; font-weight: 800; color: var(--price-up);">+0.00% Total Return</div>
+          </div>
+        </div>
+
+        <!-- 3rd Place Bronze -->
+        <div class="podium-card podium-third">
+          <div style="font-size: 42px; margin-bottom: 6px;">🥉</div>
+          <div class="badge" style="background-color: var(--podium-bronze-bg); color: var(--podium-bronze); margin-bottom: 8px;">
+            3RD PLACE • BRONZE
+          </div>
+          <h3 id="bronzeTeamName" style="font-size: 20px; color: var(--text-forest); margin-bottom: 2px;">Team 3</h3>
+          <p id="bronzeTeamMembers" style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;"></p>
+          <div class="cream-panel" style="width: 100%; padding: 10px; font-family: var(--font-mono);">
+            <div id="bronzeNetWorth" style="font-size: 18px; font-weight: 800; color: var(--text-charcoal);">₹0.00</div>
+            <div id="bronzePnl" style="font-size: 12px; font-weight: 700; color: var(--price-up);">+0.00% Return</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Standings Table -->
+      <div class="cream-panel" style="padding: 18px; margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--text-forest);">
+            Complete Championship Standings
+          </h3>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+            Audited Final Calculations
+          </span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px;">Rank</th>
+                <th style="padding: 8px;">Team Name</th>
+                <th style="padding: 8px;">Members</th>
+                <th style="padding: 8px; text-align: right;">Cash</th>
+                <th style="padding: 8px; text-align: right;">Final Net Worth</th>
+                <th style="padding: 8px; text-align: right;">Total Return</th>
+              </tr>
+            </thead>
+            <tbody id="podiumRankingsTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: center; gap: 12px; margin-top: 22px;">
+        <button onclick="dismissPodiumCeremony()" class="btn btn-sage">
+          Close Ceremony Overlay
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.4 Floating Order Toast Notification -->
+  <div id="orderToast" class="hidden toast-notice"></div>
+
+
+  <!-- ==========================================================================
+       VIEW 1: UNIVERSAL AUTHENTICATION TERMINAL (#loginView)
+       ========================================================================== -->
+  <section id="loginView" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="luxury-card" style="max-width: 440px; width: 100%; padding: 36px;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 22px;">TF</div>
+        <div class="badge badge-sage" style="margin-bottom: 10px;">
+          Institutional Simulation Engine
+        </div>
+        <h1 id="loginEventTitle" style="font-size: 26px; line-height: 1.2; margin-bottom: 6px;">The Trading Floor</h1>
+        <p style="font-size: 13px; color: var(--text-muted);">Championship 2026 • Local LAN Trading Desk</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginUsername">Terminal ID / Username</label>
+          <input id="loginUsername" type="text" required placeholder="e.g. team1, host, projector" class="form-input" style="font-family: var(--font-mono);" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Access Password / PIN</label>
+          <input id="loginPassword" type="password" required placeholder="••••••••" class="form-input" style="font-family: var(--font-mono);" />
+        </div>
+        <p id="loginError" class="hidden" style="color: var(--error-red); background-color: var(--error-bg); border: 1px solid var(--error-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; margin-bottom: 14px;"></p>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px;">
+          Authenticate Terminal
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--subtle-border); text-align: center;">
+        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 8px;">
+          Pre-Configured Terminal Logins
+        </span>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">
+          <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--text-forest); display: block;">HOST</strong>host / host2026</div>
+          <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--champagne-accent); display: block;">PROJECTOR</strong>projector / screen2026</div>
+          <div class="cream-panel" style="padding: 6px;"><strong style="color: var(--price-up); display: block;">TEAMS</strong>team1..team12</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==========================================================================
+       VIEW 2: STUDENT TRADING DESK (#traderView)
+       ========================================================================== -->
+  <section id="traderView" class="hidden ttf-app">
+    <!-- Top Header Ribbon -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">TF</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="traderTeamName" style="font-size: 16px; font-weight: 800; color: var(--text-forest);">TEAM 1</span>
+            <span id="traderDayBadge" class="badge badge-champagne">DAY 1 / 3</span>
+          </div>
+          <div id="traderTeamMembersDisplay" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"></div>
+        </div>
+        <div class="header-clock-pill">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">CLOCK:</span>
+          <span id="traderClock" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--text-forest);">00:00</span>
+        </div>
+        <span id="traderMarketStatus" class="badge badge-paused">MARKET PAUSED</span>
+      </div>
+
+      <!-- Financial Metrics Ribbon -->
+      <div class="header-metrics-bar">
+        <div class="metric-item">
+          <span class="metric-label">Available Cash</span>
+          <span id="traderCash" class="metric-value price-up">₹5,00,000.00</span>
+        </div>
+        <div class="metric-item" style="border-left: 1px solid var(--subtle-border); padding-left: 16px;">
+          <span class="metric-label">Holdings Value</span>
+          <span id="traderEquity" class="metric-value">₹0.00</span>
+        </div>
+        <div class="metric-item" style="border-left: 1px solid var(--subtle-border); padding-left: 16px;">
+          <span class="metric-label">Total Net Worth</span>
+          <span id="traderNetWorth" class="metric-value" style="font-size: 18px; color: var(--text-forest);">₹5,00,000.00</span>
+        </div>
+        <div class="metric-item" style="border-left: 1px solid var(--subtle-border); padding-left: 16px;">
+          <span class="metric-label">Total Return %</span>
+          <span id="traderReturnPct" class="metric-value price-neutral">+0.00%</span>
+        </div>
+        <button onclick="logoutTerminal()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">
+          Lock Terminal
+        </button>
+      </div>
+    </header>
+
+    <!-- Sub-Navigation & Filters Bar -->
+    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+      <!-- Desk Tabs -->
+      <div style="display: flex; gap: 8px;">
+        <button id="tabBtnMarket" onclick="switchTraderTab('market')" class="btn btn-sage" style="padding: 6px 14px; font-size: 12px;">
+          📊 Market Trading Desk
+        </button>
+        <button id="tabBtnPositions" onclick="switchTraderTab('positions')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+          💼 My Portfolio Positions
+        </button>
+        <button id="tabBtnTrades" onclick="switchTraderTab('trades')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+          📝 Trade Order History
+        </button>
+        <button id="tabBtnRules" onclick="openRulesHelpModal()" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+          📖 Competition Rules & Help
+        </button>
+      </div>
+
+      <!-- Search & Sector Filters -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input id="traderStockSearch" type="text" placeholder="Search company or ticker..." oninput="filterTraderStocks()" class="form-input" style="padding: 5px 10px; font-size: 12px; width: 180px;" />
+        <select id="traderSectorFilter" onchange="filterTraderStocks()" class="form-input" style="padding: 5px 10px; font-size: 12px; width: 140px;">
+          <option value="ALL">All Sectors</option>
+          <option value="Automobile">Automobile</option>
+          <option value="Information Tech">Information Tech</option>
+          <option value="Banking & Finance">Banking & Finance</option>
+          <option value="Renewable Energy">Renewable Energy</option>
+          <option value="Pharmaceuticals">Pharmaceuticals</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main style="flex: 1; padding: 24px; display: grid; grid-template-columns: 1fr 340px; gap: 24px; max-width: 1600px; width: 100%; margin: 0 auto;">
+      <!-- Left Container: Tab Views -->
+      <div style="min-width: 0;">
+        <!-- TAB 1: Market Desk -->
+        <div id="traderTabContentMarket" class="stock-grid"></div>
+
+        <!-- TAB 2: My Positions -->
+        <div id="traderTabContentPositions" class="hidden luxury-card" style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px;">Active Portfolio Holdings</h2>
+            <span style="font-size: 12px; color: var(--text-muted);">Real-time valuation based on current market tick</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                  <th style="padding: 10px;">Stock</th>
+                  <th style="padding: 10px;">Shares Held</th>
+                  <th style="padding: 10px;">Avg Acquisition Price</th>
+                  <th style="padding: 10px;">Current Price</th>
+                  <th style="padding: 10px; text-align: right;">Total Current Value</th>
+                  <th style="padding: 10px; text-align: right;">Unrealized P&L</th>
+                  <th style="padding: 10px; text-align: center;">Quick Trade</th>
+                </tr>
+              </thead>
+              <tbody id="traderPositionsTbody" style="font-family: var(--font-mono);"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: Trade Order History -->
+        <div id="traderTabContentTrades" class="hidden luxury-card" style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="font-size: 18px;">Executed Trade Log</h2>
+            <span style="font-size: 12px; color: var(--text-muted);">Authoritative server audit entries for your team</span>
+          </div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                  <th style="padding: 8px;">Seq</th>
+                  <th style="padding: 8px;">Time</th>
+                  <th style="padding: 8px;">Day</th>
+                  <th style="padding: 8px;">Type</th>
+                  <th style="padding: 8px;">Stock</th>
+                  <th style="padding: 8px; text-align: right;">Qty</th>
+                  <th style="padding: 8px; text-align: right;">Price</th>
+                  <th style="padding: 8px; text-align: right;">Total Value</th>
+                  <th style="padding: 8px; text-align: right;">Fee</th>
+                  <th style="padding: 8px; text-align: right;">Cash After</th>
+                </tr>
+              </thead>
+              <tbody id="traderTradesTbody" style="font-family: var(--font-mono);"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Container: Market Wire Sidebar -->
+      <aside class="news-sidebar">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--price-up);"></span>
+            <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--text-forest);">Live Market Wire</h3>
+          </div>
+          <span style="font-size: 10px; font-family: var(--font-mono); color: var(--text-muted);">LAN BROADCAST</span>
+        </div>
+        <div id="traderNewsList" style="overflow-y: auto; flex: 1;"></div>
+      </aside>
+    </main>
+  </section>
+
+
+  <!-- ==========================================================================
+       VIEW 3: HOST CONTROL CENTRE (#hostView)
+       ========================================================================== -->
+  <section id="hostView" class="hidden ttf-app">
+    <!-- Top Command Ribbon -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">TF</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px; font-weight: 800; color: var(--text-forest);">HOST CONTROL CENTRE</span>
+            <span id="hostScenarioModeBadge" class="badge badge-champagne">LIVE MODE</span>
+          </div>
+          <p id="hostClockInfo" style="font-size: 12px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 2px;">
+            Day 1 / 3 • 00:00 elapsed
+          </p>
+        </div>
+      </div>
+
+      <!-- Host Action Buttons -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <button onclick="hostPauseMarket()" class="btn btn-outline" style="border-color: var(--warning-amber); color: var(--warning-amber);">
+          ⏸ Pause
+        </button>
+        <button onclick="hostResumeMarket()" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up);">
+          ▶ Resume (3-2-1)
+        </button>
+        <button onclick="hostNextDay()" class="btn btn-outline">
+          ⏭ Next Day
+        </button>
+        <button onclick="openCustomNewsModal()" class="btn btn-sage">
+          📢 Broadcast News
+        </button>
+        <button onclick="openTeamSetupModal()" class="btn btn-outline">
+          👥 Teams Setup
+        </button>
+        <button onclick="openEventSettingsModal()" class="btn btn-outline">
+          ⚙️ Settings
+        </button>
+        <button onclick="hostConcludeChampionship()" class="btn btn-champagne">
+          🏆 Crown Winners
+        </button>
+        <button onclick="logoutTerminal()" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">
+          Exit
+        </button>
+      </div>
+    </header>
+
+    <!-- Host Navigation Sub-Bar -->
+    <div style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); padding: 8px 24px; display: flex; gap: 8px;">
+      <button id="hostTabBtnStocks" onclick="switchHostTab('stocks')" class="btn btn-sage" style="padding: 6px 14px; font-size: 12px;">
+        📈 Stock Engine & Halts
+      </button>
+      <button id="hostTabBtnNews" onclick="switchHostTab('news')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+        ⚡ News Control Deck
+      </button>
+      <button id="hostTabBtnLeaderboard" onclick="switchHostTab('leaderboard')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+        🏆 Live Standings
+      </button>
+      <button id="hostTabBtnTrades" onclick="switchHostTab('trades')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+        📝 Real-Time Trade Stream
+      </button>
+      <button id="hostTabBtnExports" onclick="switchHostTab('exports')" class="btn btn-outline" style="padding: 6px 14px; font-size: 12px;">
+        📥 Reports & CSV Exports
+      </button>
+    </div>
+
+    <!-- Host Main Panels -->
+    <main style="flex: 1; padding: 24px; max-width: 1600px; width: 100%; margin: 0 auto;">
+      <!-- TAB 1: Stock Engine & Halts -->
+      <div id="hostTabContentStocks" class="luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Live Stock Engine & Circuit Breakers</h2>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="hostSwitchScenario('test')" class="btn btn-outline" style="padding: 5px 10px; font-size: 11px;">Load Test Scenario</button>
+            <button onclick="hostSwitchScenario('live')" class="btn btn-outline" style="padding: 5px 10px; font-size: 11px;">Load Live Scenario</button>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px;">Ticker</th>
+                <th style="padding: 8px;">Name</th>
+                <th style="padding: 8px;">Sector</th>
+                <th style="padding: 8px; text-align: right;">Current Price</th>
+                <th style="padding: 8px; text-align: right;">Day Open</th>
+                <th style="padding: 8px; text-align: right;">Change %</th>
+                <th style="padding: 8px; text-align: center;">Status</th>
+                <th style="padding: 8px; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="hostStocksTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: News Control Deck -->
+      <div id="hostTabContentNews" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Scheduled & Custom Breaking News Deck</h2>
+          <button onclick="openCustomNewsModal()" class="btn btn-champagne" style="padding: 6px 14px; font-size: 12px;">
+            + Create Breaking News
+          </button>
+        </div>
+        <div id="hostNewsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px;"></div>
+      </div>
+
+      <!-- TAB 3: Live Standings -->
+      <div id="hostTabContentLeaderboard" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Live Championship Rankings</h2>
+          <span style="font-size: 12px; color: var(--text-muted);">Audited rankings computed atomically per tick</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px;">Rank</th>
+                <th style="padding: 8px;">Team Name</th>
+                <th style="padding: 8px;">Members</th>
+                <th style="padding: 8px; text-align: right;">Cash</th>
+                <th style="padding: 8px; text-align: right;">Holdings Value</th>
+                <th style="padding: 8px; text-align: right;">Net Worth</th>
+                <th style="padding: 8px; text-align: right;">Return %</th>
+                <th style="padding: 8px; text-align: center;">Trades</th>
+              </tr>
+            </thead>
+            <tbody id="hostLeaderboardTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: Real-Time Trade Stream -->
+      <div id="hostTabContentTrades" class="hidden luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">All Teams Execution Stream</h2>
+          <span style="font-size: 12px; color: var(--text-muted);">Real-time orders processed by server engine</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px;">Seq</th>
+                <th style="padding: 8px;">Time</th>
+                <th style="padding: 8px;">Team</th>
+                <th style="padding: 8px;">Type</th>
+                <th style="padding: 8px;">Ticker</th>
+                <th style="padding: 8px; text-align: right;">Qty</th>
+                <th style="padding: 8px; text-align: right;">Price</th>
+                <th style="padding: 8px; text-align: right;">Gross Value</th>
+                <th style="padding: 8px; text-align: right;">Fee</th>
+                <th style="padding: 8px; text-align: right;">Cash After</th>
+              </tr>
+            </thead>
+            <tbody id="hostRecentTradesTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 5: Reports & CSV Exports -->
+      <div id="hostTabContentExports" class="hidden luxury-card" style="padding: 24px;">
+        <h2 style="font-size: 18px; margin-bottom: 6px;">Championship Reports & Audit Exports</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+          Download official audited data for post-event verification, faculty records, and student marksheet packages.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          <!-- Standings CSV -->
+          <div class="cream-panel" style="padding: 18px;">
+            <h3 style="font-size: 15px; margin-bottom: 4px;">📊 Final Standings (CSV)</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+              Complete ranking table with starting capital, cash balance, equity, net worth, and return %.
+            </p>
+            <button onclick="downloadReport('standings')" class="btn btn-sage" style="width: 100%;">
+              Download Standings CSV
+            </button>
+          </div>
+
+          <!-- Trades CSV -->
+          <div class="cream-panel" style="padding: 18px;">
+            <h3 style="font-size: 15px; margin-bottom: 4px;">📝 Executed Trades Log (CSV)</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+              Every trade executed by all teams with millisecond timestamps, fees, and balance tracking.
+            </p>
+            <button onclick="downloadReport('trades')" class="btn btn-sage" style="width: 100%;">
+              Download Trades CSV
+            </button>
+          </div>
+
+          <!-- Audit Timeline CSV -->
+          <div class="cream-panel" style="padding: 18px;">
+            <h3 style="font-size: 15px; margin-bottom: 4px;">🛡️ Audit Timeline (CSV)</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+              Full chronological timeline of pauses, resumes, halts, news shocks, and logins.
+            </p>
+            <button onclick="downloadReport('audit-csv')" class="btn btn-sage" style="width: 100%;">
+              Download Audit CSV
+            </button>
+          </div>
+
+          <!-- Audit Log JSON -->
+          <div class="cream-panel" style="padding: 18px;">
+            <h3 style="font-size: 15px; margin-bottom: 4px;">💾 Raw Audit Master (JSON)</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+              Complete uncompressed JSON audit ledger matching institutional championship standards.
+            </p>
+            <button onclick="downloadReport('audit-json')" class="btn btn-outline" style="width: 100%;">
+              Download Audit JSON
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+
+  <!-- ==========================================================================
+       VIEW 4: PUBLIC STAGE PROJECTOR VIEW (#projectorView)
+       ========================================================================== -->
+  <section id="projectorView" class="hidden projector-container">
+    <!-- Top Status Header -->
+    <header class="projector-header">
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <div>
+          <span id="projDayText" style="font-size: 26px; font-weight: 900; color: var(--text-forest);">DAY 1 / 3</span>
+          <div id="projEventTitleHeader" style="font-size: 12px; font-weight: 700; color: var(--champagne-accent); text-transform: uppercase;">
+            The Trading Floor Championship 2026
+          </div>
+        </div>
+        <div style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
+        <div id="projClockText" class="projector-clock">CLOCK: 00:00</div>
+        <div style="height: 36px; width: 1px; background-color: var(--subtle-border);"></div>
+        <span id="projStatusText" class="badge badge-active" style="font-size: 16px; padding: 6px 16px;">
+          ACTIVE TRADING
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onclick="toggleProjectorFullscreen()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+          ⛶ Fullscreen
+        </button>
+        <button onclick="logoutTerminal()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+          Exit [ESC]
+        </button>
+      </div>
+    </header>
+
+    <!-- 2 Rows x 4 Columns High-Visibility Stocks Grid -->
+    <main id="projectorGrid" class="projector-grid"></main>
+
+    <!-- Bottom Breaking News Marquee Strip -->
+    <footer class="projector-ticker-strip">
+      <span class="badge badge-champagne" style="font-size: 14px; padding: 6px 14px; flex-shrink: 0;">
+        ⚡ BREAKING WIRE
+      </span>
+      <div style="overflow: hidden; flex: 1; position: relative; height: 28px; display: flex; align-items: center;">
+        <div id="projectorTickerText" class="news-marquee-text">
+          WELCOME TO THE TRADING FLOOR CHAMPIONSHIP 2026 — ALL SYSTEMS SYNCHRONIZED
+        </div>
+      </div>
+    </footer>
+  </section>
+
+
+  <!-- ==========================================================================
+       MODALS: CUSTOM TRADE, PROFILE, CHART, EVENT SETTINGS, TEAMS SETUP, RULES
+       ========================================================================== -->
+
+  <!-- Modal A: Interactive Custom Trade Order Modal -->
+  <div id="tradeModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header">
+        <div>
+          <span id="tradeModalSector" class="stock-sector">SECTOR</span>
+          <h2 id="tradeModalTicker" style="font-size: 22px; margin-top: 4px;">TICKER</h2>
+        </div>
+        <button onclick="closeTradeModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div class="cream-panel" style="padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span style="font-size: 12px; color: var(--text-muted);">Current Market Price</span>
+          <span id="tradeModalPrice" style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: var(--text-forest);">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px;">
+          <span style="font-size: 12px; color: var(--text-muted);">Your Available Cash</span>
+          <span id="tradeModalCash" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--price-up);">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+          <span style="font-size: 12px; color: var(--text-muted);">Your Current Holding</span>
+          <span id="tradeModalHolding" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700;">0 shares</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="tradeQuantityInput">Order Quantity (Shares)</label>
+        <input id="tradeQuantityInput" type="number" min="1" step="1" value="10" oninput="recalculateTradeModal()" class="form-input" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700;" />
+      </div>
+
+      <!-- Quick Lot Preset Pills -->
+      <div style="display: flex; gap: 6px; margin-bottom: 18px;">
+        <button onclick="setTradeLot(1)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+1</button>
+        <button onclick="setTradeLot(5)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+5</button>
+        <button onclick="setTradeLot(10)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+10</button>
+        <button onclick="setTradeLot(50)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+50</button>
+        <button onclick="setTradeLot(100)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+100</button>
+        <button onclick="setTradeLot('MAX_BUY')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: var(--price-up);">Max Buy</button>
+        <button onclick="setTradeLot('MAX_SELL')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: var(--price-down);">Max Sell</button>
+      </div>
+
+      <!-- Order Value Breakdown -->
+      <div class="cream-panel" style="padding: 12px; margin-bottom: 18px; font-family: var(--font-mono); font-size: 12px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Gross Order Value:</span>
+          <span id="tradeModalGross" style="font-weight: 700;">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span style="color: var(--text-muted);">Transaction Fee:</span>
+          <span id="tradeModalFee" style="color: var(--text-muted);">₹0.00</span>
+        </div>
+        <div style="border-top: 1px solid var(--subtle-border); margin: 6px 0;"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="font-weight: 700; color: var(--text-forest);">Net Cash Impact:</span>
+          <span id="tradeModalNet" style="font-weight: 800;">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Execution Buttons -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <button id="btnExecuteBuy" onclick="executeModalTrade('BUY')" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up); padding: 12px; font-size: 14px;">
+          Confirm BUY
+        </button>
+        <button id="btnExecuteSell" onclick="executeModalTrade('SELL')" class="btn btn-primary" style="background-color: var(--price-down); border-color: var(--price-down); padding: 12px; font-size: 14px;">
+          Confirm SELL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal B: Company Profile & Fundamentals Modal -->
+  <div id="detailsModal" class="hidden modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle" style="font-size: 18px;">Company Profile & Financials</h2>
+        <button onclick="closeDetailsModal()" class="modal-close-btn">✕</button>
+      </div>
+      <p id="modalSummary" class="cream-panel" style="padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--text-charcoal);"></p>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Sector</span>
+          <span id="modalSector" style="font-weight: 700; color: var(--text-forest);"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Face Value</span>
+          <span id="modalFaceValue" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week High</span>
+          <span id="modalHigh52" style="font-family: var(--font-mono); font-weight: 700; color: var(--price-up);"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week Low</span>
+          <span id="modalLow52" style="font-family: var(--font-mono); font-weight: 700; color: var(--price-down);"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">P/E Ratio</span>
+          <span id="modalPE" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Market Cap</span>
+          <span id="modalMarketCap" style="font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Debt-to-Equity</span>
+          <span id="modalDE" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Beta (Sensitivity)</span>
+          <span id="modalBeta" style="font-family: var(--font-mono); font-weight: 700; color: var(--champagne-accent);"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal C: Full High-Resolution Chart Modal -->
+  <div id="fullChartModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 820px;">
+      <div class="modal-header">
+        <div>
+          <span id="chartModalSector" class="stock-sector">SECTOR</span>
+          <div style="display: flex; align-items: baseline; gap: 12px; margin-top: 4px;">
+            <h2 id="chartModalTicker" style="font-size: 24px;">TICKER</h2>
+            <span id="chartModalPrice" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800;">₹0.00</span>
+            <span id="chartModalPct" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700;">+0.00%</span>
+          </div>
+        </div>
+        <button onclick="closeFullChartModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <!-- High-Res Smooth Canvas -->
+      <div style="background-color: var(--surface-cream); border: 1px solid var(--subtle-border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 14px; height: 320px;">
+        <canvas id="largeChartCanvas" width="800" height="300" style="width: 100%; height: 100%; display: block;"></canvas>
+      </div>
+
+      <!-- Key Metrics Row -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-family: var(--font-mono); font-size: 12px;">
+        <div class="cream-panel" style="padding: 8px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block;">Day Open</span>
+          <span id="chartModalOpen" style="font-weight: 700;">₹0.00</span>
+        </div>
+        <div class="cream-panel" style="padding: 8px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block;">Day High</span>
+          <span id="chartModalHigh" style="font-weight: 700; color: var(--price-up);">₹0.00</span>
+        </div>
+        <div class="cream-panel" style="padding: 8px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block;">Day Low</span>
+          <span id="chartModalLow" style="font-weight: 700; color: var(--price-down);">₹0.00</span>
+        </div>
+        <div class="cream-panel" style="padding: 8px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block;">Beta Factor</span>
+          <span id="chartModalBeta" style="font-weight: 700; color: var(--champagne-accent);">1.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal D: Host Custom News Composer -->
+  <div id="customNewsModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h2 style="font-size: 18px;">Broadcast Custom Breaking News</h2>
+        <button onclick="closeCustomNewsModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <form id="customNewsForm">
+        <div class="form-group">
+          <label class="form-label" for="newsHeadlineInput">Breaking Headline</label>
+          <input id="newsHeadlineInput" type="text" required placeholder="e.g. RBI Announces Surprise Repo Rate Cut of 50 bps" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newsExplanationInput">Explanation & Sector Context</label>
+          <textarea id="newsExplanationInput" rows="2" placeholder="e.g. Lower interest rates boost borrowing and auto sales across all major manufacturers." class="form-input"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="newsTickerInput">Affected Stock / Scope</label>
+            <select id="newsTickerInput" class="form-input"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="newsDeltaInput">Price Impact (%)</label>
+            <input id="newsDeltaInput" type="number" step="0.5" required placeholder="e.g. +8.5 or -12" class="form-input" style="font-family: var(--font-mono);" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newsDurationInput">Lerp Shock Duration (Seconds)</label>
+          <input id="newsDurationInput" type="number" min="10" max="180" value="45" class="form-input" style="font-family: var(--font-mono);" />
+          <span style="font-size: 11px; color: var(--text-muted);">Gradual price transition steps over this timeframe</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" onclick="closeCustomNewsModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-champagne">Broadcast to All Screens</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal E: Host Event Settings Modal -->
+  <div id="eventSettingsModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h2 style="font-size: 18px;">Championship Global Settings</h2>
+        <button onclick="closeEventSettingsModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <form id="eventSettingsForm">
+        <div class="form-group">
+          <label class="form-label" for="settingEventTitle">Event Title</label>
+          <input id="settingEventTitle" type="text" class="form-input" placeholder="e.g. SSASIT B-School Trading Championship 2026" />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingDayDuration">Round Duration (Seconds)</label>
+            <input id="settingDayDuration" type="number" step="30" min="60" class="form-input" style="font-family: var(--font-mono);" />
+            <span style="font-size: 11px; color: var(--text-muted);">e.g. 1800s = 30 minutes</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingTotalDays">Total Trading Rounds / Days</label>
+            <input id="settingTotalDays" type="number" min="1" max="10" class="form-input" style="font-family: var(--font-mono);" />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label" for="settingCircuitPercent">Circuit Breaker Limit (%)</label>
+            <input id="settingCircuitPercent" type="number" step="1" min="5" max="50" class="form-input" style="font-family: var(--font-mono);" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingStartingCash">Starting Virtual Cash (₹)</label>
+            <input id="settingStartingCash" type="number" step="10000" min="10000" class="form-input" style="font-family: var(--font-mono);" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="settingFeeBps">Transaction Brokerage Fee (Basis Points)</label>
+          <input id="settingFeeBps" type="number" min="0" max="100" step="5" class="form-input" style="font-family: var(--font-mono);" />
+          <span style="font-size: 11px; color: var(--text-muted);">0 bps = 0%, 10 bps = 0.10%, 25 bps = 0.25%</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" onclick="closeEventSettingsModal()" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Broadcast Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal F: Host Team Setup & CSV Import/Export Modal -->
+  <div id="teamSetupModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 820px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h2 style="font-size: 18px;">Team Management & Roster</h2>
+          <p style="font-size: 12px; color: var(--text-muted);">Configure team names, member rosters, credentials, and starting cash.</p>
+        </div>
+        <button onclick="closeTeamSetupModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <!-- Quick Presets & Add -->
+      <div class="cream-panel" style="padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Presets:</span>
+          <button onclick="generateTeamRows(4)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">4 Teams</button>
+          <button onclick="generateTeamRows(8)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">8 Teams</button>
+          <button onclick="generateTeamRows(12)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">12 Teams</button>
+          <button onclick="generateTeamRows(16)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">16 Teams</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="exportTeamsCsv()" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">Export CSV</button>
+          <button onclick="addNewTeamRow()" class="btn btn-sage" style="padding: 4px 10px; font-size: 11px;">+ Add Team</button>
+        </div>
+      </div>
+
+      <!-- Editable Roster Table -->
+      <div style="overflow-y: auto; flex: 1; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); margin-bottom: 16px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+              <th style="padding: 8px;">Username</th>
+              <th style="padding: 8px;">Team Name</th>
+              <th style="padding: 8px;">Members</th>
+              <th style="padding: 8px;">Password</th>
+              <th style="padding: 8px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="teamsSetupTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Submit Footer -->
+      <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--subtle-border); padding-top: 14px;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
+          <input id="resetBalancesCheckbox" type="checkbox" />
+          Reset existing cash balances to Starting Cash
+        </label>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="closeTeamSetupModal()" class="btn btn-outline">Cancel</button>
+          <button onclick="saveTeamsConfiguration()" class="btn btn-primary">Apply & Save Roster</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal G: Competition Rules & Guide Modal -->
+  <div id="rulesHelpModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="modal-header">
+        <h2 style="font-size: 20px;">Trading Floor Championship — Rules & Handbook</h2>
+        <button onclick="closeRulesHelpModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div style="font-size: 13px; line-height: 1.6; color: var(--text-charcoal); display: flex; flex-direction: column; gap: 14px;">
+        <div class="cream-panel" style="padding: 14px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 4px;">1. Virtual Capital & Portfolios</h4>
+          <p>Every team begins with official virtual capital. You can place market orders to buy and sell blue-chip stocks during active trading sessions. Cash balances update atomically upon execution.</p>
+        </div>
+
+        <div class="cream-panel" style="padding: 14px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 4px;">2. Authoritative Valuation & Scoring</h4>
+          <p><strong>Net Worth = Available Cash + (Holdings Quantity × Current Market Price)</strong>.<br />
+          <strong>Return % = ((Final Net Worth − Starting Capital) ÷ Starting Capital) × 100</strong>.<br />
+          Final championship standings are determined by verified total Net Worth at the end of Day 3.</p>
+        </div>
+
+        <div class="cream-panel" style="padding: 14px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 4px;">3. Circuit Breakers</h4>
+          <p>If any stock rises or falls by <strong>20%</strong> from its official Day Open reference price, trading in that stock is immediately halted to protect the market. Halts can only be released by the Host Matrix Controller.</p>
+        </div>
+
+        <div class="cream-panel" style="padding: 14px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 4px;">4. Breaking News Shocks</h4>
+          <p>Macro-economic and company-specific news releases trigger gradual price movements over 30–60 seconds, weighted by each company's sensitivity (Beta). Monitor the wire feed closely to anticipate market reactions.</p>
+        </div>
+
+        <div class="cream-panel" style="padding: 14px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 4px;">5. Market Pauses & Disconnections</h4>
+          <p>If the host pauses the market, prices freeze and orders are rejected. If your connection drops, simply refresh: your session token and portfolio are preserved safely on the exchange engine.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button onclick="closeRulesHelpModal()" class="btn btn-sage">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

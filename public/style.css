@@ -1,0 +1,878 @@
+/* ==========================================================================
+   THE TRADING FLOOR CHAMPIONSHIP 2026 — INSTITUTIONAL DESIGN SYSTEM
+   Theme: Premium White, Warm Ivory, and Pastel Luxury
+   Offline-First Architecture (Zero CDN Dependency)
+   ========================================================================== */
+
+/* 1. DESIGN TOKENS & SYSTEM VARIABLES */
+:root {
+  /* Core Luxury Palette */
+  --bg-ivory: #F8F5EF;
+  --card-white: #FFFFFF;
+  --surface-cream: #FFFDF9;
+  
+  /* Typography Colors */
+  --text-forest: #263D35;
+  --text-charcoal: #292D2B;
+  --text-muted: #72766F;
+  --text-light: #9B9E98;
+
+  /* Accents & Pastel Surfaces */
+  --champagne-accent: #B49A70;
+  --champagne-light: #F4EFE6;
+  --champagne-glow: rgba(180, 154, 112, 0.25);
+  --soft-sage: #E3EBE3;
+  --soft-sage-hover: #D5E2D5;
+  --pale-blue: #E7EDF5;
+  --pale-blue-hover: #D7E3F0;
+  --warm-beige: #EEE4D6;
+  --subtle-border: #E7E0D5;
+  --card-border: #E2DBD0;
+
+  /* Financial Indicators (High Contrast) */
+  --price-up: #218653;
+  --price-up-bg: #EAF5EE;
+  --price-up-border: #BCE3CB;
+
+  --price-down: #C64B4B;
+  --price-down-bg: #FBEFEF;
+  --price-down-border: #F3C7C7;
+
+  --warning-amber: #B77932;
+  --warning-bg: #FDF5EA;
+  --warning-border: #F3DDBC;
+
+  --error-red: #B42318;
+  --error-bg: #FEF3F2;
+  --error-border: #FECDCA;
+
+  /* Podium Accents */
+  --podium-gold: #D4AF37;
+  --podium-gold-bg: #FCF8E8;
+  --podium-silver: #8C9CAE;
+  --podium-silver-bg: #F1F4F8;
+  --podium-bronze: #A06840;
+  --podium-bronze-bg: #F9EFE7;
+
+  /* Typography Stacks (with offline-ready fallbacks) */
+  --font-serif: 'Playfair Display', 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'SF Mono', Consolas, 'Courier New', monospace;
+
+  /* Radius & Shadows */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-sm: 0 1px 3px rgba(41, 45, 43, 0.05);
+  --shadow-md: 0 4px 14px rgba(41, 45, 43, 0.07), 0 1px 3px rgba(41, 45, 43, 0.04);
+  --shadow-lg: 0 10px 28px rgba(41, 45, 43, 0.09), 0 2px 8px rgba(41, 45, 43, 0.04);
+  --shadow-xl: 0 20px 40px rgba(41, 45, 43, 0.12);
+}
+
+/* 2. BASE RESETS & GLOBAL STYLES */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  min-height: 100vh;
+  background-color: var(--bg-ivory);
+  color: var(--text-charcoal);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+  color: var(--text-forest);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.font-mono-price {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' on, 'zero' on;
+  letter-spacing: -0.02em;
+}
+
+/* Utility Containers */
+.ttf-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* 3. CARD & SURFACE ELEVATIONS */
+.luxury-card {
+  background-color: var(--card-white);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.luxury-card:hover {
+  border-color: var(--champagne-accent);
+  box-shadow: var(--shadow-lg);
+}
+
+.cream-panel {
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-md);
+}
+
+/* 4. BUTTONS & INTERACTIVE ELEMENTS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--text-forest);
+  color: #FFFFFF;
+  border-color: var(--text-forest);
+}
+
+.btn-primary:hover {
+  background-color: #1A2B25;
+  color: #FFFFFF;
+}
+
+.btn-champagne {
+  background-color: var(--champagne-accent);
+  color: #FFFFFF;
+  border-color: var(--champagne-accent);
+}
+
+.btn-champagne:hover {
+  background-color: #9C835A;
+}
+
+.btn-sage {
+  background-color: var(--soft-sage);
+  color: var(--text-forest);
+  border-color: var(--subtle-border);
+}
+
+.btn-sage:hover {
+  background-color: var(--soft-sage-hover);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--text-charcoal);
+  border-color: var(--subtle-border);
+}
+
+.btn-outline:hover {
+  background-color: var(--champagne-light);
+  border-color: var(--champagne-accent);
+}
+
+.btn-buy {
+  background-color: var(--price-up-bg);
+  color: var(--price-up);
+  border: 1px solid var(--price-up-border);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btn-buy:hover:not(:disabled) {
+  background-color: var(--price-up);
+  color: #FFFFFF;
+  border-color: var(--price-up);
+}
+
+.btn-sell {
+  background-color: var(--price-down-bg);
+  color: var(--price-down);
+  border: 1px solid var(--price-down-border);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btn-sell:hover:not(:disabled) {
+  background-color: var(--price-down);
+  color: #FFFFFF;
+  border-color: var(--price-down);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 5. BADGES & STATUS PILLS */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-active {
+  background-color: var(--price-up-bg);
+  color: var(--price-up);
+  border: 1px solid var(--price-up-border);
+}
+
+.badge-paused {
+  background-color: var(--warning-bg);
+  color: var(--warning-amber);
+  border: 1px solid var(--warning-border);
+}
+
+.badge-halted {
+  background-color: var(--error-bg);
+  color: var(--error-red);
+  border: 1px solid var(--error-border);
+  animation: pulseHalt 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseHalt {
+  0%, 100% { border-color: var(--error-red); }
+  50% { border-color: transparent; }
+}
+
+.badge-champagne {
+  background-color: var(--champagne-light);
+  color: #7A6342;
+  border: 1px solid #DFD5C6;
+}
+
+.badge-sage {
+  background-color: var(--soft-sage);
+  color: var(--text-forest);
+  border: 1px solid #C9D9C9;
+}
+
+/* 6. FINANCIAL NUMBER PRESENTATION */
+.price-up {
+  color: var(--price-up);
+}
+
+.price-down {
+  color: var(--price-down);
+}
+
+.price-neutral {
+  color: var(--text-charcoal);
+}
+
+/* 7. APP HEADER & NAVIGATION BAR */
+.app-header {
+  background-color: var(--card-white);
+  border-bottom: 1px solid var(--subtle-border);
+  padding: 12px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--text-forest), var(--champagne-accent));
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-family: var(--font-serif);
+  font-size: 18px;
+}
+
+.header-clock-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.header-metrics-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-charcoal);
+}
+
+/* 8. MARKET GRID & STOCK CARDS */
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.stock-card {
+  background-color: var(--card-white);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.stock-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--champagne-accent);
+}
+
+.stock-card.halted {
+  border: 2px solid var(--error-red);
+  background-color: #FFF8F8;
+}
+
+.stock-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stock-ticker {
+  font-family: var(--font-sans);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-forest);
+  letter-spacing: -0.01em;
+}
+
+.stock-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.stock-sector {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background-color: var(--champagne-light);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.stock-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.stock-current-price {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.stock-delta {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Sparkline Canvas */
+.sparkline-wrapper {
+  margin: 12px 0;
+  height: 60px;
+  width: 100%;
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+
+.sparkline-wrapper:hover {
+  border-color: var(--champagne-accent);
+}
+
+/* Holdings Sub-Panel on Stock Card */
+.stock-holding-row {
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+/* 9. BREAKING NEWS WIRE SIDEBAR */
+.news-sidebar {
+  background-color: var(--card-white);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  max-height: calc(100vh - 120px);
+  position: sticky;
+  top: 90px;
+}
+
+.news-item {
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 10px;
+  transition: border-color 0.18s ease;
+}
+
+.news-item:hover {
+  border-color: var(--champagne-accent);
+}
+
+.news-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.news-headline {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-forest);
+  line-height: 1.35;
+}
+
+.news-explanation {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* 10. MODALS & OVERLAYS */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(38, 61, 53, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-content {
+  background-color: var(--card-white);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  animation: modalSlideUp 0.22s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--subtle-border);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--champagne-light);
+  color: var(--text-charcoal);
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: var(--surface-cream);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-charcoal);
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--champagne-accent);
+  box-shadow: 0 0 0 3px var(--champagne-glow);
+  background-color: #FFFFFF;
+}
+
+/* 11. PROJECTOR VIEW SPECIFICATIONS (AUDITORIUM VISIBILITY) */
+.projector-container {
+  height: 100vh;
+  width: 100vw;
+  background-color: #FAF8F5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px 24px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.projector-header {
+  background-color: #FFFFFF;
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+
+.projector-clock {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--text-forest);
+}
+
+.projector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 16px;
+  flex: 1;
+  margin: 16px 0;
+  min-height: 0;
+}
+
+.projector-card {
+  background-color: #FFFFFF;
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.projector-card.halted {
+  border-color: var(--error-red);
+  background-color: #FFF5F5;
+}
+
+.projector-ticker {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--text-forest);
+  line-height: 1.05;
+}
+
+.projector-price {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.projector-ticker-strip {
+  background-color: #FFFFFF;
+  border: 2px solid var(--champagne-accent);
+  border-radius: var(--radius-lg);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+}
+
+/* Breaking News Ticker Animation */
+@keyframes tickerMarquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.news-marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: tickerMarquee 28s linear infinite;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-forest);
+}
+
+.news-marquee-text:hover {
+  animation-play-state: paused;
+}
+
+/* 12. CHAMPIONSHIP FINALE & WINNER PODIUM CEREMONY */
+.podium-container {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 20px;
+  align-items: flex-end;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 20px;
+}
+
+.podium-card {
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.podium-first {
+  background: linear-gradient(180deg, #FFFFFF, var(--podium-gold-bg));
+  border: 3px solid var(--podium-gold);
+  height: 420px;
+}
+
+.podium-second {
+  background: linear-gradient(180deg, #FFFFFF, var(--podium-silver-bg));
+  border: 2px solid var(--podium-silver);
+  height: 350px;
+}
+
+.podium-third {
+  background: linear-gradient(180deg, #FFFFFF, var(--podium-bronze-bg));
+  border: 2px solid var(--podium-bronze);
+  height: 310px;
+}
+
+.trophy-bounce {
+  animation: floatTrophy 3s infinite ease-in-out;
+}
+
+@keyframes floatTrophy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Confetti System */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 105;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  top: -20px;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(105vh) rotate(720deg);
+  }
+}
+
+/* 13. TOAST NOTIFICATION */
+.toast-notice {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 90;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: toastIn 0.25s ease-out;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast-success {
+  background-color: var(--price-up-bg);
+  color: var(--price-up);
+  border: 1px solid var(--price-up-border);
+}
+
+.toast-error {
+  background-color: var(--error-bg);
+  color: var(--error-red);
+  border: 1px solid var(--error-border);
+}
+
+/* 14. CUSTOM SCROLLBARS */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-ivory);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D5CEBF;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--champagne-accent);
+}
+
+/* 15. RESPONSIVE BREAKPOINTS */
+@media (max-width: 1024px) {
+  .projector-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+  }
+  .podium-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .podium-card {
+    height: auto !important;
+    min-height: 220px;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "the-trading-floor",
+  "version": "1.0.0",
+  "description": "Real-time LAN stock market simulation engine for The Trading Floor Championship 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js live",
+    "test-scenario": "node server.js test"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}
