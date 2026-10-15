@@ -429,6 +429,32 @@
             </div>
           </div>
 
+          <!-- Portfolio Asset Allocation & Liquidate All Action Bar -->
+          <div class="cream-panel" style="padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Cash in Hand</span>
+                <span id="posCashInHand" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--price-up);">₹0.00</span>
+              </div>
+              <div style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Stock Valuation</span>
+                <span id="posStockValuation" style="font-family: var(--font-mono); font-size: 16px; font-weight: 800; color: var(--text-forest);">₹0.00</span>
+              </div>
+              <div style="border-left: 1px solid var(--subtle-border); height: 28px;"></div>
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; font-weight: 600;">Total Portfolio Value</span>
+                <span id="posTotalNetWorth" style="font-family: var(--font-mono); font-size: 16px; font-weight: 900; color: var(--text-charcoal);">₹0.00</span>
+              </div>
+            </div>
+
+            <!-- Prominent Sell All / Liquidate Button -->
+            <button id="btnLiquidateAll" onclick="openLiquidateModal()" class="btn btn-outline" style="background-color: #FEF2F2; border-color: #F87171; color: #DC2626; font-weight: 700; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; border-radius: var(--radius-sm); transition: all 0.2s ease;">
+              <span style="font-size: 15px;">⚡</span>
+              <span>Sell All Shares (Liquidate to Cash)</span>
+            </button>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 style="font-size: 18px;">Active Portfolio Holdings</h2>
             <span style="font-size: 12px; color: var(--text-muted);">Real-time valuation based on current market tick</span>
@@ -958,24 +984,36 @@
       </div>
 
       <!-- Quick Lot Preset Pills -->
-      <div style="display: flex; gap: 6px; margin-bottom: 18px;">
-        <button onclick="setTradeLot(1)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+1</button>
-        <button onclick="setTradeLot(5)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+5</button>
-        <button onclick="setTradeLot(10)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+10</button>
-        <button onclick="setTradeLot(50)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+50</button>
-        <button onclick="setTradeLot(100)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">+100</button>
-        <button onclick="setTradeLot('MAX_BUY')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: var(--price-up);">Max Buy</button>
-        <button onclick="setTradeLot('MAX_SELL')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: var(--price-down);">Max Sell</button>
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Quick Quantity Shortcuts:</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" onclick="setTradeLot(1)" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">+1</button>
+          <button type="button" onclick="setTradeLot(5)" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">+5</button>
+          <button type="button" onclick="setTradeLot(10)" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">+10</button>
+          <button type="button" onclick="setTradeLot(50)" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">+50</button>
+          <button type="button" onclick="setTradeLot(100)" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">+100</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Holding & Budget Shortcuts:</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" onclick="setTradeLot('25%')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">25% Held</button>
+          <button type="button" onclick="setTradeLot('50%')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">50% Held</button>
+          <button type="button" onclick="setTradeLot('75%')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px;">75% Held</button>
+          <button type="button" onclick="setTradeLot('SELL_ALL')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px; color: #DC2626; font-weight: 700; border-color: #FCA5A5; background: #FEF2F2;">⚡ Sell All Held</button>
+          <button type="button" onclick="setTradeLot('MAX_BUY')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px; color: #059669; font-weight: 700; border-color: #6EE7B7; background: #ECFDF5;">⚡ Max Affordable Buy</button>
+        </div>
       </div>
 
       <!-- Order Value Breakdown -->
-      <div class="cream-panel" style="padding: 12px; margin-bottom: 18px; font-family: var(--font-mono); font-size: 12px;">
+      <div class="cream-panel" style="padding: 12px; margin-bottom: 14px; font-family: var(--font-mono); font-size: 12px;">
         <div style="display: flex; justify-content: space-between;">
           <span style="color: var(--text-muted);">Gross Order Value:</span>
           <span id="tradeModalGross" style="font-weight: 700;">₹0.00</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-          <span style="color: var(--text-muted);">Transaction Fee:</span>
+          <span style="color: var(--text-muted);">Brokerage Fee:</span>
           <span id="tradeModalFee" style="color: var(--text-muted);">₹0.00</span>
         </div>
         <div style="border-top: 1px solid var(--subtle-border); margin: 6px 0;"></div>
@@ -985,12 +1023,15 @@
         </div>
       </div>
 
+      <!-- Interactive Dynamic Status / Guidance Notice -->
+      <div id="tradeModalValidationNotice" class="hidden" style="padding: 10px 14px; margin-bottom: 16px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.45;"></div>
+
       <!-- Execution Buttons -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <button id="btnExecuteBuy" onclick="executeModalTrade('BUY')" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up); padding: 12px; font-size: 14px;">
+        <button id="btnExecuteBuy" onclick="executeModalTrade('BUY')" class="btn btn-primary" style="background-color: var(--price-up); border-color: var(--price-up); padding: 12px; font-size: 14px; font-weight: 700;">
           Confirm BUY
         </button>
-        <button id="btnExecuteSell" onclick="executeModalTrade('SELL')" class="btn btn-primary" style="background-color: var(--price-down); border-color: var(--price-down); padding: 12px; font-size: 14px;">
+        <button id="btnExecuteSell" onclick="executeModalTrade('SELL')" class="btn btn-primary" style="background-color: var(--price-down); border-color: var(--price-down); padding: 12px; font-size: 14px; font-weight: 700;">
           Confirm SELL
         </button>
       </div>
@@ -1506,6 +1547,70 @@
         <button type="button" onclick="closeChampionshipWizardModal()" class="btn btn-outline">Close Wizard</button>
         <button type="button" onclick="submitChampionshipWizard()" class="btn btn-primary" style="padding: 10px 24px; font-size: 14px;">
           🚀 Initialize & Launch New Championship
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal J: Liquidate Entire Portfolio Confirmation Modal -->
+  <div id="liquidateModal" class="hidden modal-overlay">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;">
+            ⚡
+          </div>
+          <div>
+            <h2 style="font-size: 18px; margin: 0; color: #991B1B;">Liquidate Entire Portfolio to Cash</h2>
+            <div style="font-size: 11px; color: var(--text-muted);">Sell 100% of all stock holdings into Cash in Hand</div>
+          </div>
+        </div>
+        <button onclick="closeLiquidateModal()" class="modal-close-btn">✕</button>
+      </div>
+
+      <div style="margin: 16px 0 12px; font-size: 13px; color: var(--text-charcoal); line-height: 1.5;">
+        You are about to sell all your active stock holdings at current market prices and convert your entire portfolio into <strong>100% Cash in Hand</strong>.
+      </div>
+
+      <!-- Breakdown of holdings being sold -->
+      <div class="cream-panel" style="padding: 10px; margin-bottom: 16px; max-height: 200px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
+              <th style="padding: 6px;">Stock</th>
+              <th style="padding: 6px;">Shares</th>
+              <th style="padding: 6px;">Price</th>
+              <th style="padding: 6px; text-align: right;">Est. Cash</th>
+            </tr>
+          </thead>
+          <tbody id="liquidateTableBody" style="font-family: var(--font-mono);"></tbody>
+        </table>
+      </div>
+
+      <!-- Financial Totals -->
+      <div class="cream-panel" style="padding: 12px; margin-bottom: 20px; font-family: var(--font-mono); font-size: 12px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Total Estimated Cash to Receive:</span>
+          <span id="liquidateTotalEstCash" style="font-weight: 800; color: var(--price-up); font-size: 14px;">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span style="color: var(--text-muted);">Estimated Brokerage Fee:</span>
+          <span id="liquidateEstFee" style="color: var(--text-muted);">₹0.00</span>
+        </div>
+        <div style="border-top: 1px solid var(--subtle-border); margin: 6px 0;"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+          <span style="font-weight: 700; color: var(--text-forest);">Cash in Hand After Sale:</span>
+          <span id="liquidateEstCashAfter" style="font-weight: 800; color: var(--text-forest);">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <button onclick="closeLiquidateModal()" class="btn btn-outline" style="padding: 12px; font-size: 13px;">
+          Keep Holdings (Cancel)
+        </button>
+        <button id="btnConfirmLiquidate" onclick="executeLiquidateAll()" class="btn btn-primary" style="background-color: #DC2626; border-color: #DC2626; color: #FFF; padding: 12px; font-size: 13px; font-weight: 800;">
+          ⚡ Yes, Sell All Shares Now
         </button>
       </div>
     </div>

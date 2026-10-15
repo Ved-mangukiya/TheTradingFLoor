@@ -50,7 +50,19 @@ $$\Delta P_{\text{clamped}} = \min(\Delta P_{\text{raw}}, P_{\text{current}} \ti
 
 This ensures large institutional block orders create realistic upward pressure on buys and downward pressure on sells (capped at $\pm 0.8\%$ per single trade), while high-frequency retail orders produce organic micro-fluctuations.
 
----
+### 1.4 Liquidate All (Full Portfolio Liquidation to 100% Cash)
+- **Pre-Conditions**:
+  1. Market must be ACTIVE (`isPaused === false`, `isConcluded === false`).
+  2. Team must hold at least 1 active share ($Q > 0$) across active companies. If portfolio is already 100% cash, rejected with: `💼 No active holdings to sell: Your portfolio already holds 100% Cash in Hand.`
+  3. 200ms anti-spam order rate limit enforced.
+- **Execution Rules**:
+  1. Iterates over all active holdings.
+  2. If a stock is halted by a circuit breaker (`isHalted === true`), it is skipped and reported in `skippedHalted` so illegal trades are never executed on frozen shares.
+  3. Every tradeable held position is liquidated at current market price $P_{\text{current}}$.
+  4. Realized P&L and brokerage fees are calculated and applied atomically.
+  5. Holdings and average buy price are reset to 0.
+  6. Emits `PORTFOLIO_LIQUIDATED` event with total cash received, fees paid, and individual trade records.
+  7. Triggers `portfolio_liquidated` institutional sound cue on trader terminal.
 
 ## 2. Valuation & Performance Scoring
 
@@ -97,3 +109,12 @@ If $|\Delta P| \ge \text{CircuitBreakerLimit}$ (Default: 20%):
 - **Rate Limit Window**: A 200ms throttle is enforced per team session token. Rapid-fire duplicate clicks are rejected.
 - **Role Isolation**: Only authenticated Host sessions (`role === 'HOST'`) can trigger pauses, resumes, day advances, news injections, or universe modifications.
 - **Formula Injection Mitigation**: All CSV reports sanitize cell values starting with `=`, `+`, `-`, or `@` by prefixing a single quote (`'`).
+
+---
+
+## 5. Educational Error & Guidance Protocols (Anti-Cryptic Error Policy)
+To support college students with zero professional trading background:
+1. **No Generic Error Codes**: Rejection reasons must explain **what** occurred, **exact financial figures** (shortfalls, shares held vs attempted), and **how to resolve it**.
+2. **Contextual In-Modal Feedback**: The interactive Trade Modal recalculates affordability in real-time, displaying amber/red notices when cash or shares are insufficient before order dispatch.
+3. **Audio & Visual Accessibility**: Failed or rejected orders trigger a distinct dual-tone warning buzzer (`order_rejected`) and a high-visibility, auto-dismissing toast with a manual close button.
+4. **Permanent Test Substring Guarantees**: All enhanced messages preserve essential substrings (`paused`, `Insufficient shares`, `Insufficient cash`, `Trading is not enabled`, `RESET`) to ensure 100% automated test compliance.

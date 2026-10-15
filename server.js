@@ -836,20 +836,29 @@ wss.on('connection', (ws) => {
 
     const session = sessions.get(data.session_token);
     if (!session) {
-      ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Unauthorized or expired session.' }));
+      ws.send(JSON.stringify({
+        type: 'ORDER_REJECTED',
+        reason: '🔒 Unauthorized or expired session: Your trading session has expired. Please log in again.'
+      }));
       return;
     }
 
     // --- 4. TRADER ORDER EXECUTION ---
     if (data.action === 'ORDER' && session.role === 'TRADER') {
       if (gameState.isPaused || gameState.isConcluded) {
-        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Market is currently paused or championship concluded.' }));
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.'
+        }));
         return;
       }
 
       const nowMs = Date.now();
       if (nowMs - session.lastOrderAt < 200) {
-        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Order rate limit exceeded. Please wait a moment.' }));
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: '⏳ Order rate limit exceeded: Please wait a moment between placing trades. A 200ms anti-spam protection delay protects against accidental double orders.'
+        }));
         return;
       }
       session.lastOrderAt = nowMs;
@@ -858,8 +867,23 @@ wss.on('connection', (ws) => {
       const stock = companies.find((c) => c.ticker === data.ticker);
       const qty = parseInt(data.quantity, 10);
 
-      if (!team || !stock || isNaN(qty) || qty <= 0 || qty > 1000000) {
-        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Invalid order parameters.' }));
+      if (!team) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
+        return;
+      }
+
+      if (!stock) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Stock not found: Symbol '${data.ticker}' does not exist in the active trading universe.` }));
+        return;
+      }
+
+      if (isNaN(qty) || qty <= 0) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Invalid order quantity: Please enter a whole positive number of shares (minimum 1 share). You submitted '${data.quantity}'.` }));
+        return;
+      }
+
+      if (qty > 1000000) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Order exceeds maximum limit: Maximum single trade size is 10,00,000 shares. You submitted ${qty.toLocaleString('en-IN')} shares.` }));
         return;
       }
 
@@ -867,7 +891,7 @@ wss.on('connection', (ws) => {
       if (stock.isEnabled === false) {
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
-          reason: `Trading is not enabled for ${stock.ticker} in this market universe.`
+          reason: `Trading is not enabled for ${stock.ticker} in this market universe. The host has marked this company as inactive.`
         }));
         return;
       }
@@ -875,7 +899,7 @@ wss.on('connection', (ws) => {
       if (stock.isHalted) {
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
-          reason: `Trading halted in ${stock.ticker} (${stock.haltDirection} Circuit Breaker).`
+          reason: `Trading halted in ${stock.ticker} (${stock.haltDirection} Circuit Breaker). Price moved over ±${gameState.circuitBreakerPercent || 15}%. Trading is temporarily frozen.`
         }));
         return;
       }
@@ -889,9 +913,12 @@ wss.on('connection', (ws) => {
       if (data.type === 'BUY') {
         const totalDeduction = +(grossValue + feeAmount).toFixed(2);
         if (team.cash < totalDeduction) {
+          const shortfall = +(totalDeduction - team.cash).toFixed(2);
+          const costPerUnit = execPrice * (1 + feeBps / 10000);
+          const maxAffordable = Math.max(0, Math.floor(team.cash / costPerUnit));
           ws.send(JSON.stringify({
             type: 'ORDER_REJECTED',
-            reason: `Insufficient cash. Needed ₹${totalDeduction.toLocaleString('en-IN')} (incl. ₹${feeAmount} fee), available ₹${team.cash.toLocaleString('en-IN')}.`
+            reason: `Insufficient cash. Needed ₹${totalDeduction.toLocaleString('en-IN')} (incl. ₹${feeAmount} fee), available ₹${team.cash.toLocaleString('en-IN')}. Shortfall: ₹${shortfall.toLocaleString('en-IN')}. Maximum shares you can afford: ${maxAffordable}.`
           }));
           return;
         }
@@ -950,9 +977,10 @@ wss.on('connection', (ws) => {
       } else if (data.type === 'SELL') {
         const currentHolding = team.holdings[stock.ticker] || 0;
         if (currentHolding < qty) {
+          const shortfallShares = qty - currentHolding;
           ws.send(JSON.stringify({
             type: 'ORDER_REJECTED',
-            reason: `Insufficient shares. You hold ${currentHolding} of ${stock.ticker}, tried to sell ${qty}.`
+            reason: `Insufficient shares. You hold ${currentHolding} of ${stock.ticker}, tried to sell ${qty}. Shortfall: ${shortfallShares} shares. You cannot sell more shares than you own.`
           }));
           return;
         }
@@ -1012,6 +1040,139 @@ wss.on('connection', (ws) => {
         broadcastTick();
         return;
       }
+      return;
+    }
+
+    // --- 4.1 TRADER LIQUIDATE ENTIRE PORTFOLIO (SELL ALL HELD SHARES) ---
+    if (data.action === 'LIQUIDATE_ALL' && session.role === 'TRADER') {
+      if (gameState.isPaused || gameState.isConcluded) {
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.'
+        }));
+        return;
+      }
+
+      const nowMs = Date.now();
+      if (nowMs - session.lastOrderAt < 200) {
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: '⏳ Order rate limit exceeded: Please wait a moment between placing trades. A 200ms anti-spam protection delay protects against accidental double orders.'
+        }));
+        return;
+      }
+      session.lastOrderAt = nowMs;
+
+      const team = teams[session.id];
+      if (!team) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
+        return;
+      }
+
+      // Identify all held shares with qty > 0
+      const activeHoldings = Object.entries(team.holdings || {}).filter(([ticker, q]) => q > 0);
+      if (activeHoldings.length === 0) {
+        ws.send(JSON.stringify({
+          type: 'ORDER_REJECTED',
+          reason: `💼 No active holdings to sell: Your portfolio already holds 100% Cash in Hand (₹${team.cash.toLocaleString('en-IN')}). Buy shares from the Market Desk first.`
+        }));
+        return;
+      }
+
+      const feeBps = gameState.transactionFeeBps || 0;
+      const liquidatedTrades = [];
+      const skippedHalted = [];
+      let totalNetCredit = 0;
+      let totalFeesCharged = 0;
+
+      for (const [ticker, qty] of activeHoldings) {
+        const stock = companies.find((c) => c.ticker === ticker);
+        if (!stock) continue;
+
+        // Respect circuit breakers: halted stocks cannot be traded
+        if (stock.isHalted) {
+          skippedHalted.push({
+            ticker: stock.ticker,
+            name: stock.name,
+            qty,
+            reason: `Circuit Breaker Halted (${stock.haltDirection})`
+          });
+          continue;
+        }
+
+        const execPrice = stock.currentPrice;
+        const grossValue = +(execPrice * qty).toFixed(2);
+        const feeAmount = +((grossValue * feeBps) / 10000).toFixed(2);
+        const netCredit = +(grossValue - feeAmount).toFixed(2);
+        const avgCost = team.avgBuyPrice[stock.ticker] || 0;
+        const profitOnSold = +(qty * (execPrice - avgCost)).toFixed(2);
+        const cashBefore = +team.cash.toFixed(2);
+
+        team.cash = +(team.cash + netCredit).toFixed(2);
+        team.holdings[stock.ticker] = 0;
+        team.avgBuyPrice[stock.ticker] = 0;
+        team.realizedPnl = +(team.realizedPnl + profitOnSold - feeAmount).toFixed(2);
+        team.tradeCount++;
+
+        totalNetCredit += netCredit;
+        totalFeesCharged += feeAmount;
+
+        // Dynamic market impact (order flow selling pressure)
+        const sellImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
+        if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+
+        tradeSeqCounter++;
+        const tradeRecord = {
+          tradeId: `TRD_${tradeSeqCounter}`,
+          seq: tradeSeqCounter,
+          timestamp: new Date().toLocaleTimeString(),
+          exactIso: new Date().toISOString(),
+          day: gameState.currentDay,
+          second: gameState.elapsedSeconds,
+          teamId: team.id,
+          teamName: team.name,
+          type: 'SELL',
+          ticker: stock.ticker,
+          quantity: qty,
+          price: execPrice,
+          grossValue,
+          fee: feeAmount,
+          totalImpact: netCredit,
+          cashBefore,
+          cashAfter: team.cash,
+          isLiquidation: true
+        };
+        executedTrades.push(tradeRecord);
+        liquidatedTrades.push({
+          ticker: stock.ticker,
+          name: stock.name,
+          quantity: qty,
+          price: execPrice,
+          grossValue,
+          fee: feeAmount,
+          netCredit,
+          profitOnSold
+        });
+
+        recordAuditEvent('ORDER_EXECUTE', { team_id: team.id, trade_record: tradeRecord });
+      }
+
+      totalNetCredit = +totalNetCredit.toFixed(2);
+      totalFeesCharged = +totalFeesCharged.toFixed(2);
+
+      ws.send(JSON.stringify({
+        type: 'PORTFOLIO_LIQUIDATED',
+        teamId: team.id,
+        tradesCount: liquidatedTrades.length,
+        totalNetCredit,
+        totalFeesCharged,
+        cashAfter: team.cash,
+        liquidatedTrades,
+        skippedHalted
+      }));
+
+      broadcastTick();
       return;
     }
 

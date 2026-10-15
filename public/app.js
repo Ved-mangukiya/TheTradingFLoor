@@ -137,6 +137,34 @@ function playInstitutionalSound(cueName) {
         osc.start(now + idx * 0.18);
         osc.stop(now + idx * 0.18 + 1.8);
       });
+    } else if (cueName === 'order_rejected') {
+      // Urgent, low-frequency double descending warning buzz
+      [260, 195].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.16);
+      });
+    } else if (cueName === 'portfolio_liquidated') {
+      // Rapid bright cascade chime for full liquidation to cash
+      [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.22, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.5);
+      });
     }
   } catch (e) {
     console.warn('[AUDIO NOTE]', e);
@@ -357,6 +385,16 @@ function connectWebSocket() {
       return;
     }
 
+    if (msg.type === 'PORTFOLIO_LIQUIDATED') {
+      playInstitutionalSound('portfolio_liquidated');
+      closeLiquidateModal();
+      const skipNote = msg.skippedHalted && msg.skippedHalted.length > 0
+        ? ` (${msg.skippedHalted.length} halted stocks preserved)`
+        : '';
+      showOrderToast(`⚡ ALL SHARES SOLD: Liquidated ${msg.tradesCount} positions for ₹${Number(msg.totalNetCredit).toLocaleString('en-IN')} net cash! Portfolio is now 100% Cash in Hand.${skipNote}`, true);
+      return;
+    }
+
     if (msg.type === 'ORDER_FILLED') {
       playInstitutionalSound('order_fill');
       showOrderToast(`✓ ${msg.orderType} FILLED: ${msg.quantity} ${msg.ticker} @ ₹${msg.price.toFixed(2)} (Net: ₹${msg.totalImpact.toFixed(2)})`, true);
@@ -365,7 +403,18 @@ function connectWebSocket() {
     }
 
     if (msg.type === 'ORDER_REJECTED') {
-      showOrderToast(`✗ REJECTED: ${msg.reason}`, false);
+      playInstitutionalSound('order_rejected');
+      showOrderToast(`✗ ${msg.reason}`, false);
+
+      // Display live feedback inside Trade Modal if open
+      const noticeEl = document.getElementById('tradeModalValidationNotice');
+      if (noticeEl && currentTradeModalTicker) {
+        noticeEl.textContent = msg.reason;
+        noticeEl.style.backgroundColor = '#FEF2F2';
+        noticeEl.style.color = '#B91C1C';
+        noticeEl.style.border = '1px solid #FCA5A5';
+        noticeEl.classList.remove('hidden');
+      }
       return;
     }
   };
@@ -621,9 +670,36 @@ function renderTraderView(state) {
       drawPortfolioEquityCurve('traderEquityCanvas', teamEquityHistory, { startingCash: startCash });
     }
 
-    // Render Tab 2: Positions Table
+    // Render Tab 2: Positions Table & Asset Allocation
     const positionsTbody = document.getElementById('traderPositionsTbody');
     const activePositions = companies.filter((c) => (portfolio.holdings[c.ticker] || 0) > 0);
+
+    const cashInHand = portfolio.cash || 0;
+    let totalStockValuation = 0;
+    activePositions.forEach((s) => {
+      totalStockValuation += (portfolio.holdings[s.ticker] || 0) * s.currentPrice;
+    });
+    const totalPortfolioVal = cashInHand + totalStockValuation;
+
+    const elPosCash = document.getElementById('posCashInHand');
+    if (elPosCash) elPosCash.textContent = formatINR(cashInHand);
+    const elPosStock = document.getElementById('posStockValuation');
+    if (elPosStock) elPosStock.textContent = formatINR(totalStockValuation);
+    const elPosTotal = document.getElementById('posTotalNetWorth');
+    if (elPosTotal) elPosTotal.textContent = formatINR(totalPortfolioVal);
+
+    const btnLiquidate = document.getElementById('btnLiquidateAll');
+    if (btnLiquidate) {
+      if (activePositions.length === 0) {
+        btnLiquidate.style.opacity = '0.45';
+        btnLiquidate.style.cursor = 'not-allowed';
+        btnLiquidate.title = 'No active shares held in portfolio to liquidate';
+      } else {
+        btnLiquidate.style.opacity = '1';
+        btnLiquidate.style.cursor = 'pointer';
+        btnLiquidate.title = `Sell all ${activePositions.length} active positions into 100% Cash in Hand`;
+      }
+    }
 
     if (activePositions.length === 0) {
       positionsTbody.innerHTML = `<tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No shares currently held in portfolio. Use the Market Trading Desk to place buy orders.</td></tr>`;
@@ -651,9 +727,14 @@ function renderTraderView(state) {
               ${isPos ? '+' : ''}₹${pnl.toFixed(2)} (${isPos ? '+' : ''}${pnlPct.toFixed(2)}%)
             </td>
             <td style="padding: 10px; text-align: center;">
-              <button onclick="openTradeModal('${stock.ticker}')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">
-                Trade
-              </button>
+              <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                <button onclick="openTradeModal('${stock.ticker}')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">
+                  Trade
+                </button>
+                <button onclick="quickSellAllStock('${stock.ticker}', ${qty})" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; color: #DC2626; border-color: #FCA5A5; background: #FEF2F2; font-weight: 700;" title="Instantly sell all ${qty} shares of ${stock.ticker}">
+                  ⚡ Sell All (${qty})
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -840,6 +921,10 @@ function openTradeModal(ticker) {
   document.getElementById('tradeModalTicker').textContent = `${stock.ticker} — ${stock.name}`;
   document.getElementById('tradeModalSector').textContent = stock.sector;
   document.getElementById('tradeQuantityInput').value = stock.lot_presets[0] || 10;
+
+  const notice = document.getElementById('tradeModalValidationNotice');
+  if (notice) notice.classList.add('hidden');
+
   recalculateTradeModal();
   document.getElementById('tradeModal').classList.remove('hidden');
 }
@@ -857,13 +942,20 @@ function setTradeLot(qty) {
 
   const input = document.getElementById('tradeQuantityInput');
   const feeBps = latestState.gameState.transactionFeeBps || 0;
+  const currentHeld = p.holdings[stock.ticker] || 0;
 
   if (qty === 'MAX_BUY') {
     const costPerShare = stock.currentPrice * (1 + feeBps / 10000);
     const maxShares = Math.floor(p.cash / costPerShare);
     input.value = Math.max(0, maxShares);
-  } else if (qty === 'MAX_SELL') {
-    input.value = p.holdings[stock.ticker] || 0;
+  } else if (qty === 'SELL_ALL' || qty === 'MAX_SELL') {
+    input.value = currentHeld;
+  } else if (qty === '25%') {
+    input.value = Math.max(1, Math.floor(currentHeld * 0.25));
+  } else if (qty === '50%') {
+    input.value = Math.max(1, Math.floor(currentHeld * 0.50));
+  } else if (qty === '75%') {
+    input.value = Math.max(1, Math.floor(currentHeld * 0.75));
   } else {
     input.value = qty;
   }
@@ -881,22 +973,89 @@ function recalculateTradeModal() {
   const gross = +(qty * price).toFixed(2);
   const feeBps = latestState.gameState.transactionFeeBps || 0;
   const fee = +((gross * feeBps) / 10000).toFixed(2);
+  const netBuyCost = +(gross + fee).toFixed(2);
+  const netSellProceeds = +(gross - fee).toFixed(2);
+  const currentHeld = p.holdings[stock.ticker] || 0;
 
   document.getElementById('tradeModalPrice').textContent = `₹${price.toFixed(2)}`;
   document.getElementById('tradeModalCash').textContent = formatINR(p.cash);
-  document.getElementById('tradeModalHolding').textContent = `${p.holdings[stock.ticker] || 0} shares`;
+  document.getElementById('tradeModalHolding').textContent = `${currentHeld} shares`;
 
   document.getElementById('tradeModalGross').textContent = `₹${gross.toFixed(2)}`;
   document.getElementById('tradeModalFee').textContent = `₹${fee.toFixed(2)} (${feeBps} bps)`;
-  document.getElementById('tradeModalNet').textContent = `₹${(gross + fee).toFixed(2)}`;
+  document.getElementById('tradeModalNet').textContent = `₹${netBuyCost.toFixed(2)}`;
 
-  // Enable/disable execution buttons dynamically
-  const isMarketOpen = !latestState.gameState.isPaused && !latestState.gameState.isConcluded && !stock.isHalted;
-  const canBuy = isMarketOpen && qty > 0 && p.cash >= (gross + fee);
-  const canSell = isMarketOpen && qty > 0 && (p.holdings[stock.ticker] || 0) >= qty;
+  const isMarketPaused = latestState.gameState.isPaused || latestState.gameState.isConcluded;
+  const isStockHalted = stock.isHalted;
+  const canBuy = !isMarketPaused && !isStockHalted && qty > 0 && p.cash >= netBuyCost;
+  const canSell = !isMarketPaused && !isStockHalted && qty > 0 && currentHeld >= qty;
 
-  document.getElementById('btnExecuteBuy').disabled = !canBuy;
-  document.getElementById('btnExecuteSell').disabled = !canSell;
+  const btnBuy = document.getElementById('btnExecuteBuy');
+  const btnSell = document.getElementById('btnExecuteSell');
+  btnBuy.disabled = !canBuy;
+  btnSell.disabled = !canSell;
+
+  if (qty > 0) {
+    btnBuy.textContent = canBuy ? `Confirm BUY ${qty} Shares` : `BUY (Need ₹${netBuyCost.toLocaleString('en-IN')})`;
+    btnSell.textContent = canSell ? `Confirm SELL ${qty} Shares` : `SELL (Need ${qty} Shares)`;
+  } else {
+    btnBuy.textContent = 'Confirm BUY';
+    btnSell.textContent = 'Confirm SELL';
+  }
+
+  // Educational Live Status / Guidance Box
+  const notice = document.getElementById('tradeModalValidationNotice');
+  if (notice) {
+    if (isMarketPaused) {
+      notice.innerHTML = `<strong>⏸️ Market is currently paused</strong><br>The host has temporarily suspended trading. Orders cannot be placed right now.`;
+      notice.style.backgroundColor = '#FEF3C7';
+      notice.style.color = '#92400E';
+      notice.style.border = '1px solid #FCD34D';
+      notice.classList.remove('hidden');
+    } else if (isStockHalted) {
+      notice.innerHTML = `<strong>⚡ Circuit Breaker Halt</strong><br>Trading in ${stock.ticker} is halted (${stock.haltDirection} circuit limit reached). Orders are blocked until circuit cooling.`;
+      notice.style.backgroundColor = '#FEE2E2';
+      notice.style.color = '#991B1B';
+      notice.style.border = '1px solid #F87171';
+      notice.classList.remove('hidden');
+    } else if (qty <= 0) {
+      notice.innerHTML = `💡 Enter an order quantity above (1 or more shares), or select a quick shortcut button.`;
+      notice.style.backgroundColor = '#F8F7F4';
+      notice.style.color = 'var(--text-charcoal)';
+      notice.style.border = '1px solid var(--subtle-border)';
+      notice.classList.remove('hidden');
+    } else if (p.cash < netBuyCost && currentHeld < qty) {
+      const shortfall = (netBuyCost - p.cash).toFixed(2);
+      const costPerUnit = price * (1 + feeBps / 10000);
+      const maxAffordable = Math.floor(p.cash / costPerUnit);
+      notice.innerHTML = `<strong>⚠️ Insufficient Cash & Shares:</strong><br>• BUY shortfall: ₹${Number(shortfall).toLocaleString('en-IN')} (you can afford at most <strong>${maxAffordable}</strong> shares)<br>• SELL shortage: you only own <strong>${currentHeld}</strong> shares.`;
+      notice.style.backgroundColor = '#FEF2F2';
+      notice.style.color = '#B91C1C';
+      notice.style.border = '1px solid #FCA5A5';
+      notice.classList.remove('hidden');
+    } else if (p.cash < netBuyCost) {
+      const shortfall = (netBuyCost - p.cash).toFixed(2);
+      const costPerUnit = price * (1 + feeBps / 10000);
+      const maxAffordable = Math.floor(p.cash / costPerUnit);
+      notice.innerHTML = `<strong>💰 Insufficient Cash for BUY:</strong><br>Total cost is ₹${Number(netBuyCost).toLocaleString('en-IN')}, but available cash is ₹${Number(p.cash).toLocaleString('en-IN')} (shortfall: ₹${Number(shortfall).toLocaleString('en-IN')}). You can afford at most <strong>${maxAffordable}</strong> shares.`;
+      notice.style.backgroundColor = '#FEF2F2';
+      notice.style.color = '#B91C1C';
+      notice.style.border = '1px solid #FCA5A5';
+      notice.classList.remove('hidden');
+    } else if (currentHeld < qty) {
+      notice.innerHTML = `<strong>📉 Insufficient Shares for SELL:</strong><br>Your portfolio holds <strong>${currentHeld}</strong> shares of ${stock.ticker}. You cannot sell ${qty} shares.`;
+      notice.style.backgroundColor = '#FEF2F2';
+      notice.style.color = '#B91C1C';
+      notice.style.border = '1px solid #FCA5A5';
+      notice.classList.remove('hidden');
+    } else {
+      notice.innerHTML = `<strong>✓ Order Ready:</strong><br>• Buying ${qty} shares costs ₹${netBuyCost.toFixed(2)} (Cash left: ₹${(p.cash - netBuyCost).toFixed(2)})<br>• Selling ${qty} shares credits ₹${netSellProceeds.toFixed(2)} to Cash`;
+      notice.style.backgroundColor = '#ECFDF5';
+      notice.style.color = '#065F46';
+      notice.style.border = '1px solid #A7F3D0';
+      notice.classList.remove('hidden');
+    }
+  }
 }
 
 function executeModalTrade(type) {
@@ -979,12 +1138,115 @@ function closeRulesHelpModal() {
   document.getElementById('rulesHelpModal').classList.add('hidden');
 }
 
+let orderToastTimeout = null;
 function showOrderToast(message, isSuccess) {
   const toast = document.getElementById('orderToast');
-  toast.textContent = message;
+  if (!toast) return;
+  if (orderToastTimeout) clearTimeout(orderToastTimeout);
+
+  toast.innerHTML = `
+    <span style="font-size: 16px; margin-right: 6px;">${isSuccess ? '✓' : '⚠️'}</span>
+    <span style="flex: 1; word-break: break-word;">${message}</span>
+    <button onclick="document.getElementById('orderToast').classList.add('hidden')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0 4px; font-weight: 700; font-size: 14px; opacity: 0.7;">✕</button>
+  `;
   toast.className = `toast-notice ${isSuccess ? 'toast-success' : 'toast-error'}`;
   toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 4000);
+
+  // Give students 6500ms to read detailed error messages, 3500ms for short success
+  const duration = isSuccess ? 3500 : 6500;
+  orderToastTimeout = setTimeout(() => toast.classList.add('hidden'), duration);
+}
+
+// ==========================================
+// LIQUIDATE PORTFOLIO MODAL & QUICK ACTIONS
+// ==========================================
+function openLiquidateModal() {
+  if (!latestState || !latestState.portfolio) return;
+  const p = latestState.portfolio;
+  const heldStocks = latestState.companies.filter((c) => (p.holdings[c.ticker] || 0) > 0);
+
+  if (heldStocks.length === 0) {
+    showOrderToast('💼 Your portfolio is already 100% Cash in Hand! No active shares to sell.', false);
+    return;
+  }
+
+  const tbody = document.getElementById('liquidateTableBody');
+  const feeBps = latestState.gameState.transactionFeeBps || 0;
+  let totalEstNet = 0;
+  let totalEstFee = 0;
+
+  tbody.innerHTML = heldStocks.map((stock) => {
+    const qty = p.holdings[stock.ticker] || 0;
+    const gross = qty * stock.currentPrice;
+    const fee = (gross * feeBps) / 10000;
+    const net = gross - fee;
+    totalEstNet += net;
+    totalEstFee += fee;
+
+    return `
+      <tr style="border-bottom: 1px solid var(--subtle-border);">
+        <td style="padding: 6px;">
+          <strong>${stock.ticker}</strong>
+          ${stock.isHalted ? '<span class="badge badge-paused" style="font-size: 9px; margin-left: 4px;">HALTED</span>' : ''}
+        </td>
+        <td style="padding: 6px; font-weight: 700;">${qty}</td>
+        <td style="padding: 6px;">₹${stock.currentPrice.toFixed(2)}</td>
+        <td style="padding: 6px; text-align: right; font-weight: 700; color: var(--price-up);">
+          ₹${net.toFixed(2)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('liquidateTotalEstCash').textContent = `₹${totalEstNet.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById('liquidateEstFee').textContent = `₹${totalEstFee.toFixed(2)} (${feeBps} bps)`;
+  const cashAfter = (p.cash || 0) + totalEstNet;
+  document.getElementById('liquidateEstCashAfter').textContent = `₹${cashAfter.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  document.getElementById('liquidateModal').classList.remove('hidden');
+}
+
+function closeLiquidateModal() {
+  const modal = document.getElementById('liquidateModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function executeLiquidateAll() {
+  if (!ws || !sessionToken) return;
+  const btn = document.getElementById('btnConfirmLiquidate');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Liquidating All Shares...';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '⚡ Yes, Sell All Shares Now';
+    }, 1500);
+  }
+  ws.send(JSON.stringify({
+    action: 'LIQUIDATE_ALL',
+    session_token: sessionToken
+  }));
+}
+
+function quickSellAllStock(ticker, qty) {
+  if (!ws || !sessionToken || !latestState) return;
+  const stock = latestState.companies.find((c) => c.ticker === ticker);
+  if (!stock) return;
+
+  if (latestState.gameState.isPaused || latestState.gameState.isConcluded) {
+    showOrderToast('⏸️ Market is currently paused. Cannot sell right now.', false);
+    return;
+  }
+
+  if (stock.isHalted) {
+    showOrderToast(`⚡ Circuit Breaker Halt: Trading in ${stock.ticker} is currently frozen.`, false);
+    return;
+  }
+
+  const confirmed = window.confirm(`Sell all ${qty} shares of ${stock.ticker} (${stock.name}) at ₹${stock.currentPrice.toFixed(2)}?`);
+  if (confirmed) {
+    sendOrder(stock.ticker, 'SELL', qty);
+  }
 }
 
 // ==========================================

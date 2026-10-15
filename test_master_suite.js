@@ -372,6 +372,32 @@ async function runTests() {
       logFail('Failed to execute order on enabled share', enabledOrderRes);
     }
 
+    // 5.1 Team 1 tests Liquidate All (Sell all shares into cash)
+    await new Promise((r) => setTimeout(r, 250));
+    const liquidateRes = await sendAndAwait(wsTeam1, {
+      action: 'LIQUIDATE_ALL',
+      session_token: team1Token
+    }, 'PORTFOLIO_LIQUIDATED');
+
+    if (liquidateRes.type === 'PORTFOLIO_LIQUIDATED' && liquidateRes.tradesCount > 0) {
+      logPass(`Liquidate All executed: Sold all ${liquidateRes.tradesCount} active positions. Total cash received: ₹${liquidateRes.totalNetCredit}.`);
+    } else {
+      logFail('Liquidate All failed', liquidateRes);
+    }
+
+    // 5.2 Attempting to Liquidate again with 0 holdings must be safely rejected
+    await new Promise((r) => setTimeout(r, 250));
+    const emptyLiquidateRes = await sendAndAwait(wsTeam1, {
+      action: 'LIQUIDATE_ALL',
+      session_token: team1Token
+    }, 'ORDER_REJECTED');
+
+    if (emptyLiquidateRes.reason && emptyLiquidateRes.reason.includes('No active holdings')) {
+      logPass(`Empty liquidation rejected with educational message: "${emptyLiquidateRes.reason}"`);
+    } else {
+      logFail('Empty liquidation was not rejected properly', emptyLiquidateRes);
+    }
+
     // 6. Test Universe Export Endpoints (JSON and CSV)
     const universeJson = await httpGet('/api/export/universe', hostToken);
     if (universeJson.status === 200 && universeJson.body.includes('CAMPUSCO')) {
