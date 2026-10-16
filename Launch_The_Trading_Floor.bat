@@ -10,17 +10,27 @@ echo             Offline Institutional Stock Exchange Platform
 echo ========================================================================
 echo.
 
-:: 1. Verify Node.js is installed
+:: 1. Verify Node.js is installed (Check System PATH or local portable tools/ folder)
+set "NODE_EXEC=node"
 where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Node.js was not found on this computer!
-    echo.
-    echo To run this application:
-    echo 1. Download and install Node.js LTS from: https://nodejs.org/
-    echo 2. Relaunch this file.
-    echo.
-    pause
-    exit /b 1
+    if exist "%~dp0tools\node.exe" (
+        set "NODE_EXEC=%~dp0tools\node.exe"
+        echo [INFO] Running with portable Node engine from tools folder.
+    ) else if exist "%~dp0bin\node.exe" (
+        set "NODE_EXEC=%~dp0bin\node.exe"
+        echo [INFO] Running with portable Node engine from bin folder.
+    ) else (
+        echo [ERROR] Node.js was not found on this computer!
+        echo.
+        echo To run this application:
+        echo 1. Install Node.js LTS from: https://nodejs.org/
+        echo    OR place node.exe directly inside a 'tools' folder in this directory.
+        echo 2. Relaunch this file.
+        echo.
+        pause
+        exit /b 1
+    )
 )
 
 :: 2. Verify or Install local dependencies
@@ -68,5 +78,5 @@ echo To safely stop the server, press Ctrl+C or close this window.
 echo ========================================================================
 echo.
 
-node server.js live
+"%NODE_EXEC%" server.js live
 pause

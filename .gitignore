@@ -20,5 +20,8 @@ data/state_backup.json
 *.bak
 .DS_Store
 Thumbs.db
+tools/node.exe
+tools/*.exe
+
 .vscode/
 .idea/
