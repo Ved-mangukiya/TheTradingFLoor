@@ -695,6 +695,18 @@ function hideDemoOverlays() {
   if (quickAccessCard) quickAccessCard.classList.add('hidden');
 }
 
+function openDeveloperInfoModal() {
+  const el = document.getElementById('developerInfoModal');
+  if (el) el.classList.remove('hidden');
+}
+
+function closeDeveloperInfoModal() {
+  const el = document.getElementById('developerInfoModal');
+  if (el) el.classList.add('hidden');
+}
+
+window.openDeveloperInfoModal = openDeveloperInfoModal;
+window.closeDeveloperInfoModal = closeDeveloperInfoModal;
 window.launchDemoRole = launchDemoRole;
 window.exitDemoMode = exitDemoMode;
 window.activateDemoShowcaseMode = activateDemoShowcaseMode;

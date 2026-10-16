@@ -26,9 +26,78 @@
       <button type="button" onclick="launchDemoRole('TRADER')" class="btn-demo-pill" id="demoPillTrader">💻 Trader Desk</button>
       <button type="button" onclick="launchDemoRole('WINNER_DISPLAY')" class="btn-demo-pill" id="demoPillWinner">🏆 Winner Stage</button>
       <button type="button" onclick="launchDemoRole('SOUND_CONSOLE')" class="btn-demo-pill" id="demoPillSound">🔊 Sound</button>
+      <button type="button" onclick="openDeveloperInfoModal()" class="btn-demo-pill" style="border-color: #D4AF37; color: #F7E7CE;">👨‍💻 Developer Info</button>
       <button type="button" onclick="exitDemoMode()" class="btn-demo-pill" style="background: rgba(239, 68, 68, 0.2); color: #FCA5A5; border-color: rgba(239, 68, 68, 0.4);">🚪 Exit</button>
     </div>
   </header>
+
+  <!-- ==========================================================================
+       DEVELOPER & SYSTEM ARCHITECTURE MODAL (#developerInfoModal)
+       ========================================================================== -->
+  <div id="developerInfoModal" class="hidden modal-overlay" style="z-index: 100010; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.88);">
+    <div class="modal-content" style="max-width: 680px; width: 92%; padding: 36px 32px; border: 2.5px solid var(--champagne-accent); border-radius: var(--radius-md); box-shadow: 0 24px 60px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 16px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #1E293B, #0F172A); border: 2px solid var(--podium-gold); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(212,175,55,0.3);">
+            👨‍💻
+          </div>
+          <div>
+            <div class="badge badge-champagne" style="font-size: 10px; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 4px;">
+              LEAD DEVELOPER &amp; SYSTEM ARCHITECT
+            </div>
+            <h2 style="font-size: 24px; color: var(--text-forest); margin: 0; font-family: var(--font-serif); font-weight: 800;">
+              Ved Maheshbhai Mangukiya
+            </h2>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px;">
+              Class Coordinator — First Year BBA (FY BBA)
+            </div>
+          </div>
+        </div>
+        <button type="button" onclick="closeDeveloperInfoModal()" class="btn btn-outline" style="font-size: 14px; padding: 4px 10px; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+          ✕
+        </button>
+      </div>
+
+      <div class="cream-panel" style="padding: 18px; margin-bottom: 18px; border-left: 4px solid var(--podium-gold);">
+        <h4 style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--champagne-accent); margin-bottom: 6px;">
+          🏛️ Institutional Affiliation
+        </h4>
+        <div style="font-size: 14px; font-weight: 700; color: var(--text-charcoal); line-height: 1.5;">
+          Shri Swami Atmanand Saraswati Institute of Technology (SSASIT), Surat
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+          Gujarat Technological University (GTU Code: 076) • NAAC A+ Accredited
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        <div class="cream-panel" style="padding: 14px;">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Simulation Mechanics</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Server-Authoritative Real-Time Matching</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Sub-millisecond trade execution, automated circuit breakers &amp; smoothstep stock movement.</div>
+        </div>
+        <div class="cream-panel" style="padding: 14px;">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Sound &amp; Interface</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Web Audio API &amp; Ivory Luxury Theme</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">100% offline audio synthesis, zero external CDN scripts, canvas sparkline charts.</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(30, 41, 59, 0.04); border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border: 1px solid var(--subtle-border);">
+        <div>
+          <div style="font-size: 12px; font-weight: 800; color: var(--text-charcoal);">
+            © 2026 Ved Mangukiya. All Rights Reserved.
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Engineered exclusively for The Trading Floor Championship 2026.
+          </div>
+        </div>
+        <button type="button" onclick="closeDeveloperInfoModal()" class="btn btn-primary" style="padding: 8px 18px; font-size: 12px;">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==========================================================================
        1. GLOBAL OVERLAYS: RESUME COUNTDOWN, BREAKING NEWS & WINNER PODIUM
@@ -363,6 +432,19 @@
         </div>
         <div style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">
           *Event day uses dedicated Local LAN with zero internet dependency.
+        </div>
+      </div>
+
+      <!-- Dedicated Developer Branding & Copyright Footer -->
+      <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--subtle-border); text-align: center;">
+        <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 999px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 6px;">
+          👨‍💻 Developer &amp; System Architecture Info
+        </button>
+        <div style="font-size: 11px; font-weight: 800; color: var(--text-charcoal); line-height: 1.4;">
+          © 2026 Ved Mangukiya. All Rights Reserved.
+        </div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+          Class Coordinator (FY BBA) • SSASIT Surat (GTU Code: 076)
         </div>
       </div>
     </div>
@@ -763,6 +845,18 @@
         <div id="traderNewsList" style="overflow-y: auto; flex: 1;"></div>
       </aside>
     </main>
+    <!-- Trader View Footer Branding -->
+    <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
+      <div style="color: var(--text-muted);">
+        <strong style="color: var(--text-charcoal);">The Trading Floor Championship 2026</strong> • © 2026 Ved Mangukiya. All Rights Reserved.
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="color: var(--text-muted);">SSASIT Surat (GTU Code: 076)</span>
+        <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 10px; padding: 4px 10px; border-radius: 999px;">
+          👨‍💻 Developer Info
+        </button>
+      </div>
+    </footer>
   </section>
 
 
@@ -2342,6 +2436,18 @@
       </div>
       </div>
     </main>
+    <!-- Host View Footer Branding -->
+    <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
+      <div style="color: var(--text-muted);">
+        <strong style="color: var(--text-charcoal);">Host Operations Desk</strong> • Architected by Ved Mangukiya • © 2026 All Rights Reserved.
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="color: var(--text-muted);">Class Coordinator (FY BBA) • SSASIT Surat (GTU Code: 076)</span>
+        <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 10px; padding: 4px 10px; border-radius: 999px;">
+          👨‍💻 Developer &amp; Architecture Info
+        </button>
+      </div>
+    </footer>
   </section>
 
 
@@ -2742,6 +2848,10 @@
         <div id="projectorTickerText" class="news-marquee-text">
           WELCOME TO THE TRADING FLOOR CHAMPIONSHIP 2026 — ALL SYSTEMS SYNCHRONIZED
         </div>
+      </div>
+      <div style="font-size: 11px; font-weight: 700; color: #94A3B8; white-space: nowrap; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 8px;">
+        <span>© 2026 Ved Mangukiya • All Rights Reserved</span>
+        <button type="button" onclick="openDeveloperInfoModal()" class="btn-demo-pill" style="font-size: 10px; padding: 2px 8px;">Info</button>
       </div>
     </footer>
   </section>
