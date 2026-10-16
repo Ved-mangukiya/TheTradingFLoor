@@ -57,6 +57,9 @@ const executedTrades = [];
 let tradeSeqCounter = 0;
 
 let seqCounter = 0;
+let isAuditDirty = false;
+let isFlushingAudit = false;
+
 function recordAuditEvent(type, extraFields = {}) {
   seqCounter++;
   const entry = {
@@ -70,11 +73,21 @@ function recordAuditEvent(type, extraFields = {}) {
   auditLog.timeline_events.push(entry);
   auditLog.total_records = auditLog.timeline_events.length;
   auditLog.export_time = entry.exact_timestamp;
+  isAuditDirty = true;
 }
 
 function flushAuditLogToDisk() {
-  fs.writeFile(auditFilePath, JSON.stringify(auditLog, null, 2), (err) => {
-    if (err) console.error('[AUDIT ERROR]', err.message);
+  if (!isAuditDirty || isFlushingAudit) return;
+  isFlushingAudit = true;
+  isAuditDirty = false;
+
+  // Asynchronous non-blocking serialization & atomic write
+  fs.writeFile(auditFilePath, JSON.stringify(auditLog), (err) => {
+    isFlushingAudit = false;
+    if (err) {
+      isAuditDirty = true;
+      console.error('[AUDIT ERROR]', err.message);
+    }
   });
 }
 setInterval(flushAuditLogToDisk, 5000);
@@ -887,6 +900,8 @@ function restartEngineInterval() {
 }
 
 function appendSecondLog() {
+  // Sample snapshot every 5 seconds to optimize memory and disk I/O while preserving fine-grained audit records
+  if (gameState.elapsedSeconds % 5 !== 0) return;
   const marketPrices = {};
   companies.forEach((s) => {
     if (s.isEnabled) marketPrices[s.ticker] = s.currentPrice;
