@@ -232,11 +232,529 @@ function getAutoCredentials(paramVal, allParams) {
   return null;
 }
 
-function connectWebSocket() {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${protocol}//${location.host}`);
+// ==========================================
+// 1.9 EXECUTIVE INTERACTIVE SHOWCASE ENGINE (HOD PREVIEW)
+// ==========================================
+const MOCK_COMPANIES_BASE = [
+  { ticker: "RELIANCE", name: "Reliance Industries", sector: "Energy & Conglomerate", price: 2950, basePrice: 2950, lot_presets: [1, 5, 10] },
+  { ticker: "TATAMOTORS", name: "Tata Motors Passenger & Commercial", sector: "Automobile", price: 980, basePrice: 980, lot_presets: [5, 15, 30] },
+  { ticker: "MARUTI", name: "Maruti Suzuki India", sector: "Automobile", price: 12400, basePrice: 12400, lot_presets: [1, 2, 5] },
+  { ticker: "M&M", name: "Mahindra & Mahindra", sector: "Automobile", price: 2850, basePrice: 2850, lot_presets: [2, 5, 10] },
+  { ticker: "TCS", name: "Tata Consultancy Services", sector: "IT", price: 4150, basePrice: 4150, lot_presets: [1, 5, 10] },
+  { ticker: "INFY", name: "Infosys", sector: "IT", price: 1880, basePrice: 1880, lot_presets: [5, 10, 25] },
+  { ticker: "HDFCBANK", name: "HDFC Bank", sector: "Banking", price: 1680, basePrice: 1680, lot_presets: [5, 15, 30] },
+  { ticker: "ICICIBANK", name: "ICICI Bank", sector: "Banking", price: 1240, basePrice: 1240, lot_presets: [5, 15, 30] },
+  { ticker: "SBIN", name: "State Bank of India", sector: "Banking", price: 820, basePrice: 820, lot_presets: [10, 25, 50] },
+  { ticker: "BAJFINANCE", name: "Bajaj Finance", sector: "Banking", price: 7200, basePrice: 7200, lot_presets: [1, 3, 5] },
+  { ticker: "LT", name: "Larsen & Toubro", sector: "Infrastructure", price: 3600, basePrice: 3600, lot_presets: [2, 5, 10] },
+  { ticker: "AIRTEL", name: "Bharti Airtel", sector: "Telecom", price: 1550, basePrice: 1550, lot_presets: [5, 10, 25] },
+  { ticker: "ITC", name: "ITC Limited", sector: "FMCG", price: 490, basePrice: 490, lot_presets: [20, 50, 100] },
+  { ticker: "HINDUNILVR", name: "Hindustan Unilever", sector: "FMCG", price: 2750, basePrice: 2750, lot_presets: [2, 5, 10] },
+  { ticker: "SUNPHARMA", name: "Sun Pharmaceutical Industries", sector: "Healthcare", price: 1720, basePrice: 1720, lot_presets: [5, 10, 20] },
+  { ticker: "NTPC", name: "NTPC Limited", sector: "Energy & Power", price: 410, basePrice: 410, lot_presets: [25, 50, 100] },
+  { ticker: "POWERGRID", name: "Power Grid Corporation", sector: "Energy & Power", price: 340, basePrice: 340, lot_presets: [25, 50, 100] },
+  { ticker: "TATASTEEL", name: "Tata Steel", sector: "Metals", price: 165, basePrice: 165, lot_presets: [50, 100, 200] },
+  { ticker: "JSWSTEEL", name: "JSW Steel", sector: "Metals", price: 980, basePrice: 980, lot_presets: [10, 20, 50] },
+  { ticker: "TITAN", name: "Titan Company", sector: "Consumer & Luxury", price: 3450, basePrice: 3450, lot_presets: [2, 5, 10] }
+];
 
+class MockEngine {
+  constructor() {
+    this.companies = MOCK_COMPANIES_BASE.map(function(c, i) {
+      var base = c.price;
+      var history = [];
+      var p = base * 0.985;
+      for (var h = 0; h < 14; h++) {
+        p += (Math.sin(h + i) * 0.005 + 0.001) * base;
+        history.push(Number(p.toFixed(2)));
+      }
+      history.push(base);
+      return Object.assign({}, c, {
+        price: base,
+        basePrice: base,
+        change: 0,
+        changePercent: 0,
+        high: Math.max.apply(null, history),
+        low: Math.min.apply(null, history),
+        volume: 15400 + i * 1250,
+        priceHistory: history,
+        isHalted: false,
+        isEnabled: true,
+        lotPresets: c.lot_presets,
+        fundamentals: {
+          market_cap: '₹' + (base * 12).toFixed(0) + ' Cr',
+          summary: c.name + ' leading constituent in ' + c.sector + '.'
+        }
+      });
+    });
+
+    const teamNames = [
+      'Dalal Street Titans', 'Bullish Bears', 'Alpha Hedge', 'Quantum Traders',
+      'Apex Capital', 'Vanguard Vipers', 'Sterling Bulls', 'Maverick Fund',
+      'Zenith Asset Mgmt', 'Phoenix Wealth', 'Starlight Equity', 'Omega Syndicate',
+      'Matrix Capital', 'Falcon Traders', 'Centurion Wealth', 'Ironclad Asset'
+    ];
+
+    this.teams = teamNames.map(function(name, idx) {
+      return {
+        id: 'team' + (idx + 1),
+        username: 'team' + (idx + 1),
+        name: name,
+        cash: 1000000,
+        portfolioValue: 1000000,
+        netWorth: 1000000,
+        holdings: idx === 0 ? { TATAMOTORS: 30, TCS: 10 } : {},
+        avgBuyPrice: idx === 0 ? { TATAMOTORS: 975, TCS: 4120 } : {},
+        realizedPnL: 0,
+        unrealizedPnL: 0,
+        tradesCount: idx === 0 ? 2 : 0,
+        rank: idx + 1
+      };
+    });
+
+    this.recalcTeam(this.teams[0]);
+
+    this.gameState = {
+      title: 'The Trading Floor Championship 2026',
+      subtitle: 'BBA Department • Annual Stock Simulation',
+      institution: 'Shri Swami Atmanand Saraswati Institute of Technology (SSASIT)',
+      status: 'LIVE',
+      isPaused: false,
+      currentDay: 1,
+      day: 1,
+      round: 1,
+      elapsedSeconds: 340,
+      roundDurationSeconds: 1800,
+      currentEventIndex: 0,
+      newsHistory: [
+        {
+          id: 'news_demo_1',
+          headline: 'RBI Monetary Policy: Repo Rates Retained at 6.5%, Liquidity Infusion Approved',
+          explanation: 'Accommodative banking stance drives immediate institutional demand across blue-chip financials and manufacturing.',
+          trafficLight: 'GOOD',
+          eventType: 'MACRO PULSE',
+          day: 1,
+          timestamp: new Date().toISOString()
+        }
+      ],
+      circuitBreakers: {},
+      projectorState: { boardPage: 1, isBoardPaused: false, autoCycleSeconds: 8 }
+    };
+  }
+
+  recalcTeam(team) {
+    var holdingsVal = 0;
+    var unrealized = 0;
+    for (var ticker in (team.holdings || {})) {
+      var qty = team.holdings[ticker] || 0;
+      if (qty > 0) {
+        var c = this.companies.find(function(stock) { return stock.ticker === ticker; });
+        var curPrice = c ? c.price : 0;
+        holdingsVal += curPrice * qty;
+        var avg = (team.avgBuyPrice && team.avgBuyPrice[ticker]) || curPrice;
+        unrealized += (curPrice - avg) * qty;
+      }
+    }
+    team.portfolioValue = Number((team.cash + holdingsVal).toFixed(2));
+    team.netWorth = team.portfolioValue;
+    team.unrealizedPnL = Number(unrealized.toFixed(2));
+  }
+
+  getState(role, teamId) {
+    if (!teamId) teamId = 'team1';
+    var enabled = this.companies.filter(function(c) { return c.isEnabled !== false; });
+    var targetTeam = this.teams.find(function(t) { return t.id === teamId || t.username === teamId; }) || this.teams[0];
+
+    var allocations = {};
+    allocations[targetTeam.id] = { "Automobile": 2.9, "IT": 4.1, "CASH": 93.0 };
+
+    return {
+      type: 'TICK_UPDATE',
+      scenarioMode: 'demo',
+      serverTimeMs: Date.now(),
+      soundConsoleConnected: true,
+      gameState: Object.assign({}, this.gameState, {
+        teams: this.teams,
+        companies: enabled
+      }),
+      companies: enabled,
+      allCompaniesUniverse: this.companies,
+      team: role === 'TRADER' ? targetTeam : undefined,
+      marketIndices: {
+        NIFTY_TF20: { value: 24350.25, change: 112.50, changePercent: 0.46 },
+        BANK_TF: { value: 52180.10, change: 310.20, changePercent: 0.60 },
+        IT_TF: { value: 41920.40, change: -45.10, changePercent: -0.11 },
+        AUTO_TF: { value: 25410.80, change: 185.30, changePercent: 0.73 }
+      },
+      teamSectorAllocations: allocations
+    };
+  }
+
+  tick() {
+    this.gameState.elapsedSeconds += 2;
+    if (this.gameState.isPaused) return;
+
+    for (var k = 0; k < 4; k++) {
+      var idx = Math.floor(Math.random() * this.companies.length);
+      var c = this.companies[idx];
+      if (c && !c.isHalted) {
+        var delta = (Math.random() - 0.49) * 0.006 * c.price;
+        c.price = Number(Math.max(1, c.price + delta).toFixed(2));
+        c.change = Number((c.price - c.basePrice).toFixed(2));
+        c.changePercent = Number(((c.change / c.basePrice) * 100).toFixed(2));
+        c.high = Math.max(c.high, c.price);
+        c.low = Math.min(c.low, c.price);
+        c.priceHistory.push(c.price);
+        if (c.priceHistory.length > 50) c.priceHistory.shift();
+      }
+    }
+
+    this.recalcTeam(this.teams[0]);
+  }
+
+  handleClientMessage(data, socket) {
+    var action = data.action;
+
+    if (action === 'LOGIN') {
+      var u = (data.username || '').toLowerCase().trim();
+      var role = 'TRADER';
+      var id = 'team1';
+      var name = 'Dalal Street Titans';
+
+      if (u === 'host') { role = 'HOST'; id = 'host'; name = 'Master Control'; }
+      else if (u === 'projector') { role = 'PROJECTOR'; id = 'PROJECTOR'; name = 'Main Stage Projector'; }
+      else if (u === 'sound') { role = 'SOUND_CONSOLE'; id = 'SOUND_CONSOLE'; name = 'Hall Sound System'; }
+      else if (u === 'winner') { role = 'WINNER_DISPLAY'; id = 'WINNER_DISPLAY'; name = 'Winner Presentation Stage'; }
+      else if (u.indexOf('team') === 0) { id = u; var t = this.teams.find(function(team) { return team.id === u; }); if (t) name = t.name; }
+
+      socket.sendBack({
+        type: 'LOGIN_SUCCESS',
+        session_token: 'demo_token_' + id,
+        role: role,
+        id: id,
+        name: name,
+        initialState: this.getState(role, id)
+      });
+      return;
+    }
+
+    if (action === 'RESUME_SESSION') {
+      socket.sendBack({
+        type: 'LOGIN_SUCCESS',
+        session_token: data.session_token || 'demo_token_host',
+        role: currentRole || 'HOST',
+        id: 'host',
+        name: 'Master Control',
+        initialState: this.getState(currentRole || 'HOST', 'team1')
+      });
+      return;
+    }
+
+    if (action === 'LOGOUT') {
+      return;
+    }
+
+    if (action === 'ORDER') {
+      var ticker = data.ticker;
+      var type = data.type;
+      var quantity = data.quantity;
+      var stock = this.companies.find(function(c) { return c.ticker === ticker; });
+      var team = this.teams[0];
+
+      if (!stock) {
+        socket.sendBack({ type: 'ORDER_REJECTED', reason: 'Unknown stock ticker: ' + ticker });
+        return;
+      }
+      if (stock.isHalted) {
+        socket.sendBack({ type: 'ORDER_REJECTED', reason: 'Trading is halted on ' + ticker + ' due to circuit breaker.' });
+        return;
+      }
+      var qty = parseInt(quantity, 10);
+      if (isNaN(qty) || qty <= 0) {
+        socket.sendBack({ type: 'ORDER_REJECTED', reason: 'Invalid order quantity specified.' });
+        return;
+      }
+
+      if (type === 'BUY') {
+        var cost = stock.price * qty;
+        if (team.cash < cost) {
+          socket.sendBack({ type: 'ORDER_REJECTED', reason: 'Insufficient cash. Needed ₹' + cost.toFixed(2) + ', available ₹' + team.cash.toFixed(2) + '.' });
+          return;
+        }
+        team.cash -= cost;
+        team.holdings[ticker] = (team.holdings[ticker] || 0) + qty;
+        team.avgBuyPrice[ticker] = stock.price;
+        team.tradesCount++;
+        this.recalcTeam(team);
+        socket.sendBack({ type: 'ORDER_FILLED', orderType: 'BUY', ticker: ticker, quantity: qty, price: stock.price, totalImpact: cost });
+        socket.sendBack(this.getState('TRADER', team.id));
+      } else if (type === 'SELL') {
+        var cur = team.holdings[ticker] || 0;
+        if (cur < qty) {
+          socket.sendBack({ type: 'ORDER_REJECTED', reason: 'Insufficient shares. You hold ' + cur + ' of ' + ticker + ', tried to sell ' + qty + '.' });
+          return;
+        }
+        var credit = stock.price * qty;
+        team.cash += credit;
+        team.holdings[ticker] -= qty;
+        team.tradesCount++;
+        this.recalcTeam(team);
+        socket.sendBack({ type: 'ORDER_FILLED', orderType: 'SELL', ticker: ticker, quantity: qty, price: stock.price, totalImpact: credit });
+        socket.sendBack(this.getState('TRADER', team.id));
+      }
+      return;
+    }
+
+    if (action === 'LIQUIDATE_ALL') {
+      var teamToLiq = this.teams[0];
+      var totalCredit = 0;
+      var count = 0;
+      for (var tickKey in (teamToLiq.holdings || {})) {
+        var hQty = teamToLiq.holdings[tickKey] || 0;
+        if (hQty > 0) {
+          var sStock = this.companies.find(function(c) { return c.ticker === tickKey; });
+          totalCredit += (sStock ? sStock.price : 0) * hQty;
+          teamToLiq.holdings[tickKey] = 0;
+          count++;
+        }
+      }
+      teamToLiq.cash += totalCredit;
+      this.recalcTeam(teamToLiq);
+      socket.sendBack({ type: 'PORTFOLIO_LIQUIDATED', tradesCount: count, totalNetCredit: totalCredit });
+      socket.sendBack(this.getState('TRADER', teamToLiq.id));
+      return;
+    }
+
+    if (action === 'HOST_PAUSE') {
+      this.gameState.isPaused = true;
+      this.gameState.status = 'PAUSED';
+      socket.sendBack({ type: 'MARKET_PAUSED', pauseMode: data.pauseMode || 'SOFT' });
+      socket.sendBack(this.getState(currentRole || 'HOST'));
+      return;
+    }
+
+    var self = this;
+    if (action === 'HOST_RESUME_COUNTDOWN') {
+      socket.sendBack({ type: 'COUNTDOWN_TARGET', targetTimestampMs: Date.now() + 3200, remainingSeconds: 3 });
+      setTimeout(function() {
+        self.gameState.isPaused = false;
+        self.gameState.status = 'LIVE';
+        socket.sendBack({ type: 'MARKET_RESUMED' });
+        socket.sendBack(self.getState(currentRole || 'HOST'));
+      }, 3200);
+      return;
+    }
+
+    if (action === 'HOST_TRIGGER_NEWS' || action === 'HOST_PUBLISH_NEWS_NOW') {
+      var item = data.news || {
+        id: 'news_' + Date.now(),
+        headline: data.headline || 'Institutional Block Deal Shock: Heavy Volume Surge',
+        explanation: data.explanation || 'Large domestic institutions execute portfolio rebalancing, injecting high liquidity across sectors.',
+        trafficLight: data.trafficLight || 'GOOD',
+        eventType: data.eventType || 'INSTITUTIONAL WIRE',
+        day: this.gameState.currentDay || 1,
+        timestamp: new Date().toISOString()
+      };
+      this.gameState.newsHistory.unshift(item);
+      var s1 = this.companies[Math.floor(Math.random() * this.companies.length)];
+      if (s1) { s1.price = Number((s1.price * 1.05).toFixed(2)); }
+      socket.sendBack({ type: 'NEWS_FLASH', news: item });
+      socket.sendBack(this.getState(currentRole || 'HOST'));
+      return;
+    }
+
+    if (action === 'HOST_UNHALT_STOCK') {
+      var uStock = this.companies.find(function(c) { return c.ticker === data.ticker; });
+      if (uStock) uStock.isHalted = false;
+      socket.sendBack(this.getState(currentRole || 'HOST'));
+      return;
+    }
+
+    if (action === 'HOST_TOGGLE_SHARE') {
+      var tStock = this.companies.find(function(c) { return c.ticker === data.ticker; });
+      if (tStock) tStock.isEnabled = !tStock.isEnabled;
+      socket.sendBack(this.getState(currentRole || 'HOST'));
+      return;
+    }
+
+    if (action === 'HOST_NEXT_DAY' || action === 'HOST_FINALIZE_DAY') {
+      var oldD = this.gameState.currentDay || 1;
+      this.gameState.currentDay = oldD + 1;
+      this.gameState.day = this.gameState.currentDay;
+      socket.sendBack({ type: 'DAY_TRANSITION', oldDay: oldD, newDay: this.gameState.currentDay });
+      socket.sendBack(this.getState(currentRole || 'HOST'));
+      return;
+    }
+
+    if (action === 'PROJECTOR_PAGE_NAV') {
+      this.gameState.projectorState.boardPage = data.page || 1;
+      socket.sendBack({ type: 'PROJECTOR_STATE_UPDATE', projectorState: this.gameState.projectorState });
+      return;
+    }
+
+    if (action === 'PROJECTOR_TOGGLE_BOARD_PAUSE') {
+      this.gameState.projectorState.isBoardPaused = !this.gameState.projectorState.isBoardPaused;
+      socket.sendBack({ type: 'PROJECTOR_STATE_UPDATE', projectorState: this.gameState.projectorState });
+      return;
+    }
+
+    if (action === 'HOST_TEST_SOUND_CUE') {
+      playInstitutionalSound(data.cueName);
+      return;
+    }
+  }
+}
+
+class MockWebSocket {
+  constructor(engine) {
+    this.engine = engine;
+    this.readyState = 1;
+    var self = this;
+    setTimeout(function() {
+      if (self.onopen) self.onopen();
+    }, 40);
+  }
+  send(raw) {
+    try {
+      var data = JSON.parse(raw);
+      var self = this;
+      this.engine.handleClientMessage(data, {
+        sendBack: function(msg) {
+          if (self.onmessage) {
+            self.onmessage({ data: JSON.stringify(msg) });
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('[MOCK WS MSG ERROR]', e);
+    }
+  }
+  close() {
+    this.readyState = 3;
+    if (this.onclose) this.onclose();
+  }
+}
+
+let isDemoMode = false;
+let mockEngineInstance = null;
+
+function activateDemoShowcaseMode(preselectedRole) {
+  if (!mockEngineInstance) {
+    mockEngineInstance = new MockEngine();
+  }
+  isDemoMode = true;
+
+  var demoBanner = document.getElementById('ttfDemoBanner');
+  if (demoBanner) demoBanner.classList.remove('hidden');
+  var quickAccessCard = document.getElementById('demoQuickAccessCard');
+  if (quickAccessCard) quickAccessCard.classList.remove('hidden');
+
+  ws = new MockWebSocket(mockEngineInstance);
+  attachWebSocketEvents();
+
+  if (preselectedRole) {
+    launchDemoRole(preselectedRole);
+  }
+}
+
+function launchDemoRole(role) {
+  if (!isDemoMode) activateDemoShowcaseMode();
+  getSharedAudioContext();
+
+  currentRole = role;
+  sessionToken = 'demo_token_' + role.toLowerCase();
+  sessionStorage.setItem('ttf_session_token', sessionToken);
+
+  ['Host', 'Projector', 'Trader', 'Winner', 'Sound'].forEach(function(name) {
+    var el = document.getElementById('demoPill' + name);
+    if (el) el.classList.remove('active');
+  });
+  var pillKey = role === 'SOUND_CONSOLE' ? 'Sound' : role === 'WINNER_DISPLAY' ? 'Winner' : role.charAt(0) + role.slice(1).toLowerCase();
+  var activePill = document.getElementById('demoPill' + pillKey);
+  if (activePill) activePill.classList.add('active');
+
+  switchSpaView(role);
+  if (mockEngineInstance) {
+    handleStateUpdate(mockEngineInstance.getState(role, 'team1'));
+  }
+}
+
+function exitDemoMode() {
+  sessionToken = null;
+  sessionStorage.removeItem('ttf_session_token');
+  currentRole = null;
+  switchSpaView(null);
+  var quickAccessCard = document.getElementById('demoQuickAccessCard');
+  if (quickAccessCard) quickAccessCard.classList.remove('hidden');
+}
+
+function hideDemoOverlays() {
+  var demoBanner = document.getElementById('ttfDemoBanner');
+  if (demoBanner) demoBanner.classList.add('hidden');
+  var quickAccessCard = document.getElementById('demoQuickAccessCard');
+  if (quickAccessCard) quickAccessCard.classList.add('hidden');
+}
+
+window.launchDemoRole = launchDemoRole;
+window.exitDemoMode = exitDemoMode;
+window.activateDemoShowcaseMode = activateDemoShowcaseMode;
+
+setInterval(function() {
+  if (isDemoMode && mockEngineInstance) {
+    mockEngineInstance.tick();
+    if (ws && ws.onmessage) {
+      ws.onmessage({ data: JSON.stringify(mockEngineInstance.getState(currentRole || 'HOST', 'team1')) });
+    }
+  }
+}, 2000);
+
+
+function connectWebSocket() {
+  const params = new URLSearchParams(window.location.search);
+  const explicitDemo = params.get('demo') === '1' || params.get('showcase') === '1';
+  const customServer = params.get('server');
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname) || /^10\./.test(window.location.hostname);
+
+  if ((isGitHubPages && !customServer) || explicitDemo) {
+    activateDemoShowcaseMode();
+    return;
+  }
+
+  let wsUrl;
+  if (customServer) {
+    wsUrl = customServer.indexOf('ws') === 0 ? customServer : 'wss://' + customServer;
+  } else {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    wsUrl = protocol + '//' + location.host;
+  }
+
+  try {
+    ws = new WebSocket(wsUrl);
+  } catch (err) {
+    console.warn('[WS INIT NOTE]', err);
+    if (!isLocalHost) {
+      activateDemoShowcaseMode();
+      return;
+    }
+  }
+
+  let connectTimeout = setTimeout(function() {
+    if (ws && ws.readyState !== WebSocket.OPEN && !isLocalHost) {
+      console.info('[TTF] Server unreachable, activating Executive Demo Mode for showcase.');
+      try { ws.close(); } catch (e) {}
+      activateDemoShowcaseMode();
+    }
+  }, 3500);
+
+  attachWebSocketEvents(function() { clearTimeout(connectTimeout); }, isLocalHost);
+}
+
+function attachWebSocketEvents(onOpenHook, isLocalHost) {
+  if (typeof isLocalHost === 'undefined') isLocalHost = true;
   ws.onopen = () => {
+    if (onOpenHook) onOpenHook();
+    if (!isDemoMode) hideDemoOverlays();
     const params = new URLSearchParams(window.location.search);
     const targetQuery = params.get('role') || params.get('team') || params.get('autologin') || params.get('user');
 
@@ -572,8 +1090,19 @@ function connectWebSocket() {
     }
   };
 
+  ws.onerror = (err) => {
+    if (!isLocalHost && !isDemoMode) {
+      activateDemoShowcaseMode();
+    }
+  };
+
   ws.onclose = () => {
-    setTimeout(connectWebSocket, 2000);
+    if (isDemoMode) return;
+    if (!isLocalHost) {
+      activateDemoShowcaseMode();
+    } else {
+      setTimeout(connectWebSocket, 2000);
+    }
   };
 }
 
@@ -613,6 +1142,14 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const username = document.getElementById('loginUsername').value;
   const password = document.getElementById('loginPassword').value;
+  if (isDemoMode) {
+    const lower = (username || '').toLowerCase().trim();
+    if (lower === 'host') return launchDemoRole('HOST');
+    if (lower === 'projector') return launchDemoRole('PROJECTOR');
+    if (lower === 'sound') return launchDemoRole('SOUND_CONSOLE');
+    if (lower === 'winner') return launchDemoRole('WINNER_DISPLAY');
+    return launchDemoRole('TRADER');
+  }
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     const errEl = document.getElementById('loginError');
     errEl.textContent = 'Connecting to simulation engine... Please wait 2 seconds.';

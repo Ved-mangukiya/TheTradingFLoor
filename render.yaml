@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: the-trading-floor
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js live
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production

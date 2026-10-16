@@ -97,3 +97,25 @@
 - [x] `test_upgrade_master.js`: **ALL STAGES PASSED (A, B, C, D)**
 - [x] `test_load_stress.js`: **160/160 orders in 3.05s (19.09ms avg latency)**
 - [x] `test_2hour_heavy_load.js`: **7,200s endurance test (480 trades, 78 KB audit, 8.7 MB heap)**
+
+---
+
+## 10. HOD Interactive Showcase Mode, GitHub Actions & Cloud Deployment
+- [x] **Automated GitHub Actions Deployment (`.github/workflows/deploy-pages.yml`)**:
+  - Automatically runs `npm test` to verify all 48 test stages on Ubuntu CI runner.
+  - Automatically packages and deploys `./public` to GitHub Pages (`https://ved-mangukiya.github.io/TheTradingFLoor/`).
+- [x] **Client-Side Interactive Showcase & Demo Sandbox Engine**:
+  - Built-in `MockEngine` in `public/app.js` loaded with all 20 real Indian listed equities (`RELIANCE`, `TATAMOTORS`, `MARUTI`, `TCS`, `INFY`, `HDFCBANK`, `ICICIBANK`, `LT`, etc.).
+  - Automatically activates when visited on GitHub Pages or with `?demo=1`, eliminating server cold starts or dead connection loops.
+  - Realistic 2-second micro-ticks simulate price movements, updating live sparkline charts and projector auto-cycle.
+  - Fully interactive Host Panel (Pause, Resume 3-2-1, Broadcast News, Toggle Circuit Breaker Halts).
+  - Fully interactive Trader Terminal (Team 1 Dalal Street Titans, ₹10,00,000 cash, Buy/Sell modal order execution with audio chimes and P&L updates).
+- [x] **1-Click HOD & Faculty Demo Launchers (`#demoQuickAccessCard`)**:
+  - Direct 1-click access buttons on the login screen for `👑 Open Event Host Control Panel`, `📊 Open Big Screen Auditorium Projector`, and `💻 Open Trader Desk`.
+  - Floating top demo role switcher banner (`#ttfDemoBanner`) with quick-switch pills (`👑 Host`, `📊 Projector`, `💻 Trader`, `🏆 Winner Stage`, `🔊 Sound`).
+- [x] **1-Click Cloud Deployment Blueprint (`render.yaml`)**:
+  - Zero-config blueprint ready for Render.com free tier hosting (`node server.js live` with full WebSocket support).
+- [x] **Instant 10-Second Public Tunnel (`Create_Live_Demo_Link.bat`)**:
+  - Launches local server and exposes it via secure Cloudflare Tunnel (`npx -y untun tunnel --port 3000`), giving Ved an instant public HTTPS link for live demonstration.
+- [x] **Production Event Day LAN Invariant Preserved**:
+  - When accessed on localhost or local LAN IP (`192.168.x.x`), the system connects 100% directly to the authoritative Node.js server. Demo overlays stay hidden.

@@ -13,6 +13,24 @@
 <body class="ttf-app">
 
   <!-- ==========================================================================
+       0. EXECUTIVE INTERACTIVE DEMO BAR (HOD PREVIEW)
+       ========================================================================== -->
+  <header id="ttfDemoBanner" class="hidden ttf-demo-banner">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-weight: 800; color: #D4AF37; letter-spacing: 0.05em;">✦ HOD PREVIEW • INTERACTIVE DEMO</span>
+      <span style="color: #94A3B8; font-size: 11px;">(Simulated Client Engine • Event Day uses Local LAN)</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <button type="button" onclick="launchDemoRole('HOST')" class="btn-demo-pill" id="demoPillHost">👑 Host Panel</button>
+      <button type="button" onclick="launchDemoRole('PROJECTOR')" class="btn-demo-pill" id="demoPillProjector">📊 Projector</button>
+      <button type="button" onclick="launchDemoRole('TRADER')" class="btn-demo-pill" id="demoPillTrader">💻 Trader Desk</button>
+      <button type="button" onclick="launchDemoRole('WINNER_DISPLAY')" class="btn-demo-pill" id="demoPillWinner">🏆 Winner Stage</button>
+      <button type="button" onclick="launchDemoRole('SOUND_CONSOLE')" class="btn-demo-pill" id="demoPillSound">🔊 Sound</button>
+      <button type="button" onclick="exitDemoMode()" class="btn-demo-pill" style="background: rgba(239, 68, 68, 0.2); color: #FCA5A5; border-color: rgba(239, 68, 68, 0.4);">🚪 Exit</button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
        1. GLOBAL OVERLAYS: RESUME COUNTDOWN, BREAKING NEWS & WINNER PODIUM
        ========================================================================== -->
 
@@ -326,6 +344,27 @@
           Authenticate Terminal
         </button>
       </form>
+
+      <!-- 1-Click Interactive Showcase Access (Activated on GitHub Pages or ?demo=1) -->
+      <div id="demoQuickAccessCard" class="hidden" style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--subtle-border); text-align: center;">
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 12px;">
+          ✦ HOD &amp; Faculty Interactive Demo Access
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" onclick="launchDemoRole('HOST')" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 10px; justify-content: center; font-weight: 700;">
+            👑 Open Event Host Control Panel
+          </button>
+          <button type="button" onclick="launchDemoRole('PROJECTOR')" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 10px; justify-content: center; font-weight: 700;">
+            📊 Open Big Screen Auditorium Projector
+          </button>
+          <button type="button" onclick="launchDemoRole('TRADER')" class="btn btn-outline" style="width: 100%; font-size: 12px; padding: 10px; justify-content: center; font-weight: 700;">
+            💻 Open Trader Desk (Team 1 • ₹10L Cash)
+          </button>
+        </div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 10px;">
+          *Event day uses dedicated Local LAN with zero internet dependency.
+        </div>
+      </div>
     </div>
   </section>
 

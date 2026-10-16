@@ -2446,5 +2446,53 @@ th.th-wrap {
   }
 }
 
+/* ==========================================
+   EXECUTIVE INTERACTIVE SHOWCASE (HOD PREVIEW)
+   ========================================== */
+.ttf-demo-banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  color: #FFFFFF;
+  border-bottom: 2px solid var(--podium-gold);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
 
+.btn-demo-pill {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
+.btn-demo-pill:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--podium-gold);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-demo-pill.active {
+  background: var(--podium-gold);
+  color: #1E293B;
+  border-color: var(--podium-gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}

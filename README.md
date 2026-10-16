@@ -23,7 +23,8 @@
 14. [Backing Up and Restoring Competition Data](#14-backing-up-and-restoring-competition-data)
 15. [Troubleshooting & Common Errors](#15-troubleshooting--common-errors)
 16. [How to Reset a Practice Round Safely](#16-how-to-reset-a-practice-round-safely)
-17. [Advanced Documentation Index](#17-advanced-documentation-index)
+17. [Demonstrating to HOD & Faculty via Web Link (GitHub Pages & Cloud)](#17-demonstrating-to-hod--faculty-via-web-link)
+18. [Advanced Documentation Index](#18-advanced-documentation-index)
 
 ---
 
@@ -254,7 +255,37 @@ To reset after practice rounds or start a fresh tournament:
 
 ---
 
-## 17. ADVANCED DOCUMENTATION INDEX
+## 17. DEMONSTRATING TO HOD & FACULTY VIA WEB LINK
+
+While the **actual event day operates 100% offline on a dedicated local Wi-Fi router / LAN**, you can demonstrate the complete system to college leadership (HOD, Dean, Faculty Coordinators) using any of the following browser-based methods:
+
+### Method A: GitHub Pages Interactive Showcase (Recommended for WhatsApp/Email)
+- **Live URL**: `https://ved-mangukiya.github.io/TheTradingFLoor/`
+- **How it works**:
+  - Automatically deployed on every `git push origin main` via GitHub Actions (`.github/workflows/deploy-pages.yml`).
+  - When opened in any desktop or mobile browser without a local server, it activates the **Client-Side Interactive Showcase Engine**.
+  - Includes **1-Click Demo Launchers** directly on the login screen:
+    - `👑 Open Event Host Control Panel`
+    - `📊 Open Big Screen Auditorium Projector`
+    - `💻 Open Trader Desk (Team 1 • ₹10L Cash)`
+  - Includes a floating top demo switcher bar (`✦ HOD PREVIEW • INTERACTIVE DEMO`) allowing seamless switching between Host, Projector, Trader, and Winner Stage views.
+  - Realistic 2-second micro-ticks update all 20 Indian listed companies with live sparklines, order execution, breaking news toasts, and sound effects.
+
+### Method B: Instant 10-Second Live Tunnel (`Create_Live_Demo_Link.bat`)
+- Double-click **`Create_Live_Demo_Link.bat`** on your laptop.
+- It starts the local server and generates an instant public HTTPS link (powered by Cloudflare Tunnel, e.g. `https://xxxx.trycloudflare.com`).
+- Share this link with your HOD during a presentation so they can interact with your real running server from their own phone or laptop.
+
+### Method C: 1-Click Free Cloud Server (`render.yaml`)
+- The repository includes a `render.yaml` blueprint.
+- Connect your GitHub repo to [Render.com](https://render.com) (Free tier) to host the full Node.js + WebSocket server online permanently (e.g. `https://thetradingfloor.onrender.com`).
+- GitHub Pages can also connect to this cloud backend by passing `?server=wss://your-app.onrender.com`.
+
+> **⚠️ EVENT DAY ASSURANCE**: None of these preview modes alter the local LAN architecture. On competition day, you simply run `Launch_The_Trading_Floor.bat` on the offline venue laptop. All student laptops connect over local Wi-Fi with 0 internet dependence.
+
+---
+
+## 18. ADVANCED DOCUMENTATION INDEX
 
 All comprehensive system specifications are permanently version-controlled in the repository:
 
