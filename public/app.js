@@ -509,6 +509,67 @@ function connectWebSocket() {
       }
       return;
     }
+
+    if (msg.type === 'MARKET_RESTORED') {
+      playInstitutionalSound('bell_close');
+      const softOverlay = document.getElementById('softPauseOverlay');
+      if (softOverlay && currentRole !== 'HOST') softOverlay.classList.remove('hidden');
+      showOrderToast(msg.message || 'Championship state restored! Market is paused ready for Host Resume.', true);
+      const banner = document.getElementById('hostRestoreStatusBanner');
+      const bannerText = document.getElementById('hostRestoreStatusText');
+      if (banner && bannerText) {
+        bannerText.textContent = msg.message || 'Championship state restored successfully!';
+        banner.classList.remove('hidden');
+        setTimeout(() => { banner.classList.add('hidden'); }, 8000);
+      }
+      return;
+    }
+
+    if (msg.type === 'CHECKPOINT_CREATED_ACK') {
+      if (msg.ok) {
+        showOrderToast(`💾 ${msg.message || 'Checkpoint saved successfully!'}`, true);
+        hostRefreshCheckpoints();
+      } else {
+        showOrderToast(`⚠️ ${msg.message || 'Failed to save checkpoint.'}`, false);
+      }
+      return;
+    }
+
+    if (msg.type === 'CHECKPOINTS_LIST_ACK') {
+      renderHostCheckpointsTable(msg.checkpoints || []);
+      return;
+    }
+
+    if (msg.type === 'CHECKPOINT_RESTORED_ACK') {
+      showOrderToast(`🛡️ ${msg.message || 'Game restored from checkpoint!'}`, true);
+      const banner = document.getElementById('hostRestoreStatusBanner');
+      const bannerText = document.getElementById('hostRestoreStatusText');
+      if (banner && bannerText) {
+        bannerText.textContent = msg.message || 'Game restored from checkpoint!';
+        banner.classList.remove('hidden');
+        setTimeout(() => { banner.classList.add('hidden'); }, 8000);
+      }
+      hostRefreshCheckpoints();
+      return;
+    }
+
+    if (msg.type === 'PROJECTOR_STATE_UPDATE') {
+      if (latestState && latestState.gameState) {
+        latestState.gameState.projectorState = msg.projectorState;
+      }
+      if (msg.projectorState && msg.projectorState.boardPage) {
+        currentProjectorBoardPage = msg.projectorState.boardPage;
+      }
+      if (msg.projectorState && msg.projectorState.isBoardPaused !== undefined) {
+        isProjectorBoardPaused = msg.projectorState.isBoardPaused;
+        const btn = document.getElementById('btnProjToggleBoardPause');
+        if (btn) btn.textContent = isProjectorBoardPaused ? '▶' : '⏸';
+      }
+      if (currentRole === 'PROJECTOR' && latestState) {
+        renderProjectorView(latestState);
+      }
+      return;
+    }
   };
 
   ws.onclose = () => {
@@ -1534,6 +1595,11 @@ function quickSellAllStock(ticker, qty) {
 // ==========================================
 let localProjectorCycleIndex = 0;
 let lastProjectorCycleSwitchTime = Date.now();
+let currentProjectorBoardPage = 1;
+let projectorCardsPerPage = 8;
+let isProjectorBoardPaused = false;
+let projectorBoardAutoFlipInterval = null;
+let currentProjectorActiveScene = 'SCENE_MARKET_BOARD';
 const PROJECTOR_CYCLE_SCENES = ['SCENE_MARKET_BOARD', 'SCENE_INDICES', 'SCENE_STRATEGY', 'SCENE_LEADERBOARD', 'SCENE_NEWS'];
 
 function renderProjectorView(state) {
@@ -1712,9 +1778,11 @@ function renderProjectorView(state) {
     }
   }
 
+  currentProjectorActiveScene = activeScene;
+
   // Toggle scene visibility
   const sceneElements = {
-    SCENE_MARKET_BOARD: document.getElementById('projSceneMarketBoard'),
+    SCENE_MARKET_BOARD: document.getElementById('projSceneMarketBoardWrapper') || document.getElementById('projSceneMarketBoard'),
     SCENE_INDICES: document.getElementById('projSceneIndices'),
     SCENE_STRATEGY: document.getElementById('projSceneStrategy'),
     SCENE_LEADERBOARD: document.getElementById('projSceneLeaderboard'),
@@ -1747,15 +1815,56 @@ function renderProjectorView(state) {
   }
 }
 
-// Scene 1: All-Stocks High-Visibility Grid
+// Scene 1: All-Stocks High-Visibility Grid with Automatic Zero-Scroll Pagination & Spotlight
 function renderProjectorMarketBoard(companies) {
   const grid = document.getElementById('projSceneMarketBoard');
   if (!grid) return;
   const activeCompanies = (companies || []).filter((c) => c.isEnabled !== false);
 
-  if (grid.children.length !== activeCompanies.length) {
-    grid.innerHTML = activeCompanies.map((stock) => `
-      <div id="projCard_${stock.ticker}" class="projector-card">
+  // 1. Permanently update the Spotlight Bar (Top Gainer & Top Loser across ALL active companies)
+  renderProjectorSpotlight(activeCompanies);
+
+  // 2. Pagination Math (Configurable cards per page, default 8 = 4 cols x 2 rows, fits 1080p without scrolling)
+  const totalCards = activeCompanies.length;
+  const totalPages = Math.max(1, Math.ceil(totalCards / projectorCardsPerPage));
+
+  if (currentProjectorBoardPage > totalPages) currentProjectorBoardPage = 1;
+  if (currentProjectorBoardPage < 1) currentProjectorBoardPage = 1;
+
+  const startIdx = (currentProjectorBoardPage - 1) * projectorCardsPerPage;
+  const pageCompanies = activeCompanies.slice(startIdx, startIdx + projectorCardsPerPage);
+
+  // Update Page Indicator
+  const pageIndicator = document.getElementById('projBoardPageIndicator');
+  if (pageIndicator) {
+    if (totalPages > 1) {
+      pageIndicator.textContent = `📄 Page ${currentProjectorBoardPage} of ${totalPages} (Stocks ${startIdx + 1}–${Math.min(startIdx + projectorCardsPerPage, totalCards)} of ${totalCards})`;
+    } else {
+      pageIndicator.textContent = `📄 Page 1 of 1 (All ${totalCards} Stocks)`;
+    }
+  }
+
+  // Initialize auto-rotation interval once (Rotates every 8 seconds when market board is active)
+  if (!projectorBoardAutoFlipInterval) {
+    projectorBoardAutoFlipInterval = setInterval(() => {
+      if (isProjectorBoardPaused) return;
+      if (currentProjectorActiveScene !== 'SCENE_MARKET_BOARD') return;
+      const act = ((latestState && latestState.companies) || []).filter((c) => c.isEnabled !== false);
+      const pages = Math.max(1, Math.ceil(act.length / projectorCardsPerPage));
+      if (pages > 1) {
+        currentProjectorBoardPage = (currentProjectorBoardPage % pages) + 1;
+        renderProjectorMarketBoard(act);
+      }
+    }, 8000);
+  }
+
+  // 3. Render cards for the CURRENT PAGE ONLY
+  const currentPageTickers = pageCompanies.map((s) => s.ticker).join(',');
+  const renderedTickers = Array.from(grid.children).map((el) => el.getAttribute('data-ticker')).join(',');
+
+  if (currentPageTickers !== renderedTickers) {
+    grid.innerHTML = pageCompanies.map((stock) => `
+      <div id="projCard_${stock.ticker}" data-ticker="${stock.ticker}" class="projector-card">
         <div class="projector-card-header">
           <div class="projector-card-top">
             <span class="projector-ticker" title="${escapeHtml(stock.name || stock.ticker)}">${stock.ticker}</span>
@@ -1773,8 +1882,10 @@ function renderProjectorMarketBoard(companies) {
     `).join('');
   }
 
-  activeCompanies.forEach((stock) => {
-    const pctVal = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
+  // 4. Update prices, deltas, and Bezier sparklines IN-PLACE (zero timer resets)
+  pageCompanies.forEach((stock) => {
+    const ref = stock.dayOpenPrice || stock.referencePrice || stock.currentPrice;
+    const pctVal = ref > 0 ? ((stock.currentPrice - ref) / ref) * 100 : 0;
     const pct = pctVal.toFixed(1);
     const isUp = pctVal >= 0;
 
@@ -1802,11 +1913,32 @@ function renderProjectorMarketBoard(companies) {
     }
 
     if (window.drawSmoothMiniSparkline) {
-      drawSmoothMiniSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp);
+      drawSmoothMiniSparkline(`projCanvas_${stock.ticker}`, stock.history, ref, isUp);
     } else {
-      drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, stock.dayOpenPrice, isUp, false);
+      drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, ref, isUp, false);
     }
   });
+}
+
+function projectorNextBoardPage() {
+  const active = ((latestState && latestState.companies) || []).filter((c) => c.isEnabled !== false);
+  const totalPages = Math.max(1, Math.ceil(active.length / projectorCardsPerPage));
+  currentProjectorBoardPage = (currentProjectorBoardPage % totalPages) + 1;
+  renderProjectorMarketBoard(active);
+}
+
+function projectorPrevBoardPage() {
+  const active = ((latestState && latestState.companies) || []).filter((c) => c.isEnabled !== false);
+  const totalPages = Math.max(1, Math.ceil(active.length / projectorCardsPerPage));
+  currentProjectorBoardPage = currentProjectorBoardPage <= 1 ? totalPages : currentProjectorBoardPage - 1;
+  renderProjectorMarketBoard(active);
+}
+
+function projectorToggleBoardPause() {
+  isProjectorBoardPaused = !isProjectorBoardPaused;
+  const btn = document.getElementById('btnProjToggleBoardPause');
+  if (btn) btn.textContent = isProjectorBoardPaused ? '▶' : '⏸';
+  showOrderToast(isProjectorBoardPaused ? '⏸ Projector page auto-flip paused' : '▶ Projector page auto-flip resumed', true);
 }
 
 // Scene 2: Real Market Indices Overview
@@ -2911,6 +3043,10 @@ function switchHostTab(tabName) {
   if (targetHub === 'event') {
     if (tabName === 'universe' || tabName === 'companies') switchSetupSection('universe');
     else if (tabName === 'launcher') switchSetupSection('teams');
+  }
+
+  if (targetHub === 'stage' && currentRole === 'HOST') {
+    hostRefreshCheckpoints();
   }
 
   if (latestState) {
@@ -5871,5 +6007,158 @@ function submitChampionshipWizard() {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Disaster Recovery & Checkpoints Client Engine
+// -----------------------------------------------------------------------------
+function hostCreateCheckpoint(label = 'manual') {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showOrderToast('WebSocket not connected. Cannot save checkpoint.', false);
+    return;
+  }
+  showOrderToast('💾 Saving disaster recovery checkpoint...', true);
+  ws.send(JSON.stringify({
+    action: 'HOST_CREATE_CHECKPOINT',
+    label,
+    session_token: sessionToken
+  }));
+}
+
+function hostRefreshCheckpoints() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_LIST_CHECKPOINTS',
+    session_token: sessionToken
+  }));
+}
+
+function renderHostCheckpointsTable(checkpoints) {
+  const tbody = document.getElementById('hostCheckpointsTableBody');
+  if (!tbody) return;
+
+  if (!Array.isArray(checkpoints) || checkpoints.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">
+          No saved checkpoints yet. Click <strong>"Save Instant Checkpoint Now"</strong> to create a recovery point.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = '';
+  checkpoints.forEach((cp) => {
+    const min = Math.floor(cp.elapsedSeconds / 60);
+    const sec = cp.elapsedSeconds % 60;
+    const timeFormatted = `${min}m ${sec < 10 ? '0' : ''}${sec}s (${cp.elapsedSeconds}s)`;
+    const dateFormatted = new Date(cp.mtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const isAuto = cp.label === 'auto';
+    const typeBadge = isAuto 
+      ? `<span class="badge" style="background: #E0E7FF; color: #3730A3; font-size: 10px; font-weight: 700;">AUTO (120s)</span>`
+      : `<span class="badge badge-champagne" style="font-size: 10px; font-weight: 700;">${escapeHtml(cp.label.toUpperCase())}</span>`;
+
+    html += `
+      <tr style="border-bottom: 1px solid #F1F5F9;">
+        <td style="padding: 10px 14px; font-family: var(--font-mono); font-weight: 700; color: #1E3A8A;">
+          ${escapeHtml(cp.filename)}
+          <div style="font-size: 10px; color: var(--text-muted); font-weight: 400; font-family: var(--font-sans); margin-top: 2px;">
+            Saved at ${dateFormatted}
+          </div>
+        </td>
+        <td style="padding: 10px 14px; font-weight: 700; color: var(--text-forest);">
+          Day ${cp.day}
+        </td>
+        <td style="padding: 10px 14px; font-family: var(--font-mono);">
+          ${timeFormatted}
+        </td>
+        <td style="padding: 10px 14px;">
+          ${typeBadge}
+        </td>
+        <td style="padding: 10px 14px; font-family: var(--font-mono); color: var(--text-muted);">
+          ${cp.sizeKB} KB
+        </td>
+        <td style="padding: 10px 14px; text-align: right;">
+          <button onclick="hostRestoreCheckpoint('${escapeHtml(cp.filename)}')" class="btn btn-outline" 
+            style="padding: 4px 12px; font-size: 11px; font-weight: 800; border-color: #EF4444; color: #DC2626; background: #FEF2F2;"
+            title="Restore game state to this exact second">
+            🔄 Restore
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+function hostRestoreCheckpoint(filename) {
+  if (!filename) return;
+  const confirmed = confirm(
+    `⚠️ DISASTER RECOVERY & GAME RESTORE CONFIRMATION\n\n` +
+    `Are you sure you want to restore the championship to checkpoint:\n"${filename}"?\n\n` +
+    `• All 16 team cash balances, stock holdings, and trades will revert to this snapshot.\n` +
+    `• Stock prices will revert to this exact point.\n` +
+    `• The market will be loaded in a safe PAUSED state.\n` +
+    `• You can then click "▶ Resume 3-2-1" when ready to continue the tournament.\n\n` +
+    `Proceed with Restore?`
+  );
+  if (!confirmed) return;
+
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showOrderToast('WebSocket not connected. Cannot restore checkpoint.', false);
+    return;
+  }
+
+  showOrderToast('🔄 Restoring championship state from checkpoint...', true);
+  ws.send(JSON.stringify({
+    action: 'HOST_RESTORE_CHECKPOINT',
+    filename,
+    session_token: sessionToken
+  }));
+}
+
+function hostUploadBackupFile(event) {
+  const file = event && event.target && event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data || !data.gameState || !Array.isArray(data.companies) || !data.teams) {
+        alert('Invalid backup file. The uploaded JSON does not contain valid championship data (missing gameState, companies, or teams).');
+        return;
+      }
+
+      const confirmed = confirm(
+        `⚠️ RESTORE FROM UPLOADED BACKUP FILE\n\n` +
+        `File: "${file.name}"\n` +
+        `Title: ${data.gameState.title || 'The Trading Floor'}\n` +
+        `Day: ${data.gameState.currentDay || 1} (${data.gameState.elapsedSeconds || 0}s elapsed)\n` +
+        `Teams: ${Object.keys(data.teams).length}\n\n` +
+        `Restore this backup? The market will be restored in a safe PAUSED state ready for Host Resume.`
+      );
+      if (!confirmed) return;
+
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        showOrderToast('WebSocket not connected.', false);
+        return;
+      }
+
+      showOrderToast('🔄 Uploading and restoring backup...', true);
+      ws.send(JSON.stringify({
+        action: 'HOST_RESTORE_CHECKPOINT',
+        checkpointData: data,
+        session_token: sessionToken
+      }));
+    } catch (err) {
+      alert(`Error reading backup file: ${err.message}`);
+    } finally {
+      if (event.target) event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
 // Initialize connection on load
 connectWebSocket();
+

@@ -2227,6 +2227,60 @@
           </div>
         </div>
         <div id="hostDaySnapshotsContainer"></div>
+      <!-- Disaster Recovery & Checkpoints Card -->
+      <div class="luxury-card" style="padding: 24px; margin-top: 24px; border: 2px solid #93C5FD; background: #EFF6FF;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; border-bottom: 1px solid rgba(59, 130, 246, 0.2); padding-bottom: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">🛡️</span>
+              <h3 style="font-size: 18px; font-weight: 900; color: #1E3A8A; margin: 0;">Disaster Recovery, Checkpoints &amp; Game Restore</h3>
+            </div>
+            <p style="font-size: 13px; color: #1E40AF; margin: 4px 0 0 0; line-height: 1.4;">
+              Take instant full-state backups anytime. If a laptop shuts down or error occurs, click <strong>Restore</strong> on any checkpoint below to reload all 16 team portfolios, cash, trades, and stock prices. The market will be safely paused ready for Host Resume.
+            </p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="hostCreateCheckpoint()" class="btn btn-primary" style="background: #2563EB; border-color: #1D4ED8; font-weight: 800; font-size: 12px; padding: 8px 16px;">
+              💾 Save Instant Checkpoint Now
+            </button>
+            <button onclick="hostRefreshCheckpoints()" class="btn btn-outline" style="font-size: 12px; padding: 8px 14px; background: #FFFFFF; border-color: #3B82F6; color: #1D4ED8;">
+              🔄 Refresh List
+            </button>
+            <label class="btn btn-outline" style="font-size: 12px; padding: 8px 14px; background: #FFFFFF; border-color: #3B82F6; color: #1D4ED8; cursor: pointer; margin: 0;">
+              📂 Upload Backup File
+              <input type="file" id="hostBackupFileInput" accept=".json" onchange="hostUploadBackupFile(event)" style="display: none;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Restore Alert Banner -->
+        <div id="hostRestoreStatusBanner" class="hidden" style="padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 14px; background: #ECFDF5; border: 1px solid #10B981; color: #065F46; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+          <span>✅</span>
+          <span id="hostRestoreStatusText">Game restored successfully!</span>
+        </div>
+
+        <!-- Checkpoints Table -->
+        <div style="background: #FFFFFF; border-radius: var(--radius-sm); border: 1px solid rgba(59, 130, 246, 0.2); overflow: hidden;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 10px 14px;">Checkpoint Name</th>
+                <th style="padding: 10px 14px;">Competition Day</th>
+                <th style="padding: 10px 14px;">Elapsed Time</th>
+                <th style="padding: 10px 14px;">Type</th>
+                <th style="padding: 10px 14px;">Size</th>
+                <th style="padding: 10px 14px; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="hostCheckpointsTableBody">
+              <tr>
+                <td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">
+                  Click "Refresh List" or "Save Instant Checkpoint Now" to view recovery points.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Safe Championship Reset Card (One Canonical Safe Reset Action) -->
@@ -2329,8 +2383,66 @@
           portfolio balances are frozen safely. Trading will resume with a 3-second live countdown.</p>
       </div>
 
-      <!-- Scene 1: All Real Companies Market Board -->
-      <main id="projSceneMarketBoard" class="projector-grid" style="margin: 0; flex: 1;"></main>
+      <!-- Scene 1: All Real Companies Market Board with Persistent Top Gainers/Losers & Automatic Zero-Scroll Pagination -->
+      <div id="projSceneMarketBoardWrapper" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+        <!-- Persistent Stage Spotlight: Top Gainer, Top Loser & Market Breadth -->
+        <div id="projMarketSpotlightBar" style="display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 14px; margin-bottom: 12px;">
+          <!-- Top Percentage Gainer Card -->
+          <div id="projTopGainerCard" class="luxury-card" style="padding: 10px 16px; border-left: 5px solid var(--price-up); background: linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%); display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                <span style="font-size: 14px;">🏆</span>
+                <span class="badge" style="background: #DCFCE7; color: #166534; font-size: 10px; font-weight: 800; letter-spacing: 0.05em;">TOP GAINER</span>
+              </div>
+              <div id="projTopGainerTicker" style="font-size: 18px; font-weight: 900; color: var(--text-forest); font-family: var(--font-mono); line-height: 1.2;">--</div>
+              <div id="projTopGainerName" style="font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px;">--</div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0; margin-left: 10px;">
+              <div id="projTopGainerPrice" style="font-size: 18px; font-weight: 900; color: var(--price-up); font-family: var(--font-mono);">₹0.00</div>
+              <div id="projTopGainerDelta" class="badge" style="background: #15803D; color: #FFFFFF; font-size: 12px; font-weight: 800; font-family: var(--font-mono); margin-top: 3px;">+0.00% ▲</div>
+            </div>
+          </div>
+
+          <!-- Top Percentage Loser Card -->
+          <div id="projTopLoserCard" class="luxury-card" style="padding: 10px 16px; border-left: 5px solid var(--error-red); background: linear-gradient(135deg, #FFFFFF 0%, #FEF2F2 100%); display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm);">
+            <div style="min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                <span style="font-size: 14px;">📉</span>
+                <span class="badge" style="background: #FEE2E2; color: #991B1B; font-size: 10px; font-weight: 800; letter-spacing: 0.05em;">TOP LOSER</span>
+              </div>
+              <div id="projTopLoserTicker" style="font-size: 18px; font-weight: 900; color: var(--text-forest); font-family: var(--font-mono); line-height: 1.2;">--</div>
+              <div id="projTopLoserName" style="font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px;">--</div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0; margin-left: 10px;">
+              <div id="projTopLoserPrice" style="font-size: 18px; font-weight: 900; color: var(--error-red); font-family: var(--font-mono);">₹0.00</div>
+              <div id="projTopLoserDelta" class="badge" style="background: #DC2626; color: #FFFFFF; font-size: 12px; font-weight: 800; font-family: var(--font-mono); margin-top: 3px;">-0.00% ▼</div>
+            </div>
+          </div>
+
+          <!-- Market Breadth & Page Rotation Status Card -->
+          <div id="projBreadthCard" class="luxury-card" style="padding: 10px 16px; background: #FAFBFD; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Market Breadth</span>
+              <span id="projBreadthRatio" style="font-size: 12px; font-weight: 800; font-family: var(--font-mono); color: var(--text-forest);">
+                <span id="projAdvancingCount" style="color: var(--price-up);">0 ▲ Advancing</span> • <span id="projDecliningCount" style="color: var(--error-red);">0 ▼ Declining</span>
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+              <div id="projBoardPageIndicator" style="font-size: 11px; font-weight: 800; color: #1E40AF; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 3px 10px; border-radius: 999px;">
+                📄 Page 1 of 1 (Stocks 1-8 of 20)
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button onclick="projectorPrevBoardPage()" class="btn btn-outline" style="padding: 2px 7px; font-size: 11px; border-color: #CBD5E1; color: var(--text-forest);" title="Previous Page">◀</button>
+                <button id="btnProjToggleBoardPause" onclick="projectorToggleBoardPause()" class="btn btn-outline" style="padding: 2px 7px; font-size: 11px; border-color: #CBD5E1; color: var(--text-forest);" title="Pause / Resume Page Auto-Flip">⏸</button>
+                <button onclick="projectorNextBoardPage()" class="btn btn-outline" style="padding: 2px 7px; font-size: 11px; border-color: #CBD5E1; color: var(--text-forest);" title="Next Page">▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paginated Cards Grid (Zero vertical scrollbar, strictly fills screen) -->
+        <main id="projSceneMarketBoard" class="projector-grid" style="margin: 0; flex: 1; overflow: hidden; align-content: start;"></main>
+      </div>
 
       <!-- Scene 2: Real Market Indices Overview -->
       <div id="projSceneIndices" class="hidden"

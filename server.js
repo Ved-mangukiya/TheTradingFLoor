@@ -226,6 +226,10 @@ function setupDefaultTeams(count = 12, startingCash = 500000) {
 // Persist customized active universe
 const ACTIVE_UNIVERSE_FILE = path.join(DATA_DIR, 'universe_active.json');
 const LIVE_STATE_FILE = path.join(DATA_DIR, 'live_game_state.json');
+const CHECKPOINTS_DIR = path.join(DATA_DIR, 'checkpoints');
+if (!fs.existsSync(CHECKPOINTS_DIR)) {
+  fs.mkdirSync(CHECKPOINTS_DIR, { recursive: true });
+}
 
 function saveUniverseToDisk() {
   if (activeScenarioMode === 'test') return;
@@ -274,19 +278,85 @@ function saveLiveGameState() {
   }
 }
 
-function restoreLiveGameState() {
-  if (!fs.existsSync(LIVE_STATE_FILE)) return false;
+function createCheckpoint(label = 'manual') {
   try {
-    const raw = fs.readFileSync(LIVE_STATE_FILE, 'utf-8');
-    const data = JSON.parse(raw);
+    const traderUsers = {};
+    Object.keys(USERS).forEach((k) => {
+      if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
+    });
+
+    const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `checkpoint_Day${gameState ? gameState.currentDay : 1}_${gameState ? gameState.elapsedSeconds : 0}s_${label}_${timestampStr}.json`;
+    const fullPath = path.join(CHECKPOINTS_DIR, filename);
+
+    const snapshot = {
+      version: '2.0.0',
+      savedAt: new Date().toISOString(),
+      label,
+      activeScenarioMode,
+      gameState,
+      companies,
+      teams,
+      executedTrades,
+      tradeSeqCounter,
+      newsEvents,
+      traderUsers
+    };
+
+    fs.writeFileSync(fullPath, JSON.stringify(snapshot, null, 2));
+    fs.writeFileSync(LIVE_STATE_FILE, JSON.stringify(snapshot, null, 2));
+    recordAuditEvent('CHECKPOINT_SAVED', { filename, day: gameState ? gameState.currentDay : 1, second: gameState ? gameState.elapsedSeconds : 0, label });
+    return { filename, fullPath, snapshot };
+  } catch (err) {
+    console.error('[CHECKPOINT CREATE ERROR]', err.message);
+    return null;
+  }
+}
+
+function listCheckpoints() {
+  try {
+    if (!fs.existsSync(CHECKPOINTS_DIR)) return [];
+    const files = fs.readdirSync(CHECKPOINTS_DIR).filter((f) => f.endsWith('.json'));
+    const items = files.map((f) => {
+      const p = path.join(CHECKPOINTS_DIR, f);
+      const stat = fs.statSync(p);
+      let day = 1;
+      let second = 0;
+      let label = 'manual';
+      const m = f.match(/Day(\d+)_(\d+)s_([^_]+)/);
+      if (m) {
+        day = parseInt(m[1], 10);
+        second = parseInt(m[2], 10);
+        label = m[3];
+      }
+      return {
+        filename: f,
+        sizeKB: (stat.size / 1024).toFixed(1),
+        mtime: stat.mtime.toISOString(),
+        day,
+        second,
+        label
+      };
+    });
+    items.sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
+    return items;
+  } catch (e) {
+    return [];
+  }
+}
+
+function restoreFromCheckpointData(data, sourceLabel = 'manual') {
+  try {
     if (!data || !data.gameState || !Array.isArray(data.companies) || !data.teams) {
       return false;
     }
 
     activeScenarioMode = data.activeScenarioMode || 'live';
     gameState = data.gameState;
-    // ALWAYS pause on crash recovery so the market waits for Host to resume
+    // ALWAYS pause on restore so the market safely waits for Host to resume
     gameState.isPaused = true;
+    gameState.status = 'PAUSED';
+    gameState.pauseMode = 'VISIBLE_FROZEN';
     gameState.pauseStartedAt = Date.now();
 
     companies = data.companies;
@@ -306,32 +376,54 @@ function restoreLiveGameState() {
       Object.assign(USERS, data.traderUsers);
     }
 
-    console.log('----------------------------------------------------------------');
-    console.log(' ⚡ [CRASH RECOVERY] Previous live session detected and restored cleanly!');
-    console.log(` • Title:           ${gameState.title}`);
-    console.log(` • Day & Second:    Day ${gameState.currentDay} / ${gameState.totalDays} (${gameState.elapsedSeconds}s elapsed)`);
-    console.log(` • Teams Loaded:    ${Object.keys(teams).length}`);
-    console.log(` • Trades Restored: ${executedTrades.length}`);
-    console.log(' • Market Status:   PAUSED (Host must press Resume to continue)');
-    console.log('----------------------------------------------------------------');
-
+    saveLiveGameState();
     restartEngineInterval();
-    recordAuditEvent('CRASH_RECOVERY_RESTORED', {
+    recordAuditEvent('CHECKPOINT_RESTORED', {
+      source: sourceLabel,
       day: gameState.currentDay,
       elapsedSeconds: gameState.elapsedSeconds,
       tradesCount: executedTrades.length
     });
     return true;
+  } catch (err) {
+    console.error('[RESTORE CHECKPOINT ERROR]', err.message);
+    return false;
+  }
+}
+
+function restoreLiveGameState() {
+  if (!fs.existsSync(LIVE_STATE_FILE)) return false;
+  try {
+    const raw = fs.readFileSync(LIVE_STATE_FILE, 'utf-8');
+    const data = JSON.parse(raw);
+    const success = restoreFromCheckpointData(data, 'CRASH_RECOVERY');
+    if (success) {
+      console.log('----------------------------------------------------------------');
+      console.log(' ⚡ [CRASH RECOVERY] Previous live session detected and restored cleanly!');
+      console.log(` • Title:           ${gameState.title}`);
+      console.log(` • Day & Second:    Day ${gameState.currentDay} / ${gameState.totalDays} (${gameState.elapsedSeconds}s elapsed)`);
+      console.log(` • Teams Loaded:    ${Object.keys(teams).length}`);
+      console.log(` • Trades Restored: ${executedTrades.length}`);
+      console.log(' • Market Status:   PAUSED (Host must press Resume to continue)');
+      console.log('----------------------------------------------------------------');
+    }
+    return success;
   } catch (e) {
     console.error('[CRASH RECOVERY RESTORE ERROR]', e.message);
     return false;
   }
 }
 
-// Auto-save live state every 4 seconds
+// Auto-save live state every 4 seconds, and auto-checkpoint every 120 seconds during live trading
+let autoCheckpointCounter = 0;
 setInterval(() => {
   if (activeScenarioMode !== 'test') {
     saveLiveGameState();
+    autoCheckpointCounter += 4;
+    if (autoCheckpointCounter >= 120 && gameState && gameState.status === 'LIVE' && !gameState.isPaused) {
+      autoCheckpointCounter = 0;
+      createCheckpoint('auto');
+    }
   }
 }, 4000);
 
@@ -2315,19 +2407,42 @@ wss.on('connection', (ws) => {
         broadcastTick();
       }
 
-      // 5.2g Host Intelligent Projector Cycle Mode Controls
+      // 5.2g Host Intelligent Projector Cycle Mode & Board Pagination Controls
       if (data.action === 'HOST_UPDATE_PROJECTOR_MODE') {
         if (!gameState.projectorState) {
-          gameState.projectorState = { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12, isWinnerActive: false };
+          gameState.projectorState = { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12, isWinnerActive: false, boardPage: 1, isBoardPaused: false };
         }
         if (data.mode) gameState.projectorState.mode = data.mode;
         if (data.scene) gameState.projectorState.currentScene = data.scene;
         if (data.sceneDurationSeconds) gameState.projectorState.sceneDurationSeconds = Math.max(3, parseInt(data.sceneDurationSeconds, 10));
+        if (data.boardPage) gameState.projectorState.boardPage = Math.max(1, parseInt(data.boardPage, 10));
+        if (data.isBoardPaused !== undefined) gameState.projectorState.isBoardPaused = !!data.isBoardPaused;
         gameState.projectorState.updatedAt = new Date().toISOString();
 
         recordAuditEvent('PROJECTOR_MODE_CHANGED', { projectorState: gameState.projectorState });
         broadcastAll({ type: 'PROJECTOR_STATE_UPDATE', projectorState: gameState.projectorState });
         broadcastTick();
+        return;
+      }
+
+      if (data.action === 'HOST_SET_PROJECTOR_BOARD_PAGE') {
+        if (!gameState.projectorState) {
+          gameState.projectorState = { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12, isWinnerActive: false, boardPage: 1, isBoardPaused: false };
+        }
+        gameState.projectorState.boardPage = Math.max(1, parseInt(data.page, 10) || 1);
+        gameState.projectorState.updatedAt = new Date().toISOString();
+        broadcastAll({ type: 'PROJECTOR_STATE_UPDATE', projectorState: gameState.projectorState });
+        return;
+      }
+
+      if (data.action === 'HOST_TOGGLE_PROJECTOR_BOARD_PAUSE') {
+        if (!gameState.projectorState) {
+          gameState.projectorState = { mode: 'AUTO_CYCLE', currentScene: 'SCENE_MARKET_BOARD', sceneDurationSeconds: 12, isWinnerActive: false, boardPage: 1, isBoardPaused: false };
+        }
+        gameState.projectorState.isBoardPaused = data.isPaused !== undefined ? !!data.isPaused : !gameState.projectorState.isBoardPaused;
+        gameState.projectorState.updatedAt = new Date().toISOString();
+        broadcastAll({ type: 'PROJECTOR_STATE_UPDATE', projectorState: gameState.projectorState });
+        return;
       }
 
       // 5.2h Host Finalize Current Day Results
@@ -2887,6 +3002,69 @@ wss.on('connection', (ws) => {
         broadcastTick();
       }
 
+      // 5.21b Host Disaster Recovery Checkpoints (Save, List, Restore)
+      if (data.action === 'HOST_CREATE_CHECKPOINT') {
+        const result = createCheckpoint(data.label || 'manual');
+        ws.send(JSON.stringify({
+          type: 'CHECKPOINT_CREATED_ACK',
+          ok: !!result,
+          filename: result ? result.filename : null,
+          message: result ? `Checkpoint saved successfully (${result.filename})` : 'Failed to create checkpoint.'
+        }));
+        return;
+      }
+
+      if (data.action === 'HOST_LIST_CHECKPOINTS') {
+        const list = listCheckpoints();
+        ws.send(JSON.stringify({
+          type: 'CHECKPOINTS_LIST_ACK',
+          ok: true,
+          checkpoints: list
+        }));
+        return;
+      }
+
+      if (data.action === 'HOST_RESTORE_CHECKPOINT') {
+        let restored = false;
+        let sourceDesc = 'manual';
+        if (data.filename) {
+          const targetFile = path.join(CHECKPOINTS_DIR, path.basename(data.filename));
+          if (fs.existsSync(targetFile)) {
+            try {
+              const parsed = JSON.parse(fs.readFileSync(targetFile, 'utf-8'));
+              restored = restoreFromCheckpointData(parsed, data.filename);
+              sourceDesc = data.filename;
+            } catch (e) {
+              restored = false;
+            }
+          }
+        } else if (data.checkpointData) {
+          restored = restoreFromCheckpointData(data.checkpointData, 'uploaded_file');
+          sourceDesc = 'uploaded_file';
+        }
+
+        if (restored) {
+          broadcastAll({
+            type: 'MARKET_RESTORED',
+            message: `Competition state restored from checkpoint (${sourceDesc}). Market is paused — press Resume 3-2-1 to continue.`,
+            gameState
+          });
+          broadcastTick();
+          ws.send(JSON.stringify({
+            type: 'CHECKPOINT_RESTORED_ACK',
+            ok: true,
+            message: 'Game state restored cleanly! Market is paused ready for Host Resume.',
+            gameState
+          }));
+        } else {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Failed to restore checkpoint: Invalid or missing backup data.'
+          }));
+        }
+        return;
+      }
+
       // 5.22 Host Initialize & Launch New Championship from Setup Wizard
       if (data.action === 'HOST_INITIALIZE_NEW_CHAMPIONSHIP') {
         const config = data.config || {};
@@ -3248,27 +3426,25 @@ app.get('/api/backup', requireHostAuth, (req, res) => {
 app.post('/api/restore', requireHostAuth, (req, res) => {
   try {
     const backup = req.body;
-    if (!backup || !backup.gameState || !Array.isArray(backup.companies)) {
-      return res.status(400).json({ error: 'Invalid competition backup file format.' });
+    const ok = restoreFromCheckpointData(backup, 'http_restore');
+    if (ok) {
+      broadcastAll({
+        type: 'MARKET_RESTORED',
+        message: 'Competition state restored from backup file. Market is paused — press Resume 3-2-1 to continue.',
+        gameState
+      });
+      broadcastTick();
+      res.json({ success: true, message: 'Championship state restored successfully. Market is paused ready for Host Resume.' });
+    } else {
+      res.status(400).json({ error: 'Invalid competition backup file format.' });
     }
-
-    gameState = backup.gameState;
-    companies = backup.companies;
-    if (Array.isArray(backup.newsEvents)) newsEvents = backup.newsEvents;
-    if (backup.teams && typeof backup.teams === 'object') teams = backup.teams;
-    if (Array.isArray(backup.executedTrades)) {
-      executedTrades.length = 0;
-      backup.executedTrades.forEach((t) => executedTrades.push(t));
-      tradeSeqCounter = executedTrades.length;
-    }
-
-    saveUniverseToDisk();
-    recordAuditEvent('COMPETITION_RESTORED', { timestamp: backup.backup_timestamp });
-    broadcastTick();
-    res.json({ success: true, message: 'Championship state restored successfully.' });
   } catch (err) {
     res.status(500).json({ error: `Restore failed: ${err.message}` });
   }
+});
+
+app.get('/api/checkpoints', requireHostAuth, (req, res) => {
+  res.json({ checkpoints: listCheckpoints() });
 });
 
 // Boot Initial Scenario

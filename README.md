@@ -217,34 +217,40 @@ Navigate to the **📥 Reports & CSV Exports** tab in the Host Controller:
 
 ---
 
-## 14. BACKING UP AND RESTORING COMPETITION DATA
+## 14. DISASTER RECOVERY CHECKPOINTS & INSTANT GAME RESTORE
 
-- **Live Snapshot API**: Visit `http://localhost:3000/api/backup?token=<HOST_TOKEN>` to download a complete tournament state snapshot.
-- **Restoration API**: Send a `POST` request to `http://localhost:3000/api/restore` with the backup JSON to restore an interrupted tournament.
-- **File Backups**: All active universe changes save automatically to `data/universe_active.json`. All audit records save to `logs/`.
+The Trading Floor Championship 2026 features an institutional-grade disaster recovery and checkpoint system:
 
----
-
-## 15. TROUBLESHOOTING & COMMON ERRORS
-
-| Symptom | Cause | Solution |
-| :--- | :--- | :--- |
-| **"Node is not recognized"** | Node.js not installed | Download and install Node.js LTS from [nodejs.org](https://nodejs.org/). |
-| **Port 3000 in use (`EADDRINUSE`)** | Another instance running | Close other CMD windows or run `npx kill-port 3000`. |
-| **Student laptops cannot connect** | Windows Firewall or AP Isolation | Allow Node.js on Private Networks in Windows Firewall. If using campus Wi-Fi with client isolation, switch to a mobile phone hotspot. |
-| **Orders rejected / Market frozen** | Market is paused | Click **▶ Resume (3-2-1)** in the Host Control Panel. |
-| **Stock shows HALTED** | 20% Circuit Breaker hit | In **📈 Stock Engine & Halts**, click **Release Halt** next to the stock. |
-| **No sound playing** | Browser autoplay policy | Click anywhere on the browser window once to allow Web Audio playback. |
-| **Student closed browser tab** | Accidental closure | Reopen the browser and visit `http://<HOST_IP>:3000/`. Session token restores portfolio automatically. |
+- **Automatic Checkpoints**: Every 120 seconds during live trading, the server saves an automated full-state snapshot (`checkpoint_DayX_..._auto.json`) in `data/checkpoints/`.
+- **Manual Instant Checkpoint**: In the Host panel under **`🖥️ 4. Stage & Results`**, click **`💾 Save Instant Checkpoint Now`** to create an immediate recovery point.
+- **One-Click Instant Restore**: Find any checkpoint in the table and click **`🔄 Restore`**. The server immediately loads the exact portfolio cash, holdings, trades, and stock prices.
+- **Upload Backup File**: Click **`📂 Upload Backup File`** to load any `.json` backup file directly from your pen drive.
+- **Safe Continuity Invariant**: Restoring keeps all student, projector, and sound windows connected (zero re-logins needed). The market safely restores in a **`PAUSED`** state so the host can click **`▶ Resume 3-2-1`** when ready!
 
 ---
 
-## 16. HOW TO RESET A PRACTICE ROUND SAFELY
+## 15. JIOFIBER OFFLINE ROUTER EVENT CONFIGURATION
 
-To reset after a practice round:
-1. In the Host Controller, click **🏛️ Market Builder** -> **↺ Reset to Baseline**.
-2. Click **👥 Teams Setup** -> check **"Reset existing cash balances to Starting Cash"** -> click **Apply & Save Roster**.
-3. All team cash balances return to ₹5,00,000, holdings clear to 0, and the trade counter resets cleanly.
+Using a standalone JioFiber router as an offline local Wi-Fi hub is the most reliable setup for college auditoriums:
+
+1. **Factory Reset**: Hold the back reset pin for 15 seconds until lights blink.
+2. **Admin Panel**: Connect via LAN/Wi-Fi to `http://192.168.29.1` (Username `admin`, Password `Jiocentrum`).
+3. **Wi-Fi SSID & Password**: Name it `TheTradingFloor` (WPA2-PSK: `tradingfloor2026`). Keep 5 GHz enabled for zero radio interference.
+4. **MANDATORY: Disable AP Isolation**: Ensure **AP Isolation / Client Isolation / Station Separation** is **DISABLED** so student laptops can connect to the host IP.
+5. **Max Clients**: In DHCP settings, set Max Clients to **64** and lease time to 1 day (`86400`s).
+6. **"No Internet" Prompt**: Because there is no yellow fiber cable plugged in at the college, laptops and smartphones will display *"Wi-Fi has no internet connection. Stay connected?"* — All teams **MUST click "Yes / Stay Connected"**.
+
+---
+
+## 16. HOW TO RESET A CHAMPIONSHIP SAFELY
+
+To reset after practice rounds or start a fresh tournament:
+1. In the Host Controller, go to **`🖥️ 4. Stage & Results`** -> scroll to **Safe Championship Reset Card**.
+2. Type the confirmation phrase: **`RESET CHAMPIONSHIP`** (or `RESET`).
+3. Click **💥 Reset Entire Championship**.
+4. The server cleanly resets to Day 1 Standby, clears active trades and temporary timers, and sends a full-screen notification to all connected trader screens:
+   *"The host has reset the competition. You have been logged out. Please wait for the host to set up a new event."*
+5. All historical audit logs and finalized CSV reports in `logs/` are permanently preserved.
 
 ---
 
@@ -252,22 +258,24 @@ To reset after a practice round:
 
 All comprehensive system specifications are permanently version-controlled in the repository:
 
+- [`AGENTS.md`](AGENTS.md) — Authoritative instructions for future AI coding agents.
+- [`CHANGELOG.md`](CHANGELOG.md) — Chronological record of major releases, bug fixes, and features.
 - [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) — Complete product vision and feature requirements.
 - [`docs/USER_FLOWS.md`](docs/USER_FLOWS.md) — Step-by-step user journeys for Host, Traders, and Projector.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — Technical architecture, WebSocket contracts, and audio synthesizer.
+- [`docs/EVENT_LIFECYCLE.md`](docs/EVENT_LIFECYCLE.md) — Complete state machine, allowed transitions, and timers.
 - [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md) — Order execution, valuation, fees, circuit breakers, and scoring.
-- [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — Warm ivory luxury palette, typography, and UI tokens.
-- [`docs/SHARE_MANAGEMENT.md`](docs/SHARE_MANAGEMENT.md) — Stock universe schema, presets, and price randomization.
-- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — Complete TypeScript schemas for all entities.
+- [`docs/NEWS_ENGINE.md`](docs/NEWS_ENGINE.md) — Automated news plans, smoothstep engine, and 60s privacy countdown.
+- [`docs/REAL_COMPANY_DATA.md`](docs/REAL_COMPANY_DATA.md) — 20 verified Indian listed NSE public companies catalogue.
+- [`docs/MULTI_DAY_CHAMPIONSHIP.md`](docs/MULTI_DAY_CHAMPIONSHIP.md) — Multi-day event transitions and inter-day continuity.
+- [`docs/DAILY_LEADERBOARD.md`](docs/DAILY_LEADERBOARD.md) — Daily vs cumulative championship standings formulas.
+- [`docs/PROJECTOR_CYCLE.md`](docs/PROJECTOR_CYCLE.md) — Zero-scroll automatic stock board pagination, top movers, and winner reveal.
+- [`docs/RESET_AND_RECOVERY.md`](docs/RESET_AND_RECOVERY.md) — Reset vs New Event vs Server Restart vs Checkpoint Restore.
+- [`docs/MARKET_INDICES.md`](docs/MARKET_INDICES.md) — NIFTY_TF20 and sector benchmark index methodologies.
 - [`docs/SECURITY.md`](docs/SECURITY.md) — LAN trust model, role-based access control, and sanitization.
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — Runtime dependencies audit and zero-bloat philosophy.
-- [`docs/TOOLS.md`](docs/TOOLS.md) — Software prerequisites, launchers, and Git workflow.
-- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) — 24-scenario test matrix and acceptance criteria.
-- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — Common operational issues and fixes.
-- [`docs/BACKUP_AND_RESTORE.md`](docs/BACKUP_AND_RESTORE.md) — Complete backup and restoration procedures.
-- [`docs/SHARE_CONFIGURATION_GUIDE.md`](docs/SHARE_CONFIGURATION_GUIDE.md) — Practical guide for designing tournament rounds.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — Architectural decision records (ADRs).
+- [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md) — 48-scenario automated master test suite and manual QA matrix.
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — Common operational issues, JioFiber tips, and fixes.
 - [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) — Verified boundaries and workarounds.
-- [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) — Mathematical drift models and financial references.
-- [`tasks/CURRENT_STATUS.md`](tasks/CURRENT_STATUS.md) — Verified implementation status.
+- [`tasks/CURRENT_STATUS.md`](tasks/CURRENT_STATUS.md) — Verified implementation status and test logs.
 - [`tasks/NEXT_SESSION.md`](tasks/NEXT_SESSION.md) — Future development roadmap and tasks.

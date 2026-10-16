@@ -1,8 +1,8 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
 **Date**: 2026-10-16  
-**Version**: 2.0.0 (Master Upgrade: 4-Hub Host Workflow, One Action Rule, Automatic News Plan, Smoothstep Engine, 60s News Privacy, Safe Reset)  
-**Status**: STABLE, FULLY IMPLEMENTED & VERIFIED (47/47 Master Tests + Upgrade Suite Passing)  
+**Version**: 2.1.0 (Master Upgrade: 4-Hub Host Workflow, Automatic News Plan, Smoothstep Engine, 60s News Privacy, Safe Reset, Zero-Scroll Projector Pagination, Top Mover Spotlight Bar, Disaster Recovery Checkpoints)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (48/48 Master Tests + 100% Specialized Suites Passing)  
 
 ---
 
@@ -11,7 +11,7 @@
   1. `🏠 1. Home`: Status overview, connection monitor (Traders, Projector, Sound), Readiness Checklist, and single dynamic Next Step guidance.
   2. `⚙️ 2. Event`: 6-step guided setup wizard (`Details -> Teams -> Companies -> Schedule -> News Plan -> Review & Lock`), real company selection, auto-generated news plan, automatic readiness validation, and single safe `Unlock Configuration` control.
   3. `📈 3. Live Market`: Canonical single Market Operations Bar (`▶ Resume 3-2-1`, `⏸ Pause`, `🕶️ Blackout`, `🏁 Conclude Session`), real-time stock boards, News Control Centre with 60-second privacy reveal, and live trade stream.
-  4. `🖥️ 4. Stage & Results`: Auditorium Projector Remote (Auto-Cycle / Fixed Screen), Venue Sound Console controls, Leaderboard results, audited CSV/JSON reports, and Safe Championship Reset card.
+  4. `🖥️ 4. Stage & Results`: Auditorium Projector Remote (Auto-Cycle / Fixed Screen / Board Page Controls), Venue Sound Console controls, Disaster Recovery & Checkpoint Matrix, Leaderboard results, audited CSV/JSON reports, and Safe Championship Reset card.
 - [x] **Zero Action Duplication**: Consolidated floating/overview pause and resume buttons into one canonical Live Market bar. Removed duplicate news editors, duplicate company pickers, and redundant launchers.
 
 ---
@@ -56,13 +56,33 @@
 
 ---
 
-## 6. Canvas Price Charts with News Timeline Markers
-- [x] **Published News Timeline Markers**: Interactive `⚡ NEWS` badge plotted directly along the chart time axis at the exact publication second.
-- [x] **Visual Clarity**: Tooltips display price and timestamp; clean axes with zero page redraw flicker.
+## 6. Projector Redesign: Zero-Scroll Pagination & Spotlight Bar
+- [x] **Zero-Scroll Stock Board Pagination**:
+  - Automatically partitions the active stock universe into readable 8-card pages ($4 \times 2$ responsive grid) with `overflow: hidden`.
+  - Automatically rotates to the next page every 8 seconds with smooth CSS transitions.
+  - In-place DOM and sparkline updates ensure price ticks never restart rotation timers or cause canvas flickering.
+- [x] **Permanently Visible Spotlight Bar**:
+  - **Top Percentage Gainer**: Displays ticker, current price, and percentage change. Deterministic alphabetical tie-break prevents jitter.
+  - **Top Percentage Loser**: Displays ticker, current price, and percentage change.
+  - **Market Breadth**: Live counter of Advancing, Declining, and Unchanged stocks across the universe.
+  - **Pagination Controls**: Displays "Page X of Y", visual dot indicators, and Host remote controls (`◀ Prev`, `⏸ Pause/Resume`, `▶ Next`).
 
 ---
 
-## 7. Safe Championship Reset with Mandatory Client Logout
+## 7. Disaster Recovery & Checkpoint Engine
+- [x] **Periodic & Manual Snapshots**:
+  - Auto-checkpoints every 120 seconds during live market sessions saved to `data/checkpoints/`.
+  - Host can capture instant named checkpoints via `HOST_CREATE_CHECKPOINT`.
+- [x] **One-Click & File Upload Restore**:
+  - Host can inspect and restore any previous checkpoint directly from the Stage & Results hub.
+  - Supports uploading exported JSON backup files from an external USB drive.
+- [x] **Safe Restored State Invariant**:
+  - Upon restore, market status is forced to `PAUSED` waiting for Host Resume 3-2-1.
+  - All connected trader and projector terminals receive `MARKET_RESTORED` notice and refresh their portfolios cleanly.
+
+---
+
+## 8. Safe Championship Reset with Mandatory Client Logout
 - [x] **Strict Confirmation Phrase**: Requires explicit `"RESET CHAMPIONSHIP"` (or `'RESET'`) input, rejecting any mismatched confirmation.
 - [x] **Mandatory Full-Screen Client Notification**:
   *"The host has reset the competition. You have been logged out. Please wait for the host to set up a new event."*
@@ -70,7 +90,10 @@
 
 ---
 
-## 8. Verification & Test Suite Status
-- [x] `test_master_suite.js`: **47/47 PASSED (0 failed)**
+## 9. Verification & Test Suite Status
+- [x] `test_master_suite.js`: **48/48 PASSED (0 failed)**
+- [x] `test_checkpoint_disaster_recovery.js`: **100% PASSED**
+- [x] `test_projector_pagination.js`: **100% PASSED**
 - [x] `test_upgrade_master.js`: **ALL STAGES PASSED (A, B, C, D)**
-- [x] Browser visual verification completed on all 4 hubs and privacy countdown.
+- [x] `test_load_stress.js`: **160/160 orders in 3.05s (19.09ms avg latency)**
+- [x] `test_2hour_heavy_load.js`: **7,200s endurance test (480 trades, 78 KB audit, 8.7 MB heap)**

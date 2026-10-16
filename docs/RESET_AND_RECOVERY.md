@@ -1,17 +1,25 @@
 # RESET, RESTART & RECOVERY PROTOCOLS
 
 ## 1. Separation of Concerns
-In live event software, **Event Reset**, **New Event Creation**, and **Server Restart** are distinct operations with different side effects and safety guarantees. They must never be conflated.
+In live tournament software, **Event Reset**, **New Event Creation**, **Server Crash Restart**, and **Disaster Recovery Checkpoint Restore** are four distinct operations with different side effects and safety guarantees. They must never be conflated.
+
+| Operation | Trigger | Scope | Market State After | Data Preserved |
+| :--- | :--- | :--- | :--- | :--- |
+| **Reset Event** | Host typed `"RESET CHAMPIONSHIP"` | Clears active competition | `STANDBY` (Day 1) | Historical CSVs & audit logs in `logs/` |
+| **New Event** | Setup Wizard | Initializes fresh tournament | `STANDBY` (Day 1) | Archives previous tournament |
+| **Server Restart** | Server process reboots / OS reboot | Recovers `live_game_state.json` | `PAUSED` | 100% of live cash, holdings, trades |
+| **Restore Checkpoint** | Host clicks `🔄 Restore` on checkpoint | Reverts to selected checkpoint | `PAUSED` | Complete snapshot at that second |
 
 ---
 
-## 2. Operation A: Reset Current Event (`HOST_FULL_RESET`)
+## 2. Operation A: Reset Current Event (`HOST_RESET_ENTIRE_CHAMPIONSHIP`)
 ### Purpose
 Wipes the active championship state and returns the Host Control Centre to a blank, unconfigured state (Draft Setup Mode).
 
 ### Safety Guardrail
-- Requires explicit confirmation with an exact case-sensitive confirmation phrase: `"RESET CHAMPIONSHIP"`.
-- If the phrase is omitted or incorrect, the server strictly rejects the request and logs a security audit entry.
+- Requires explicit confirmation with an exact confirmation phrase: `"RESET CHAMPIONSHIP"` (or `'RESET'`).
+- If the phrase is omitted or incorrect, the server strictly rejects the request with an explanatory message:
+  `"Reset rejected: You must type 'RESET CHAMPIONSHIP' exactly to confirm event reset."`
 
 ### Actions Taken on Server Confirmation
 1. Cancels all active timers, resume countdowns, and scheduled news timers.
@@ -26,7 +34,7 @@ Wipes the active championship state and returns the Host Control Centre to a bla
 
 ### Preserved Assets (Never Wiped)
 - User authentication accounts (`host`, `projector`, `sound`, `team1..16`).
-- Master company catalogue (`data/universe_baseline.json`).
+- Master company catalogue (`data/universe_active.json`).
 - Pre-existing event export CSV files and audit logs in `logs/`.
 - Local UI styles, fonts, and assets.
 
@@ -46,10 +54,10 @@ Initializes a new tournament without destroying historical records.
 ### Purpose
 If the Node.js server crashes, reboots, or is restarted due to OS updates or power interruption during an active competition, it must **never** wipe live competition progress.
 
-### Recovery Invariants (`data/state_backup.json`)
-Every state transition (order execution, news shock, pause/resume, day transition) flushes an atomic state backup to `data/state_backup.json`.
+### Recovery Invariants (`data/live_game_state.json`)
+Every state transition (order execution, news shock, pause/resume, day transition) flushes an atomic state backup to `data/live_game_state.json`.
 
-On startup, `server.js` checks for `data/state_backup.json`:
+On startup, `server.js` checks for `data/live_game_state.json`:
 1. **State Restoration**: Restores event title, day number, elapsed seconds, current stock prices, circuit breaker states, all team cash balances, stock holdings, and trade ledger.
 2. **Safe Market State**: Automatically opens the market in `PAUSED` state with a terminal message:
    ```
@@ -61,3 +69,21 @@ On startup, `server.js` checks for `data/state_backup.json`:
    ```
 3. **No Duplicate Execution**: Executed trades are not re-executed; previously applied scheduled news items are marked as processed and are not re-applied.
 4. **Resumed Floor**: Connected clients re-establish WebSocket connections, receive the restored snapshot, and await host resume.
+
+---
+
+## 5. Operation D: Disaster Recovery Checkpoints & Instant Game Restore
+### Purpose
+Allows the host to take instant point-in-time snapshots and restore from any saved checkpoint or external backup file without losing connected client sessions.
+
+### Storage & Nomenclature
+Checkpoints are saved in `data/checkpoints/` as standalone JSON files:
+`checkpoint_Day{D}_{Sec}s_{label}_{timestamp}.json`
+
+### Capabilities
+1. **Auto-Checkpoints**: The server automatically captures a full-state checkpoint every **120 seconds** during active trading (`label: 'auto'`).
+2. **Manual Checkpoints**: Host clicks **`💾 Save Instant Checkpoint Now`** in `Stage & Results` at any critical juncture.
+3. **One-Click Restore**: Host clicks **`🔄 Restore`** next to any checkpoint in the table.
+4. **File Upload Restore**: Host can upload any previous `.json` backup file from a USB drive via **`📂 Upload Backup File`**.
+5. **Zero Client Disconnection**: All trader terminals, projector displays, and sound consoles remain open. Upon restore, they receive a `MARKET_RESTORED` broadcast and instantly update their portfolios and prices without needing to log in again.
+6. **Safe Paused Invariant**: The market always restores in a safe `PAUSED` state. The host clicks **`▶ Resume 3-2-1`** to continue the tournament with complete continuity.

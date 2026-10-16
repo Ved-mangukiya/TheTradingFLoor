@@ -4,6 +4,47 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
 
 ---
 
+## [2.1.0] — 2026-10-16
+### Added
+- **Disaster Recovery Checkpoints & Instant Game Restore**:
+  - Full-state snapshots saved in `data/checkpoints/` (`checkpoint_Day{D}_{Sec}s_{label}_{timestamp}.json`).
+  - Auto-checkpoints captured every 120 seconds during live trading.
+  - Dedicated **Disaster Recovery & Checkpoints Card** in Host `Stage & Results`.
+  - Instant manual backup button (`💾 Save Instant Checkpoint Now`) and file upload restore (`📂 Upload Backup File`).
+  - Zero-disconnection client restore: Connected terminals remain active, receive `MARKET_RESTORED`, and update instantly without re-logging in.
+  - Invariant enforcement: Game always restores in a safe `PAUSED` state waiting for Host `▶ Resume 3-2-1`.
+- **Projector Zero-Scroll Automatic Stock Board Pagination**:
+  - Automatically slices large stock universes into readable pages (default 8 stocks per page, $4 \times 2$ grid).
+  - Rotates every 8 seconds with zero vertical scrolling (`overflow: hidden;`).
+  - In-place price updates: WebSocket ticks update visible cards and Bezier sparklines without tearing down DOM or resetting timers.
+  - Remote Host control via WebSockets (`HOST_SET_PROJECTOR_BOARD_PAGE`, `HOST_TOGGLE_PROJECTOR_BOARD_PAUSE`).
+- **Projector Persistent Spotlight (Top Gainer & Top Loser)**:
+  - Permanent spotlight bar positioned above the stock grid, visible across all page flips.
+  - Evaluates maximum and minimum percentage changes across all enabled companies in real-time.
+  - Deterministic tie-breaking: Alphabetical sorting by ticker symbol prevents flickering.
+  - Live Market Breadth indicator displaying advancing vs declining counts.
+- **Self-Contained Portable USB Package**:
+  - Embedded portable Node.js runtime (`tools/node.exe`, Node v24.14.0).
+  - `Pack_Portable_USB_Zip.bat` creates a ready-to-run 35 MB ZIP for zero-dependency college PC execution.
+- **Automated Test Matrix Expansion**:
+  - Added `test_projector_pagination.js` (Top gainer/loser math, tie-breaks, 20-stock pagination, remote controls).
+  - Added `test_checkpoint_disaster_recovery.js` (full save, list, mutate, restore cycle).
+  - Added `test_2hour_heavy_load.js` (7,200s endurance test with 480 trades, 78 KB audit log).
+  - Expanded `test_master_suite.js` to 48 passing tests (100% pass rate).
+
+---
+
+## [2.0.0] — 2026-10-16
+### Added
+- **4 Canonical Host Navigation Hubs**: Home, Event Setup, Live Market, and Stage & Results.
+- **Automatic Configuration Locking**: Locks tournament settings on valid review; prevents mid-competition tampering.
+- **Automatic News Plan Generation**: Host selects companies, system generates 12 balanced, multi-day news items with neutral headlines.
+- **60-Second Confidentiality Reveal Window**: Private price impacts masked by default; 60s countdown banner on explicit host reveal.
+- **Continuous Smoothstep Price Engine**: $s(u) = 3u^2 - 2u^3$ continuous over elapsed milliseconds.
+- **Safe Championship Reset**: Strict confirmation phrase (`RESET CHAMPIONSHIP`) with full-screen trader logout overlay.
+
+---
+
 ## [1.2.0] — 2026-10-15
 ### Added
 - **Market Builder & Share Universe Manager**: Dedicated host tab to curate active tradeable stocks without code editing.

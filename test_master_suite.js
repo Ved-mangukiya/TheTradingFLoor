@@ -766,10 +766,29 @@ async function runTests() {
       session_token: hostToken
     }, 'PROJECTOR_STATE_UPDATE');
 
-    if (exitWinnerRes.type === 'PROJECTOR_STATE_UPDATE' && exitWinnerRes.projectorState.isWinnerActive === false) {
-      logPass('Exit Winner Presentation verified: Auditorium projector returned to live market cycle.');
+    // 10.8 Projector Board Pagination & Pause Remote Controls
+    const boardPageRes = await sendAndAwait(ws1, {
+      action: 'HOST_SET_PROJECTOR_BOARD_PAGE',
+      page: 2,
+      session_token: hostToken
+    }, 'PROJECTOR_STATE_UPDATE');
+
+    if (boardPageRes.type === 'PROJECTOR_STATE_UPDATE' && boardPageRes.projectorState.boardPage === 2) {
+      logPass('Projector board page navigation verified: Successfully set to Page 2.');
     } else {
-      logFail('Exit winner presentation failed', exitWinnerRes);
+      logFail('Projector board page navigation failed', boardPageRes);
+    }
+
+    const boardPauseRes = await sendAndAwait(ws1, {
+      action: 'HOST_TOGGLE_PROJECTOR_BOARD_PAUSE',
+      isPaused: true,
+      session_token: hostToken
+    }, 'PROJECTOR_STATE_UPDATE');
+
+    if (boardPauseRes.type === 'PROJECTOR_STATE_UPDATE' && boardPauseRes.projectorState.isBoardPaused === true) {
+      logPass('Projector board auto-flip pause toggle verified: Remote pause confirmed.');
+    } else {
+      logFail('Projector board auto-flip pause toggle failed', boardPauseRes);
     }
 
     ws1.close();

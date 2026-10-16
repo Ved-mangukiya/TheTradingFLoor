@@ -48,8 +48,21 @@
 
 ---
 
-## 3. COMMON PITFALLS & GOTCHAS
+## 3. CORE ARCHITECTURAL INVARIANTS
+
+1. **One Business Action = One Entry Point**: Never create duplicate buttons across tabs for the same action (e.g., pausing, resuming, resetting). Market operations reside canonically on the Live Market Operations Bar.
+2. **Authoritative Server Math**: All prices, orders, cash deductions, fee calculations, holdings, circuit breaker halts, and rankings are calculated and enforced strictly on the Node.js server. The client is a reactive view only.
+3. **Disaster Recovery & Safe Checkpoint Restoring**: State restorations (crash recovery or manual checkpoint restore) MUST ALWAYS initialize `gameState.isPaused = true` so the market waits safely for the Host to hit `▶ Resume 3-2-1`.
+4. **Projector Zero-Scroll Pagination**: The stock board divides into readable pages (default 8 per page, $4 \times 2$ grid) rotating every 8s. Cards on the active page update in-place without resetting rotation timers. Top Gainer and Top Loser spotlight cards evaluate across all active companies and stay permanently visible.
+5. **News Secrecy & 60-Second Reveal**: News impacts are masked by default (`[🔒 Private Price Impact Details Hidden]`). When revealed by the host, they automatically hide after 60s or upon tab navigation. Trader and projector terminals NEVER receive private impact percentages.
+6. **Rate Limiting & Anti-Spam**: A 200ms debounce per team session prevents double-click spam.
+7. **Formula Injection Protection**: In all CSV exports, any value starting with `=`, `+`, `-`, or `@` is prepended with `'` to prevent spreadsheet formula execution.
+
+---
+
+## 4. COMMON PITFALLS & GOTCHAS
 
 - **Order Debounce Timing in Tests**: In automated WebSocket testing scripts, always add an artificial delay (`await new Promise(r => setTimeout(r, 250))`) between consecutive orders from the same session to respect the 200ms server debounce.
 - **Enabled Stocks Filtering**: Traders and projectors only receive stocks where `isEnabled !== false`. Hosts receive `allCompaniesUniverse` so they can manage disabled/excluded stocks.
-- **Batch Files & Non-Technical Users**: The primary users are college professors, organizers, and student coordinators. Launchers (`Launch_The_Trading_Floor.bat`) must provide clear, human-readable terminal output and zero-config browser startup.
+- **Projector DOM Stability**: Do NOT rebuild projector card DOM nodes on every tick. Rebuilding destroys canvas contexts and causes visual flickering. Only rebuild when the page flips or when active tickers change.
+- **Batch Files & Non-Technical Users**: The primary users are college professors, organizers, and student coordinators. Launchers (`Launch_The_Trading_Floor.bat`) must provide clear, human-readable terminal output, auto-detect `%~dp0tools\node.exe`, and support zero-config startup.
