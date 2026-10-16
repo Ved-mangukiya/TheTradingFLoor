@@ -443,26 +443,233 @@ function gaussianRandom() {
 // ==========================================
 // 4. NEWS & CIRCUIT BREAKER HANDLERS
 // ==========================================
+
+// Smoothstep transition model: P(t) = P0 + (PT - P0) * s(u) where s(u) = 3u^2 - 2u^3
+function applyStockTransition(stock, shockPct, durationSec) {
+  if (!stock || !stock.isEnabled || stock.isHalted) return;
+  // Always begin smoothly from the current official price (never snap):
+  const startPrice = stock.currentPrice;
+  const targetPrice = +(startPrice * (1 + shockPct / 100)).toFixed(2);
+  const durSec = Math.max(10, durationSec || 45);
+  stock.activeTransition = {
+    startPrice,
+    targetPrice,
+    startTimeMs: Date.now(),
+    durationMs: durSec * 1000
+  };
+}
+
+// Automatic News Template Library (neutral headlines in simple English, realistic sector impacts)
+const NEWS_TEMPLATE_LIBRARY = [
+  {
+    template_id: 'AUTO_PLI_POLICY',
+    sector: 'Automobile',
+    type: 'SECTOR',
+    headline: 'Ministry of Heavy Industries Outlines Updated Production and Component Sourcing Guidelines',
+    simple_explanation: 'Regulatory notification revises localization targets and battery sourcing criteria for domestic vehicle manufacturers.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 11.5 : (idx === 1 ? 7.5 : -3.5);
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'STEEL_IMPORT_STANDARDS',
+    sector: 'Metals',
+    type: 'SECTOR',
+    headline: 'Directorate General of Foreign Trade Issues Operational Guidelines for Industrial Steel Shipments',
+    simple_explanation: 'Notification establishes standardized quality testing protocols and tariff updates on imported industrial coils.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 12.0 : (idx === 1 ? 8.5 : -4.0);
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'IT_ENTERPRISE_CLOUD',
+    sector: 'Information Technology',
+    type: 'SECTOR',
+    headline: 'North American Enterprise Cloud Modernization Budgets Expand in Q3 Spending Survey',
+    simple_explanation: 'Quarterly industry benchmark index highlights resilient offshore IT contract renewals across multinational banking and retail clients.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx % 2 === 0 ? 8.5 : 6.2;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'BANKING_REPO_RATE',
+    sector: 'Banking & Financial Services',
+    type: 'MACRO',
+    headline: 'Reserve Bank of India Monetary Policy Committee Announces Liquidity Operations Framework',
+    simple_explanation: 'Central banking committee calibrates domestic liquidity facilities following latest consumer price stability benchmarks.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 6.5 : (idx === 1 ? 8.0 : 7.2);
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 50 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'ENERGY_GRID_EXPANSION',
+    sector: 'Energy & Power',
+    type: 'SECTOR',
+    headline: 'Central Electricity Authority Finalizes Green Energy Transmission Corridor Phase II',
+    simple_explanation: 'National transmission roadmap clears capital expenditure allocations for inter-state renewable energy feeding corridors.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 7.8 : 5.4;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'PHARMA_REGULATORY_CLEARANCE',
+    sector: 'Pharmaceuticals & Healthcare',
+    type: 'SECTOR',
+    headline: 'Global Health Regulators Conclude Multi-Facility Good Manufacturing Practice Audits',
+    simple_explanation: 'Inspection reports for domestic active pharmaceutical ingredient sites concluded with standard voluntary action observations.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 10.5 : 4.8;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 40 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'FMCG_RURAL_DEMAND',
+    sector: 'Consumer & Retail',
+    type: 'SECTOR',
+    headline: 'Agricultural Harvest Data Indicates Steady Consumer Household Spending in Rural Markets',
+    simple_explanation: 'Seasonal procurement indices point to steady packaged goods replenishment across semi-urban distribution chains.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 6.8 : -2.5;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 35 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'INFRA_PORT_CORRIDOR',
+    sector: 'Infrastructure & Engineering',
+    type: 'SECTOR',
+    headline: 'National Highway and Dedicated Freight Logistics Network Crosses Operational Milestone',
+    simple_explanation: 'Cabinet committee reviews multimodal logistics transit times along major industrial expressways and port terminals.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 9.2 : 5.0;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'TELECOM_SPECTRUM_CLUSTERS',
+    sector: 'Telecommunications',
+    type: 'SECTOR',
+    headline: 'Department of Telecommunications Approves Spectrum Band Harmonization in Metro Circles',
+    simple_explanation: 'Regulatory order consolidates contiguous mid-band carrier frequencies across urban clusters to optimize data capacity.',
+    generator: (sectorStocks) => {
+      const impacts = {};
+      sectorStocks.forEach((s, idx) => {
+        const delta = idx === 0 ? 9.5 : 4.5;
+        impacts[s.ticker] = { delta_pct: delta, duration_sec: 45 };
+      });
+      return impacts;
+    }
+  },
+  {
+    template_id: 'MACRO_INDUSTRIAL_OUTPUT',
+    sector: 'MACRO',
+    type: 'MACRO',
+    headline: 'Ministry of Statistics Reports Manufacturing and Mining Output Indices for Past Quarter',
+    simple_explanation: 'Broad-based capital goods and core sector index figures demonstrate sustained domestic industrial utilization.',
+    generator: () => ({
+      GLOBAL_WEIGHTED: { base_pct: 4.5, duration_sec: 50 }
+    })
+  }
+];
+
+// Generates a balanced, deterministic multi-day news plan strictly for the selected companies
+function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds = 1800) {
+  let pool = [];
+  if (Array.isArray(selectedTickers) && selectedTickers.length > 0) {
+    pool = companies.filter((c) => selectedTickers.includes(c.ticker));
+  }
+  if (pool.length === 0) {
+    pool = companies.filter((c) => c.isEnabled !== false);
+  }
+  if (pool.length === 0) {
+    pool = companies.slice(0, Math.min(10, companies.length));
+  }
+
+  const generatedEvents = [];
+  const timeFractions = [0.18, 0.40, 0.65, 0.85];
+
+  for (let d = 1; d <= totalDays; d++) {
+    timeFractions.forEach((frac, fIdx) => {
+      const triggerSec = Math.round(dayDurationSeconds * frac);
+      const templateIdx = ((d - 1) * timeFractions.length + fIdx) % NEWS_TEMPLATE_LIBRARY.length;
+      const tpl = NEWS_TEMPLATE_LIBRARY[templateIdx];
+
+      // Filter pool stocks belonging to template sector
+      const sectorStocks = pool.filter((s) => s.sector && s.sector.toLowerCase().includes(tpl.sector.toLowerCase()));
+      const targetStocks = sectorStocks.length > 0 ? sectorStocks : pool.slice(0, Math.min(3, pool.length));
+      const rawImpacts = tpl.generator(targetStocks);
+
+      // Strictly sanitize impacts so only stocks present in the pool can be affected
+      const impacts = {};
+      Object.keys(rawImpacts).forEach((ticker) => {
+        if (ticker === 'GLOBAL_WEIGHTED' || pool.some((s) => s.ticker === ticker)) {
+          impacts[ticker] = rawImpacts[ticker];
+        }
+      });
+
+      generatedEvents.push({
+        event_id: `EVT_D${d}_0${fIdx + 1}`,
+        day: d,
+        trigger_second: triggerSec,
+        type: tpl.type,
+        headline: tpl.headline,
+        simple_explanation: tpl.simple_explanation,
+        impacts
+      });
+    });
+  }
+
+  return generatedEvents;
+}
+
 function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   eventObj.triggered = true;
   const impacts = eventObj.impacts || {};
-  const tickMs = gameState.tickIntervalMs;
 
   if (impacts.GLOBAL_WEIGHTED) {
     const basePct = impacts.GLOBAL_WEIGHTED.base_pct;
     const durationSec = impacts.GLOBAL_WEIGHTED.duration_sec || 60;
-    const steps = Math.max(1, Math.round((durationSec * 1000) / tickMs));
 
     companies.forEach((stock) => {
       if (!stock.isEnabled || stock.isHalted) return;
-      const shockPct = basePct * stock.beta;
-      const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
-      const targetPrice = +(currentRef * (1 + shockPct / 100)).toFixed(2);
-      stock.activeTransition = {
-        targetPrice,
-        stepsRemaining: steps,
-        stepDelta: (targetPrice - stock.currentPrice) / steps
-      };
+      const shockPct = basePct * (stock.beta || 1.0);
+      applyStockTransition(stock, shockPct, durationSec);
     });
   } else {
     // 1. Process specific company impacts
@@ -471,14 +678,7 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
       const stock = companies.find((s) => s.ticker === ticker);
       if (!stock || !stock.isEnabled || stock.isHalted) return;
       const { delta_pct, duration_sec } = impacts[ticker];
-      const steps = Math.max(1, Math.round(((duration_sec || 45) * 1000) / tickMs));
-      const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
-      const targetPrice = +(currentRef * (1 + delta_pct / 100)).toFixed(2);
-      stock.activeTransition = {
-        targetPrice,
-        stepsRemaining: steps,
-        stepDelta: (targetPrice - stock.currentPrice) / steps
-      };
+      applyStockTransition(stock, delta_pct, duration_sec);
     });
 
     // 2. Process sector-wide impacts (e.g., SECTOR_AUTO, SECTOR_TECH, SECTOR_BANKING)
@@ -486,18 +686,11 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
       if (!key.startsWith('SECTOR_')) return;
       const targetSector = key.replace('SECTOR_', '').toLowerCase();
       const { delta_pct, duration_sec } = impacts[key];
-      const steps = Math.max(1, Math.round(((duration_sec || 45) * 1000) / tickMs));
       companies.forEach((stock) => {
         if (!stock.isEnabled || stock.isHalted) return;
         if (stock.sector && stock.sector.toLowerCase().includes(targetSector)) {
           const sectorShock = delta_pct * (stock.beta || 1.0);
-          const currentRef = stock.activeTransition ? stock.activeTransition.targetPrice : stock.currentPrice;
-          const targetPrice = +(currentRef * (1 + sectorShock / 100)).toFixed(2);
-          stock.activeTransition = {
-            targetPrice,
-            stepsRemaining: steps,
-            stepDelta: (targetPrice - stock.currentPrice) / steps
-          };
+          applyStockTransition(stock, sectorShock, duration_sec);
         }
       });
     });
@@ -649,21 +842,26 @@ function restartEngineInterval() {
         return;
       }
 
-      // 1. Process active news transition
-      if (stock.activeTransition && stock.activeTransition.stepsRemaining > 0) {
-        stock.activeTransition.stepDelta = (stock.activeTransition.targetPrice - stock.currentPrice) / stock.activeTransition.stepsRemaining;
-        stock.currentPrice += stock.activeTransition.stepDelta;
-        stock.activeTransition.stepsRemaining--;
-        if (stock.activeTransition.stepsRemaining <= 0) {
+      // 1. Process active news transition using mathematically bounded smoothstep
+      // Formula: u = clamp((t - t0) / T, 0, 1), s(u) = 3*u^2 - 2*u^3, P(t) = P0 + (PT - P0) * s(u)
+      if (stock.activeTransition) {
+        const elapsedMs = Date.now() - stock.activeTransition.startTimeMs;
+        const durationMs = stock.activeTransition.durationMs || 45000;
+        const u = Math.min(1, Math.max(0, elapsedMs / durationMs));
+        const s = 3 * u * u - 2 * u * u * u;
+        const smoothVal = stock.activeTransition.startPrice + (stock.activeTransition.targetPrice - stock.activeTransition.startPrice) * s;
+        stock.currentPrice = +smoothVal.toFixed(2);
+        if (u >= 1) {
+          stock.currentPrice = stock.activeTransition.targetPrice;
           stock.activeTransition = null;
         }
       }
 
       // 2. Realistic Gaussian + micro-drift + Ornstein-Uhlenbeck mean-reversion
-      const gaussianComponent = gaussianRandom() * stock.volatility_factor * stock.currentPrice * 0.35;
-      const microDrift = (Math.random() - 0.495) * 2 * stock.volatility_factor * stock.currentPrice * 0.65;
+      const gaussianComponent = gaussianRandom() * stock.volatility_factor * stock.currentPrice * 0.25;
+      const microDrift = (Math.random() - 0.495) * stock.volatility_factor * stock.currentPrice * 0.35;
       // Subtle gravitational anchor towards baseline price (prevents unrealistic runaway divergence)
-      const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
+      const meanReversion = -0.0003 * (stock.currentPrice - stock.base_price);
       const totalDrift = gaussianComponent + microDrift + meanReversion;
 
       const minBound = stock.min_price || 1;
@@ -757,19 +955,27 @@ function calculateMarketIndices() {
   const broadChg = +(broadVal - broadBase).toFixed(2);
   const broadPct = +(((broadVal - broadBase) / broadBase) * 100).toFixed(2);
 
-  function calcSubIndex(id, name, base, tickers) {
+  function calcSubIndex(id, name, sectorName, base, tickers) {
     const subs = enabled.filter((c) => tickers.includes(c.ticker));
     if (subs.length === 0) return null;
     const ratio = subs.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / subs.length;
     const val = +(base * ratio).toFixed(2);
+    const chg = +(val - base).toFixed(2);
+    const chgPct = +(((val - base) / base) * 100).toFixed(2);
     return {
       id,
       name,
+      sector: sectorName,
       baseValue: base,
       currentValue: val,
-      change: +(val - base).toFixed(2),
-      changePct: +(((val - base) / base) * 100).toFixed(2),
-      constituents: subs.map((s) => s.ticker)
+      value: val,
+      change: chg,
+      changePoints: chg,
+      changePct: chgPct,
+      constituents: subs.map((s) => s.ticker),
+      tickers: subs.map((s) => s.ticker),
+      constituentsCount: subs.length,
+      weighting: 'Equal-Weighted'
     };
   }
 
@@ -777,18 +983,24 @@ function calculateMarketIndices() {
     {
       id: 'NIFTY_TF20',
       name: 'TTF NIFTY 20 (Benchmark)',
+      sector: 'MARKET BENCHMARK',
       baseValue: broadBase,
       currentValue: broadVal,
+      value: broadVal,
       change: broadChg,
+      changePoints: broadChg,
       changePct: broadPct,
-      constituents: enabled.map((s) => s.ticker)
+      constituents: enabled.map((s) => s.ticker),
+      tickers: enabled.map((s) => s.ticker),
+      constituentsCount: enabled.length,
+      weighting: 'Equal-Weighted'
     },
-    calcSubIndex('BANK_TF', 'TTF BANK NIFTY', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
-    calcSubIndex('IT_TF', 'TTF IT (Tech)', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
-    calcSubIndex('AUTO_TF', 'TTF AUTO (Mobility)', 22000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
-    calcSubIndex('ENERGY_TF', 'TTF ENERGY & POWER', 18000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
-    calcSubIndex('METALS_TF', 'TTF METALS & INFRA', 12000, ['LT', 'TATASTEEL', 'JSWSTEEL']),
-    calcSubIndex('CONSUMER_TF', 'TTF CONSUMER & PHARMA', 16000, ['ITC', 'HINDUNILVR', 'SUNPHARMA', 'TITAN'])
+    calcSubIndex('BANK_TF', 'TTF BANK NIFTY', 'BANKING & FINANCE', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
+    calcSubIndex('IT_TF', 'TTF IT (Tech)', 'INFORMATION TECH', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
+    calcSubIndex('AUTO_TF', 'TTF AUTO (Mobility)', 'AUTOMOBILE', 22000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
+    calcSubIndex('ENERGY_TF', 'TTF ENERGY & POWER', 'ENERGY & POWER', 18000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
+    calcSubIndex('METALS_TF', 'TTF METALS & INFRA', 'METALS & INFRA', 12000, ['LT', 'TATASTEEL', 'JSWSTEEL']),
+    calcSubIndex('CONSUMER_TF', 'TTF CONSUMER & PHARMA', 'CONSUMER & PHARMA', 16000, ['ITC', 'HINDUNILVR', 'SUNPHARMA', 'TITAN'])
   ].filter(Boolean);
 
   return list;
@@ -929,6 +1141,8 @@ function getSanitizedPublicState(role, teamId) {
     scenarioMode: activeScenarioMode,
     serverTimeMs: Date.now(),
     soundConsoleConnected: soundClients.size > 0,
+    marketIndices,
+    teamSectorAllocations,
     gameState: {
       title: gameState.title,
       subtitle: gameState.subtitle || '',
@@ -1019,12 +1233,23 @@ function getSanitizedPublicState(role, teamId) {
     // Host receives all scheduled news with individual publication countdowns and statuses
     payload.allScheduledNews = newsEvents.map((ev) => {
       let status = 'SCHEDULED';
-      let appearsInSeconds = Math.max(0, (ev.trigger_second || 0) - gameState.elapsedSeconds);
+      let appearsInSeconds = 0;
+      const evDay = ev.day || 1;
       if (ev.cancelled) {
         status = 'CANCELLED';
       } else if (ev.triggered) {
         status = 'PUBLISHED';
         appearsInSeconds = 0;
+      } else if (evDay < gameState.currentDay) {
+        status = 'CONCLUDED';
+        appearsInSeconds = 0;
+      } else if (evDay > gameState.currentDay) {
+        status = 'FUTURE_DAY';
+        appearsInSeconds = ev.trigger_second || 0;
+      } else {
+        // Current active competition day
+        status = 'SCHEDULED';
+        appearsInSeconds = Math.max(0, (ev.trigger_second || 0) - gameState.elapsedSeconds);
       }
       return {
         ...ev,
@@ -1140,6 +1365,7 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     targetServerTimeMs,
     totalDurationMs: durationMs
   };
+  gameState.status = 'COUNTDOWN';
 
   const pausedDurationSec = gameState.pauseStartedAt
     ? Math.round((now - gameState.pauseStartedAt) / 1000)
@@ -1159,6 +1385,7 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     targetServerTimeMs,
     serverTimeMs: now
   });
+  broadcastTick();
 
   if (activeCountdownTimer) clearTimeout(activeCountdownTimer);
 
@@ -1776,6 +2003,72 @@ wss.on('connection', (ws) => {
         }
       }
 
+      // 5.0 Explicit Host Event Lock (Pre-Event Setup Freeze)
+      if (data.action === 'HOST_SET_EVENT_LOCK' || data.action === 'HOST_LOCK_EVENT') {
+        gameState.configLocked = true;
+        recordAuditEvent('EVENT_CONFIG_LOCKED', { triggered_by: 'HOST', title: gameState.title, source: 'SETUP_WIZARD_CONFIRMATION' });
+        broadcastAll({
+          type: 'EVENT_CONFIG_LOCKED',
+          message: 'Your event setup is complete. Settings are now locked to protect competition fairness.',
+          gameState
+        });
+        ws.send(JSON.stringify({
+          type: 'EVENT_CONFIG_LOCKED_ACK',
+          ok: true,
+          message: 'Your event setup is complete. Settings are now locked to protect competition fairness.'
+        }));
+        broadcastTick();
+        return;
+      }
+
+      // 5.0b Host Unlock Event Configuration (Allowed ONLY before competition starts)
+      if (data.action === 'HOST_UNLOCK_EVENT_CONFIG' || data.action === 'HOST_UNLOCK_EVENT') {
+        if (gameState.status === 'LIVE' || gameState.elapsedSeconds > 0 || gameState.currentDay > 1) {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Cannot unlock settings: The competition has already started. Event settings are permanently frozen during live trading.'
+          }));
+          return;
+        }
+        gameState.configLocked = false;
+        recordAuditEvent('EVENT_CONFIG_UNLOCKED', { triggered_by: 'HOST', title: gameState.title });
+        broadcastAll({
+          type: 'EVENT_CONFIG_UNLOCKED',
+          message: 'Event settings have been unlocked for editing. Settings will re-lock automatically when complete.',
+          gameState
+        });
+        ws.send(JSON.stringify({
+          type: 'EVENT_CONFIG_UNLOCKED_ACK',
+          ok: true,
+          message: 'Event settings unlocked successfully.'
+        }));
+        broadcastTick();
+        return;
+      }
+
+      // 5.0c Automatic News Plan Generation from Selected Companies
+      if (data.action === 'HOST_GENERATE_AUTO_NEWS_PLAN') {
+        if (gameState.configLocked || gameState.status === 'LIVE') {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Event settings are locked. Cannot regenerate news plan.'
+          }));
+          return;
+        }
+        const selected = Array.isArray(data.selectedTickers) ? data.selectedTickers : null;
+        const days = parseInt(data.totalDays, 10) || gameState.totalDays || 3;
+        const dur = parseInt(data.dayDurationSeconds, 10) || gameState.dayDurationSeconds || 1800;
+        newsEvents = generateAutoNewsPlan(selected, days, dur);
+        recordAuditEvent('AUTO_NEWS_PLAN_GENERATED', { count: newsEvents.length, totalDays: days });
+        ws.send(JSON.stringify({
+          type: 'AUTO_NEWS_PLAN_GENERATED_ACK',
+          ok: true,
+          newsEvents
+        }));
+        broadcastTick();
+        return;
+      }
+
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
         const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
@@ -1821,6 +2114,17 @@ wss.on('connection', (ws) => {
         if (data.institution) gameState.institution = data.institution;
         recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, title: gameState.title });
         broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, gameState });
+        broadcastTick();
+      }
+
+      // 5.2b2 Cancel Scheduled Countdown
+      if (data.action === 'HOST_CANCEL_SCHEDULE') {
+        gameState.status = 'STANDBY';
+        gameState.scheduledStartTime = null;
+        gameState.startMode = 'MANUAL';
+        gameState.isPaused = true;
+        recordAuditEvent('SCHEDULE_CANCELLED', { triggered_by: 'HOST' });
+        broadcastAll({ type: 'SCHEDULE_CANCELLED', gameState });
         broadcastTick();
       }
 
@@ -2087,6 +2391,7 @@ wss.on('connection', (ws) => {
           gameState.currentDay++;
           gameState.elapsedSeconds = 0;
           gameState.isPaused = true;
+          gameState.status = 'STANDBY';
           gameState.pauseMode = 'VISIBLE_FROZEN';
           gameState.pauseStartedAt = Date.now();
 
@@ -2127,26 +2432,28 @@ wss.on('connection', (ws) => {
         const explanation = (data.explanation || '').trim();
         const type = (data.type || 'SPECIAL SHOCK').toUpperCase().trim();
         const ticker = (data.ticker || '').trim().toUpperCase();
-        const deltaPct = parseFloat(data.deltaPct);
         const durationSec = parseInt(data.durationSec, 10) || 45;
+        const deltaPct = parseFloat(data.deltaPct);
 
-        if (headline && !isNaN(deltaPct)) {
-          const customId = `CUSTOM_${Date.now().toString().slice(-4)}`;
-          const impacts = {};
-
+        let impacts = data.impacts || null;
+        if (!impacts && ticker && !isNaN(deltaPct)) {
+          impacts = {};
           if (ticker === 'ALL' || ticker === 'GLOBAL') {
             impacts.GLOBAL_WEIGHTED = { base_pct: deltaPct, duration_sec: durationSec };
           } else {
             impacts[ticker] = { delta_pct: deltaPct, duration_sec: durationSec };
           }
+        }
 
+        if (headline && impacts && Object.keys(impacts).length > 0) {
+          const customId = `CUSTOM_${Date.now().toString().slice(-4)}`;
           const customEventObj = {
             event_id: customId,
             day: gameState.currentDay,
             trigger_second: gameState.elapsedSeconds,
             type,
             headline,
-            simple_explanation: explanation || `${ticker} impacted by ${deltaPct > 0 ? '+' : ''}${deltaPct}%`,
+            simple_explanation: explanation || `Market impact: ${Object.keys(impacts).join(', ')}`,
             impacts
           };
 
@@ -2478,8 +2785,9 @@ wss.on('connection', (ws) => {
       // 5.21 Host Reset Entire Championship (Dangerous & Secure)
       if (data.action === 'HOST_RESET_ENTIRE_CHAMPIONSHIP') {
         // High-friction verification phrase check
-        if ((data.confirmation || '').trim().toUpperCase() !== 'RESET') {
-          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Confirmation phrase "RESET" required.' }));
+        const confirmVal = (data.confirmation || '').trim().toUpperCase();
+        if (confirmVal !== 'RESET' && confirmVal !== 'RESET CHAMPIONSHIP') {
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Confirmation phrase "RESET CHAMPIONSHIP" required.' }));
           return;
         }
 
@@ -2488,34 +2796,78 @@ wss.on('connection', (ws) => {
           try { fs.unlinkSync(LIVE_STATE_FILE); } catch (e) {}
         }
 
-        // 2. Broadcast reset to all connected clients
+        // 2. Broadcast mandatory full-screen logout message to all connected clients
         broadcastAll({
           type: 'CHAMPIONSHIP_RESET',
-          message: 'The championship has been reset by the Host. All terminals are returning to the login screen.'
+          message: 'The host has reset the competition. You have been logged out. Please wait for the host to set up a new event.'
         });
 
-        // 3. Clear all non-host sessions
-        sessions.forEach((sess, tok) => {
-          if (sess.role !== 'HOST') sessions.delete(tok);
+        // Invalidate active trader sessions so stale orders cannot be placed
+        wss.clients.forEach((client) => {
+          if (client.session && client.session.role === 'TRADER') {
+            client.session = null;
+          }
         });
 
-        // 4. Pause and clear in-memory state
+        // 3. Reset Game State to pristine Day 1 Standby
+        gameState.status = 'STANDBY';
         gameState.isPaused = true;
+        gameState.pauseMode = 'VISIBLE_FROZEN';
+        gameState.haltReason = null;
         gameState.elapsedSeconds = 0;
         gameState.currentDay = 1;
         gameState.isConcluded = false;
         gameState.winnerData = null;
         gameState.activeNewsFlash = null;
         gameState.newsHistory = [];
+        gameState.scheduledStartTime = null;
+        gameState.activeCountdown = null;
+        gameState.configLocked = false;
+        gameState.totalShiftOffsetSeconds = 0;
+        gameState.pauseStartedAt = null;
         executedTrades.length = 0;
         tradeSeqCounter = 0;
 
+        // 4. Reset all teams back to starting cash and zero holdings
+        const startingCash = gameState.startingCash || 500000;
+        Object.values(teams).forEach((t) => {
+          t.cash = startingCash;
+          t.holdings = {};
+          t.avgBuyPrice = {};
+          t.realizedPnl = 0;
+          t.tradeCount = 0;
+          companies.forEach((c) => {
+            t.holdings[c.ticker] = 0;
+            t.avgBuyPrice[c.ticker] = 0;
+          });
+        });
+
+        // 5. Reset all companies back to starting base prices
+        companies.forEach((c) => {
+          const base = c.base_price || c.currentPrice || 1000;
+          c.currentPrice = base;
+          c.dayOpenPrice = base;
+          c.previousClosePrice = base;
+          c.dayHigh = base;
+          c.dayLow = base;
+          c.isHalted = false;
+          c.haltDirection = null;
+          c.activeTransition = null;
+          c.history = [{ time: 0, price: base }];
+        });
+
+        // 6. Reset all news events
+        newsEvents.forEach((ev) => {
+          ev.triggered = false;
+          ev.cancelled = false;
+        });
+
         recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST' });
 
-        // 5. Confirm to Host and launch Setup Wizard
+        // 7. Confirm to Host and broadcast clean state tick
         ws.send(JSON.stringify({
           type: 'CHAMPIONSHIP_RESET_ACK',
-          message: 'Championship reset successfully. Launching Setup Wizard.'
+          message: 'Championship reset successfully. Returned to Day 1 Standby.'
         }));
         broadcastTick();
       }

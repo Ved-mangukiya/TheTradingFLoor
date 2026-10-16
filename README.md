@@ -46,18 +46,30 @@ Participants trade real-time simulated blue-chip equities across Indian economic
 ---
 
 ## 3. INTERFACE PREVIEWS & LIVE ROLES
-The application operates three coordinated interfaces from a single URL:
+The application operates four coordinated experiences from a single server:
 
-1. **Host Matrix Controller (`?role=host`)**:
-   - Master controls: Start, Pause, Resume, Next Day, Crown Winners.
-   - Tabs: Stock Engine & Halts, Market Builder, News Wire Deck, Live Standings, Real-Time Trades, Reports.
-2. **Trader Team Desk (`?role=trader` or default `/`)**:
+1. **Host Control Centre (`?role=host&pass=host2026`)**:
+   - Master 4-Hub architecture:
+     - **🏠 1. Home**: Next Step guidance card, interactive readiness checklist, connected terminals monitor, live audit feed.
+     - **⚙️ 2. Event**: 6-step guided wizard (Details → Teams → Companies → Schedule → News Plan → Review & Lock) with automatic lock and pre-start unlock safeguard.
+     - **📈 3. Live Market**: Single Market Operations Bar (Resume 3-2-1, Pause, Blackout, Conclude), stock boards, News Control Centre with 60-second privacy countdown, and live trade stream.
+     - **🖥️ 4. Stage & Results**: Projector scene remote (Auto-Cycle / Fixed Screen), Winner Presentation remote, Venue Sound Console channel controls, audited reports, and Safe Championship Reset card.
+
+2. **Student Trading Desk (`?role=trader&team=team1&pass=trade100`)**:
    - Stock cards with live tick prices, day open/high/low, and smooth Bezier sparklines.
-   - 1-click Order Ticket modal with quantity presets (Max Buy, Max Sell, 1, 5, 10, 50, 100).
+   - Non-blocking institutional breaking news wire toast with 15-second animated progress bar.
+   - 1-click Order Ticket with quantity presets and live fee/cash impact calculation.
    - Real-time portfolio valuation, cash balance, and executed trade receipts.
-3. **Stage Projector View (`?role=projector`)**:
-   - High-contrast auditorium display legible from 50 feet away.
-   - Top 5 live championship standings and 12-company ticker board.
+
+3. **Stage Auditorium Projector (`?role=projector&pass=screen2026`)**:
+   - High-contrast auditorium display legible from 50 feet away in 1080p and 4K.
+   - Auto-cycle rotation through Market Board, Real Indices (`NIFTY_TF20`, `BANK_TF`, `IT_TF`, `AUTO_TF`), Macro Sector Strategy, Standings, and News.
+   - Embedded full-screen Winner Reveal stage (`Bronze → Silver → Champion → Podium → Standings`).
+
+4. **Venue Sound Console (`?role=sound&pass=sound2026`)**:
+   - Dedicated audio client for sound laptop plugged into auditorium PA speakers.
+   - Role-isolated: strictly audio cue playback, zero administrative host privileges.
+   - 1-click Host Audio Self-Test integration and 100% offline Web Audio API institutional synthesis.
 
 ---
 

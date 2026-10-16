@@ -354,6 +354,22 @@
     if (!s.isHalted) pulseHead(ctx, head.x, head.y, col, t, 4);
     else badge(ctx, 'TRADING HALTED', pl + 8, pt + 12, 'left', C.down, '#fff', 11);
 
+    // Published news event timeline markers
+    var newsList = (s && s.newsMarkers) || [];
+    newsList.forEach(function (n) {
+      if (n.time >= t0 && n.time <= t1) {
+        var nx = Math.round(X(n.time)) + 0.5;
+        ctx.save();
+        ctx.strokeStyle = '#D97706';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath(); ctx.moveTo(nx, pt); ctx.lineTo(nx, pt + ih); ctx.stroke();
+        ctx.setLineDash([]);
+        badge(ctx, '⚡ ' + (n.label || 'NEWS'), nx, pt + 6, 'center', '#FEF3C7', '#92400E', 9);
+        ctx.restore();
+      }
+    });
+
     // Hover crosshair (fades in/out; returns to live mode on mouseout)
     if (st.ha > 0) {
       var i2 = nearest(pts, Math.min(Math.max(st.lastMx, pl), W - pr)), p = pts[i2], d = hist[i2];

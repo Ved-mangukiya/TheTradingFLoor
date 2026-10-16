@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js live",
+    "dev": "node server.js live",
     "start:live": "node server.js live",
     "start:test": "node server.js test",
     "test": "node test_master_suite.js"

@@ -1,99 +1,76 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
-**Date**: 2026-10-15  
-**Version**: 1.4.0 (Real Indian Companies, Neutral News, Intelligent Projector & Embedded Winner Reveal)  
-**Status**: STABLE, FULLY IMPLEMENTED & VERIFIED (47/47 Automated Tests Passing)  
+**Date**: 2026-10-16  
+**Version**: 2.0.0 (Master Upgrade: 4-Hub Host Workflow, One Action Rule, Automatic News Plan, Smoothstep Engine, 60s News Privacy, Safe Reset)  
+**Status**: STABLE, FULLY IMPLEMENTED & VERIFIED (47/47 Master Tests + Upgrade Suite Passing)  
 
 ---
 
-## 1. Verified Real-Company Market Universe
-- [x] **20 Real Indian Listed Companies (NSE/BSE)**: Replaced fictional entities with official listed giants: `RELIANCE`, `TATAMOTORS`, `MARUTI`, `M&M`, `TCS`, `INFY`, `HDFCBANK`, `ICICIBANK`, `SBIN`, `BAJFINANCE`, `LT`, `AIRTEL`, `ITC`, `HINDUNILVR`, `SUNPHARMA`, `NTPC`, `POWERGRID`, `TATASTEEL`, `JSWSTEEL`, and `TITAN`.
-- [x] **Baseline Data & Calibration**: Official closing prices as reference base, realistic lot presets (`[1, 5, 10]` to `[20, 50, 100]`), Beta volatility factors (0.65 to 1.50), and verified balance sheet fundamentals.
-- [x] **Price Transparency Invariant**: User interfaces clearly label market movements as *Simulated Prices* derived from NSE reference benchmarks, strictly avoiding false claims of live internet market feeds.
+## 1. Architectural Principle: ONE ACTION = ONE CLEAR PLACE = ONE AUTHORITATIVE IMPLEMENTATION
+- [x] **4 Primary Host Navigation Hubs**:
+  1. `🏠 1. Home`: Status overview, connection monitor (Traders, Projector, Sound), Readiness Checklist, and single dynamic Next Step guidance.
+  2. `⚙️ 2. Event`: 6-step guided setup wizard (`Details -> Teams -> Companies -> Schedule -> News Plan -> Review & Lock`), real company selection, auto-generated news plan, automatic readiness validation, and single safe `Unlock Configuration` control.
+  3. `📈 3. Live Market`: Canonical single Market Operations Bar (`▶ Resume 3-2-1`, `⏸ Pause`, `🕶️ Blackout`, `🏁 Conclude Session`), real-time stock boards, News Control Centre with 60-second privacy reveal, and live trade stream.
+  4. `🖥️ 4. Stage & Results`: Auditorium Projector Remote (Auto-Cycle / Fixed Screen), Venue Sound Console controls, Leaderboard results, audited CSV/JSON reports, and Safe Championship Reset card.
+- [x] **Zero Action Duplication**: Consolidated floating/overview pause and resume buttons into one canonical Live Market bar. Removed duplicate news editors, duplicate company pickers, and redundant launchers.
 
 ---
 
-## 2. Predefined Neutral News Engine & Secrecy Invariant
-- [x] **12 Multi-Day Journalistic Storylines**: Built across Days 1, 2, and 3 with connected regulatory shifts, semiconductor bottlenecks, RBI MPC policy, and corrective audit protocols.
-- [x] **Strict Prohibition on Buy/Sell Recommendations**: Zero trade signals in news headlines (e.g. *"Good news for X"* or *"X is set to rise"* are strictly eliminated). Replaced with neutral wire syntax (e.g. *"Ministry of Heavy Industries Revises Production-Linked Incentive Norms"*).
-- [x] **Secrecy & Anti-Leak Invariant**: Private price shocks matrix (`impacts: [{ ticker, delta_pct }]`) is stripped from public broadcasts. Only authenticated Host Matrix sessions see private math and countdowns.
+## 2. Automatic Configuration Locking & Safe Pre-Competition Unlock
+- [x] **Automatic Readiness Validation**: Checks all required fields (title, starting cash, fees, company selection, schedule, and balanced news plan).
+- [x] **Automatic Lock on Valid Draft**: Transitions state to `Ready — Locked` with simple English notice:
+  *"Your event setup is complete. Settings are now locked to protect competition fairness."*
+- [x] **Safe Unlock (`HOST_UNLOCK_EVENT_CONFIG`)**:
+  - Permitted only before the tournament starts (`gameState.status === 'STANDBY' && gameState.elapsedSeconds === 0`).
+  - Once live trading begins or seconds elapse, permanently freezes event configuration. Any unlock attempt returns clear explanation:
+    *"Cannot unlock settings: The competition has already started. Event settings are permanently frozen during live trading."*
 
 ---
 
-## 3. Server-Enforced Configuration Lock (`EVENT_CONFIG_LOCKED`)
-- [x] **Immutable Event Invariant**: Once an event enters `SCHEDULED` or `LIVE` (`gameState.configLocked = true`), the server strictly rejects:
-  - Adding new shares (`HOST_ADD_SHARE`) -> returns `EVENT_CONFIG_LOCKED`.
-  - Deleting/removing shares (`HOST_REMOVE_SHARE`) -> returns `EVENT_CONFIG_LOCKED`.
-  - Mutating starting capital or round duration (`HOST_UPDATE_EVENT_CONFIG`) -> returns `EVENT_CONFIG_LOCKED`.
-  - Creating custom news shocks (`HOST_CREATE_CUSTOM_NEWS`) -> returns `EVENT_CONFIG_LOCKED`.
-- [x] **Host Lock Banner**: Host dashboard dynamically displays the lock status banner (`#hostConfigLockBanner`) indicating whether tournament parameters are in editable Draft mode or frozen Locked mode.
+## 3. Automatic News Plan Generation from Selected Companies
+- [x] **Host Selects Companies — Engine Selects News**: The host selects participating companies from the verified Indian listed universe (`RELIANCE`, `TATAMOTORS`, `TCS`, `HDFCBANK`, etc.).
+- [x] **Auto News Plan (`HOST_GENERATE_AUTO_NEWS_PLAN`)**:
+  - Uses `NEWS_TEMPLATE_LIBRARY` (10 rich sector/macro templates with neutral headlines in plain English).
+  - Strictly targets selected companies (zero leakage of unselected companies into impacts).
+  - Generates balanced, multi-day schedules with deterministic timing fractions.
+- [x] **Neutral Public Headlines**: Formatted in objective wire language without buy/sell advice (e.g. *"Ministry of Heavy Industries Outlines Updated Production and Component Sourcing Guidelines"*).
 
 ---
 
-## 4. Real Market Indices & Benchmarking Engine
-- [x] **6 Simulated Indices Calculated on Server**:
-  - `NIFTY_TF20` (Broad Benchmark 20 — Base 25,000.00)
-  - `BANK_TF` (Banking & Finance — Base 50,000.00)
-  - `IT_TF` (Information Technology — Base 35,000.00)
-  - `AUTO_TF` (Automotive Mobility — Base 20,000.00)
-  - `ENERGY_TF` (Power & Energy — Base 15,000.00)
-  - `METALS_TF` (Metals & Mining — Base 10,000.00)
-- [x] **Equal-Weighted Price-Relative Formula**: $I_t = I_0 \times (\frac{1}{N} \sum \frac{P_t}{P_0})$.
-- [x] **Endpoints & Projector**: Accessible via `GET /api/market-indices` and rendered during `SCENE_INDICES`.
+## 4. Confidentiality & 60-Second Private Impact Reveal Model
+- [x] **Default Private Impact Masking**: Private price impact percentages (`+11.5%`, `-3.5%`) are masked by default in the host interface as `[🔒 Private Price Impact Details Hidden]`.
+- [x] **Zero Public Leakage**: Trader workstations and auditorium projector never receive private impact percentages or directional targets over WebSocket.
+- [x] **60-Second Reveal Window**:
+  - Clicking `👁️ Reveal Private News Details` displays permitted impact percentages and activates a visible 60-second countdown banner (`⚠️ Private event information is visible. It will hide automatically in 60s.`).
+  - Features immediate `🔒 Hide Now` button.
+  - Automatically re-masks all private details when the timer expires or when the host navigates away from the Market tab.
 
 ---
 
-## 5. Team Macro Strategy & Sector Allocations (Privacy-Safe)
-- [x] **Audience Strategy Scene (`SCENE_STRATEGY`)**: Displays macro sector percentages (Banking %, IT %, Auto %, Energy %, Metals %, Cash %) and concentration tags per team desk.
-- [x] **Strict Privacy Invariant**: Never reveals individual stock tickers, share quantities, or entry prices to public viewers or competitors.
+## 5. Smoothstep Stock Price Movement Engine
+- [x] **Mathematical Smoothstep Formulation**:
+  $$u = \text{clamp}\left(\frac{t - t_0}{T}, 0, 1\right), \quad s(u) = 3u^2 - 2u^3, \quad P(t) = P_0 + (P_T - P_0) \cdot s(u)$$
+- [x] **Continuous Server-Time Basis**: Computed using exact elapsed milliseconds (`Date.now() - stock.activeTransition.startTimeMs`), rendering the engine completely immune to tick delay drift.
+- [x] **Non-Snapping Trajectory Transition**: When a new shock arrives during an active transition, the new trajectory begins from the current official price $P_0 = P_{\text{current}}$, eliminating jarring price snaps.
+- [x] **Realistic Reaction Window**: Durations calibrated (15s to 60s) allowing participants to read news and execute trades while prices evolve.
 
 ---
 
-## 6. Live Event Anchor Commentary Prompts
-- [x] **Dynamic Talking Points**: Server generates data-driven observations for host/anchor:
-  - 1st Place desk focus with dominant sector weighting.
-  - High conviction sector concentration alerts ($\ge 45\%$).
-  - Dry powder cash reserve alerts ($\ge 40\%$).
-  - Macro index rally/drop alerts ($\ge \pm 1.5\%$).
-  - Multi-day rank surge alerts ($\ge +2$ spots).
-- [x] **Emcee Copy Integration**: Features 1-click **📋 Copy** buttons in Host panel. Endpoint: `GET /api/anchor-commentary`.
+## 6. Canvas Price Charts with News Timeline Markers
+- [x] **Published News Timeline Markers**: Interactive `⚡ NEWS` badge plotted directly along the chart time axis at the exact publication second.
+- [x] **Visual Clarity**: Tooltips display price and timestamp; clean axes with zero page redraw flicker.
 
 ---
 
-## 7. Intelligent Projector Multi-Scene Cycle & Embedded Winner Reveal
-- [x] **5-Scene Projector Playlist**:
-  1. `SCENE_MARKET_BOARD`: Live 20 real stock cards with Bezier sparklines.
-  2. `SCENE_INDICES`: 6 real market benchmark cards.
-  3. `SCENE_STRATEGY`: Macro sector strategy breakdown.
-  4. `SCENE_LEADERBOARD`: Complete live standings table.
-  5. `SCENE_NEWS`: Breaking journalistic wire archives.
-- [x] **Host Presentation Modes**: `AUTO_CYCLE` (configurable seconds per scene) vs `FIXED_SCREEN`.
-- [x] **Embedded Projector Winner Reveal Stage**:
-  - No separate URLs required. The projector display (`/?role=projector`) natively houses both `#projectorMainStage` and `#projectorWinnerStage`.
-  - When the Host clicks **👑 Announce Winners on Projector Screen**, the projector smoothly hides the market board and reveals the full-screen verified awards ceremony (`SCENE_INTRO`, `SCENE_BRONZE`, `SCENE_SILVER`, `SCENE_CHAMPION` with confetti, `SCENE_PODIUM`, and `SCENE_STANDINGS`).
-  - Clicking **⏹️ Exit Winner Mode** smoothly restores the live market cycle.
+## 7. Safe Championship Reset with Mandatory Client Logout
+- [x] **Strict Confirmation Phrase**: Requires explicit `"RESET CHAMPIONSHIP"` (or `'RESET'`) input, rejecting any mismatched confirmation.
+- [x] **Mandatory Full-Screen Client Notification**:
+  *"The host has reset the competition. You have been logged out. Please wait for the host to set up a new event."*
+- [x] **Trader Session Invalidation**: Immediately invalidates active trader sessions server-side to prevent stale orders from executing, displays full-screen overlay `#clientResetModal`, and cleanly redirects to login.
 
 ---
 
-## 8. Multi-Day Championship Lifecycle & Day Finalization
-- [x] **Continuous Portfolio Scoring**: Carries cash and holdings overnight across Days 1, 2, and 3.
-- [x] **Daily Finalization (`HOST_FINALIZE_DAY`)**: Freezes daily closing prices, calculates daily P&L, daily return %, cumulative return %, and rank deltas (`▲ +2`, `▼ -1`, `• 0`).
-- [x] **Snapshot Persistence & API**: Committed to `gameState.dailyLeaderboards['day_' + day]`. Endpoint: `GET /api/daily-snapshot/:day`.
-
----
-
-## 9. Automated & Browser Testing Verification
-- [x] `test_master_suite.js`: 47 automated test assertions executed and passing with 0 failures:
-  - System health, authentication, token resumption.
-  - 3-second resume countdown, pause cancellation.
-  - Order execution, trade fees, overbuy/oversell rejections.
-  - Share universe management, tradeability toggles, liquidate all.
-  - Real Indian listed universe integrity (20 stocks).
-  - Market indices mathematical correctness.
-  - Macro sector allocation privacy (zero ticker leakage).
-  - Event Anchor Commentary generator.
-  - Event configuration lock rejection (`EVENT_CONFIG_LOCKED`).
-  - Projector mode & duration updates.
-  - Day finalization & daily snapshot retrieval.
-  - Embedded Projector Winner Presentation trigger & exit.
-- [x] Browser subagent automated recording: Verified in browser walkthrough (`projector_and_winner_reveal_demo_1792072989906.webp`).
+## 8. Verification & Test Suite Status
+- [x] `test_master_suite.js`: **47/47 PASSED (0 failed)**
+- [x] `test_upgrade_master.js`: **ALL STAGES PASSED (A, B, C, D)**
+- [x] Browser visual verification completed on all 4 hubs and privacy countdown.
