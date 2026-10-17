@@ -147,64 +147,72 @@ To find it manually on Windows:
 
 ---
 
-## 8. HOW TEAMS CONNECT VIA LAN / WI-FI
+## 8. AUTHORITATIVE EVENT LIFECYCLE & WORKFLOW
 
-1. Connect the host computer and all student laptops to the **same Wi-Fi network** (or a phone hotspot).
-2. Tell student teams to open Chrome or Edge and navigate to:
+The championship operates under a strict, authoritative 8-phase operational lifecycle:
+
+```
+Server Starts ──> Host Logs In ──> Guided Event Setup Centre ──> Host Configures (16 Teams & Stocks)
+                                                                            │
+Competition Starts <── Host Panel Activates <── Teams Log In <── Host Confirms & Locks Setup
+```
+
+1. **Server Starts**: Node.js boots in `SETUP` mode (`configLocked = false`).
+2. **Host Logs In**: When the host logs in, the full Live Host Panel is **not** immediately displayed. Instead, the Host is guided directly into the **Event Setup Centre** (`#eventSetupView`).
+3. **Event Setup Configuration**:
+   - **Step 1: Event Details & Rules**: Championship title, host university, starting capital (₹1L to ₹10L), competition duration, transaction brokerage fee, and circuit breaker limit (±20%).
+   - **Step 2: 16 Teams Roster & Passwords**: Fixed 16-desk capacity. Host can customize team names, student members, generate random 6-digit PINs, reset standard credentials (`trade100`..`trade1600`), copy all 16 credentials to clipboard with 1 click, or download `TheTradingFloor_16_Team_Credentials.csv`.
+   - **Step 3: Stock Selection Catalogue**: Searchable catalogue of 20 verified real National Stock Exchange of India (NSE) corporate equities with sector filter pills, search bar, and 1-click presets (`All 20 NSE Stocks`, `Top 12 Diverse Mix`, `Top 8 Mega-Caps`). A minimum of 4 stocks is enforced.
+   - **Step 4: Journalistic News Timeline**: Multi-day educational financial news events automatically generated and scheduled based on the selected stocks.
+   - **Step 5: Review & Final Lock**: Summary verification tiles and authoritative lock confirmation.
+4. **Team Login Gating (Pre-Lock Security)**:
+   - **Before setup is confirmed and locked, team logins are strictly rejected by the server**:
+     `"The host is preparing the event. Team login will open once setup is complete."`
+   - The login screen dynamically shows an **Event Setup in Progress** status banner with live progress details.
+5. **Host Confirms & Locks Setup**:
+   - The Host reviews the configuration and confirms via the authoritative lock modal.
+   - The server validates the setup (title, 16 teams, $\ge 4$ stocks), hashes/activates the 16 team accounts, provisions starting cash, freezes the active stock universe, locks state (`configLocked = true`, `status = 'STANDBY'`), and broadcasts `EVENT_CONFIG_LOCKED`.
+6. **Team Credentials & Login Open**:
+   - The login screen status banner instantly switches to **🟢 COMPETITION READY • LOGINS OPEN**.
+   - All 16 team terminals can now authenticate and access strictly their own isolated portfolio, orders, and cash.
+7. **Host Panel Fully Activates**:
+   - Only after setup is validated and locked does the full **Live Host Operations Command Centre** become available to the host.
+8. **Competition Starts & Live Floor Operations**:
+   - The Host initiates trading via `▶ Resume 3-2-1` or schedules the event.
+   - Resetting the championship purges old trader sessions with `SESSION_EXPIRED`, unlocks setup, and returns the Host to a clean Event Setup Centre.
+
+---
+
+## 9. HOW TEAMS CONNECT VIA LAN / WI-FI
+
+1. Connect the host computer and all student laptops to the **same Wi-Fi network** (or a local LAN router / phone hotspot).
+2. Tell student teams to open Chrome, Edge, or Safari and navigate to:
    ```
    http://<HOST_IP>:3000/
    ```
    *(Example: `http://192.168.1.35:3000/`)*
-3. Teams log in using their assigned team credentials (e.g. Username: `team1` / Password: `trade100`).
+3. Once the host confirms and locks event setup, teams log in using their assigned team credentials (e.g. Username: `team1` / Password: `trade100` or direct link `http://<HOST_IP>:3000/?team=team1&pass=trade100`).
 
 ---
 
-## 9. HOW TO CONFIGURE A COMPETITION
+## 10. STOCK SELECTION CATALOGUE & PRESETS
 
-1. Open the Host Controller (`http://localhost:3000/?role=host`).
-2. Click **⚙️ Settings** in the top navigation bar.
-3. Set your competition parameters:
-   - **Championship Title**: e.g., *"National College Trading Fest 2026"*
-   - **Trading Days**: Default 3 days (1 to 5).
-   - **Day Duration**: Default 30 minutes (configurable from 5 to 60 minutes).
-   - **Starting Cash**: Default ₹5,00,000 (configurable from ₹50,000 to ₹1,00,00,000).
-   - **Circuit Breaker Limit**: Default 20% (bounds: 5% to 50%).
-   - **Transaction Brokerage Fee**: Default 0 bps (bounds: 0 to 100 bps; 10 bps = 0.10%).
-4. Click **Save & Broadcast Settings**. All connected terminals update immediately.
+Under Step 3 of the Event Setup Centre, the host selects which verified equities trade during the championship:
 
----
-
-## 10. TEAM MANAGEMENT & CREDENTIAL SLIPS
-
-1. In the Host Controller, click **👥 Teams Setup**.
-2. **Quick Presets**: Click **4 Teams**, **8 Teams**, **12 Teams**, or **16 Teams** to instantly generate roster rows.
-3. **Customize Roster**: Type actual college team names (e.g. *"IIM Bangalore Bulls"*, *"SRCC Titans"*) and participant member names.
-4. **Print Credentials**: Click **Export CSV** to download `teams_roster.csv` containing usernames and passwords to print or hand out to teams.
-5. Click **Apply & Save Roster**.
+- **Catalogue Search & Sector Filtering**: Instant search across 20 verified NSE equities by ticker, corporate name, or sector (Banking, IT, Auto, Energy, Metals, FMCG, Pharma, Conglomerate).
+- **Curated 1-Click Presets**:
+  - **All 20 NSE Stocks**: Comprehensive institutional market.
+  - **Top 12 Diverse Mix**: Curated cross-sector basket across Reliance, TCS, HDFC Bank, Tata Motors, L&T, Infosys, ICICI Bank, ITC, Bajaj Finance, Bharti Airtel, Sun Pharma, and Titan.
+  - **Top 8 Mega-Caps**: Focus round on the largest blue-chips by market capitalization.
+  - **Deselect All**: Resets to minimum required 4 stocks for custom selection.
+- **Stock Universe Immutability**: Once setup is locked, the selected stock universe remains fixed throughout the competition to ensure audited academic integrity.
 
 ---
 
-## 11. MARKET BUILDER & SHARE UNIVERSE MANAGER
-
-Click the **🏛️ Market Builder (Share Universe)** subtab in the Host Controller:
-
-- **Apply Curated Presets**:
-  - **Balanced Market**: Diversified 6-company mix across IT, Banking, Energy, and Auto.
-  - **High Volatility**: Fast-paced round with elevated volatility ($\sigma = 0.008$) and high news sensitivity ($\beta = 1.6$).
-  - **Tech & Auto Focus**: Enables tech and auto blue-chips while disabling other sectors.
-  - **Defensive & Value**: Slower, stable round focusing on Banking and FMCG.
-  - **Enable All**: Activates all 12 registered companies.
-- **Randomize Starting Prices**: Click **🎲 Randomize Prices (±10%)** to introduce new baseline prices so repeat rounds cannot be anticipated.
-- **Toggle Stock Tradeability**: Click the **● Active in Market / ○ Disabled** badge on any row to instantly hide or reveal that stock from student trading desks.
-- **Add New Company**: Click **+ Add New Company** to introduce campus sponsors, IPOs, or custom equities.
-- **Export Universe**: Click **Export Universe (JSON)** or **Export Universe (CSV)** for faculty records.
-
----
-
-## 12. RUNNING THE LIVE EVENT
+## 11. RUNNING THE LIVE EVENT
 
 ```
-Step 1: HOST clicks "▶ Resume (3-2-1)" ➔ 3-second countdown chimes ➔ Trading is LIVE
+Step 1: HOST clicks "▶ Resume (3-2-1)" ➔ 3-second synchronized countdown chimes ➔ Trading is LIVE
 Step 2: Host injects breaking news shocks via "⚡ News Control Deck"
 Step 3: If circuit breaker halts occur, Host inspects and clicks "Release Halt"
 Step 4: At round end, Host clicks "⏭ Next Day" to advance Day 1 ➔ Day 2 ➔ Day 3

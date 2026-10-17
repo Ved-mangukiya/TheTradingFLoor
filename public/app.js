@@ -1330,6 +1330,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       sessionToken = msg.session_token;
       currentRole = msg.role;
       sessionStorage.setItem('ttf_session_token', sessionToken);
+      if (msg.initialState) {
+        latestState = msg.initialState;
+      }
       switchSpaView(msg.role);
       handleStateUpdate(msg.initialState);
       return;
@@ -1514,7 +1517,57 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'EVENT_CONFIG_LOCKED') {
-      showOrderToast(`🔒 ${msg.reason || 'Configuration is locked for live competition integrity.'}`, false);
+      if (latestState && latestState.gameState) {
+        latestState.gameState.configLocked = true;
+        latestState.gameState.status = msg.status || 'STANDBY';
+      }
+      updateLoginEventStatusBanner(latestState);
+      if (currentRole === 'HOST') {
+        const setupEl = document.getElementById('eventSetupView');
+        const hostEl = document.getElementById('hostView');
+        if (setupEl) setupEl.classList.add('hidden');
+        if (hostEl) hostEl.classList.remove('hidden');
+        showOrderToast(`🔒 ${msg.reason || 'Configuration locked! Live championship active and 16 team logins open.'}`, true);
+      }
+      return;
+    }
+
+    if (msg.type === 'EVENT_CONFIG_LOCKED_ACK') {
+      if (currentRole === 'HOST') {
+        if (msg.gameState && latestState) {
+          latestState.gameState = msg.gameState;
+        }
+        const setupEl = document.getElementById('eventSetupView');
+        const hostEl = document.getElementById('hostView');
+        if (setupEl) setupEl.classList.add('hidden');
+        if (hostEl) hostEl.classList.remove('hidden');
+        showOrderToast('🔒 ' + (msg.message || 'Championship setup locked! 16 team credentials are live.'), true);
+        if (latestState) renderHostView(latestState);
+      }
+      return;
+    }
+
+    if (msg.type === 'SETUP_VALIDATION_ERROR') {
+      showOrderToast(`⚠️ ${msg.message || 'Setup validation failed.'}`, false);
+      return;
+    }
+
+    if (msg.type === 'EVENT_CONFIG_UNLOCKED') {
+      if (latestState && latestState.gameState) {
+        latestState.gameState.configLocked = false;
+        latestState.gameState.status = 'SETUP';
+      }
+      updateLoginEventStatusBanner(latestState);
+      if (currentRole === 'HOST') {
+        const setupEl = document.getElementById('eventSetupView');
+        const hostEl = document.getElementById('hostView');
+        if (setupEl) {
+          setupEl.classList.remove('hidden');
+          initOrRestoreEventSetup();
+        }
+        if (hostEl) hostEl.classList.add('hidden');
+      }
+      showOrderToast('🔓 Event setup is now unlocked.', true);
       return;
     }
 
@@ -1625,7 +1678,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
 }
 
 function switchSpaView(role) {
-  ['loginView', 'traderView', 'hostView', 'projectorView', 'soundConsoleView', 'winnerPresentationView'].forEach((id) => {
+  ['loginView', 'traderView', 'hostView', 'projectorView', 'soundConsoleView', 'winnerPresentationView', 'eventSetupView'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -1633,7 +1686,17 @@ function switchSpaView(role) {
   if (role === 'TRADER') {
     document.getElementById('traderView').classList.remove('hidden');
   } else if (role === 'HOST') {
-    document.getElementById('hostView').classList.remove('hidden');
+    const isLocked = latestState && latestState.gameState && latestState.gameState.configLocked;
+    if (!isLocked) {
+      const setupEl = document.getElementById('eventSetupView');
+      if (setupEl) {
+        setupEl.classList.remove('hidden');
+        initOrRestoreEventSetup();
+      }
+    } else {
+      const hostEl = document.getElementById('hostView');
+      if (hostEl) hostEl.classList.remove('hidden');
+    }
   } else if (role === 'PROJECTOR') {
     document.getElementById('projectorView').classList.remove('hidden');
   } else if (role === 'SOUND_CONSOLE') {
@@ -1642,6 +1705,7 @@ function switchSpaView(role) {
     document.getElementById('winnerPresentationView').classList.remove('hidden');
   } else {
     document.getElementById('loginView').classList.remove('hidden');
+    updateLoginEventStatusBanner(latestState);
   }
 }
 
@@ -1776,8 +1840,38 @@ function handleStateUpdate(state) {
     showWinnerPodium(state.gameState.winnerData, state.gameState.title);
   }
 
+  // Authoritatively update login readiness banner
+  updateLoginEventStatusBanner(state);
+
+  // Authoritatively manage Host Setup View vs Host Panel View routing
+  if (currentRole === 'HOST') {
+    const setupEl = document.getElementById('eventSetupView');
+    const hostEl = document.getElementById('hostView');
+    const isLocked = state.gameState && state.gameState.configLocked;
+    if (!isLocked) {
+      if (setupEl && setupEl.classList.contains('hidden')) {
+        setupEl.classList.remove('hidden');
+        initOrRestoreEventSetup();
+      }
+      if (hostEl && !hostEl.classList.contains('hidden')) {
+        hostEl.classList.add('hidden');
+      }
+    } else {
+      if (setupEl && !setupEl.classList.contains('hidden')) {
+        setupEl.classList.add('hidden');
+      }
+      if (hostEl && hostEl.classList.contains('hidden')) {
+        hostEl.classList.remove('hidden');
+      }
+    }
+  }
+
   if (currentRole === 'TRADER') renderTraderView(state);
-  else if (currentRole === 'HOST') renderHostView(state);
+  else if (currentRole === 'HOST') {
+    if (state.gameState && state.gameState.configLocked) {
+      renderHostView(state);
+    }
+  }
   else if (currentRole === 'PROJECTOR') renderProjectorView(state);
   else if (currentRole === 'SOUND_CONSOLE') renderSoundConsoleView(state);
   else if (currentRole === 'WINNER_DISPLAY') renderWinnerPresentationView(state);
@@ -4109,10 +4203,174 @@ function switchHostTab(tabName) {
   }
 }
 
+// ==========================================
+// GUIDED EVENT SETUP CONTROLLER (#eventSetupView)
+// ==========================================
+
+const DEFAULT_CATALOGUE_COMPANIES = [
+  { ticker: 'RELIANCE', name: 'Reliance Industries', sector: 'Energy & Conglomerate', base_price: 2950, beta: 1.05, exchange: 'NSE' },
+  { ticker: 'TATAMOTORS', name: 'Tata Motors Passenger & Commercial', sector: 'Automobile', base_price: 980, beta: 1.40, exchange: 'NSE' },
+  { ticker: 'MARUTI', name: 'Maruti Suzuki India', sector: 'Automobile', base_price: 12400, beta: 0.85, exchange: 'NSE' },
+  { ticker: 'M&M', name: 'Mahindra & Mahindra', sector: 'Automobile', base_price: 2850, beta: 1.15, exchange: 'NSE' },
+  { ticker: 'TCS', name: 'Tata Consultancy Services', sector: 'Information Technology', base_price: 4150, beta: 0.75, exchange: 'NSE' },
+  { ticker: 'INFY', name: 'Infosys', sector: 'Information Technology', base_price: 1880, beta: 1.10, exchange: 'NSE' },
+  { ticker: 'HDFCBANK', name: 'HDFC Bank', sector: 'Banking', base_price: 1680, beta: 0.95, exchange: 'NSE' },
+  { ticker: 'ICICIBANK', name: 'ICICI Bank', sector: 'Banking', base_price: 1240, beta: 1.05, exchange: 'NSE' },
+  { ticker: 'SBIN', name: 'State Bank of India', sector: 'Banking', base_price: 820, beta: 1.30, exchange: 'NSE' },
+  { ticker: 'BAJFINANCE', name: 'Bajaj Finance', sector: 'Banking', base_price: 7200, beta: 1.25, exchange: 'NSE' },
+  { ticker: 'LT', name: 'Larsen & Toubro', sector: 'Conglomerate', base_price: 3600, beta: 1.10, exchange: 'NSE' },
+  { ticker: 'AIRTEL', name: 'Bharti Airtel', sector: 'Conglomerate', base_price: 1550, beta: 0.80, exchange: 'NSE' },
+  { ticker: 'ITC', name: 'ITC Limited', sector: 'Consumer', base_price: 490, beta: 0.65, exchange: 'NSE' },
+  { ticker: 'HINDUNILVR', name: 'Hindustan Unilever', sector: 'Consumer', base_price: 2750, beta: 0.60, exchange: 'NSE' },
+  { ticker: 'SUNPHARMA', name: 'Sun Pharmaceutical Industries', sector: 'Pharma', base_price: 1720, beta: 0.70, exchange: 'NSE' },
+  { ticker: 'NTPC', name: 'NTPC Limited', sector: 'Energy', base_price: 410, beta: 0.90, exchange: 'NSE' },
+  { ticker: 'POWERGRID', name: 'Power Grid Corporation', sector: 'Energy', base_price: 340, beta: 0.70, exchange: 'NSE' },
+  { ticker: 'TATASTEEL', name: 'Tata Steel', sector: 'Metals', base_price: 165, beta: 1.35, exchange: 'NSE' },
+  { ticker: 'JSWSTEEL', name: 'JSW Steel', sector: 'Metals', base_price: 980, beta: 1.25, exchange: 'NSE' },
+  { ticker: 'TITAN', name: 'Titan Company', sector: 'Consumer', base_price: 3450, beta: 1.05, exchange: 'NSE' }
+];
+
+let setupSelectedTickers = new Set(DEFAULT_CATALOGUE_COMPANIES.map((c) => c.ticker));
+let setupCatalogueSearchTerm = '';
+let setupCatalogueSectorFilter = 'ALL';
+let setupInitialized = false;
 let activeSetupSection = 'details';
+
+function updateLoginEventStatusBanner(state) {
+  const banner = document.getElementById('loginEventStatusBanner');
+  if (!banner) return;
+  const iconEl = document.getElementById('loginEventStatusIcon');
+  const titleEl = document.getElementById('loginEventStatusTitle');
+  const descEl = document.getElementById('loginEventStatusDesc');
+
+  const isLocked = state && state.gameState && state.gameState.configLocked;
+  if (isLocked) {
+    if (iconEl) iconEl.textContent = '🟢';
+    if (titleEl) {
+      titleEl.textContent = 'COMPETITION READY • LOGINS OPEN';
+      titleEl.style.color = 'var(--price-up)';
+    }
+    if (descEl) {
+      descEl.textContent = 'The competition is active. All 16 team terminals can now authenticate.';
+    }
+    banner.style.borderColor = 'var(--price-up)';
+    banner.style.background = '#F0FDF4';
+  } else {
+    if (iconEl) iconEl.textContent = '⏳';
+    if (titleEl) {
+      titleEl.textContent = 'EVENT SETUP IN PROGRESS';
+      titleEl.style.color = 'var(--warning-amber)';
+    }
+    if (descEl) {
+      descEl.textContent = 'The host is preparing the event. Team login will open once setup is complete.';
+    }
+    banner.style.borderColor = 'var(--subtle-border)';
+    banner.style.background = 'var(--surface-cream)';
+  }
+}
+
+function initOrRestoreEventSetup() {
+  let draft = null;
+  try {
+    const raw = localStorage.getItem('ttf_setup_draft');
+    if (raw) draft = JSON.parse(raw);
+  } catch (e) {}
+
+  const gs = (latestState && latestState.gameState) || {};
+
+  // Step 1: Details
+  const titleEl = document.getElementById('setupEventTitle');
+  const instEl = document.getElementById('setupInstitution');
+  const cashEl = document.getElementById('setupStartingCash');
+  const daysEl = document.getElementById('setupTotalDays');
+  const durEl = document.getElementById('setupDayDuration');
+  const feeEl = document.getElementById('setupTransactionFee');
+  const cbEl = document.getElementById('setupCircuitBreaker');
+
+  if (titleEl) titleEl.value = (draft && draft.title) || gs.title || 'The Trading Floor Championship 2026';
+  if (instEl) instEl.value = (draft && draft.institution) || gs.institution || 'Gujarat Technological University';
+  if (cashEl) cashEl.value = String((draft && draft.startingCash) || gs.startingCash || 500000);
+  if (daysEl) daysEl.value = String((draft && draft.totalDays) || gs.totalDays || 3);
+  if (durEl) durEl.value = String((draft && draft.dayDurationSeconds) || gs.dayDurationSeconds || 1800);
+  if (feeEl) feeEl.value = String((draft && draft.transactionFeeBps !== undefined) ? draft.transactionFeeBps : (gs.transactionFeeBps !== undefined ? gs.transactionFeeBps : 0));
+  if (cbEl) cbEl.value = String((draft && draft.circuitBreakerPercent) || gs.circuitBreakerPercent || 20);
+
+  // Step 2: 16 Teams Roster
+  let teamsData = (draft && draft.teams && draft.teams.length === 16) ? draft.teams : null;
+  if (!teamsData && latestState && latestState.allTeamsList && latestState.allTeamsList.length === 16) {
+    teamsData = latestState.allTeamsList.map((t, idx) => ({
+      slot: idx + 1,
+      name: t.name || `Team ${idx + 1}`,
+      username: t.username || `team${idx + 1}`,
+      password: t.password || `trade${idx + 1}00`,
+      members: t.members || `Trader ${idx + 1}A, Trader ${idx + 1}B`
+    }));
+  }
+  if (!teamsData) {
+    teamsData = [];
+    for (let i = 1; i <= 16; i++) {
+      teamsData.push({
+        slot: i,
+        name: `Team ${i}`,
+        username: `team${i}`,
+        password: `trade${i}00`,
+        members: `Trader ${i}A, Trader ${i}B`
+      });
+    }
+  }
+  renderSetupTeamsRoster(teamsData);
+
+  // Step 3: Stock Selection Catalogue
+  if (draft && Array.isArray(draft.selectedTickers) && draft.selectedTickers.length >= 4) {
+    setupSelectedTickers = new Set(draft.selectedTickers);
+  } else if (latestState && latestState.allCompaniesUniverse && latestState.allCompaniesUniverse.length > 0) {
+    const enabled = latestState.allCompaniesUniverse.filter((c) => c.isEnabled !== false).map((c) => c.ticker);
+    setupSelectedTickers = new Set(enabled.length >= 4 ? enabled : latestState.allCompaniesUniverse.map((c) => c.ticker));
+  } else {
+    setupSelectedTickers = new Set(DEFAULT_CATALOGUE_COMPANIES.map((c) => c.ticker));
+  }
+  renderStockCatalogueGrid();
+
+  // Step 4 & 5
+  updateNewsPreviewFromSelection();
+  updateReviewStats();
+  setupInitialized = true;
+}
+
+function saveSetupDraft() {
+  const teams = getSetup16TeamsArray();
+  const draft = {
+    title: (document.getElementById('setupEventTitle')?.value || '').trim(),
+    institution: (document.getElementById('setupInstitution')?.value || '').trim(),
+    startingCash: parseFloat(document.getElementById('setupStartingCash')?.value) || 500000,
+    totalDays: parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3,
+    dayDurationSeconds: parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800,
+    transactionFeeBps: parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0,
+    circuitBreakerPercent: parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20,
+    selectedTickers: Array.from(setupSelectedTickers),
+    teams
+  };
+
+  try {
+    localStorage.setItem('ttf_setup_draft', JSON.stringify(draft));
+  } catch (e) {}
+
+  const indicator = document.getElementById('setupAutoSaveIndicator');
+  if (indicator) {
+    indicator.textContent = '💾 Draft Auto-Saved';
+    indicator.style.opacity = '1';
+    clearTimeout(indicator._fadeTimer);
+    indicator._fadeTimer = setTimeout(() => {
+      indicator.style.opacity = '0.7';
+    }, 1500);
+  }
+
+  updateReviewStats();
+}
+
 function switchSetupSection(sec) {
   activeSetupSection = sec;
-  const sections = ['details', 'teams', 'universe', 'schedule', 'news', 'review'];
+  const sections = ['details', 'teams', 'universe', 'news', 'review'];
   sections.forEach((s) => {
     const btn = document.getElementById(`setupNavBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
     const content = document.getElementById(`setupSection${s.charAt(0).toUpperCase() + s.slice(1)}`);
@@ -4125,11 +4383,461 @@ function switchSetupSection(sec) {
       else content.classList.add('hidden');
     }
   });
-  if (sec === 'universe' && latestState) {
-    renderHostUniverseView(latestState.allCompaniesUniverse || latestState.companies || []);
-  } else if (sec === 'teams' && latestState) {
-    renderHostLauncherTab(latestState);
+
+  if (sec === 'teams') {
+    if (!setupInitialized) initOrRestoreEventSetup();
+  } else if (sec === 'universe') {
+    renderStockCatalogueGrid();
+    if (latestState) renderHostUniverseView(latestState.allCompaniesUniverse || latestState.companies || []);
+  } else if (sec === 'news') {
+    updateNewsPreviewFromSelection();
+  } else if (sec === 'review') {
+    updateReviewStats();
   }
+}
+
+function renderSetupTeamsRoster(teamsList) {
+  const tbody = document.getElementById('setupTeamsRosterTbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = teamsList.map((t, idx) => {
+    const i = idx + 1;
+    const name = escapeHtml(t.name || `Team ${i}`);
+    const username = `team${i}`;
+    const password = escapeHtml(t.password || `trade${i}00`);
+    const members = escapeHtml(t.members || '');
+
+    return `
+      <tr style="border-bottom: 1px solid var(--subtle-border); transition: background 0.15s ease;">
+        <td style="padding: 10px 12px; font-weight: 800; color: var(--champagne-accent);">
+          <span class="badge badge-champagne" style="font-size: 11px;">#${i}</span>
+        </td>
+        <td style="padding: 6px 12px;">
+          <input type="text" id="setupTeamName_${i}" class="form-input" style="padding: 6px 10px; font-size: 12px; font-weight: 700; color: var(--text-forest);" value="${name}" oninput="saveSetupDraft()" placeholder="Team ${i}" />
+        </td>
+        <td style="padding: 10px 12px; font-weight: 800; color: #1E40AF; font-size: 12px;">
+          ${username}
+        </td>
+        <td style="padding: 6px 12px;">
+          <input type="text" id="setupTeamPass_${i}" class="form-input" style="padding: 6px 10px; font-size: 12px; font-family: var(--font-mono); color: var(--text-charcoal); background: #FAF9F6;" value="${password}" oninput="saveSetupDraft()" placeholder="Password" />
+        </td>
+        <td style="padding: 6px 12px;">
+          <input type="text" id="setupTeamMembers_${i}" class="form-input" style="padding: 6px 10px; font-size: 12px;" value="${members}" oninput="saveSetupDraft()" placeholder="Trader ${i}A, Trader ${i}B" />
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function getSetup16TeamsArray() {
+  const teams = [];
+  for (let i = 1; i <= 16; i++) {
+    const nameInput = document.getElementById(`setupTeamName_${i}`);
+    const passInput = document.getElementById(`setupTeamPass_${i}`);
+    const membersInput = document.getElementById(`setupTeamMembers_${i}`);
+    teams.push({
+      slot: i,
+      id: `team_${i}`,
+      username: `team${i}`,
+      name: (nameInput ? nameInput.value : `Team ${i}`).trim() || `Team ${i}`,
+      password: (passInput ? passInput.value : `trade${i}00`).trim() || `trade${i}00`,
+      members: (membersInput ? membersInput.value : '').trim()
+    });
+  }
+  return teams;
+}
+
+function generateRandomTeamPins() {
+  for (let i = 1; i <= 16; i++) {
+    const passInput = document.getElementById(`setupTeamPass_${i}`);
+    if (passInput) {
+      const pin = Math.floor(100000 + Math.random() * 900000).toString();
+      passInput.value = pin;
+    }
+  }
+  saveSetupDraft();
+  showOrderToast('🎲 Generated random 6-digit PINs for all 16 teams!', true);
+}
+
+function resetDefaultTeamCredentials() {
+  for (let i = 1; i <= 16; i++) {
+    const nameInput = document.getElementById(`setupTeamName_${i}`);
+    const passInput = document.getElementById(`setupTeamPass_${i}`);
+    if (nameInput) nameInput.value = `Team ${i}`;
+    if (passInput) passInput.value = `trade${i}00`;
+  }
+  saveSetupDraft();
+  showOrderToast('🔄 Reset all 16 teams to standard credentials (trade100..trade1600).', true);
+}
+
+function copySetupCredentialsToClipboard() {
+  const teams = getSetup16TeamsArray();
+  const origin = window.location.origin;
+  const lines = [
+    'THE TRADING FLOOR CHAMPIONSHIP 2026 — 16 TEAMS CREDENTIALS',
+    '============================================================',
+    ''
+  ];
+  teams.forEach((t) => {
+    lines.push(`Desk #${t.slot}: ${t.name}`);
+    lines.push(`   Username: ${t.username}`);
+    lines.push(`   Password: ${t.password}`);
+    lines.push(`   Direct Access: ${origin}/?team=${t.username}&pass=${encodeURIComponent(t.password)}`);
+    lines.push('');
+  });
+
+  const fullText = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(fullText)
+      .then(() => showOrderToast('📋 All 16 team credentials copied to clipboard!', true))
+      .catch(() => fallbackCopy(fullText));
+  } else {
+    fallbackCopy(fullText);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showOrderToast('📋 All 16 team credentials copied to clipboard!', true);
+  } catch (e) {
+    showOrderToast('⚠️ Could not copy to clipboard. Please copy manually.', false);
+  }
+  document.body.removeChild(ta);
+}
+
+function downloadSetupCredentialsCsv() {
+  const teams = getSetup16TeamsArray();
+  const origin = window.location.origin;
+  const rows = [
+    ['Desk Slot', 'Team Name', 'Username', 'Password', 'Direct URL']
+  ];
+  teams.forEach((t) => {
+    const url = `${origin}/?team=${t.username}&pass=${encodeURIComponent(t.password)}`;
+    const safeName = /^[=+\-@]/.test(t.name) ? `'${t.name}` : t.name;
+    const safePass = /^[=+\-@]/.test(t.password) ? `'${t.password}` : t.password;
+    rows.push([t.slot, `"${safeName.replace(/"/g, '""')}"`, t.username, `"${safePass.replace(/"/g, '""')}"`, url]);
+  });
+  const csvContent = rows.map((r) => r.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TheTradingFloor_16_Team_Credentials.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showOrderToast('📥 Downloaded TheTradingFloor_16_Team_Credentials.csv', true);
+}
+
+function getAvailableStocks() {
+  if (latestState && latestState.allCompaniesUniverse && latestState.allCompaniesUniverse.length > 0) {
+    return latestState.allCompaniesUniverse;
+  }
+  return DEFAULT_CATALOGUE_COMPANIES;
+}
+
+function renderStockCatalogueGrid() {
+  const grid = document.getElementById('stockCatalogueGrid');
+  if (!grid) return;
+
+  const allStocks = getAvailableStocks();
+  const search = setupCatalogueSearchTerm.toLowerCase();
+  const sector = setupCatalogueSectorFilter;
+
+  const filtered = allStocks.filter((s) => {
+    const matchesSearch = !search ||
+      s.ticker.toLowerCase().includes(search) ||
+      s.name.toLowerCase().includes(search) ||
+      (s.sector && s.sector.toLowerCase().includes(search));
+    const matchesSector = sector === 'ALL' ||
+      (s.sector && s.sector.toLowerCase().includes(sector.toLowerCase()));
+    return matchesSearch && matchesSector;
+  });
+
+  const selectedCountEl = document.getElementById('catalogueSelectedCount');
+  if (selectedCountEl) selectedCountEl.textContent = setupSelectedTickers.size;
+  const badgeEl = document.getElementById('catalogueSelectedCountBadge');
+  if (badgeEl) {
+    if (setupSelectedTickers.size < 4) {
+      badgeEl.className = 'badge badge-paused';
+      badgeEl.innerHTML = `⚠️ <span id="catalogueSelectedCount">${setupSelectedTickers.size}</span> / ${allStocks.length} Stocks (Min 4 Required)`;
+    } else {
+      badgeEl.className = 'badge badge-active';
+      badgeEl.innerHTML = `✓ <span id="catalogueSelectedCount">${setupSelectedTickers.size}</span> / ${allStocks.length} Stocks Selected`;
+    }
+  }
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted); background: var(--surface-cream); border-radius: var(--radius-sm); border: 1px dashed var(--subtle-border);">
+        No corporate equities found matching "${escapeHtml(search)}". Try a different query.
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map((s) => {
+    const isSelected = setupSelectedTickers.has(s.ticker);
+    const basePrice = s.base_price !== undefined ? s.base_price : (s.currentPrice || 1000);
+
+    return `
+      <div onclick="toggleStockSelection('${s.ticker}')" class="stock-catalogue-card" style="padding: 14px 16px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.18s ease; user-select: none; background: #FFFFFF; ${isSelected ? 'border: 2px solid var(--price-up); box-shadow: 0 4px 12px rgba(33,134,83,0.12);' : 'border: 1px solid var(--subtle-border); opacity: 0.65;'}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-weight: 900; font-size: 15px; color: var(--text-forest); font-family: var(--font-mono);">${s.ticker}</span>
+              <span class="badge" style="font-size: 9px; padding: 2px 5px; background: #EEF2F6; color: #475569;">NSE</span>
+            </div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-charcoal); margin-top: 2px; line-height: 1.3;">${escapeHtml(s.name)}</div>
+          </div>
+          <div style="text-align: right;">
+            <input type="checkbox" ${isSelected ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--price-up); cursor: pointer;" onclick="event.stopPropagation(); toggleStockSelection('${s.ticker}')" />
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--subtle-border); font-size: 11px;">
+          <span class="badge" style="font-size: 10px; background: var(--surface-cream); color: var(--text-muted);">${escapeHtml(s.sector || 'Equities')}</span>
+          <div style="text-align: right;">
+            <span style="color: var(--text-muted); font-size: 10px;">Ref Price:</span>
+            <span style="font-weight: 800; color: var(--text-forest); font-family: var(--font-mono); margin-left: 2px;">₹${basePrice.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function filterStockCatalogue() {
+  const searchInput = document.getElementById('stockCatalogueSearch');
+  setupCatalogueSearchTerm = (searchInput ? searchInput.value : '').trim();
+  renderStockCatalogueGrid();
+}
+
+function filterCatalogueBySector(sector) {
+  setupCatalogueSectorFilter = sector;
+  const pills = document.querySelectorAll('#catalogueSectorPills button');
+  pills.forEach((p) => {
+    if (p.getAttribute('data-sector') === sector) p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  renderStockCatalogueGrid();
+}
+
+function toggleStockSelection(ticker) {
+  if (setupSelectedTickers.has(ticker)) {
+    if (setupSelectedTickers.size <= 4) {
+      showOrderToast('⚠️ Minimum 4 stocks required to preserve market index diversity.', false);
+      return;
+    }
+    setupSelectedTickers.delete(ticker);
+  } else {
+    setupSelectedTickers.add(ticker);
+  }
+  renderStockCatalogueGrid();
+  updateNewsPreviewFromSelection();
+  saveSetupDraft();
+  updateReviewStats();
+}
+
+function selectStockPreset(preset) {
+  const allStocks = getAvailableStocks();
+  if (preset === 'all') {
+    setupSelectedTickers = new Set(allStocks.map((c) => c.ticker));
+    showOrderToast(`✓ Selected all ${setupSelectedTickers.size} NSE corporate equities.`, true);
+  } else if (preset === 'top12') {
+    const top12 = ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS', 'LT', 'INFY', 'ICICIBANK', 'ITC', 'BAJFINANCE', 'AIRTEL', 'SUNPHARMA', 'TITAN'];
+    const valid = top12.filter((t) => allStocks.some((c) => c.ticker === t));
+    setupSelectedTickers = new Set(valid);
+    showOrderToast(`✓ Selected top 12 diversified market leaders across all sectors.`, true);
+  } else if (preset === 'top8') {
+    const top8 = ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS', 'LT', 'INFY', 'ICICIBANK', 'ITC'];
+    const valid = top8.filter((t) => allStocks.some((c) => c.ticker === t));
+    setupSelectedTickers = new Set(valid);
+    showOrderToast(`✓ Selected top 8 mega-cap equities.`, true);
+  } else if (preset === 'clear') {
+    const min4 = ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS'].filter((t) => allStocks.some((c) => c.ticker === t));
+    setupSelectedTickers = new Set(min4.length >= 4 ? min4 : allStocks.slice(0, 4).map((c) => c.ticker));
+    showOrderToast('⚠️ Deselected all non-essential stocks (retained minimum 4 required).', false);
+  }
+  renderStockCatalogueGrid();
+  updateNewsPreviewFromSelection();
+  saveSetupDraft();
+  updateReviewStats();
+}
+
+function generateClientNewsPreview(selectedTickers, totalDays, dayDurationSeconds) {
+  const templates = [
+    { title: 'Strong Institutional Q3 Earnings Growth', pct: 4.5, exp: 'Quarterly financial filings exceed consensus forecasts; institutional liquidity accelerates.' },
+    { title: 'Supply Chain Friction and Cost Escalations', pct: -3.8, exp: 'Input cost pressures and logistics delays weigh slightly on near-term operating margins.' },
+    { title: 'Mega Infrastructure Expansion Contract Secured', pct: 6.2, exp: 'Major capital project allotment awarded, bolstering long-term revenue order books.' },
+    { title: 'Sectoral Regulatory Audit & Compliance Review', pct: -2.5, exp: 'Exchange regulatory body initiates routine compliance inspection across leading participants.' },
+    { title: 'Strategic Green Energy & Technology Initiative', pct: 5.0, exp: 'Enterprise announces capital expenditure drive into next-generation sustainable technology.' },
+    { title: 'Monetary Policy Committee Neutral Stance Update', pct: 2.0, exp: 'Central bank benchmark rate decision maintains favorable institutional liquidity environment.' }
+  ];
+
+  const news = [];
+  const tickers = selectedTickers.length > 0 ? selectedTickers : ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS'];
+  let eventIdx = 0;
+
+  for (let day = 1; day <= totalDays; day++) {
+    const triggers = [
+      Math.floor(dayDurationSeconds * 0.25),
+      Math.floor(dayDurationSeconds * 0.50),
+      Math.floor(dayDurationSeconds * 0.75)
+    ];
+
+    triggers.forEach((triggerSec) => {
+      const t = tickers[eventIdx % tickers.length];
+      const tmpl = templates[eventIdx % templates.length];
+      eventIdx++;
+
+      news.push({
+        day,
+        trigger_second: triggerSec,
+        headline: `${t}: ${tmpl.title}`,
+        simple_explanation: tmpl.exp,
+        ticker: t,
+        impact_pct: tmpl.pct
+      });
+    });
+  }
+  return news;
+}
+
+function updateNewsPreviewFromSelection() {
+  const container = document.getElementById('setupNewsPreviewList');
+  if (!container) return;
+
+  const totalDays = parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3;
+  const dayDuration = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
+  const tickers = Array.from(setupSelectedTickers);
+
+  const previewEvents = generateClientNewsPreview(tickers, totalDays, dayDuration);
+
+  container.innerHTML = previewEvents.map((ev) => {
+    const isUp = ev.impact_pct >= 0;
+    return `
+      <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); background: #FFFFFF;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">
+            DAY ${ev.day} &bull; AT ${formatMMSS(ev.trigger_second)}
+          </span>
+          <span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10px; font-weight: 800;">
+            ${ev.ticker} ${isUp ? '+' : ''}${ev.impact_pct}%
+          </span>
+        </div>
+        <div style="font-weight: 800; font-size: 13px; color: var(--text-forest); margin-bottom: 4px; line-height: 1.35;">
+          ${escapeHtml(ev.headline)}
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+          ${escapeHtml(ev.simple_explanation)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function regenerateNewsTimeline() {
+  updateNewsPreviewFromSelection();
+  showOrderToast('🔄 News timeline regenerated dynamically from selected stocks.', true);
+}
+
+function updateReviewStats() {
+  const cash = parseFloat(document.getElementById('setupStartingCash')?.value) || 500000;
+  const totalDays = parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3;
+  const dayDuration = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
+  const cb = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
+
+  const statTeams = document.getElementById('reviewStatTeams');
+  const statStocks = document.getElementById('reviewStatStocks');
+  const statCash = document.getElementById('reviewStatCash');
+  const statSchedule = document.getElementById('reviewStatSchedule');
+
+  if (statTeams) statTeams.textContent = '16 Teams Configured';
+  if (statStocks) statStocks.textContent = `${setupSelectedTickers.size} Stocks Active`;
+  if (statCash) statCash.textContent = `₹${cash.toLocaleString('en-IN')} / Team`;
+  if (statSchedule) statSchedule.textContent = `${totalDays} Days • ${Math.round(dayDuration / 60)}m / Day (±${cb}%)`;
+}
+
+function openLockSetupConfirmModal() {
+  const title = (document.getElementById('setupEventTitle')?.value || '').trim();
+  if (!title) {
+    showOrderToast('⚠️ Event title cannot be empty. Please enter an event title in Step 1.', false);
+    switchSetupSection('details');
+    return;
+  }
+
+  if (setupSelectedTickers.size < 4) {
+    showOrderToast('⚠️ Please select at least 4 stocks in Step 3 before locking setup.', false);
+    switchSetupSection('universe');
+    return;
+  }
+
+  const teams = getSetup16TeamsArray();
+  if (teams.length !== 16) {
+    showOrderToast('⚠️ Exactly 16 teams are required in Step 2.', false);
+    switchSetupSection('teams');
+    return;
+  }
+
+  for (let i = 0; i < teams.length; i++) {
+    if (!teams[i].name) {
+      showOrderToast(`⚠️ Team #${teams[i].slot} name cannot be empty.`, false);
+      switchSetupSection('teams');
+      return;
+    }
+    if (!teams[i].password) {
+      showOrderToast(`⚠️ Team #${teams[i].slot} password cannot be empty.`, false);
+      switchSetupSection('teams');
+      return;
+    }
+  }
+
+  const modal = document.getElementById('lockSetupConfirmModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeLockSetupConfirmModal() {
+  const modal = document.getElementById('lockSetupConfirmModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function submitLockEventSetup() {
+  closeLockSetupConfirmModal();
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    showOrderToast('⚠️ Server connection not open. Please reconnect.', false);
+    return;
+  }
+
+  const title = (document.getElementById('setupEventTitle')?.value || '').trim();
+  const institution = (document.getElementById('setupInstitution')?.value || '').trim();
+  const startingCash = parseFloat(document.getElementById('setupStartingCash')?.value) || 500000;
+  const totalDays = parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3;
+  const dayDurationSeconds = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
+  const transactionFeeBps = parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0;
+  const circuitBreakerPercent = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
+  const teams = getSetup16TeamsArray();
+  const selectedTickers = Array.from(setupSelectedTickers);
+
+  ws.send(JSON.stringify({
+    action: 'HOST_SET_EVENT_LOCK',
+    session_token: sessionToken,
+    eventTitle: title,
+    institution,
+    startingCash,
+    totalDays,
+    dayDurationSeconds,
+    transactionFeeBps,
+    circuitBreakerPercent,
+    teams,
+    selectedTickers
+  }));
+
+  showOrderToast('🔒 Submitting tournament setup & activating 16 team credentials...', true);
 }
 
 function saveEventDetailsFromSetup() {
@@ -7213,6 +7921,38 @@ function hostUploadBackupFile(event) {
   };
   reader.readAsText(file);
 }
+
+// Export Guided Setup Controller to window for inline HTML event attributes
+window.initOrRestoreEventSetup = initOrRestoreEventSetup;
+window.saveSetupDraft = saveSetupDraft;
+window.switchSetupSection = switchSetupSection;
+window.generateRandomTeamPins = generateRandomTeamPins;
+window.resetDefaultTeamCredentials = resetDefaultTeamCredentials;
+window.copySetupCredentialsToClipboard = copySetupCredentialsToClipboard;
+window.downloadSetupCredentialsCsv = downloadSetupCredentialsCsv;
+window.renderStockCatalogueGrid = renderStockCatalogueGrid;
+window.filterStockCatalogue = filterStockCatalogue;
+window.filterCatalogueBySector = filterCatalogueBySector;
+window.toggleStockSelection = toggleStockSelection;
+window.selectStockPreset = selectStockPreset;
+window.updateNewsPreviewFromSelection = updateNewsPreviewFromSelection;
+window.regenerateNewsTimeline = regenerateNewsTimeline;
+window.openLockSetupConfirmModal = openLockSetupConfirmModal;
+window.closeLockSetupConfirmModal = closeLockSetupConfirmModal;
+window.submitLockEventSetup = submitLockEventSetup;
+window.updateLoginEventStatusBanner = updateLoginEventStatusBanner;
+
+// Probe authoritative event readiness status for login screen immediately
+try {
+  fetch('/api/event-status')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data && data.configLocked !== undefined) {
+        updateLoginEventStatusBanner({ gameState: data });
+      }
+    })
+    .catch(() => {});
+} catch (e) {}
 
 // Initialize connection on load
 connectWebSocket();

@@ -155,27 +155,96 @@ async function runTests() {
       logFail('Host authentication failed', hostLogin);
     }
 
-    // 2.3 Trader Team 1 Login
+    // 2.3 Team Login Gated Before Setup is Locked
     const wsTeam1 = await connectWs();
+    const preLockLogin = await sendAndAwait(wsTeam1, { action: 'LOGIN', username: 'team1', password: 'trade100' }, 'LOGIN_ERROR');
+    if (preLockLogin.message.includes('The host is preparing the event')) {
+      logPass('Team login correctly gated on server before event setup is confirmed & locked.');
+    } else {
+      logFail('Team login was not gated before event setup lock', preLockLogin);
+    }
+
+    // 2.4 Invalid Event Setup Rejected by Server
+    const invalidLockRes = await sendAndAwait(ws1, {
+      action: 'HOST_SET_EVENT_LOCK',
+      session_token: hostToken,
+      eventTitle: '',
+      selectedTickers: ['RELIANCE'] // Less than minimum 4 stocks
+    }, 'SETUP_VALIDATION_ERROR');
+    if (invalidLockRes.type === 'SETUP_VALIDATION_ERROR') {
+      logPass('Server rejected invalid event setup (minimum 4 stocks & non-blank title enforced).');
+    } else {
+      logFail('Server did not reject invalid setup', invalidLockRes);
+    }
+
+    // 2.4b Host configures stock catalogue before locking (adds custom share CAMPUSCO)
+    ws1.send(JSON.stringify({
+      action: 'HOST_ADD_SHARE',
+      session_token: hostToken,
+      ticker: 'CAMPUSCO',
+      name: 'Campus Innovations Ltd',
+      sector: 'Technology',
+      base_price: 250.00,
+      volatility_factor: 0.005,
+      beta: 1.2,
+      summary: 'Student-led tech enterprise'
+    }));
+    await new Promise((r) => setTimeout(r, 400));
+    logPass('Host configured and added custom share CAMPUSCO to setup catalogue.');
+
+    // 2.5 Host Confirms and Locks Authoritative Event Setup (16 Teams & Selected Stocks)
+    const test16Teams = [];
+    for (let i = 1; i <= 16; i++) {
+      test16Teams.push({
+        slot: i,
+        name: `Team ${i}`,
+        username: `team${i}`,
+        password: `trade${i}00`,
+        members: `Trader ${i}A, Trader ${i}B`
+      });
+    }
+    const selectedStocks = [...hostLogin.initialState.companies.map((c) => c.ticker), 'CAMPUSCO'];
+
+    const lockAck = await sendAndAwait(ws1, {
+      action: 'HOST_SET_EVENT_LOCK',
+      session_token: hostToken,
+      eventTitle: 'The Trading Floor Championship 2026',
+      institution: 'Gujarat Technological University',
+      startingCash: 500000,
+      totalDays: 3,
+      dayDurationSeconds: 1800,
+      transactionFeeBps: 0,
+      circuitBreakerPercent: 20,
+      teams: test16Teams,
+      selectedTickers: selectedStocks
+    }, 'EVENT_CONFIG_LOCKED_ACK');
+
+    if (lockAck.type === 'EVENT_CONFIG_LOCKED_ACK') {
+      logPass('Host confirmed & locked authoritative event setup. 16 Team accounts activated.');
+    } else {
+      logFail('Host setup lock failed', lockAck);
+    }
+
+    // 2.6 Post-Lock Trader Team 1 Login
     const team1Login = await sendAndAwait(wsTeam1, { action: 'LOGIN', username: 'team1', password: 'trade100' }, 'LOGIN_SUCCESS');
     if (team1Login.role === 'TRADER' && team1Login.id === 'team_1') {
       team1Token = team1Login.session_token;
-      logPass(`Trader Team 1 authenticated. Initial cash: ₹${team1Login.initialState.portfolio.cash}`);
+      logPass(`Trader Team 1 authenticated after setup lock. Initial cash: ₹${team1Login.initialState.portfolio.cash}`);
     } else {
       logFail('Team 1 authentication failed', team1Login);
     }
 
-    // 2.4 Trader Team 2 Login
+    // 2.7 Post-Lock Trader Team 2 Login
     const wsTeam2 = await connectWs();
     const team2Login = await sendAndAwait(wsTeam2, { action: 'LOGIN', username: 'team2', password: 'trade200' }, 'LOGIN_SUCCESS');
     if (team2Login.role === 'TRADER' && team2Login.id === 'team_2') {
       team2Token = team2Login.session_token;
-      logPass(`Trader Team 2 authenticated. Initial cash: ₹${team2Login.initialState.portfolio.cash}`);
+      logPass(`Trader Team 2 authenticated after setup lock. Initial cash: ₹${team2Login.initialState.portfolio.cash}`);
     } else {
       logFail('Team 2 authentication failed', team2Login);
     }
 
-    // 2.5 Resume Session via Token
+    // 2.8 Resume Session via Token
     const wsResume = await connectWs();
     const resumeRes = await sendAndAwait(wsResume, { action: 'RESUME_SESSION', session_token: team1Token }, 'LOGIN_SUCCESS');
     if (resumeRes.id === 'team_1') {
@@ -185,7 +254,7 @@ async function runTests() {
     }
     wsResume.close();
 
-    // 2.6 Dedicated Event-Hall Sound Console Login
+    // 2.9 Dedicated Event-Hall Sound Console Login
     const wsSound = await connectWs();
     const soundLogin = await sendAndAwait(wsSound, { action: 'LOGIN', username: 'sound', password: 'sound2026' }, 'LOGIN_SUCCESS');
     if (soundLogin.role === 'SOUND_CONSOLE') {
@@ -359,21 +428,21 @@ async function runTests() {
     // -------------------------------------------------------------
     console.log('\n[STAGE 4.6] Share Universe Management & Tradeability Enforcement');
 
-    // 1. Host adds new share CAMPUSCO
-    ws1.send(JSON.stringify({
+    // 1. Verify mid-tournament share creation is rejected because universe is locked
+    const midTourneyAdd = await sendAndAwait(ws1, {
       action: 'HOST_ADD_SHARE',
       session_token: hostToken,
-      ticker: 'CAMPUSCO',
-      name: 'Campus Innovations Ltd',
+      ticker: 'NEW_ILLEGAL_SHARE',
+      name: 'Illegal Mid-Tournament Share',
       sector: 'Technology',
-      base_price: 250.00,
-      volatility_factor: 0.005,
-      beta: 1.2,
-      summary: 'Student-led tech enterprise'
-    }));
+      base_price: 100.00
+    }, 'EVENT_CONFIG_LOCKED');
 
-    await new Promise((r) => setTimeout(r, 400));
-    logPass('Host added custom share CAMPUSCO to active universe.');
+    if (midTourneyAdd.type === 'EVENT_CONFIG_LOCKED') {
+      logPass('Mid-competition share addition correctly rejected (locked stock universe integrity preserved).');
+    } else {
+      logFail('Mid-competition share addition was not rejected', midTourneyAdd);
+    }
 
     // 2. Host disables CAMPUSCO
     ws1.send(JSON.stringify({

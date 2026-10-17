@@ -115,7 +115,7 @@ let gameState = {
   title: 'The Trading Floor - Championship 2026',
   subtitle: 'Gujarat Technological University • Intra-College Trading Championship',
   institution: 'Gujarat Technological University',
-  status: 'PAUSED',
+  status: 'SETUP',
   configLocked: false,
   startMode: 'IMMEDIATE',
   scheduledStartTime: null,
@@ -446,7 +446,7 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     title: meta.title || 'The Trading Floor - Championship 2026',
     subtitle: meta.subtitle || 'Gujarat Technological University • Intra-College Trading Championship',
     institution: meta.institution || 'Gujarat Technological University',
-    status: 'PAUSED',
+    status: 'SETUP',
     configLocked: false,
     startMode: 'IMMEDIATE',
     scheduledStartTime: null,
@@ -1671,6 +1671,15 @@ wss.on('connection', (ws) => {
         return;
       }
 
+      // TRADER login gating: Teams cannot log in until host completes and locks event setup
+      if (userRecord.role === 'TRADER' && !gameState.configLocked) {
+        ws.send(JSON.stringify({
+          type: 'LOGIN_ERROR',
+          message: 'The host is preparing the event. Team login will open once setup is complete.'
+        }));
+        return;
+      }
+
       const token = crypto.randomBytes(16).toString('hex');
       const sessionObj = {
         token,
@@ -1711,6 +1720,17 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify({ type: 'SESSION_EXPIRED' }));
         return;
       }
+
+      // TRADER session gating: Reject resumed sessions if host has reset or unlocked setup
+      if (existing.role === 'TRADER' && !gameState.configLocked) {
+        sessions.delete(data.session_token);
+        ws.send(JSON.stringify({
+          type: 'LOGIN_ERROR',
+          message: 'The host is preparing the event. Team login will open once setup is complete.'
+        }));
+        return;
+      }
+
       ws.session = existing;
       if (existing.role === 'SOUND_CONSOLE') {
         soundClients.add(ws);
@@ -2087,12 +2107,12 @@ wss.on('connection', (ws) => {
     if (session.role === 'HOST') {
       const isConfigLocked = !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN');
 
-      // Enforce configuration lock: prevent modifying shares or custom shocks while tournament is active
+      // Enforce configuration lock: prevent modifying shares while tournament is active
       if (gameState.configLocked) {
-        if (['HOST_ADD_SHARE', 'HOST_REMOVE_SHARE', 'HOST_DELETE_SHARE', 'HOST_EDIT_SHARE', 'HOST_CREATE_CUSTOM_NEWS'].includes(data.action)) {
+        if (['HOST_ADD_SHARE', 'HOST_REMOVE_SHARE', 'HOST_DELETE_SHARE', 'HOST_EDIT_SHARE'].includes(data.action)) {
           ws.send(JSON.stringify({
             type: 'EVENT_CONFIG_LOCKED',
-            reason: 'EVENT_CONFIG_LOCKED: Configuration is permanently frozen for competition integrity. No new shares or custom news can be modified while tournament is active.'
+            reason: 'EVENT_CONFIG_LOCKED: Configuration is permanently frozen for competition integrity. Tradeable stock universe cannot be modified while tournament is active.'
           }));
           return;
         }
@@ -2110,21 +2130,183 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.0 Explicit Host Event Lock (Pre-Event Setup Freeze)
+      // 5.0 Explicit Host Event Lock (Pre-Event Setup Freeze & Team Credential Activation)
       if (data.action === 'HOST_SET_EVENT_LOCK' || data.action === 'HOST_LOCK_EVENT') {
+        const errors = [];
+        if (data.eventTitle !== undefined && (!data.eventTitle || !data.eventTitle.trim())) {
+          errors.push('Event title cannot be blank.');
+        }
+
+        // Validate stock selection (at least 4 verified stocks)
+        let selectedTickers = data.selectedTickers;
+        if (Array.isArray(selectedTickers)) {
+          if (selectedTickers.length < 4) {
+            errors.push('Please select at least 4 tradeable stocks for the market universe.');
+          }
+        } else {
+          const currentEnabled = companies.filter((c) => c.isEnabled !== false);
+          if (currentEnabled.length < 4) {
+            errors.push('Please select at least 4 tradeable stocks for the market universe.');
+          } else {
+            selectedTickers = currentEnabled.map((c) => c.ticker);
+          }
+        }
+
+        // Validate 16 teams roster
+        if (Array.isArray(data.teams)) {
+          if (data.teams.length !== 16) {
+            errors.push('Exactly 16 teams are required for the competition roster.');
+          }
+          data.teams.forEach((t, i) => {
+            if (!t.name || !t.name.trim()) errors.push(`Team ${i + 1} display name is required.`);
+            if (!t.password || !t.password.trim()) errors.push(`Team ${i + 1} password is required.`);
+          });
+        }
+
+        if (errors.length > 0) {
+          ws.send(JSON.stringify({
+            type: 'SETUP_VALIDATION_ERROR',
+            errors,
+            message: 'Setup validation failed: ' + errors.join(' ')
+          }));
+          return;
+        }
+
+        // Apply Event Parameters
+        if (data.eventTitle) gameState.title = data.eventTitle.trim();
+        if (data.institution) gameState.institution = data.institution.trim();
+        if (data.startingCash && !isNaN(data.startingCash) && parseFloat(data.startingCash) > 0) {
+          gameState.startingCash = parseFloat(data.startingCash);
+        }
+        if (data.totalDays && !isNaN(data.totalDays) && parseInt(data.totalDays, 10) > 0) {
+          gameState.totalDays = parseInt(data.totalDays, 10);
+        }
+        if (data.dayDurationSeconds && !isNaN(data.dayDurationSeconds) && parseInt(data.dayDurationSeconds, 10) >= 60) {
+          gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
+        }
+        if (data.transactionFeeBps !== undefined && !isNaN(data.transactionFeeBps)) {
+          gameState.transactionFeeBps = Math.max(0, parseInt(data.transactionFeeBps, 10));
+        }
+        if (data.circuitBreakerPercent && !isNaN(data.circuitBreakerPercent)) {
+          gameState.circuitBreakerPercent = Math.max(5, Math.min(50, parseFloat(data.circuitBreakerPercent)));
+        }
+
+        // Apply Stock Selection
+        if (Array.isArray(selectedTickers)) {
+          companies.forEach((c) => {
+            c.isEnabled = selectedTickers.includes(c.ticker);
+            if (c.isEnabled) {
+              const base = c.base_price || c.currentPrice || 1000;
+              c.currentPrice = base;
+              c.dayOpenPrice = base;
+              c.dayHigh = base;
+              c.dayLow = base;
+              c.isHalted = false;
+              c.activeTransition = null;
+              c.history = [{ time: 0, price: base }];
+            }
+          });
+          saveUniverseToDisk();
+        }
+
+        // Apply 16 Teams Roster & Credentials
+        if (Array.isArray(data.teams) && data.teams.length === 16) {
+          Object.keys(USERS).forEach((k) => {
+            if (USERS[k].role === 'TRADER') delete USERS[k];
+          });
+          teams = {};
+
+          data.teams.forEach((tData, idx) => {
+            const i = idx + 1;
+            const teamId = `team_${i}`;
+            const username = (tData.username || `team${i}`).trim().toLowerCase();
+            const password = (tData.password || `trade${i}00`).trim();
+            const name = (tData.name || `Team ${i}`).trim();
+            const members = (tData.members || `Trader ${i}A, Trader ${i}B`).trim();
+
+            USERS[username] = {
+              username,
+              password,
+              role: 'TRADER',
+              id: teamId,
+              name,
+              members
+            };
+
+            const holdings = {};
+            const avgBuyPrice = {};
+            companies.forEach((c) => {
+              holdings[c.ticker] = 0;
+              avgBuyPrice[c.ticker] = 0;
+            });
+
+            teams[teamId] = {
+              id: teamId,
+              username,
+              name,
+              members,
+              cash: gameState.startingCash,
+              startingCash: gameState.startingCash,
+              holdings,
+              avgBuyPrice,
+              realizedPnl: 0,
+              tradeCount: 0
+            };
+          });
+        }
+
+        // Auto-generate Multi-Day News Plan from the selected enabled stocks
+        const enabledTickers = companies.filter((c) => c.isEnabled !== false).map((c) => c.ticker);
+        newsEvents = generateAutoNewsPlan(enabledTickers, gameState.totalDays, gameState.dayDurationSeconds);
+
+        // Permanently lock event setup for competition integrity
         gameState.configLocked = true;
-        recordAuditEvent('EVENT_CONFIG_LOCKED', { triggered_by: 'HOST', title: gameState.title, source: 'SETUP_WIZARD_CONFIRMATION' });
+        gameState.status = 'STANDBY';
+        gameState.isPaused = true;
+        gameState.elapsedSeconds = 0;
+        gameState.currentDay = 1;
+        gameState.isConcluded = false;
+
+        saveLiveGameState();
+        recordAuditEvent('EVENT_CONFIG_LOCKED', {
+          triggered_by: 'HOST',
+          title: gameState.title,
+          teamsCount: Object.keys(teams).length,
+          stocksCount: enabledTickers.length
+        });
+
         broadcastAll({
           type: 'EVENT_CONFIG_LOCKED',
-          message: 'Your event setup is complete. Settings are now locked to protect competition fairness.',
+          message: 'Your event setup is complete. Team logins are now open and settings are locked.',
           gameState
         });
+
         ws.send(JSON.stringify({
           type: 'EVENT_CONFIG_LOCKED_ACK',
           ok: true,
-          message: 'Your event setup is complete. Settings are now locked to protect competition fairness.'
+          message: 'Event setup confirmed and locked. All 16 team credentials are now active!'
         }));
+
         broadcastTick();
+        return;
+      }
+
+      // 5.0b Bulk Stock Selection Update (Allowed only before lock)
+      if (data.action === 'HOST_SET_SELECTED_STOCKS') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'EVENT_CONFIG_LOCKED',
+            reason: 'Configuration is permanently frozen for competition integrity. Stock selection cannot be changed after setup is locked.'
+          }));
+          return;
+        }
+        if (Array.isArray(data.selectedTickers)) {
+          companies.forEach((c) => {
+            c.isEnabled = data.selectedTickers.includes(c.ticker);
+          });
+          saveUniverseToDisk();
+          broadcastTick();
+        }
         return;
       }
 
@@ -2933,14 +3115,25 @@ wss.on('connection', (ws) => {
         });
 
         // Invalidate active trader sessions so stale orders cannot be placed
+        for (const [tkn, sess] of sessions.entries()) {
+          if (sess.role === 'TRADER') {
+            sessions.delete(tkn);
+          }
+        }
         wss.clients.forEach((client) => {
           if (client.session && client.session.role === 'TRADER') {
             client.session = null;
+            try {
+              client.send(JSON.stringify({
+                type: 'SESSION_EXPIRED',
+                message: 'The championship has been reset by the host. Please wait for the host to complete event setup.'
+              }));
+            } catch (e) {}
           }
         });
 
-        // 3. Reset Game State to pristine Day 1 Standby
-        gameState.status = 'STANDBY';
+        // 3. Reset Game State to pristine Day 1 Setup
+        gameState.status = 'SETUP';
         gameState.isPaused = true;
         gameState.pauseMode = 'VISIBLE_FROZEN';
         gameState.haltReason = null;
@@ -3210,12 +3403,30 @@ app.get('/api/health', (req, res) => {
     uptime_seconds: Math.floor(process.uptime()),
     active_scenario: activeScenarioMode,
     is_paused: gameState.isPaused,
+    configLocked: !!gameState.configLocked,
+    status_phase: gameState.status,
     current_day: gameState.currentDay,
     elapsed_seconds: gameState.elapsedSeconds,
     connected_clients: wss.clients.size,
     total_trades_executed: executedTrades.length,
     companies_count: companies.length,
-    active_shares_count: companies.filter((c) => c.isEnabled).length
+    active_shares_count: companies.filter((c) => c.isEnabled !== false).length
+  });
+});
+
+// 8.1b Public Event Status (for login screen & external monitors)
+app.get('/api/event-status', (req, res) => {
+  res.json({
+    title: gameState.title,
+    subtitle: gameState.subtitle,
+    institution: gameState.institution,
+    status: gameState.status,
+    configLocked: !!gameState.configLocked,
+    totalDays: gameState.totalDays,
+    dayDurationSeconds: gameState.dayDurationSeconds,
+    startingCash: gameState.startingCash,
+    teamsCount: Object.keys(teams).length,
+    activeStocksCount: companies.filter((c) => c.isEnabled !== false).length
   });
 });
 
