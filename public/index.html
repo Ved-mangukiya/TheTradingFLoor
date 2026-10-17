@@ -1420,54 +1420,27 @@
       </div>
     </header>
 
-    <!-- TOURNAMENT MASTER FLOW CONTROLLER (Day 1 -> Day 2 -> Day 3 -> Winners) -->
+    <!-- TOURNAMENT MASTER FLOW CONTROLLER (Dynamic Day 1..N -> Winners) -->
     <div class="luxury-card host-tournament-flow-card"
       style="margin: 16px 24px 0 24px; padding: 16px 24px; background: linear-gradient(135deg, #FAF8F5 0%, #FFFFFF 100%); border: 2px solid var(--champagne-accent); box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
       <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
-        <!-- Flow Stepper -->
+        <!-- Dynamic Flow Stepper -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span
             style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">FLOW:</span>
-
-          <div id="flowStepPre" class="flow-step-pill active">
-            <span class="step-num">0</span>
-            <span class="step-label">Pre-Event</span>
-          </div>
-          <div class="flow-step-arrow">➔</div>
-
-          <div id="flowStepDay1" class="flow-step-pill">
-            <span class="step-num">1</span>
-            <span class="step-label">Day 1 (Kickoff)</span>
-          </div>
-          <div class="flow-step-arrow">➔</div>
-
-          <div id="flowStepDay2" class="flow-step-pill">
-            <span class="step-num">2</span>
-            <span class="step-label">Day 2</span>
-          </div>
-          <div class="flow-step-arrow">➔</div>
-
-          <div id="flowStepDay3" class="flow-step-pill">
-            <span class="step-num">3</span>
-            <span class="step-label">Day 3 (Climax)</span>
-          </div>
-          <div class="flow-step-arrow">➔</div>
-
-          <div id="flowStepReveal" class="flow-step-pill">
-            <span class="step-num">👑</span>
-            <span class="step-label">Winner Reveal</span>
+          <div id="hostDynamicFlowSteps" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Rendered dynamically by renderHostFlowStepper() -->
           </div>
         </div>
 
         <!-- Flow Guidance & Contextual Action -->
         <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
           <div id="flowStageStatusWrap" style="text-align: right;">
-            <div id="flowStageTitle" style="font-size: 14px; font-weight: 800; color: var(--text-forest);">Day 1 In Flow
-            </div>
-            <div id="flowStageSub" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
-              Floor Ready • Awaiting Start</div>
+            <div id="flowStageTitle" style="font-size: 14px; font-weight: 800; color: var(--text-forest);">Day 1 In Flow</div>
+            <div id="flowStageSub" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">Floor Ready • Awaiting Start</div>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <div id="hostFlowActionsContainer" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- Rendered dynamically by renderHostEventControls() -->
             <button id="btnFlowPrimaryAction" onclick="handleFlowPrimaryAction()" class="btn btn-primary"
               style="padding: 10px 20px; font-weight: 800; font-size: 13px; background-color: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 12px rgba(33,134,83,0.25);">
               ▶ Start Market (3-2-1)
@@ -2375,23 +2348,40 @@
           style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;"></div>
       </div>
 
-      <!-- TAB: Team Financial Analysis -->
+      <!-- TAB: Team Financial & Investment Analytics -->
       <div id="hostTabContentAnalysis" class="hidden luxury-card" style="padding: 24px;">
         <div
           style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
           <div>
-            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">📊 Team-by-Team Financial
-              Analysis</h2>
-            <p style="font-size: 13px; color: var(--text-muted);">
-              Audited performance ledger: Starting capital, cash balances, equity holdings at closing prices, net
-              P&amp;L (₹), and return percentages.
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">💼 Team Investment Analytics &amp; Portfolio Ledgers</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+              Audited performance ledger clearly distinguishing <strong>Available Liquid Cash</strong>, <strong>Invested Cost Basis</strong>, and <strong>Current Holdings Market Value</strong>. Click any team row to inspect full stock allocation and trade history.
             </p>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button onclick="downloadResultsSnapshotJSON()" class="btn btn-outline"
               style="padding: 6px 12px; font-size: 12px;">Export Analysis JSON</button>
             <button onclick="hostStartWinnerPresentation()" class="btn btn-champagne"
               style="padding: 6px 12px; font-size: 12px; font-weight: 800;">👑 Launch Stage Presentation</button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="cream-panel" style="padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-radius: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 260px;">
+            <input type="text" id="hostInvestSearch" placeholder="🔍 Search team name, username, or members..." oninput="renderHostAnalysis(latestState)" class="form-input" style="font-size: 13px; padding: 8px 12px;" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); white-space: nowrap;">Sort by:</label>
+            <select id="hostInvestSort" onchange="renderHostAnalysis(latestState)" class="form-input" style="font-size: 12px; padding: 7px 12px; min-width: 200px;">
+              <option value="portfolio">Portfolio Value (High to Low)</option>
+              <option value="pnl">Net Profit / Loss (High to Low)</option>
+              <option value="return">Return % (High to Low)</option>
+              <option value="cash">Available Cash (High to Low)</option>
+              <option value="cost">Invested Cost (High to Low)</option>
+              <option value="holdings">Holdings Count (High to Low)</option>
+              <option value="name">Team Name (A-Z)</option>
+            </select>
           </div>
         </div>
 
@@ -2402,16 +2392,15 @@
                 style="border-bottom: 2px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
                 <th style="padding: 10px;">Rank</th>
                 <th style="padding: 10px;">Team Name</th>
-                <th style="padding: 10px;">Members</th>
-                <th style="padding: 10px; text-align: right;">Starting Capital</th>
-                <th style="padding: 10px; text-align: right;">Cash in Hand</th>
-                <th style="padding: 10px; text-align: right;">Holdings Value</th>
-                <th style="padding: 10px; text-align: right;">Final Portfolio</th>
-                <th style="padding: 10px; text-align: right;">Net P&amp;L (₹)</th>
+                <th style="padding: 10px; text-align: right;" title="Available liquid cash not currently invested in shares">Available Cash</th>
+                <th style="padding: 10px; text-align: right;" title="Cost basis of active holdings: sum of quantity * average purchase price">Invested Cost</th>
+                <th style="padding: 10px; text-align: right;" title="Current market value of shares: sum of quantity * current market price">Holdings Value</th>
+                <th style="padding: 10px; text-align: right; font-weight: 800;" title="Total portfolio valuation: Available Cash + Holdings Value">Portfolio Value</th>
+                <th style="padding: 10px; text-align: right;" title="Net profit or loss: Portfolio Value - Starting Capital">Net P&amp;L (₹)</th>
                 <th style="padding: 10px; text-align: right;">Return %</th>
+                <th style="padding: 10px; text-align: center;">Holdings</th>
                 <th style="padding: 10px; text-align: center;">Trades</th>
-                <th style="padding: 10px; text-align: right;">Brokerage Fees</th>
-                <th style="padding: 10px; text-align: center;">Performance Review</th>
+                <th style="padding: 10px; text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody id="hostFinancialAnalysisTbody" style="font-family: var(--font-mono);"></tbody>
@@ -3007,6 +2996,82 @@
         </button>
       </div>
     </header>
+
+    <!-- TV Broadcast Breaking Market Reaction Spotlight Overlay -->
+    <div id="projNewsReactionSpotlightOverlay" class="hidden proj-reaction-spotlight-overlay">
+      <div class="proj-reaction-spotlight-card">
+        <!-- Breaking Ribbon -->
+        <div style="background: linear-gradient(90deg, #991B1B 0%, #DC2626 50%, #991B1B 100%); color: #FFF; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #FEF08A; animation: pulseGlow 1s infinite;"></span>
+            <span style="font-size: 14px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase;">🔴 BREAKING ANALYSIS • POST-NEWS MARKET REACTION</span>
+          </div>
+          <span id="projReactionTimeBadge" style="font-family: var(--font-mono); font-size: 13px; font-weight: 700; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px;">LIVE REACTION</span>
+        </div>
+
+        <div style="padding: 24px 32px;">
+          <!-- Headline Wire -->
+          <div style="margin-bottom: 20px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--champagne-accent); letter-spacing: 0.08em; margin-bottom: 4px;">TRIGGERING WIRE STORY</div>
+            <h2 id="projReactionHeadline" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin: 0; line-height: 1.3;">—</h2>
+          </div>
+
+          <!-- Main Stats Comparison Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; align-items: center;">
+            <!-- Left: Ticker & Price Movement -->
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;">
+                <span id="projReactionTicker" style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; color: var(--text-forest);">—</span>
+                <span id="projReactionSector" class="badge badge-champagne" style="font-size: 12px; font-weight: 800;">—</span>
+              </div>
+              <div id="projReactionName" style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; font-weight: 600;">—</div>
+
+              <!-- Price Box Comparison -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                <div class="cream-panel" style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--subtle-border);">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pre-News Price</div>
+                  <div id="projReactionStartPrice" style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: var(--text-charcoal); margin-top: 2px;">₹0.00</div>
+                  <div id="projReactionStartTime" style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">00:00:00</div>
+                </div>
+
+                <div class="cream-panel" style="padding: 12px 16px; border-radius: 10px; border: 1px solid var(--subtle-border);">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Post-Reaction Price</div>
+                  <div id="projReactionEndPrice" style="font-family: var(--font-mono); font-size: 20px; font-weight: 900; color: var(--price-up); margin-top: 2px;">₹0.00</div>
+                  <div id="projReactionEndTime" style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">00:00:00</div>
+                </div>
+              </div>
+
+              <!-- Big Delta Badge -->
+              <div id="projReactionDeltaBadge" style="padding: 12px 20px; border-radius: 10px; text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 900; background: #DCFCE7; color: #166534; border: 2px solid #86EFAC;">
+                +0.00% ▲
+              </div>
+            </div>
+
+            <!-- Right: Canvas Chart Comparison -->
+            <div class="cream-panel" style="padding: 16px; border-radius: 14px; border: 1px solid var(--subtle-border); background: #FAF9F6;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-forest);">Price Trajectory Reaction Graph</span>
+                <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">S-Curve Smoothstep Equilibrium</span>
+              </div>
+              <div style="height: 180px; width: 100%;">
+                <canvas id="projReactionChartCanvas" width="500" height="180" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 6px;">
+                <span id="projReactionChartStartTime">Pre-News Base</span>
+                <span style="color: var(--champagne-accent); font-weight: 700;">▲ Reaction Window</span>
+                <span id="projReactionChartEndTime">Equilibrium Reached</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Dismiss Bar -->
+          <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+            <span>⚡ Automated Market Analysis • Auto-dismissing in <span id="projReactionDismissSec">12</span>s</span>
+            <button type="button" onclick="dismissProjectorReactionSpotlight()" class="btn btn-outline" style="font-size: 11px; padding: 4px 12px;">Close Now [✕]</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Interactive Stage (Switches between Market Multi-Scene Cycle and Embedded Winner Stage) -->
     <div id="projectorMainStage" style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin: 16px 0;">
@@ -4713,6 +4778,237 @@
         style="width: 100%; padding: 14px; font-size: 14px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
         Acknowledge &amp; Return to Login Screen ➔
       </button>
+    </div>
+  </div>
+
+  <!-- Team Investment Breakdown & Allocation Detail Modal -->
+  <div id="teamInvestmentDetailModal" class="hidden modal-overlay" style="z-index: 9998; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 28px; border: 2px solid var(--champagne-accent); border-radius: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 28px;">💼</span>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h2 id="invModalTeamName" style="font-size: 20px; font-weight: 800; color: var(--text-forest); margin: 0;">Team Portfolio Detail</h2>
+              <span id="invModalRankBadge" class="badge badge-champagne" style="font-size: 11px; font-weight: 800;">#1</span>
+            </div>
+            <div id="invModalMembers" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Members: —</div>
+          </div>
+        </div>
+        <button onclick="closeTeamInvestmentDetail()" class="modal-close-btn" style="font-size: 20px;">✕</button>
+      </div>
+
+      <!-- Financial Metrics Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 1px solid var(--subtle-border);">
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Available Liquid Cash</div>
+          <div id="invModalCash" style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--text-forest); margin-top: 2px;">₹0.00</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Uninvested Capital</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 1px solid var(--subtle-border);">
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Invested Cost Basis</div>
+          <div id="invModalCost" style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: #1E40AF; margin-top: 2px;">₹0.00</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Cost Basis of Shares</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 1px solid var(--subtle-border);">
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Holdings Market Value</div>
+          <div id="invModalMarketVal" style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--price-up); margin-top: 2px;">₹0.00</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Current Market Worth</div>
+        </div>
+        <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 2px solid var(--champagne-accent); background: #FAF9F6;">
+          <div style="font-size: 10px; font-weight: 800; color: var(--text-forest); text-transform: uppercase;">Total Portfolio Value</div>
+          <div id="invModalPortfolioVal" style="font-family: var(--font-mono); font-size: 18px; font-weight: 900; color: var(--text-forest); margin-top: 2px;">₹0.00</div>
+          <div id="invModalNetPnl" style="font-size: 11px; font-weight: 800; margin-top: 2px;" class="price-up">+₹0.00 (+0.00%)</div>
+        </div>
+      </div>
+
+      <!-- Asset Allocation Visualizer -->
+      <div class="cream-panel" style="padding: 16px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--subtle-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-forest);">Portfolio Allocation Breakdown</span>
+          <span style="font-size: 11px; color: var(--text-muted);">Cash in Hand vs Corporate Equities</span>
+        </div>
+        <div id="invModalAllocBar" class="team-alloc-bar"></div>
+        <div id="invModalAllocLegend" style="display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 11px; margin-top: 8px;"></div>
+      </div>
+
+      <!-- Active Share Holdings Breakdown Table -->
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-forest); margin-bottom: 8px;">Active Equities Portfolio</h3>
+        <div style="overflow-x: auto; border: 1px solid var(--subtle-border); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
+                <th style="padding: 8px 10px;">Stock</th>
+                <th style="padding: 8px 10px;">Sector</th>
+                <th style="padding: 8px 10px; text-align: right;">Quantity</th>
+                <th style="padding: 8px 10px; text-align: right;">Avg Buy Price</th>
+                <th style="padding: 8px 10px; text-align: right;">Total Cost Basis</th>
+                <th style="padding: 8px 10px; text-align: right;">Current Price</th>
+                <th style="padding: 8px 10px; text-align: right;">Market Value</th>
+                <th style="padding: 8px 10px; text-align: right;">Unrealized P&amp;L</th>
+                <th style="padding: 8px 10px; text-align: right;">Return %</th>
+              </tr>
+            </thead>
+            <tbody id="invModalHoldingsTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Orders by this Team -->
+      <div>
+        <h3 style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-forest); margin-bottom: 8px;">Executed Orders Log</h3>
+        <div style="max-height: 160px; overflow-y: auto; border: 1px solid var(--subtle-border); border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+            <thead>
+              <tr style="background: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
+                <th style="padding: 6px 10px;">Time</th>
+                <th style="padding: 6px 10px;">Action</th>
+                <th style="padding: 6px 10px;">Stock</th>
+                <th style="padding: 6px 10px; text-align: right;">Quantity</th>
+                <th style="padding: 6px 10px; text-align: right;">Price</th>
+                <th style="padding: 6px 10px; text-align: right;">Total Value</th>
+              </tr>
+            </thead>
+            <tbody id="invModalOrdersTbody" style="font-family: var(--font-mono);"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Conclude Day -->
+  <div id="modalConcludeDay" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--champagne-accent); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">🔔</span>
+        <div>
+          <h2 id="modalConcludeDayTitle" style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin: 0;">Conclude Day 1 of 3</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">End active trading session for today</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; color: var(--text-forest);">
+        <p style="margin: 0 0 10px 0;"><strong>What happens when you conclude today:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 12px;">
+          <li>Active orders and trading desks will be paused.</li>
+          <li>Official closing prices for today are locked into the daily snapshot ledger.</li>
+          <li>Team portfolio values, rankings, and cash are safely recorded.</li>
+          <li>All holdings and cash carry forward seamlessly to the next day.</li>
+        </ul>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeLifecycleModal('modalConcludeDay')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeConcludeDay()" class="btn btn-primary" style="background: var(--price-up); border-color: var(--price-up); font-weight: 800;">
+          🔔 Confirm &amp; Conclude Day
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Start Next Day -->
+  <div id="modalStartNextDay" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--champagne-accent); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">▶️</span>
+        <div>
+          <h2 id="modalStartNextDayTitle" style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin: 0;">Start Next Trading Day</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Advance competition round to Day 2</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; color: var(--text-forest);">
+        <p style="margin: 0 0 10px 0;"><strong>Advancing to the next trading session:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 12px;">
+          <li>Session timer resets to 00:00 in <strong>Standby mode</strong>.</li>
+          <li>Yesterday's closing prices become today's opening benchmark baseline.</li>
+          <li>All team cash balances and active share holdings are carried forward.</li>
+          <li>You can start the session whenever the room is ready using <strong>▶ Start Market (3-2-1)</strong>.</li>
+        </ul>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeLifecycleModal('modalStartNextDay')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeStartNextDay()" class="btn btn-primary" style="background: var(--price-up); border-color: var(--price-up); font-weight: 800;">
+          ▶️ Advance to Next Day (Standby)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Add Day -->
+  <div id="modalAddDay" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--champagne-accent); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">➕</span>
+        <div>
+          <h2 id="modalAddDayTitle" style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin: 0;">Add Extra Day to Tournament</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Extend championship by 1 Trading Day</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; color: var(--text-forest);">
+        <p style="margin: 0 0 10px 0;"><strong>Extending tournament schedule:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 12px;">
+          <li>Total competition days will increase by +1.</li>
+          <li>The news engine will automatically schedule balanced macroeconomic news for the added day.</li>
+          <li>Existing completed day snapshots and rankings are permanently preserved.</li>
+        </ul>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeLifecycleModal('modalAddDay')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeAddDay()" class="btn btn-sage" style="font-weight: 800;">
+          ➕ Add Day &amp; Extend Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Finish Event -->
+  <div id="modalFinishEvent" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--champagne-accent); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">🏆</span>
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin: 0;">Finish Championship Tournament</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Close tournament and compile final standings</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; color: var(--text-forest);">
+        <p style="margin: 0 0 10px 0;"><strong>Finalizing championship:</strong></p>
+        <ul style="margin: 0; padding-left: 20px; color: var(--text-muted); font-size: 12px;">
+          <li>All trading sessions will conclude permanently.</li>
+          <li>Final audited standings, returns, and valuations are calculated.</li>
+          <li>Enables the Stage Winner Presentation ceremony on the Auditorium Projector.</li>
+        </ul>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeLifecycleModal('modalFinishEvent')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeFinishEvent()" class="btn btn-champagne" style="font-weight: 800;">
+          🏆 Finish Championship &amp; Review Standings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Emergency Stop -->
+  <div id="modalEmergencyStop" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--error-red); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">🛑</span>
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--error-red); margin: 0;">Emergency Market Halt</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Instantaneous full-floor freeze</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border-left: 4px solid var(--error-red);">
+        <p style="margin: 0 0 10px 0; color: var(--error-red); font-weight: 800;">CRITICAL HALT NOTICE:</p>
+        <p style="margin: 0; font-size: 12px; color: var(--text-forest);">
+          This halts order processing immediately across all team terminals and cancels in-flight news price transitions. The market state enters EMERGENCY_STOP.
+        </p>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="closeLifecycleModal('modalEmergencyStop')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeEmergencyStop()" class="btn btn-outline" style="background: var(--error-red); color: #FFF; border-color: var(--error-red); font-weight: 800;">
+          🛑 ACTIVATE EMERGENCY HALT
+        </button>
+      </div>
     </div>
   </div>
 

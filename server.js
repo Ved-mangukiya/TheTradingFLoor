@@ -550,17 +550,23 @@ function gaussianRandom() {
 // ==========================================
 
 // Smoothstep transition model: P(t) = P0 + (PT - P0) * s(u) where s(u) = 3u^2 - 2u^3
-function applyStockTransition(stock, shockPct, durationSec) {
+function applyStockTransition(stock, shockPct, durationSec, newsHeadline = null) {
   if (!stock || !stock.isEnabled || stock.isHalted) return;
   // Always begin smoothly from the current official price (never snap):
   const startPrice = stock.currentPrice;
   const targetPrice = +(startPrice * (1 + shockPct / 100)).toFixed(2);
   const durSec = Math.max(10, durationSec || 45);
+  const startTimeMs = Date.now();
+  const startTimeStr = new Date(startTimeMs).toLocaleTimeString();
   stock.activeTransition = {
     startPrice,
     targetPrice,
-    startTimeMs: Date.now(),
-    durationMs: durSec * 1000
+    startTimeMs,
+    startTimeStr,
+    durationMs: durSec * 1000,
+    shockPct,
+    headline: newsHeadline || 'Market Wire Shock',
+    preNewsHistory: (stock.history || []).slice(-10)
   };
 }
 
@@ -777,9 +783,50 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
   return generatedEvents;
 }
 
+function extendNewsPlanForDay(dayNumber) {
+  const pool = companies.filter((c) => c.isEnabled !== false);
+  const totalSec = gameState.dayDurationSeconds || 1800;
+  let timeFractions = [0.18, 0.40, 0.65, 0.85];
+  let readingWindowSec = 25;
+  if (totalSec <= 300) { timeFractions = [0.35, 0.70]; readingWindowSec = 12; }
+  else if (totalSec <= 600) { timeFractions = [0.25, 0.55, 0.80]; readingWindowSec = 18; }
+  else if (totalSec <= 1200) { timeFractions = [0.20, 0.45, 0.70, 0.88]; readingWindowSec = 22; }
+
+  timeFractions.forEach((frac, fIdx) => {
+    const triggerSec = Math.round(totalSec * frac);
+    const templateIdx = ((dayNumber - 1) * timeFractions.length + fIdx) % NEWS_TEMPLATE_LIBRARY.length;
+    const tpl = NEWS_TEMPLATE_LIBRARY[templateIdx];
+    const sectorStocks = pool.filter((s) => s.sector && s.sector.toLowerCase().includes(tpl.sector.toLowerCase()));
+    const targetStocks = sectorStocks.length > 0 ? sectorStocks : pool.slice(0, Math.min(3, pool.length));
+    const rawImpacts = tpl.generator(targetStocks);
+    const impacts = {};
+    Object.keys(rawImpacts).forEach((ticker) => {
+      if (ticker === 'GLOBAL_WEIGHTED' || pool.some((s) => s.ticker === ticker)) {
+        impacts[ticker] = rawImpacts[ticker];
+      }
+    });
+
+    newsEvents.push({
+      event_id: `EVT_D${dayNumber}_0${fIdx + 1}`,
+      day: dayNumber,
+      trigger_second: triggerSec,
+      reading_duration_sec: readingWindowSec,
+      type: tpl.type,
+      headline: tpl.headline,
+      simple_explanation: tpl.simple_explanation,
+      phase: 'SCHEDULED',
+      impacts
+    });
+  });
+}
+
 function applyNewsImpactsToStocks(eventObj) {
+  if (eventObj.impactsApplied) return; // Idempotent: prevent duplicate shock application
+  eventObj.impactsApplied = true;
+
   const impacts = eventObj.impacts || {};
   const oppMult = (gameState && gameState.opportunityMultiplier) || 1.0;
+  const headline = eventObj.headline || 'Market Wire Reaction';
 
   if (impacts.GLOBAL_WEIGHTED) {
     const basePct = impacts.GLOBAL_WEIGHTED.base_pct * oppMult;
@@ -788,7 +835,7 @@ function applyNewsImpactsToStocks(eventObj) {
     companies.forEach((stock) => {
       if (!stock.isEnabled || stock.isHalted) return;
       const shockPct = basePct * (stock.beta || 1.0);
-      applyStockTransition(stock, shockPct, durationSec);
+      applyStockTransition(stock, shockPct, durationSec, headline);
     });
   } else {
     // 1. Process specific company impacts
@@ -798,7 +845,7 @@ function applyNewsImpactsToStocks(eventObj) {
       if (!stock || !stock.isEnabled || stock.isHalted) return;
       const { delta_pct, duration_sec } = impacts[ticker];
       const shockPct = delta_pct * oppMult;
-      applyStockTransition(stock, shockPct, duration_sec);
+      applyStockTransition(stock, shockPct, duration_sec, headline);
     });
 
     // 2. Process sector-wide impacts
@@ -810,7 +857,7 @@ function applyNewsImpactsToStocks(eventObj) {
         if (!stock.isEnabled || stock.isHalted) return;
         if (stock.sector && stock.sector.toLowerCase().includes(targetSector)) {
           const sectorShock = delta_pct * (stock.beta || 1.0) * oppMult;
-          applyStockTransition(stock, sectorShock, duration_sec);
+          applyStockTransition(stock, sectorShock, duration_sec, headline);
         }
       });
     });
@@ -818,6 +865,9 @@ function applyNewsImpactsToStocks(eventObj) {
 }
 
 function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
+  if (eventObj.triggered && eventObj.phase !== 'SCHEDULED') {
+    return false; // Idempotent: prevent duplicate news triggers
+  }
   eventObj.triggered = true;
   const impacts = eventObj.impacts || {};
 
@@ -1019,7 +1069,33 @@ function restartEngineInterval() {
         stock.currentPrice = +smoothVal.toFixed(2);
         if (u >= 1) {
           stock.currentPrice = stock.activeTransition.targetPrice;
+          const tr = stock.activeTransition;
           stock.activeTransition = null;
+
+          const endTimeStr = new Date().toLocaleTimeString();
+          const startP = tr.startPrice || stock.dayOpenPrice;
+          const endP = stock.currentPrice;
+          const deltaPct = startP > 0 ? +(((endP - startP) / startP) * 100).toFixed(2) : 0;
+          const isUp = deltaPct >= 0;
+
+          const spotlightPayload = {
+            ticker: stock.ticker,
+            name: stock.name,
+            sector: stock.sector || 'Equities',
+            headline: tr.headline || 'Market Wire Reaction',
+            startPrice: startP,
+            startTimeStr: tr.startTimeStr || 'Earlier',
+            endPrice: endP,
+            endTimeStr,
+            deltaPct,
+            isUp,
+            history: (stock.history || []).slice(-25)
+          };
+
+          broadcastAll({
+            type: 'NEWS_REACTION_SPOTLIGHT',
+            reaction: spotlightPayload
+          });
         }
       }
 
@@ -1099,6 +1175,74 @@ function calculateLeaderboard() {
   }).sort((a, b) => {
     if (b.netWorth !== a.netWorth) return b.netWorth - a.netWorth;
     return b.tradeCount - a.tradeCount;
+  });
+}
+
+function calculateTeamInvestments() {
+  return Object.values(teams).map((t) => {
+    let investedCost = 0;
+    let holdingsMarketValue = 0;
+    let distinctHoldingsCount = 0;
+    const holdingsDetail = [];
+
+    companies.forEach((c) => {
+      const qty = t.holdings[c.ticker] || 0;
+      if (qty > 0) {
+        distinctHoldingsCount++;
+        const avgPrice = t.avgBuyPrice[c.ticker] || 0;
+        const cost = +(qty * avgPrice).toFixed(2);
+        const mktVal = +(qty * c.currentPrice).toFixed(2);
+        const unPnl = +(mktVal - cost).toFixed(2);
+        const retPct = cost > 0 ? +((unPnl / cost) * 100).toFixed(2) : 0;
+
+        investedCost += cost;
+        holdingsMarketValue += mktVal;
+
+        holdingsDetail.push({
+          ticker: c.ticker,
+          name: c.name,
+          sector: c.sector || 'General',
+          quantity: qty,
+          avgBuyPrice: +avgPrice.toFixed(2),
+          investedCost: cost,
+          currentPrice: +c.currentPrice.toFixed(2),
+          marketValue: mktVal,
+          unrealizedPnl: unPnl,
+          returnPct: retPct
+        });
+      }
+    });
+
+    const startingCapital = t.startingCash || gameState.startingCash || 500000;
+    const availableCash = +t.cash.toFixed(2);
+    investedCost = +investedCost.toFixed(2);
+    holdingsMarketValue = +holdingsMarketValue.toFixed(2);
+    const portfolioValue = +(availableCash + holdingsMarketValue).toFixed(2);
+    const netPnl = +(portfolioValue - startingCapital).toFixed(2);
+    const returnPct = startingCapital > 0 ? +((netPnl / startingCapital) * 100).toFixed(2) : 0;
+
+    return {
+      id: t.id,
+      teamId: t.id,
+      name: t.name,
+      teamName: t.name,
+      username: t.username || t.id.replace('_', ''),
+      members: t.members || '',
+      startingCapital,
+      startingCash: startingCapital,
+      availableCash,
+      investedCost,
+      holdingsMarketValue,
+      portfolioValue,
+      netPnl,
+      returnPct,
+      distinctHoldingsCount,
+      distinctHoldings: distinctHoldingsCount,
+      tradeCount: t.tradeCount || 0,
+      holdingsDetail,
+      lastTradeTime: t.lastTradeTime || '—',
+      connected: t.connected || false
+    };
   });
 }
 
@@ -1457,6 +1601,7 @@ function getSanitizedPublicState(role, teamId) {
         tradeCount: t.tradeCount
       };
     });
+    payload.teamInvestments = calculateTeamInvestments();
   }
 
   if (role === 'PROJECTOR') {
@@ -1464,6 +1609,16 @@ function getSanitizedPublicState(role, teamId) {
     payload.marketIndices = marketIndices;
     payload.teamSectorAllocations = teamSectorAllocations;
     payload.projectorState = gameState.projectorState;
+    payload.teamInvestmentSummaries = calculateTeamInvestments().map((t) => ({
+      id: t.id,
+      name: t.name,
+      portfolioValue: t.portfolioValue,
+      availableCash: t.availableCash,
+      investedCost: t.investedCost,
+      holdingsMarketValue: t.holdingsMarketValue,
+      returnPct: t.returnPct,
+      distinctHoldingsCount: t.distinctHoldingsCount
+    }));
     payload.finalResultsSnapshot = gameState.finalResultsSnapshot || (gameState.isConcluded ? generateOfficialResultsSnapshot() : null);
     payload.presentationState = gameState.presentationState;
   }
@@ -2707,8 +2862,8 @@ wss.on('connection', (ws) => {
         return;
       }
 
-      // 5.2h Host Finalize Current Day Results
-      if (data.action === 'HOST_FINALIZE_DAY') {
+      // 5.2h Host Conclude / Finalize Current Day Results
+      if (data.action === 'HOST_FINALIZE_DAY' || data.action === 'HOST_CONCLUDE_DAY') {
         const day = gameState.currentDay;
         const standings = calculateLeaderboard();
         const closingPrices = {};
@@ -2766,8 +2921,20 @@ wss.on('connection', (ws) => {
         gameState.dailyLeaderboards[`day_${day}`] = daySnapshot;
         gameState.dailyClosingPrices[`day_${day}`] = closingPrices;
 
-        recordAuditEvent('DAY_FINALIZED', { day, teamsCount: dailyRankings.length });
+        // Transition market state to DAY_COMPLETED
+        gameState.isPaused = true;
+        gameState.status = 'DAY_COMPLETED';
+        gameState.pauseMode = 'VISIBLE_FROZEN';
+        gameState.pauseStartedAt = Date.now();
+        gameState.activeCountdown = null;
+
+        recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length });
         broadcastAudioCue('bell_close', 'lifecycle', { day });
+        broadcastAll({
+          type: 'DAY_CONCLUDED',
+          day,
+          daySnapshot
+        });
         broadcastAll({
           type: 'DAY_FINALIZED',
           day,
@@ -2776,8 +2943,8 @@ wss.on('connection', (ws) => {
         broadcastTick();
       }
 
-      // 5.3 Next Day
-      if (data.action === 'HOST_NEXT_DAY') {
+      // 5.2i Start Next Day
+      if (data.action === 'HOST_NEXT_DAY' || data.action === 'HOST_START_NEXT_DAY') {
         if (gameState.currentDay < gameState.totalDays) {
           const oldDay = gameState.currentDay;
           gameState.currentDay++;
@@ -2786,6 +2953,7 @@ wss.on('connection', (ws) => {
           gameState.status = 'STANDBY';
           gameState.pauseMode = 'VISIBLE_FROZEN';
           gameState.pauseStartedAt = Date.now();
+          gameState.activeCountdown = null;
 
           companies.forEach((stock) => {
             stock.previousClosePrice = stock.currentPrice;
@@ -2798,7 +2966,7 @@ wss.on('connection', (ws) => {
             stock.history = [{ time: 0, price: stock.currentPrice }];
           });
 
-          recordAuditEvent('ADVANCE_DAY', { new_day: gameState.currentDay });
+          recordAuditEvent('ADVANCE_DAY', { old_day: oldDay, new_day: gameState.currentDay, total_days: gameState.totalDays });
           broadcastAll({
             type: 'DAY_TRANSITION',
             oldDay,
@@ -2806,7 +2974,75 @@ wss.on('connection', (ws) => {
             totalDays: gameState.totalDays
           });
           broadcastTick();
+        } else {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: `Cannot advance: Day ${gameState.currentDay} is the final planned day. Use 'Finish Championship' or 'Add Next Day'.`
+          }));
         }
+      }
+
+      // 5.2j Add Extra Day to Championship
+      if (data.action === 'HOST_ADD_DAY') {
+        const oldTotal = gameState.totalDays;
+        gameState.totalDays++;
+        extendNewsPlanForDay(gameState.totalDays);
+
+        recordAuditEvent('DAY_ADDED', { oldTotalDays: oldTotal, newTotalDays: gameState.totalDays });
+        broadcastAll({
+          type: 'DAY_ADDED',
+          totalDays: gameState.totalDays
+        });
+        broadcastAll({
+          type: 'EVENT_DAYS_UPDATED',
+          totalDays: gameState.totalDays
+        });
+        broadcastTick();
+      }
+
+      // 5.2k Finish Event (Enter Final Results Review)
+      if (data.action === 'HOST_FINISH_EVENT') {
+        const winnerData = getConcludedLeaderboard();
+        const snapshot = generateOfficialResultsSnapshot();
+        gameState.isPaused = true;
+        gameState.isConcluded = true;
+        gameState.status = 'FINAL_ANALYSIS';
+        gameState.winnerData = winnerData;
+        gameState.finalResultsSnapshot = snapshot;
+
+        recordAuditEvent('CHAMPIONSHIP_FINISHED', { totalDays: gameState.totalDays, winners: winnerData });
+        broadcastAll({
+          type: 'CHAMPIONSHIP_CONCLUDED',
+          winnerData,
+          snapshot,
+          title: gameState.title
+        });
+        broadcastTick();
+      }
+
+      // 5.2l Emergency Stop (Full Event Emergency Freeze)
+      if (data.action === 'HOST_EMERGENCY_STOP') {
+        gameState.isPaused = true;
+        gameState.status = 'EMERGENCY_STOP';
+        gameState.pauseMode = 'EMERGENCY_HALT';
+        gameState.pauseStartedAt = Date.now();
+        gameState.activeCountdown = null;
+
+        companies.forEach((c) => {
+          c.activeTransition = null;
+        });
+
+        recordAuditEvent('EMERGENCY_STOP', { reason: data.reason || 'Host initiated emergency market freeze.' });
+        broadcastAudioCue('circuit_alarm', 'alerts', { type: 'EMERGENCY_STOP' });
+        broadcastAll({
+          type: 'EMERGENCY_STOP',
+          reason: data.reason || 'Host initiated emergency market freeze across all trading terminals.'
+        });
+        broadcastAll({
+          type: 'EMERGENCY_STOP_TRIGGERED',
+          reason: data.reason || 'Host initiated emergency market freeze across all trading terminals.'
+        });
+        broadcastTick();
       }
 
       // 5.4 Trigger Existing Scheduled News
@@ -3507,6 +3743,35 @@ app.get('/api/event-status', (req, res) => {
     startingCash: gameState.startingCash,
     teamsCount: Object.keys(teams).length,
     activeStocksCount: companies.filter((c) => c.isEnabled !== false).length
+  });
+});
+
+// 8.1c Team Investment Analytics Endpoint
+app.get('/api/team-investments', (req, res) => {
+  const teams = calculateTeamInvestments();
+  res.json({
+    success: true,
+    day: gameState.currentDay,
+    totalDays: gameState.totalDays,
+    totalTeams: teams.length,
+    teams: teams,
+    teamInvestments: teams
+  });
+});
+
+app.get('/api/team-investments/:teamId', (req, res) => {
+  const teamId = req.params.teamId;
+  const investments = calculateTeamInvestments();
+  const teamInv = investments.find((t) => t.id === teamId || t.teamId === teamId || t.username === teamId);
+  if (!teamInv) {
+    return res.status(404).json({ success: false, error: 'Team not found.' });
+  }
+  // Attach team trade history
+  const teamTrades = executedTrades.filter((tr) => tr.team_id === teamInv.id || tr.team_name === teamInv.name);
+  res.json({
+    success: true,
+    ...teamInv,
+    orderHistory: teamTrades.slice(-50).reverse()
   });
 });
 

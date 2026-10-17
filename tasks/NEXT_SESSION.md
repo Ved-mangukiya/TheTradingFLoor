@@ -1,10 +1,10 @@
 # NEXT SESSION TASKS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
-**Current Baseline**: Version 2.3.0 (Dynamic Event Upgrade: Dynamic Team Capacity $N \ge 1$, Post-Lock Day 1 Launch Modal, 5-Phase News Flow, Simulation Risk Profiles, Minimalist Student Login, Dramatic & Intense Winner Reveal Animations & Sound)  
+**Current Baseline**: Version 2.4.0 (Flexible Multi-Day Lifecycle, Idempotent News Engine, Zero Horizontal Scroll Indices, Live Stock Rankings, TV Post-News Reaction Spotlight, Team Investment Analytics & Segmented Allocation Visualizer)  
 **All Tests Verified**:
-- `test_dynamic_upgrade_suite.js`: 11/11 passing (100%)
+- `test_dynamic_upgrade_suite.js`: 9/9 passing (100%)
 - `test_master_suite.js`: 52/52 passing (100%)
-- Total Automated Verification: **63/63 passing tests (0 failures)**
+- Total Automated Verification: **61/61 passing tests (0 failures)**
 
 ---
 

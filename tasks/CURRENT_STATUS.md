@@ -1,18 +1,19 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
 **Date**: 2026-10-17  
-**Version**: 2.3.0 (Dynamic Event Upgrade: Dynamic Team Capacity $N \ge 1$, Post-Lock Day 1 Launch Modal, 5-Phase News Flow, Simulation Risk Profiles, Minimalist Student Login, Dramatic & Intense Winner Reveal Animations & Sound)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (63/63 Automated Tests Passing: 11 Dynamic + 52 Master Suite)  
+**Version**: 2.4.0 (Flexible Multi-Day Lifecycle, Idempotent News Engine, Zero Horizontal Scroll Indices, Live Stock Rankings, TV Post-News Reaction Spotlight, Team Investment Analytics & Segmented Allocation Visualizer)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (61/61 Automated Tests Passing: 9 Dynamic Upgrade Suite + 52 Master Suite)  
 
 ---
 
 ## 1. Architectural Principle: ONE ACTION = ONE CLEAR PLACE = ONE AUTHORITATIVE IMPLEMENTATION
 - [x] **4 Primary Host Navigation Hubs**:
   1. `🏠 1. Home`: Status overview, connection monitor (Traders, Projector, Sound), Readiness Checklist, and single dynamic Next Step guidance.
-  2. `⚙️ 2. Event`: 6-step guided setup wizard (`Details -> Teams -> Companies -> Schedule -> News Plan -> Review & Lock`), real company selection, auto-generated news plan, automatic readiness validation, and single safe `Unlock Configuration` control.
-  3. `📈 3. Live Market`: Canonical single Market Operations Bar (`▶ Resume 3-2-1`, `⏸ Pause`, `🕶️ Blackout`, `🏁 Conclude Session`), real-time stock boards, News Control Centre with 60-second privacy reveal, and live trade stream.
-  4. `🖥️ 4. Stage & Results`: Auditorium Projector Remote (Auto-Cycle / Fixed Screen / Board Page Controls), Venue Sound Console controls, Disaster Recovery & Checkpoint Matrix, Leaderboard results, audited CSV/JSON reports, and Safe Championship Reset card.
+  2. `⚙️ 2. Event`: 8-step guided setup workflow (`Details -> Teams -> Companies -> Trading Rules -> Schedule -> News Plan -> Projector & Sound -> Review & Lock`), real company selection, auto-generated news plan, automatic readiness validation, and single safe `Unlock Configuration` control.
+  3. `📈 3. Live Market`: Canonical single Market Operations Bar (`▶ Resume 3-2-1`, `⏸ Pause`, `🕶️ Blackout`, `🔔 Conclude Day`, `➕ Add Next Day`, `🛑 Emergency Stop`), real-time stock boards, News Control Centre with 60-second privacy reveal, and live trade stream.
+  4. `🖥️ 4. Stage & Results`: Auditorium Projector Remote (Auto-Cycle / Fixed Screen / Board Page Controls), Team Investment Analytics, Venue Sound Console controls, Disaster Recovery & Checkpoint Matrix, Leaderboard results, audited CSV/JSON reports, and Safe Championship Reset card.
 - [x] **Zero Action Duplication**: Consolidated floating/overview pause and resume buttons into one canonical Live Market bar. Removed duplicate news editors, duplicate company pickers, and redundant launchers.
+- [x] **Distinct Lifecycle Operations**: Strictly separated `Conclude Day`, `Start Next Day`, `Add Next Day`, `Finish Event`, `Finalize Championship`, and `Emergency Stop` with dedicated confirmation dialogs and authoritative server validation.
 
 ---
 

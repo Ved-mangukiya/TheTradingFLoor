@@ -2135,22 +2135,77 @@ th.th-wrap {
   flex-shrink: 0;
 }
 
-/* Indices Ticker Bar & Chips */
+/* Indices Ticker Bar & Chips - Zero Horizontal Scrolling */
 .indices-ticker-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  overflow-x: auto;
+  overflow: hidden;
   padding: 8px 16px;
   background: #FFFFFF;
   border: 1px solid var(--subtle-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
-.indices-ticker-bar::-webkit-scrollbar {
-  display: none;
+
+.projector-rank-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--surface-cream);
+  color: var(--text-forest);
+  border: 1px solid var(--subtle-border);
+  font-family: var(--font-mono);
+}
+
+/* TV Broadcast Post-News Reaction Spotlight Overlay */
+.proj-reaction-spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.proj-reaction-spotlight-card {
+  width: 100%;
+  max-width: 980px;
+  background: linear-gradient(135deg, #FAF8F5 0%, #FFFFFF 100%);
+  border: 3px solid var(--champagne-accent);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.25);
+  overflow: hidden;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Team Investment Portfolio Allocation Bar */
+.team-alloc-bar {
+  display: flex;
+  width: 100%;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #E2E8F0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+  margin: 10px 0;
+}
+
+.team-alloc-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.team-alloc-seg:hover {
+  filter: brightness(1.1);
 }
 
 .index-chip {

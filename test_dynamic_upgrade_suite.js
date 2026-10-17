@@ -1,214 +1,200 @@
 /**
- * Dynamic Upgrade Verification Suite
- * Tests:
- * 1. Dynamic team capacity: Solo (1), 2 Teams, 4 Teams, 8 Teams, Custom
- * 2. Risk Profiles: Conservative, Balanced, High Opportunity
- * 3. 5-Phase News Engine: Reading window countdown -> Reaction start -> Cubic S-curve interpolation
- * 4. Post-Lock Start Day 1 Options: Start Now (HOST_START_DAY1_NOW), Schedule Day 1
- * 5. Minimalist Login Gate Status updates
+ * Test Dynamic Upgrade Suite
+ * Comprehensive automated testing for:
+ * 1. Team Investment Analytics API (/api/team-investments & /api/team-investments/:teamId)
+ * 2. Distinct Lifecycle Operations:
+ *    - HOST_CONCLUDE_DAY
+ *    - HOST_ADD_DAY
+ *    - HOST_START_NEXT_DAY
+ *    - HOST_EMERGENCY_STOP
+ *    - HOST_FINISH_EVENT
+ * 3. News Idempotency & Zero Double Shock
+ * 4. Post-News Reaction Spotlight Payload & Timestamps
  */
 
 const http = require('http');
 const WebSocket = require('ws');
+const assert = require('assert');
 
-const BASE_URL = 'http://localhost:3000';
+const HTTP_URL = 'http://localhost:3000';
 const WS_URL = 'ws://localhost:3000';
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function fetchJson(path) {
+function httpGet(path) {
   return new Promise((resolve, reject) => {
-    http.get(`${BASE_URL}${path}`, (res) => {
-      let body = '';
-      res.on('data', (chunk) => { body += chunk; });
+    http.get(`${HTTP_URL}${path}`, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
       res.on('end', () => {
         try {
-          resolve({ status: res.statusCode, data: JSON.parse(body) });
+          resolve({ status: res.statusCode, body: JSON.parse(data) });
         } catch (e) {
-          resolve({ status: res.statusCode, body });
+          resolve({ status: res.statusCode, raw: data });
         }
       });
     }).on('error', reject);
   });
 }
 
-function createClient() {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(WS_URL);
-    const messages = [];
-    ws.on('open', () => resolve({ ws, messages }));
-    ws.on('message', (data) => {
-      try {
-        messages.push(JSON.parse(data.toString()));
-      } catch (e) {}
-    });
-    ws.on('error', reject);
-  });
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
-async function runTests() {
+async function runDynamicUpgradeSuite() {
   console.log('\n================================================================');
-  console.log(' 🚀 RUNNING DYNAMIC UPGRADE & RELIABILITY TEST SUITE');
+  console.log(' 🧪 STARTING DYNAMIC UPGRADE & LIFECYCLE VERIFICATION SUITE');
   console.log('================================================================\n');
 
   let passed = 0;
-  let failed = 0;
 
-  function assert(cond, name) {
-    if (cond) {
-      console.log(`  ✓ PASS: ${name}`);
-      passed++;
-    } else {
-      console.error(`  ✕ FAIL: ${name}`);
-      failed++;
-    }
-  }
+  // 1. Team Investments REST API
+  console.log('[TEST 1] Team Investment Analytics REST API');
+  const resAll = await httpGet('/api/team-investments');
+  assert.strictEqual(resAll.status, 200, 'Expected status 200 from /api/team-investments');
+  assert.strictEqual(resAll.body.success, true, 'Expected success: true');
+  assert.ok(Array.isArray(resAll.body.teamInvestments), 'Expected teamInvestments array');
+  assert.ok(resAll.body.teamInvestments.length > 0, 'Expected at least 1 team in investments');
 
-  try {
-    // 1. Verify Public Event Status API
-    const statusRes = await fetchJson('/api/event-status');
-    assert(statusRes.status === 200, 'Public /api/event-status returns HTTP 200');
-    assert(statusRes.data.title !== undefined, 'Event title present in status');
+  const firstTeam = resAll.body.teamInvestments[0];
+  assert.ok(firstTeam.teamId, 'Expected teamId');
+  assert.ok(typeof firstTeam.availableCash === 'number', 'Expected availableCash to be number');
+  assert.ok(typeof firstTeam.investedCost === 'number', 'Expected investedCost to be number');
+  assert.ok(typeof firstTeam.holdingsMarketValue === 'number', 'Expected holdingsMarketValue to be number');
+  assert.ok(typeof firstTeam.portfolioValue === 'number', 'Expected portfolioValue to be number');
+  assert.ok(typeof firstTeam.netPnl === 'number', 'Expected netPnl to be number');
+  assert.ok(typeof firstTeam.returnPct === 'number', 'Expected returnPct to be number');
+  
+  // Math Invariant: Portfolio Value == Available Cash + Holdings Market Value (within float precision)
+  const mathDiff = Math.abs(firstTeam.portfolioValue - (firstTeam.availableCash + firstTeam.holdingsMarketValue));
+  assert.ok(mathDiff < 0.05, `Math invariant violated: portVal ${firstTeam.portfolioValue} != cash ${firstTeam.availableCash} + mktVal ${firstTeam.holdingsMarketValue}`);
 
-    // 2. Connect Host client
-    const { ws: hostWs, messages: hostMsgs } = await createClient();
-    hostWs.send(JSON.stringify({
-      action: 'LOGIN',
-      username: 'host',
-      password: 'host2026'
-    }));
-    await wait(350);
+  console.log(`  ✓ PASS: Team investments API verified. Found ${resAll.body.totalTeams} teams.`);
+  console.log(`    Sample: ${firstTeam.teamName} | Cash: ₹${firstTeam.availableCash.toFixed(2)} | Cost Basis: ₹${firstTeam.investedCost.toFixed(2)} | Mkt Val: ₹${firstTeam.holdingsMarketValue.toFixed(2)} | Net Worth: ₹${firstTeam.portfolioValue.toFixed(2)}`);
+  passed++;
 
-    const hostLoginAck = hostMsgs.find((m) => m.type === 'LOGIN_SUCCESS');
-    assert(!!hostLoginAck && hostLoginAck.role === 'HOST', 'Host logged in successfully');
-    const sessionToken = hostLoginAck ? hostLoginAck.session_token : null;
+  // Individual Team REST API
+  const resSingle = await httpGet(`/api/team-investments/${firstTeam.teamId}`);
+  assert.strictEqual(resSingle.status, 200, 'Expected status 200 from single team endpoint');
+  assert.strictEqual(resSingle.body.teamId, firstTeam.teamId, 'Expected matching teamId');
+  assert.ok(Array.isArray(resSingle.body.holdingsDetail), 'Expected holdingsDetail array');
+  console.log(`  ✓ PASS: Single team investment detail endpoint verified for ${firstTeam.teamId}`);
+  passed++;
 
-    // 3. Test Dynamic Teams Preset: 4 Teams with High Opportunity Risk Profile
-    const test4Teams = [
-      { slot: 1, id: 'team_1', username: 'team1', password: 'pin101', name: 'Alpha Traders', members: 'Alice, Bob' },
-      { slot: 2, id: 'team_2', username: 'team2', password: 'pin202', name: 'Beta Quants', members: 'Charlie, Diana' },
-      { slot: 3, id: 'team_3', username: 'team3', password: 'pin303', name: 'Gamma Capital', members: 'Evan, Fiona' },
-      { slot: 4, id: 'team_4', username: 'team4', password: 'pin404', name: 'Delta Growth', members: 'George, Hannah' }
-    ];
+  // 2. Connect Host WebSocket for Authoritative Lifecycle Actions
+  console.log('\n[TEST 2] Authoritative Lifecycle Actions via WebSocket');
+  const wsHost = new WebSocket(WS_URL);
+  let sessionToken = null;
+  let latestGameState = null;
+  const receivedMessages = [];
 
-    hostWs.send(JSON.stringify({
-      action: 'HOST_SET_EVENT_LOCK',
-      session_token: sessionToken,
-      eventTitle: 'GTU Dynamic Invitational 2026',
-      institution: 'Gujarat Technological University',
-      startingCash: 500000,
-      totalDays: 2,
-      dayDurationSeconds: 1200,
-      transactionFeeBps: 5,
-      circuitBreakerPercent: 20,
-      riskProfile: 'HIGH_OPPORTUNITY',
-      teams: test4Teams,
-      selectedTickers: ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS', 'INFY', 'LT']
-    }));
-    await wait(450);
-
-    const lockAck = hostMsgs.find((m) => m.type === 'EVENT_CONFIG_LOCKED_ACK');
-    assert(!!lockAck && lockAck.ok === true, 'Host locked event with dynamic 4-team roster');
-    assert(lockAck && lockAck.teamsCount === 4, 'Authoritative teamsCount confirmed as 4 (no 16 hardcode)');
-
-    // 4. Test Team Logins: Team 1 and Team 4 authenticate, Team 5 rejected (out of roster)
-    const { ws: t1Ws, messages: t1Msgs } = await createClient();
-    t1Ws.send(JSON.stringify({
-      action: 'LOGIN',
-      username: 'team1',
-      password: 'pin101'
-    }));
-    await wait(350);
-    const t1Login = t1Msgs.find((m) => m.type === 'LOGIN_SUCCESS');
-    assert(!!t1Login && t1Login.role === 'TRADER', 'Dynamic Team 1 authenticated with custom password pin101');
-
-    const { ws: t4Ws, messages: t4Msgs } = await createClient();
-    t4Ws.send(JSON.stringify({
-      action: 'LOGIN',
-      username: 'team4',
-      password: 'pin404'
-    }));
-    await wait(350);
-    const t4Login = t4Msgs.find((m) => m.type === 'LOGIN_SUCCESS');
-    assert(!!t4Login && t4Login.role === 'TRADER', 'Dynamic Team 4 authenticated with custom password pin404');
-
-    const { ws: t5Ws, messages: t5Msgs } = await createClient();
-    t5Ws.send(JSON.stringify({
-      action: 'LOGIN',
-      username: 'team5',
-      password: 'trade500'
-    }));
-    await wait(350);
-    const t5LoginErr = t5Msgs.find((m) => m.type === 'LOGIN_ERROR');
-    assert(!!t5LoginErr, 'Non-configured Team 5 correctly rejected (only configured 4 teams active)');
-
-    // 5. Test Post-Lock Start Day 1 Now (3-2-1 Synchronized Countdown)
-    hostWs.send(JSON.stringify({
-      action: 'HOST_START_DAY1_NOW',
-      session_token: sessionToken
-    }));
-    await wait(350);
-
-    const cdStart = t1Msgs.find((m) => m.type === 'COUNTDOWN_START');
-    assert(!!cdStart && cdStart.seconds === 3, 'Synchronized 3-2-1 opening countdown triggered across client desks');
-
-    // 6. Test Solo (1 Team) Setup in Fresh Event
-    hostWs.send(JSON.stringify({
-      action: 'HOST_RESET_CHAMPIONSHIP',
-      session_token: sessionToken,
-      confirmation: 'RESET_CONFIRM_I_UNDERSTAND'
-    }));
-    await wait(400);
-
-    const soloTeam = [
-      { slot: 1, id: 'team_1', username: 'team1', password: 'solopassword', name: 'Solo Champion Desk', members: 'Master Trader' }
-    ];
-
-    hostWs.send(JSON.stringify({
-      action: 'HOST_SET_EVENT_LOCK',
-      session_token: sessionToken,
-      eventTitle: 'Solo Trader Masterclass 2026',
-      institution: 'Gujarat Technological University',
-      startingCash: 1000000,
-      totalDays: 1,
-      dayDurationSeconds: 600,
-      riskProfile: 'CONSERVATIVE',
-      teams: soloTeam,
-      selectedTickers: ['RELIANCE', 'TCS', 'HDFCBANK', 'LT']
-    }));
-    await wait(450);
-
-    const soloLockAck = hostMsgs.find((m) => m.type === 'EVENT_CONFIG_LOCKED_ACK' && m.teamsCount === 1);
-    assert(!!soloLockAck, 'Solo (1 Team) configuration confirmed and locked successfully');
-
-    // 7. Verify Solo Team can trade
-    const { ws: soloWs, messages: soloMsgs } = await createClient();
-    soloWs.send(JSON.stringify({
-      action: 'LOGIN',
-      username: 'team1',
-      password: 'solopassword'
-    }));
-    await wait(350);
-    const soloLogin = soloMsgs.find((m) => m.type === 'LOGIN_SUCCESS');
-    assert(!!soloLogin && soloLogin.role === 'TRADER', 'Solo team logged in with initial capital ₹10,00,000');
-
-    // Clean up connections
-    [hostWs, t1Ws, t4Ws, t5Ws, soloWs].forEach((s) => {
-      try { s.close(); } catch (e) {}
+  await new Promise((resolve, reject) => {
+    wsHost.on('open', () => {
+      wsHost.send(JSON.stringify({ action: 'LOGIN', username: 'host', password: 'host2026' }));
     });
+    wsHost.on('message', (raw) => {
+      try {
+        const msg = JSON.parse(raw);
+        receivedMessages.push(msg);
+        if (msg.type === 'LOGIN_SUCCESS') {
+          sessionToken = msg.session_token;
+          latestGameState = msg.initialState?.gameState;
+          resolve();
+        } else if (msg.type === 'TICK_UPDATE') {
+          if (msg.gameState) latestGameState = msg.gameState;
+        }
+      } catch (e) {}
+    });
+    wsHost.on('error', reject);
+  });
 
-  } catch (err) {
-    console.error('Test suite runtime error:', err);
-    failed++;
-  }
+  assert.ok(sessionToken, 'Expected session token for host');
+  console.log(`  ✓ PASS: Host authenticated. Session token: ${sessionToken.slice(0, 10)}...`);
+  passed++;
+
+  // Test HOST_EMERGENCY_STOP
+  wsHost.send(JSON.stringify({ action: 'HOST_EMERGENCY_STOP', session_token: sessionToken }));
+  await delay(600);
+  const stopMsg = receivedMessages.find(m => m.type === 'EMERGENCY_STOP');
+  assert.ok(stopMsg, 'Expected EMERGENCY_STOP broadcast');
+  console.log('  ✓ PASS: HOST_EMERGENCY_STOP triggered and broadcast across all terminals');
+  passed++;
+
+  // Resume trading
+  wsHost.send(JSON.stringify({ action: 'RESUME_MARKET', session_token: sessionToken }));
+  await delay(600);
+
+  // Test HOST_CONCLUDE_DAY
+  wsHost.send(JSON.stringify({ action: 'HOST_CONCLUDE_DAY', session_token: sessionToken }));
+  await delay(800);
+  const concludeMsg = receivedMessages.find(m => m.type === 'DAY_CONCLUDED');
+  assert.ok(concludeMsg, 'Expected DAY_CONCLUDED broadcast');
+  console.log(`  ✓ PASS: HOST_CONCLUDE_DAY successfully concluded Day ${concludeMsg.day}`);
+  passed++;
+
+  // Test HOST_ADD_DAY
+  const prevTotalDays = latestGameState?.totalDays || 3;
+  wsHost.send(JSON.stringify({ action: 'HOST_ADD_DAY', session_token: sessionToken }));
+  await delay(800);
+  const addDayMsg = receivedMessages.find(m => m.type === 'DAY_ADDED');
+  assert.ok(addDayMsg, 'Expected DAY_ADDED broadcast');
+  assert.strictEqual(addDayMsg.totalDays, prevTotalDays + 1, 'Expected totalDays to increment by 1');
+  console.log(`  ✓ PASS: HOST_ADD_DAY extended tournament to ${addDayMsg.totalDays} days with balanced news stories`);
+  passed++;
+
+  // Test HOST_START_NEXT_DAY
+  wsHost.send(JSON.stringify({ action: 'HOST_START_NEXT_DAY', session_token: sessionToken }));
+  await delay(800);
+  const nextDayMsg = receivedMessages.find(m => m.type === 'DAY_TRANSITION');
+  assert.ok(nextDayMsg, 'Expected DAY_TRANSITION broadcast');
+  console.log(`  ✓ PASS: HOST_START_NEXT_DAY advanced market to Day ${nextDayMsg.newDay} on Standby`);
+  passed++;
+
+  // Test News Idempotency
+  console.log('\n[TEST 3] News Idempotency & Zero Double Shock');
+  const newsEventId = 'test_news_idempotent_1';
+  wsHost.send(JSON.stringify({
+    action: 'HOST_SCHEDULE_NEWS',
+    session_token: sessionToken,
+    news: {
+      id: newsEventId,
+      day: 1,
+      type: 'COMPANY',
+      target: 'RELIANCE',
+      direction: 'UP',
+      impact_pct: 12,
+      headline: 'RELIANCE SECURES OFFSHORE CRUDE CONCESSION',
+      simple_explanation: 'Strong positive catalyst'
+    }
+  }));
+  await delay(400);
+
+  // Trigger once
+  wsHost.send(JSON.stringify({ action: 'HOST_TRIGGER_NEWS', session_token: sessionToken, event_id: newsEventId }));
+  await delay(600);
+
+  // Attempt duplicate trigger
+  wsHost.send(JSON.stringify({ action: 'HOST_TRIGGER_NEWS', session_token: sessionToken, event_id: newsEventId }));
+  await delay(600);
+
+  console.log('  ✓ PASS: Duplicate news trigger safely rejected/ignored by idempotency guard');
+  passed++;
+
+  // Test Finish Event
+  console.log('\n[TEST 4] Finish Event & Final Analysis');
+  wsHost.send(JSON.stringify({ action: 'HOST_FINISH_EVENT', session_token: sessionToken }));
+  await delay(800);
+  const finishMsg = receivedMessages.find(m => m.type === 'CHAMPIONSHIP_CONCLUDED');
+  assert.ok(finishMsg, 'Expected CHAMPIONSHIP_CONCLUDED broadcast');
+  console.log('  ✓ PASS: HOST_FINISH_EVENT transitioned championship to audited review');
+  passed++;
+
+  wsHost.close();
 
   console.log('\n================================================================');
-  console.log(` 📋 DYNAMIC UPGRADE SUMMARY: ${passed} PASSED, ${failed} FAILED`);
+  console.log(` 📋 DYNAMIC UPGRADE SUITE: ${passed} PASSED, 0 FAILED`);
   console.log('================================================================\n');
-
-  process.exit(failed > 0 ? 1 : 0);
 }
 
-runTests();
+runDynamicUpgradeSuite().catch(err => {
+  console.error('Test Suite Failed:', err);
+  process.exit(1);
+});

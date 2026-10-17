@@ -4,6 +4,42 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
 
 ---
 
+## [2.4.0] — 2026-10-17
+### Added
+- **Flexible Multi-Day Lifecycle & Distinct Operations**:
+  - Authoritative server state machine supporting $N \ge 1$ days (`Day 1 of 3`, `Day 2 of 3`, `Day 1 of 1`).
+  - Distinct operational separation with dedicated confirmation modals and server validation:
+    - `Conclude Day`: closes active day trading, freezes balances, writes immutable daily records, advances day status to `DAY_COMPLETED`.
+    - `Start Next Day`: verifies prior day completion, advances `currentDay`, resets clocks, sets `STANDBY` mode.
+    - `Add Next Day`: dynamically increments `totalDays`, schedules balanced news stories for the added day via `extendNewsPlanForDay`.
+    - `Finish Event`: enters `FINAL_ANALYSIS` review state and generates audited final standings snapshot.
+    - `Finalize Championship`: locks results and activates the ceremonial winner reveal.
+    - `Emergency Stop`: halts all trading orders and active transitions instantly across all desks.
+  - Dynamically rendered flow stepper pills in `#hostDynamicFlowSteps` showing `Pre-Event ➔ Day 1 ... Day N ➔ Winner Reveal`.
+  - Contextual Live Operations Bar in `#hostFlowActionsContainer` showing only the actions valid for the current state.
+- **TV Broadcast Post-News Reaction Spotlight on Projector**:
+  - Projector breaking market analysis card with large headline wire, comparative price badges with exact timestamps (`Recorded at 10:14` ➔ `Executed at 10:15`), percentage change badge (`+11.5% SURGE ▲`), and real-time canvas trajectory chart.
+  - Smooth Bezier area graph with start and end price callouts and timestamps.
+  - Audio cue `reaction_start_chime` and configurable auto-dismiss window.
+- **News Engine Idempotency & Strict Public Secrecy**:
+  - Idempotency guards in `applyNewsImpactsToStocks` (`eventObj.impactsApplied`) and `triggerNewsEvent` permanently prevent duplicate triggers or duplicate shocks from slow requests or double-clicks.
+  - Zero notification of price impact applied shown to student traders or public projector screens; private impacts remain strictly on Host Screen with 60-second self-hiding reveal.
+- **Projector Overhaul: Live Stock Rankings & Zero-Scroll Indices**:
+  - Sorted live stock board ranking companies by percentage change descending with deterministic ticker tie-breaking.
+  - Visual rank badges (`.projector-rank-badge`) showing `#1..#N`.
+  - DOM element reordering via `grid.appendChild(card)` preserves existing Canvas 2D contexts and sparkline history without tearing down the DOM.
+  - Auto-rotation resume: manual navigation (`Next`/`Prev`) automatically resumes 8s rotation after 12s dwell buffer.
+  - Replaced horizontal scrollbar in `.indices-ticker-bar` with responsive flex-wrap grid (`overflow: hidden`), making all benchmark and sector indices permanently visible on 1080p projectors without scrolling.
+- **Team Investment Analytics & Segmented Allocation Visualizer**:
+  - Dedicated Host financial analysis view with instant search filter and multi-metric sorting.
+  - Strict accounting separation: Available Cash (Liquid), Invested Cost (Basis), Holdings Market Value, Total Portfolio Value, Net Profit/Loss, and Return %.
+  - Portfolio detail modal with interactive horizontal segmented allocation bar (`#invModalAllocBar`), active equities breakdown table, and executed orders audit log.
+  - REST endpoints: `GET /api/team-investments` and `GET /api/team-investments/:teamId`.
+- **Automated Verification**:
+  - Added `test_dynamic_upgrade_suite.js` (9/9 passed).
+  - Verified `test_master_suite.js` (52/52 passed).
+  - Total automated test suite: **61/61 passed (0 failures)**.
+
 ## [2.3.0] — 2026-10-17
 ### Added
 - **Dynamic Team Capacity (Any $N \ge 1$ Desks)**:
