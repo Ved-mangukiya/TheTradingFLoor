@@ -421,6 +421,15 @@
         <p style="font-size: 13px; color: var(--text-muted);">Championship 2026 • Local LAN Trading Desk</p>
       </div>
 
+      <!-- Live Event Readiness / Team Login Gate Banner -->
+      <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border); background: var(--surface-cream); display: flex; align-items: center; gap: 10px; text-align: left;">
+        <span id="loginEventStatusIcon" style="font-size: 20px; line-height: 1;">⏳</span>
+        <div style="flex: 1;">
+          <div id="loginEventStatusTitle" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Event Setup in Progress</div>
+          <div id="loginEventStatusDesc" style="font-size: 11px; color: var(--text-muted); line-height: 1.35; margin-top: 1px;">The host is preparing the event. Team login will open once setup is complete.</div>
+        </div>
+      </div>
+
       <form id="loginForm">
         <div class="form-group">
           <label class="form-label" for="loginUsername">Terminal ID / Username</label>
@@ -475,6 +484,407 @@
       </div>
     </div>
   </section>
+
+
+  <!-- ==========================================================================
+       VIEW: GUIDED EVENT SETUP CENTRE (#eventSetupView)
+       Presented to Host immediately upon login before tournament is locked
+       ========================================================================== -->
+  <section id="eventSetupView" class="hidden ttf-app" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <!-- Top Command Ribbon -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">TF</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px; font-weight: 800; color: var(--text-forest);">CHAMPIONSHIP EVENT SETUP</span>
+            <span class="badge" style="background: #FEF3C7; color: #92400E; font-weight: 800; border: 1px solid #FCD34D;">🛠️ SETUP IN PROGRESS</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            Configure tournament rules, 16-team roster, and tradeable stocks before opening logins
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="setupAutoSaveIndicator" style="font-size: 11px; font-family: var(--font-mono); color: var(--price-up); font-weight: 700;">
+          💾 Draft Auto-Saved
+        </span>
+        <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;">
+          👨‍💻 Developer Info
+        </button>
+        <button type="button" onclick="logoutTerminal()" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;">
+          Exit / Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Stepper Navigation Bar -->
+    <div style="background-color: var(--surface-cream); border-bottom: 2px solid var(--champagne-light); padding: 12px 24px;">
+      <div style="max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+        <div class="setup-sub-nav" style="margin: 0; display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" id="setupNavBtnDetails" onclick="switchSetupSection('details')" class="setup-nav-btn active">
+            📋 1. Event Details &amp; Rules
+          </button>
+          <button type="button" id="setupNavBtnTeams" onclick="switchSetupSection('teams')" class="setup-nav-btn">
+            👥 2. 16 Teams Roster &amp; Passwords
+          </button>
+          <button type="button" id="setupNavBtnUniverse" onclick="switchSetupSection('universe')" class="setup-nav-btn">
+            🏛️ 3. Stock Selection Catalogue
+          </button>
+          <button type="button" id="setupNavBtnNews" onclick="switchSetupSection('news')" class="setup-nav-btn">
+            ⚡ 4. News Timeline
+          </button>
+          <button type="button" id="setupNavBtnReview" onclick="switchSetupSection('review')" class="setup-nav-btn">
+            🔒 5. Review &amp; Lock Event
+          </button>
+        </div>
+        <button type="button" onclick="switchSetupSection('review')" class="btn btn-primary" style="font-size: 12px; font-weight: 800; padding: 8px 16px;">
+          Next: Review &amp; Lock ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Setup Content Area -->
+    <main style="flex: 1; padding: 24px; max-width: 1400px; width: 100%; margin: 0 auto;">
+      <!-- Section 1: Event Details & Rules -->
+      <div id="setupSectionDetails" class="setup-sec-panel luxury-card" style="padding: 24px;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
+          <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">📋 1. Event Brand &amp; Competition Rules</h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+            Define the championship title, host institution, starting capital, and market session duration.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Championship Event Title
+            </label>
+            <input type="text" id="setupEventTitle" oninput="saveSetupDraft()" class="form-input" value="The Trading Floor Championship 2026" />
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Host Institution / University
+            </label>
+            <input type="text" id="setupInstitution" oninput="saveSetupDraft()" class="form-input" value="Gujarat Technological University" />
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Starting Capital per Team (₹)
+            </label>
+            <select id="setupStartingCash" onchange="saveSetupDraft()" class="form-input">
+              <option value="100000">₹1,00,000 (Strict Capital)</option>
+              <option value="250000">₹2,50,000 (Medium Capital)</option>
+              <option value="500000" selected>₹5,00,000 (Standard Official Championship)</option>
+              <option value="1000000">₹10,00,000 (High Capital Portfolio)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Total Competition Days
+            </label>
+            <select id="setupTotalDays" onchange="saveSetupDraft(); updateNewsPreviewFromSelection();" class="form-input">
+              <option value="1">1 Day (Rapid Sprint Final)</option>
+              <option value="2">2 Days (Qualifier + Final)</option>
+              <option value="3" selected>3 Days (Full Championship)</option>
+              <option value="5">5 Days (Week Tournament)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Session Duration (per Day)
+            </label>
+            <select id="setupDayDuration" onchange="saveSetupDraft(); updateNewsPreviewFromSelection();" class="form-input">
+              <option value="300">5 Minutes (Ultra Rapid Dry-Run)</option>
+              <option value="600">10 Minutes (Fast Round)</option>
+              <option value="1200">20 Minutes (Standard College Round)</option>
+              <option value="1800" selected>30 Minutes (Championship Official)</option>
+              <option value="2700">45 Minutes (Extended Market)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Transaction Fee (Basis Points)
+            </label>
+            <select id="setupTransactionFee" onchange="saveSetupDraft()" class="form-input">
+              <option value="0" selected>0 bps (Zero Commission)</option>
+              <option value="5">5 bps (0.05% Institutional)</option>
+              <option value="10">10 bps (0.10% Standard Brokerage)</option>
+              <option value="20">20 bps (0.20% High Friction)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Circuit Breaker Limit (± %)
+            </label>
+            <select id="setupCircuitBreaker" onchange="saveSetupDraft()" class="form-input">
+              <option value="15">15% Limit (Strict Exchange)</option>
+              <option value="20" selected>20% Limit (Official GTU Default)</option>
+              <option value="25">25% Limit (Wide Band)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Reference Benchmark Source
+            </label>
+            <input type="text" class="form-input" value="National Stock Exchange of India (NSE EOD Official)" readonly style="background: #F1F5F9; color: #475569;" />
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" onclick="switchSetupSection('teams')" class="btn btn-primary" style="font-weight: 800; padding: 10px 20px;">
+            Next: 16 Teams Roster ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 2: Teams Roster (Exactly 16 Teams) -->
+      <div id="setupSectionTeams" class="hidden setup-sec-panel luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
+          <div>
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">👥 2. Participating Teams &amp; Passwords (16 Desks)</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+              Configure all 16 participant team desks. Passwords can be customized or generated. Passwords activate only after setup lock.
+            </p>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <button type="button" onclick="generateRandomTeamPins()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+              🎲 Generate Random PINs
+            </button>
+            <button type="button" onclick="resetDefaultTeamCredentials()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+              🔄 Reset Standard Passwords
+            </button>
+            <button type="button" onclick="copySetupCredentialsToClipboard()" class="btn btn-sage" style="font-size: 12px; padding: 6px 14px; font-weight: 700;">
+              📋 Copy All 16 Logins
+            </button>
+            <button type="button" onclick="downloadSetupCredentialsCsv()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+              📥 Download Logins CSV
+            </button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto; margin-bottom: 24px; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); background: #FFFFFF;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+                <th style="padding: 8px 12px; width: 80px;">Slot</th>
+                <th style="padding: 8px 12px;">Team Display Name</th>
+                <th style="padding: 8px 12px; width: 120px;">Username</th>
+                <th style="padding: 8px 12px; width: 140px;">Password / PIN</th>
+                <th style="padding: 8px 12px;">Student Members (Optional)</th>
+              </tr>
+            </thead>
+            <tbody id="setupTeamsRosterTbody" style="font-family: var(--font-mono);">
+              <!-- 16 Team Rows rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px;">
+          <button type="button" onclick="switchSetupSection('details')" class="btn btn-outline" style="font-weight: 700;">
+            ⬅ Back: Event Details
+          </button>
+          <button type="button" onclick="switchSetupSection('universe')" class="btn btn-primary" style="font-weight: 800; padding: 10px 20px;">
+            Next: Stock Selection ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 3: Stock Selection Catalogue -->
+      <div id="setupSectionUniverse" class="hidden setup-sec-panel luxury-card" style="padding: 24px;">
+        <div style="margin-bottom: 16px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">🏛️ 3. Stock Selection &amp; Market Catalogue</h2>
+              <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                Select which verified real NSE corporate equities will participate in the simulated trading floor.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="catalogueSelectedCountBadge" class="badge badge-champagne" style="font-size: 13px; font-weight: 800; padding: 6px 14px;">
+                <span id="catalogueSelectedCount">20</span> / 20 Stocks Selected
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catalogue Filter Bar -->
+        <div class="cream-panel" style="padding: 14px 18px; margin-bottom: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px; max-width: 420px;">
+            <input type="text" id="stockCatalogueSearch" oninput="filterStockCatalogue()" placeholder="🔍 Search by symbol, name, or sector..." class="form-input" style="padding: 8px 12px; font-size: 13px;" />
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Presets:</span>
+            <button type="button" onclick="selectStockPreset('all')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">
+              All 20 NSE Stocks
+            </button>
+            <button type="button" onclick="selectStockPreset('top12')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">
+              Top 12 Diverse Mix
+            </button>
+            <button type="button" onclick="selectStockPreset('top8')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">
+              Top 8 Mega-Caps
+            </button>
+            <button type="button" onclick="selectStockPreset('clear')" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: var(--error-red);">
+              Deselect All
+            </button>
+          </div>
+        </div>
+
+        <!-- Sector Filter Pills -->
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;" id="catalogueSectorPills">
+          <button type="button" onclick="filterCatalogueBySector('ALL')" class="btn-demo-pill active" data-sector="ALL">All Sectors (20)</button>
+          <button type="button" onclick="filterCatalogueBySector('Banking')" class="btn-demo-pill" data-sector="Banking">Banking &amp; Finance (4)</button>
+          <button type="button" onclick="filterCatalogueBySector('Information Technology')" class="btn-demo-pill" data-sector="Information Technology">Information Tech (2)</button>
+          <button type="button" onclick="filterCatalogueBySector('Automobile')" class="btn-demo-pill" data-sector="Automobile">Automobile (2)</button>
+          <button type="button" onclick="filterCatalogueBySector('Energy')" class="btn-demo-pill" data-sector="Energy">Energy &amp; Power (3)</button>
+          <button type="button" onclick="filterCatalogueBySector('Metals')" class="btn-demo-pill" data-sector="Metals">Metals &amp; Mining (2)</button>
+          <button type="button" onclick="filterCatalogueBySector('Consumer')" class="btn-demo-pill" data-sector="Consumer">FMCG &amp; Retail (2)</button>
+          <button type="button" onclick="filterCatalogueBySector('Pharma')" class="btn-demo-pill" data-sector="Pharma">Pharmaceuticals (1)</button>
+          <button type="button" onclick="filterCatalogueBySector('Conglomerate')" class="btn-demo-pill" data-sector="Conglomerate">Conglomerate &amp; Infra (4)</button>
+        </div>
+
+        <!-- Stock Catalogue Cards Grid -->
+        <div id="stockCatalogueGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; margin-bottom: 24px;">
+          <!-- Populated dynamically with all 20 real companies -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px;">
+          <button type="button" onclick="switchSetupSection('teams')" class="btn btn-outline" style="font-weight: 700;">
+            ⬅ Back: 16 Teams
+          </button>
+          <button type="button" onclick="switchSetupSection('news')" class="btn btn-primary" style="font-weight: 800; padding: 10px 20px;">
+            Next: News Timeline ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 4: News Timeline Preview -->
+      <div id="setupSectionNews" class="hidden setup-sec-panel luxury-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
+          <div>
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">⚡ 4. Journalistic News Timeline (Auto-Generated)</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+              Multi-day narrative events scheduled automatically based on your selected stocks. Headlines are neutral and educational.
+            </p>
+          </div>
+          <button type="button" onclick="regenerateNewsTimeline()" class="btn btn-sage" style="font-size: 12px; padding: 6px 14px; font-weight: 700;">
+            🔄 Regenerate for Selected Stocks
+          </button>
+        </div>
+
+        <div id="setupNewsPreviewList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px;">
+          <button type="button" onclick="switchSetupSection('universe')" class="btn btn-outline" style="font-weight: 700;">
+            ⬅ Back: Stocks
+          </button>
+          <button type="button" onclick="switchSetupSection('review')" class="btn btn-primary" style="font-weight: 800; padding: 10px 20px;">
+            Next: Review &amp; Lock ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 5: Review & Lock Event -->
+      <div id="setupSectionReview" class="hidden setup-sec-panel luxury-card" style="padding: 24px;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
+          <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">🔒 5. Pre-Event Verification &amp; Final Lock</h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+            Verify your configuration before locking. Once locked, 16 team credentials become active for student login and trading rules freeze.
+          </p>
+        </div>
+
+        <!-- Verification Stat Tiles -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
+          <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Competition Roster</div>
+            <div id="reviewStatTeams" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">16 Teams Configured</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Slots 1 to 16 with credentials</div>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Tradeable Stock Universe</div>
+            <div id="reviewStatStocks" style="font-size: 22px; font-weight: 800; color: var(--price-up); margin-top: 4px;">20 Stocks Active</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Verified NSE corporate equities</div>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Starting Capital</div>
+            <div id="reviewStatCash" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">₹5,00,000 / Team</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Zero-holding cash in hand</div>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
+            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Schedule &amp; Duration</div>
+            <div id="reviewStatSchedule" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">3 Days • 30m / Day</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Circuit breaker: 20%</div>
+          </div>
+        </div>
+
+        <!-- Lock Action Callout -->
+        <div class="cream-panel" style="padding: 24px; border: 2px solid var(--champagne-accent); background: linear-gradient(135deg, rgba(212,175,55,0.06), #FFFFFF); border-radius: var(--radius-md); margin-bottom: 24px; text-align: center;">
+          <div style="font-size: 38px; margin-bottom: 10px;">🏛️</div>
+          <h3 style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin-bottom: 6px;">
+            Ready to Lock Championship Setup?
+          </h3>
+          <p style="font-size: 13px; color: var(--text-muted); max-width: 680px; margin: 0 auto 20px auto; line-height: 1.6;">
+            Confirming the lock will authoritatively register the 16 team credentials on the server, open team logins for student participants, and transition you directly to the Live Host Operations Command Centre.
+          </p>
+
+          <button type="button" onclick="openLockSetupConfirmModal()" class="btn btn-primary" style="padding: 14px 36px; font-size: 15px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 16px rgba(33,134,83,0.3);">
+            🔒 Confirm &amp; Lock Event Setup (Open Team Logins)
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-start; gap: 10px;">
+          <button type="button" onclick="switchSetupSection('news')" class="btn btn-outline" style="font-weight: 700;">
+            ⬅ Back: News Plan
+          </button>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Lock Setup Confirmation Modal -->
+  <div id="lockSetupConfirmModal" class="hidden modal-overlay" style="z-index: 130;">
+    <div class="modal-content" style="max-width: 540px; padding: 28px; text-align: center;">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--champagne-light); color: var(--champagne-accent); font-size: 26px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+        🔒
+      </div>
+      <h3 style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin-bottom: 8px;">
+        Confirm Event Lock &amp; Activate Logins
+      </h3>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+        Are you ready to lock the competition? This action performs the following authoritative steps:
+      </p>
+
+      <div style="text-align: left; background: var(--surface-cream); border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 24px; font-size: 12px; line-height: 1.6;">
+        <div style="margin-bottom: 6px;">✓ <strong>16 Team Desks:</strong> Activates credentials for teams 1–16.</div>
+        <div style="margin-bottom: 6px;">✓ <strong>Stock Selection:</strong> Permanently freezes the active tradeable equities.</div>
+        <div style="margin-bottom: 6px;">✓ <strong>News Engine:</strong> Locks the scheduled multi-day journalistic wire timeline.</div>
+        <div>✓ <strong>Host Control:</strong> Unlocks the full Live Host Operations Command Centre.</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" onclick="closeLockSetupConfirmModal()" class="btn btn-outline" style="padding: 10px 18px;">
+          Cancel / Keep Editing
+        </button>
+        <button type="button" onclick="submitLockEventSetup()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
+          Yes, Lock Event &amp; Open Logins
+        </button>
+      </div>
+    </div>
+  </div>
 
 
   <!-- ==========================================================================
