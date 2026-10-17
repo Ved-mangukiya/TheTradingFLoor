@@ -16,6 +16,8 @@ logs/*.log
 # Temporary Backups & OS files
 data/live_game_state.json
 data/state_backup.json
+data/checkpoints/*.json
+!data/checkpoints/.gitkeep
 *.tmp
 *.bak
 .DS_Store

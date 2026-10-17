@@ -727,7 +727,19 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
   }
 
   const generatedEvents = [];
-  const timeFractions = [0.18, 0.40, 0.65, 0.85];
+  // Adapt timing fractions and reading windows intelligently by session duration
+  let timeFractions = [0.18, 0.40, 0.65, 0.85];
+  let readingWindowSec = 25;
+  if (dayDurationSeconds <= 300) {
+    timeFractions = [0.35, 0.70];
+    readingWindowSec = 12;
+  } else if (dayDurationSeconds <= 600) {
+    timeFractions = [0.25, 0.55, 0.80];
+    readingWindowSec = 18;
+  } else if (dayDurationSeconds <= 1200) {
+    timeFractions = [0.20, 0.45, 0.70, 0.88];
+    readingWindowSec = 22;
+  }
 
   for (let d = 1; d <= totalDays; d++) {
     timeFractions.forEach((frac, fIdx) => {
@@ -752,9 +764,11 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
         event_id: `EVT_D${d}_0${fIdx + 1}`,
         day: d,
         trigger_second: triggerSec,
+        reading_duration_sec: readingWindowSec,
         type: tpl.type,
         headline: tpl.headline,
         simple_explanation: tpl.simple_explanation,
+        phase: 'SCHEDULED',
         impacts
       });
     });
@@ -763,13 +777,13 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
   return generatedEvents;
 }
 
-function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
-  eventObj.triggered = true;
+function applyNewsImpactsToStocks(eventObj) {
   const impacts = eventObj.impacts || {};
+  const oppMult = (gameState && gameState.opportunityMultiplier) || 1.0;
 
   if (impacts.GLOBAL_WEIGHTED) {
-    const basePct = impacts.GLOBAL_WEIGHTED.base_pct;
-    const durationSec = impacts.GLOBAL_WEIGHTED.duration_sec || 60;
+    const basePct = impacts.GLOBAL_WEIGHTED.base_pct * oppMult;
+    const durationSec = impacts.GLOBAL_WEIGHTED.duration_sec || 45;
 
     companies.forEach((stock) => {
       if (!stock.isEnabled || stock.isHalted) return;
@@ -779,14 +793,15 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   } else {
     // 1. Process specific company impacts
     Object.keys(impacts).forEach((ticker) => {
-      if (ticker.startsWith('SECTOR_')) return; // handled below
+      if (ticker.startsWith('SECTOR_')) return;
       const stock = companies.find((s) => s.ticker === ticker);
       if (!stock || !stock.isEnabled || stock.isHalted) return;
       const { delta_pct, duration_sec } = impacts[ticker];
-      applyStockTransition(stock, delta_pct, duration_sec);
+      const shockPct = delta_pct * oppMult;
+      applyStockTransition(stock, shockPct, duration_sec);
     });
 
-    // 2. Process sector-wide impacts (e.g., SECTOR_AUTO, SECTOR_TECH, SECTOR_BANKING)
+    // 2. Process sector-wide impacts
     Object.keys(impacts).forEach((key) => {
       if (!key.startsWith('SECTOR_')) return;
       const targetSector = key.replace('SECTOR_', '').toLowerCase();
@@ -794,11 +809,41 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
       companies.forEach((stock) => {
         if (!stock.isEnabled || stock.isHalted) return;
         if (stock.sector && stock.sector.toLowerCase().includes(targetSector)) {
-          const sectorShock = delta_pct * (stock.beta || 1.0);
+          const sectorShock = delta_pct * (stock.beta || 1.0) * oppMult;
           applyStockTransition(stock, sectorShock, duration_sec);
         }
       });
     });
+  }
+}
+
+function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
+  eventObj.triggered = true;
+  const impacts = eventObj.impacts || {};
+
+  // 5-Phase News Flow: Reading & Discussion Window (No instant price shock!)
+  let readingSec = 0;
+  if (eventObj.reading_duration_sec !== undefined) {
+    readingSec = eventObj.reading_duration_sec;
+  } else if (triggeredBy === 'HOST_MANUAL' && eventObj.immediate) {
+    readingSec = 0;
+  } else if (triggeredBy === 'HOST_CUSTOM' && eventObj.reading_duration_sec === undefined) {
+    readingSec = 0; // immediate for custom test/host shocks unless specified
+  } else {
+    const totalSec = gameState.dayDurationSeconds || 1800;
+    if (totalSec <= 300) readingSec = 12;
+    else if (totalSec <= 600) readingSec = 18;
+    else readingSec = 25;
+  }
+
+  eventObj.readingDurationSec = readingSec;
+  eventObj.reactionStartSecond = (gameState.elapsedSeconds || 0) + readingSec;
+
+  if (readingSec === 0) {
+    eventObj.phase = 'REACTING';
+    applyNewsImpactsToStocks(eventObj);
+  } else {
+    eventObj.phase = 'READING';
   }
 
   let sentiment = 'NEUTRAL';
@@ -822,6 +867,9 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     simple_explanation: eventObj.simple_explanation,
     sentiment,
     trafficLightBadge,
+    phase: eventObj.phase,
+    readingDurationSec: eventObj.readingDurationSec,
+    reactionStartSecond: eventObj.reactionStartSecond,
     impacts: eventObj.impacts,
     timestamp: new Date().toLocaleTimeString()
   };
@@ -833,6 +881,8 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     triggered_by: triggeredBy,
     event_id: eventObj.event_id,
     headline: eventObj.headline,
+    phase: eventObj.phase,
+    reading_seconds: eventObj.readingDurationSec,
     impacts: eventObj.impacts
   });
 
@@ -905,6 +955,17 @@ setInterval(() => {
   newsEvents.forEach((ev) => {
     if (!ev.triggered && !ev.cancelled && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
       triggerNewsEvent(ev, 'AUTO_CLOCK');
+    }
+    // 5-Phase News Flow: Transition from READING to REACTING when decision deadline expires
+    if (ev.triggered && !ev.cancelled && ev.phase === 'READING' && gameState.elapsedSeconds >= (ev.reactionStartSecond || (ev.trigger_second + 25))) {
+      ev.phase = 'REACTING';
+      applyNewsImpactsToStocks(ev);
+      broadcastAudioCue('reaction_start_chime', 'news', { event_id: ev.event_id, headline: ev.headline });
+      broadcastAll({
+        type: 'NEWS_REACTION_START',
+        event_id: ev.event_id,
+        headline: ev.headline
+      });
     }
   });
 
@@ -2152,14 +2213,18 @@ wss.on('connection', (ws) => {
           }
         }
 
-        // Validate 16 teams roster
+        // Validate dynamic teams roster (supports any dynamic count >= 1)
         if (Array.isArray(data.teams)) {
-          if (data.teams.length !== 16) {
-            errors.push('Exactly 16 teams are required for the competition roster.');
+          if (data.teams.length < 1) {
+            errors.push('At least 1 team is required for the competition roster.');
           }
+          const seenUsernames = new Set();
           data.teams.forEach((t, i) => {
             if (!t.name || !t.name.trim()) errors.push(`Team ${i + 1} display name is required.`);
             if (!t.password || !t.password.trim()) errors.push(`Team ${i + 1} password is required.`);
+            const u = (t.username || `team${i + 1}`).trim().toLowerCase();
+            if (seenUsernames.has(u)) errors.push(`Duplicate username "${u}" found on team ${i + 1}.`);
+            seenUsernames.add(u);
           });
         }
 
@@ -2191,6 +2256,18 @@ wss.on('connection', (ws) => {
           gameState.circuitBreakerPercent = Math.max(5, Math.min(50, parseFloat(data.circuitBreakerPercent)));
         }
 
+        // Apply Simulation Risk Profile
+        if (data.riskProfile) {
+          gameState.riskProfile = ['CONSERVATIVE', 'BALANCED', 'HIGH_OPPORTUNITY', 'CUSTOM'].includes(data.riskProfile) ? data.riskProfile : 'BALANCED';
+        }
+        if (gameState.riskProfile === 'HIGH_OPPORTUNITY') {
+          gameState.opportunityMultiplier = 1.45;
+        } else if (gameState.riskProfile === 'CONSERVATIVE') {
+          gameState.opportunityMultiplier = 0.75;
+        } else {
+          gameState.opportunityMultiplier = 1.0;
+        }
+
         // Apply Stock Selection
         if (Array.isArray(selectedTickers)) {
           companies.forEach((c) => {
@@ -2209,8 +2286,8 @@ wss.on('connection', (ws) => {
           saveUniverseToDisk();
         }
 
-        // Apply 16 Teams Roster & Credentials
-        if (Array.isArray(data.teams) && data.teams.length === 16) {
+        // Apply Dynamic Teams Roster & Credentials (supports any count >= 1)
+        if (Array.isArray(data.teams) && data.teams.length >= 1) {
           Object.keys(USERS).forEach((k) => {
             if (USERS[k].role === 'TRADER') delete USERS[k];
           });
@@ -2218,7 +2295,7 @@ wss.on('connection', (ws) => {
 
           data.teams.forEach((tData, idx) => {
             const i = idx + 1;
-            const teamId = `team_${i}`;
+            const teamId = tData.id || `team_${i}`;
             const username = (tData.username || `team${i}`).trim().toLowerCase();
             const password = (tData.password || `trade${i}00`).trim();
             const name = (tData.name || `Team ${i}`).trim();
@@ -2281,10 +2358,13 @@ wss.on('connection', (ws) => {
           gameState
         });
 
+        const activeTeamCount = Object.keys(teams).length;
         ws.send(JSON.stringify({
           type: 'EVENT_CONFIG_LOCKED_ACK',
           ok: true,
-          message: 'Event setup confirmed and locked. All 16 team credentials are now active!'
+          message: `Event setup confirmed and locked. All ${activeTeamCount} team credentials are now active!`,
+          teamsCount: activeTeamCount,
+          gameState
         }));
 
         broadcastTick();
@@ -2380,7 +2460,7 @@ wss.on('connection', (ws) => {
       }
 
       // 5.2 Market Resume with Authoritative 3-2-1 Server Countdown
-      if (data.action === 'HOST_RESUME_COUNTDOWN') {
+      if (data.action === 'HOST_RESUME_COUNTDOWN' || data.action === 'HOST_START_DAY1_NOW') {
         const res = startResumeCountdown('HOST');
         if (!res.ok) {
           ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: res.reason }));

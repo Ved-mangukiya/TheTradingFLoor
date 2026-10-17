@@ -3,8 +3,6 @@
     "ticker": "RELIANCE",
     "name": "Reliance Industries",
     "sector": "Energy & Conglomerate",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 2950,
     "lot_presets": [
       1,
@@ -16,8 +14,6 @@
     "min_price": 1,
     "max_price": 500000,
     "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
     "fundamentals": {
       "market_cap": "₹19.9 Lakh Cr",
       "pe_ratio": 26.8,
@@ -33,8 +29,6 @@
     "ticker": "TATAMOTORS",
     "name": "Tata Motors Passenger & Commercial",
     "sector": "Automobile",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 980,
     "lot_presets": [
       5,
@@ -45,9 +39,7 @@
     "volatility_factor": 0.0035,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.60 Lakh Cr",
       "pe_ratio": 16.4,
@@ -63,8 +55,6 @@
     "ticker": "MARUTI",
     "name": "Maruti Suzuki India",
     "sector": "Automobile",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 12400,
     "lot_presets": [
       1,
@@ -75,9 +65,7 @@
     "volatility_factor": 0.0018,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.85 Lakh Cr",
       "pe_ratio": 28.5,
@@ -93,8 +81,6 @@
     "ticker": "M&M",
     "name": "Mahindra & Mahindra",
     "sector": "Automobile",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 2850,
     "lot_presets": [
       2,
@@ -105,9 +91,7 @@
     "volatility_factor": 0.0028,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.54 Lakh Cr",
       "pe_ratio": 29.8,
@@ -123,8 +107,6 @@
     "ticker": "TCS",
     "name": "Tata Consultancy Services",
     "sector": "IT & Tech",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 4150,
     "lot_presets": [
       2,
@@ -136,8 +118,6 @@
     "min_price": 1,
     "max_price": 500000,
     "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
     "fundamentals": {
       "market_cap": "₹15.0 Lakh Cr",
       "pe_ratio": 31.4,
@@ -153,8 +133,6 @@
     "ticker": "INFY",
     "name": "Infosys",
     "sector": "IT & Tech",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 1880,
     "lot_presets": [
       5,
@@ -165,9 +143,7 @@
     "volatility_factor": 0.0026,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹7.80 Lakh Cr",
       "pe_ratio": 27.9,
@@ -183,8 +159,6 @@
     "ticker": "HDFCBANK",
     "name": "HDFC Bank",
     "sector": "Banking",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 1680,
     "lot_presets": [
       5,
@@ -196,8 +170,6 @@
     "min_price": 1,
     "max_price": 500000,
     "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
     "fundamentals": {
       "market_cap": "₹12.8 Lakh Cr",
       "pe_ratio": 19.2,
@@ -213,8 +185,6 @@
     "ticker": "ICICIBANK",
     "name": "ICICI Bank",
     "sector": "Banking",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 1240,
     "lot_presets": [
       5,
@@ -225,9 +195,7 @@
     "volatility_factor": 0.0024,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹8.70 Lakh Cr",
       "pe_ratio": 17.5,
@@ -243,8 +211,6 @@
     "ticker": "SBIN",
     "name": "State Bank of India",
     "sector": "Banking",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 820,
     "lot_presets": [
       10,
@@ -255,9 +221,7 @@
     "volatility_factor": 0.003,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹7.30 Lakh Cr",
       "pe_ratio": 11.2,
@@ -273,8 +237,6 @@
     "ticker": "BAJFINANCE",
     "name": "Bajaj Finance",
     "sector": "Banking",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 7200,
     "lot_presets": [
       1,
@@ -285,9 +247,7 @@
     "volatility_factor": 0.0038,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹4.45 Lakh Cr",
       "pe_ratio": 31.8,
@@ -303,8 +263,6 @@
     "ticker": "LT",
     "name": "Larsen & Toubro",
     "sector": "Infrastructure",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 3600,
     "lot_presets": [
       2,
@@ -316,8 +274,6 @@
     "min_price": 1,
     "max_price": 500000,
     "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
     "fundamentals": {
       "market_cap": "₹4.95 Lakh Cr",
       "pe_ratio": 34.6,
@@ -333,8 +289,6 @@
     "ticker": "AIRTEL",
     "name": "Bharti Airtel",
     "sector": "Telecom",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 1550,
     "lot_presets": [
       5,
@@ -345,9 +299,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹9.10 Lakh Cr",
       "pe_ratio": 48,
@@ -363,8 +315,6 @@
     "ticker": "ITC",
     "name": "ITC Limited",
     "sector": "FMCG",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 490,
     "lot_presets": [
       10,
@@ -375,9 +325,7 @@
     "volatility_factor": 0.0016,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹6.15 Lakh Cr",
       "pe_ratio": 28.5,
@@ -393,8 +341,6 @@
     "ticker": "HINDUNILVR",
     "name": "Hindustan Unilever",
     "sector": "FMCG",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 2750,
     "lot_presets": [
       2,
@@ -405,9 +351,7 @@
     "volatility_factor": 0.0015,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹6.45 Lakh Cr",
       "pe_ratio": 58.2,
@@ -423,8 +367,6 @@
     "ticker": "SUNPHARMA",
     "name": "Sun Pharmaceutical Industries",
     "sector": "Pharma",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 1720,
     "lot_presets": [
       5,
@@ -435,9 +377,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹4.12 Lakh Cr",
       "pe_ratio": 37.5,
@@ -453,8 +393,6 @@
     "ticker": "NTPC",
     "name": "NTPC Limited",
     "sector": "Energy & Power",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 410,
     "lot_presets": [
       10,
@@ -465,9 +403,7 @@
     "volatility_factor": 0.0022,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.98 Lakh Cr",
       "pe_ratio": 17.8,
@@ -483,8 +419,6 @@
     "ticker": "POWERGRID",
     "name": "Power Grid Corporation",
     "sector": "Energy & Power",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 340,
     "lot_presets": [
       10,
@@ -495,9 +429,7 @@
     "volatility_factor": 0.0017,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.16 Lakh Cr",
       "pe_ratio": 19.4,
@@ -513,8 +445,6 @@
     "ticker": "TATASTEEL",
     "name": "Tata Steel",
     "sector": "Metals",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 165,
     "lot_presets": [
       25,
@@ -525,9 +455,7 @@
     "volatility_factor": 0.0036,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹2.06 Lakh Cr",
       "pe_ratio": 38,
@@ -543,8 +471,6 @@
     "ticker": "JSWSTEEL",
     "name": "JSW Steel",
     "sector": "Metals",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 980,
     "lot_presets": [
       5,
@@ -555,9 +481,7 @@
     "volatility_factor": 0.0032,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹2.40 Lakh Cr",
       "pe_ratio": 29.5,
@@ -573,8 +497,6 @@
     "ticker": "TITAN",
     "name": "Titan Company",
     "sector": "Consumer & Retail",
-    "exchange": "NSE",
-    "currency": "INR",
     "base_price": 3450,
     "lot_presets": [
       2,
@@ -585,9 +507,7 @@
     "volatility_factor": 0.0022,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
-    "reference_source": "NSE EOD Official Reference",
-    "reference_timestamp": "2026-10-15T15:30:00Z",
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.06 Lakh Cr",
       "pe_ratio": 85,

@@ -4,6 +4,49 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
 
 ---
 
+## [2.3.0] — 2026-10-17
+### Added
+- **Dynamic Team Capacity (Any $N \ge 1$ Desks)**:
+  - Eliminated hardcoded 16-team limits across backend and frontend.
+  - Added 1-click team capacity presets: Solo (1 Desk), 2 Teams, 4 Teams, 8 Teams, 16 Teams, and Custom.
+  - Interactive team roster builder with dynamic desk additions (`+ Add Team Desk`), individual row deletions (`🗑️`), PIN generator, credentials copy, and CSV export.
+  - Dynamic holding and valuation alignment ensures newly added teams initialize with zero undefined errors.
+- **Minimalist Student-Friendly Login & Waiting Room**:
+  - Replaced technical jargon (`⚡ 20 Live Stocks Loaded • 🔒 Order Security Ready • 🔔 Hall Sound Engine Armed`) with clean, plain English labels ("Username", "Password", "Log In").
+  - Dynamic status banner: "Competition Setup in Progress" vs "COMPETITION READY • LOGINS OPEN".
+  - Clean trader waiting room chips (`Selected Corporate Equities Ready` • `Live Trading Floor Execution`).
+- **Post-Lock Day 1 Launch Modal**:
+  - Interactive modal automatically opens upon locking event configuration.
+  - 3 intuitive host launch pathways:
+    1. **Start Day 1 Now**: Instantly triggers the synchronized 3-2-1 countdown across all screens.
+    2. **Schedule Day 1**: Sets scheduled countdown banner with target time and auto-start.
+    3. **Start Later**: Leaves market on standby for host to launch manually when auditorium is ready.
+  - Instant WebSocket login unlock broadcast (`EVENT_CONFIG_LOCKED`) allows students to log in immediately without refreshing browsers.
+- **Student-Friendly 5-Phase News Flow & Cubic Price Reactions**:
+  - Phase 1: Announced.
+  - Phase 2: Reading & Discussion Window (12–30s countdown bar, no instant price jump, trading remains fully active).
+  - Phase 3: Decision Deadline.
+  - Phase 4: Smooth cubic S-curve reaction ($e(u) = 3u^2 - 2u^3$) with `NEWS_REACTION_START` audio chime.
+  - Phase 5: Reaction Completed.
+- **Calibrated Simulation Risk & Opportunity Profiles**:
+  - Preset options: Conservative (0.75x shock scale), Balanced (1.0x), High Opportunity (1.45x), and Custom.
+  - Calibrated opportunity multipliers give student traders noticeable, rewarding gains from smart news analysis.
+- **Dramatic & Intense Winner Reveal Audio & Animations**:
+  - Web Audio API institutional sound synthesis:
+    - `dramatic_tension_riser`: Low-frequency pulsing sub-bass heartbeat riser with pitch ascent.
+    - `winner_drumroll_boom`: Snare rumble with resonant orchestral bass drum impact.
+    - `champion_fanfare_epic`: Royal brass fanfare triad with triumphant orchestral resolve.
+  - Cinematic CSS visual effects:
+    - `.dramatic-screen-rumble`: 3.2s camera vibration effect.
+    - `.golden-aura-glow`: Radiant champagne gold shockwave pulsing outward.
+    - `.trophy-intense-slam`: 3D scale-down slam with spring bounce.
+    - Confetti storm upgraded to 180 multi-color physics-simulated particles.
+- **Automated Dynamic Upgrade Test Suite**:
+  - Added `test_dynamic_upgrade_suite.js` (11 tests covering event status, dynamic 4-team lock, solo 1-team lock, custom passwords, invalid team rejection, 3-2-1 post-lock trigger).
+  - Verified total automated test pass count: **63/63 passing tests** (11 dynamic + 52 master suite).
+
+---
+
 ## [2.2.0] — 2026-10-17
 ### Added
 - **Architectural Separation & Database Transparency**:

@@ -693,6 +693,151 @@ function playInstitutionalSound(cueName) {
         osc.start(now + idx * 0.06);
         osc.stop(now + idx * 0.06 + 0.5);
       });
+    } else if (cueName === 'dramatic_tension_riser') {
+      // Intense accelerating sub-bass heartbeat riser with detuned sweeping filters
+      const heartbeats = [0, 0.45, 0.85, 1.20, 1.50, 1.75, 1.95, 2.12];
+      heartbeats.forEach((tOffset, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(75, now + tOffset);
+        osc.frequency.exponentialRampToValueAtTime(36, now + tOffset + 0.15);
+        gain.gain.setValueAtTime(0.35 + (i * 0.04), now + tOffset);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + tOffset + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + tOffset);
+        osc.stop(now + tOffset + 0.2);
+      });
+
+      // Filtered rising tension noise/saw sweep
+      const sweepOsc = ctx.createOscillator();
+      const sweepFilter = ctx.createBiquadFilter();
+      const sweepGain = ctx.createGain();
+      sweepOsc.type = 'sawtooth';
+      sweepOsc.frequency.setValueAtTime(90, now);
+      sweepOsc.frequency.exponentialRampToValueAtTime(420, now + 2.2);
+
+      sweepFilter.type = 'lowpass';
+      sweepFilter.frequency.setValueAtTime(180, now);
+      sweepFilter.frequency.exponentialRampToValueAtTime(1400, now + 2.2);
+      sweepFilter.Q.setValueAtTime(6.0, now);
+
+      sweepGain.gain.setValueAtTime(0.05, now);
+      sweepGain.gain.linearRampToValueAtTime(0.32, now + 2.1);
+      sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 2.3);
+
+      sweepOsc.connect(sweepFilter);
+      sweepFilter.connect(sweepGain);
+      sweepGain.connect(ctx.destination);
+      sweepOsc.start(now);
+      sweepOsc.stop(now + 2.35);
+    } else if (cueName === 'winner_drumroll_boom') {
+      // Rapid snare drumroll strikes (20 rapid micro-bursts accelerating)
+      for (let i = 0; i < 22; i++) {
+        const strikeTime = now + (i * 0.045);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = i % 2 === 0 ? 'triangle' : 'square';
+        osc.frequency.setValueAtTime(220 + (i * 8), strikeTime);
+        gain.gain.setValueAtTime(0.12 + (i * 0.012), strikeTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, strikeTime + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(strikeTime);
+        osc.stop(strikeTime + 0.045);
+      }
+
+      // Massive Seismic Sub-Bass Boom Impact at the end of the roll
+      const boomTime = now + 1.0;
+      const subOsc = ctx.createOscillator();
+      const subGain = ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(85, boomTime);
+      subOsc.frequency.exponentialRampToValueAtTime(32, boomTime + 1.6);
+      subGain.gain.setValueAtTime(0.55, boomTime);
+      subGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 1.8);
+      subOsc.connect(subGain);
+      subGain.connect(ctx.destination);
+      subOsc.start(boomTime);
+      subOsc.stop(boomTime + 1.85);
+    } else if (cueName === 'champion_fanfare_epic') {
+      // Grand D-Major multi-octave victory fanfare (D4, F#4, A4, D5, F#5, A5, D6)
+      const brassNotes = [
+        { freq: 293.66, time: 0.0, dur: 0.35, vol: 0.35 }, // D4
+        { freq: 369.99, time: 0.22, dur: 0.35, vol: 0.35 }, // F#4
+        { freq: 440.00, time: 0.44, dur: 0.45, vol: 0.38 }, // A4
+        { freq: 587.33, time: 0.70, dur: 0.55, vol: 0.42 }, // D5
+        { freq: 739.99, time: 1.10, dur: 0.45, vol: 0.45 }, // F#5
+        { freq: 880.00, time: 1.40, dur: 0.50, vol: 0.48 }, // A5
+        { freq: 1174.66, time: 1.80, dur: 2.2, vol: 0.55 }  // D6 Grand Finale
+      ];
+      brassNotes.forEach((n) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.freq, now + n.time);
+        gain.gain.setValueAtTime(n.vol, now + n.time);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + n.time);
+        osc.stop(now + n.time + n.dur);
+      });
+    } else if (cueName === 'reaction_start_chime') {
+      // Bright crystalline 4-tone ascending alert chime when price reaction begins
+      [783.99, 987.77, 1174.66, 1567.98].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+        gain.gain.setValueAtTime(0.24, now + idx * 0.09);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.65);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.09);
+        osc.stop(now + idx * 0.09 + 0.65);
+      });
+    } else if (cueName === 'competition_ready') {
+      // Ascending C-Major chord fanfare
+      [261.63, 329.63, 392.00, 523.25].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.28, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 1.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 1.2);
+      });
+    } else if (cueName === 'login_success') {
+      [659.25, 987.77].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.35);
+      });
+    } else if (cueName === 'login_error') {
+      [207.65, 155.56].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.22);
+      });
     }
   } catch (e) {
     console.warn('[AUDIO NOTE]', e);
@@ -1451,6 +1596,31 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       playInstitutionalSound('order_placed');
       const timeStr = new Date(msg.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       showOrderToast(`📅 Event scheduled for ${timeStr}. Waiting room countdown armed.`, true);
+      return;
+    }
+
+    if (msg.type === 'EVENT_CONFIG_LOCKED' || msg.type === 'EVENT_CONFIG_LOCKED_ACK') {
+      if (latestState && latestState.gameState) {
+        latestState.gameState.configLocked = true;
+        if (msg.gameState) latestState.gameState = { ...latestState.gameState, ...msg.gameState };
+      }
+      playInstitutionalSound('competition_ready');
+      updateLoginEventStatusBanner(latestState);
+
+      if (msg.type === 'EVENT_CONFIG_LOCKED_ACK' && currentRole === 'HOST') {
+        openPostLockDay1Modal(msg.teamsCount || 16);
+      }
+      return;
+    }
+
+    if (msg.type === 'NEWS_REACTION_START') {
+      playInstitutionalSound('reaction_start_chime');
+      showOrderToast(`⚡ Price Reaction Active: ${msg.headline || 'Market updating'}`, true);
+      const trafficBadge = document.getElementById('bannerTrafficBadge');
+      if (trafficBadge) {
+        trafficBadge.textContent = '⚡ PRICE REACTION IN PROGRESS';
+        trafficBadge.className = 'badge badge-champagne';
+      }
       return;
     }
 
@@ -4235,6 +4405,7 @@ let setupCatalogueSearchTerm = '';
 let setupCatalogueSectorFilter = 'ALL';
 let setupInitialized = false;
 let activeSetupSection = 'details';
+let setupCurrentTeamsList = [];
 
 function updateLoginEventStatusBanner(state) {
   const banner = document.getElementById('loginEventStatusBanner');
@@ -4251,18 +4422,18 @@ function updateLoginEventStatusBanner(state) {
       titleEl.style.color = 'var(--price-up)';
     }
     if (descEl) {
-      descEl.textContent = 'The competition is active. All 16 team terminals can now authenticate.';
+      descEl.textContent = 'The competition is ready. All configured teams can now log in.';
     }
     banner.style.borderColor = 'var(--price-up)';
     banner.style.background = '#F0FDF4';
   } else {
     if (iconEl) iconEl.textContent = '⏳';
     if (titleEl) {
-      titleEl.textContent = 'EVENT SETUP IN PROGRESS';
+      titleEl.textContent = 'Competition Setup in Progress';
       titleEl.style.color = 'var(--warning-amber)';
     }
     if (descEl) {
-      descEl.textContent = 'The host is preparing the event. Team login will open once setup is complete.';
+      descEl.textContent = 'The host is getting everything ready. Team logins will open soon.';
     }
     banner.style.borderColor = 'var(--subtle-border)';
     banner.style.background = 'var(--surface-cream)';
@@ -4286,6 +4457,7 @@ function initOrRestoreEventSetup() {
   const durEl = document.getElementById('setupDayDuration');
   const feeEl = document.getElementById('setupTransactionFee');
   const cbEl = document.getElementById('setupCircuitBreaker');
+  const riskEl = document.getElementById('setupRiskProfile');
 
   if (titleEl) titleEl.value = (draft && draft.title) || gs.title || 'The Trading Floor Championship 2026';
   if (instEl) instEl.value = (draft && draft.institution) || gs.institution || 'Gujarat Technological University';
@@ -4294,12 +4466,14 @@ function initOrRestoreEventSetup() {
   if (durEl) durEl.value = String((draft && draft.dayDurationSeconds) || gs.dayDurationSeconds || 1800);
   if (feeEl) feeEl.value = String((draft && draft.transactionFeeBps !== undefined) ? draft.transactionFeeBps : (gs.transactionFeeBps !== undefined ? gs.transactionFeeBps : 0));
   if (cbEl) cbEl.value = String((draft && draft.circuitBreakerPercent) || gs.circuitBreakerPercent || 20);
+  if (riskEl) riskEl.value = (draft && draft.riskProfile) || gs.riskProfile || 'BALANCED';
 
-  // Step 2: 16 Teams Roster
-  let teamsData = (draft && draft.teams && draft.teams.length === 16) ? draft.teams : null;
-  if (!teamsData && latestState && latestState.allTeamsList && latestState.allTeamsList.length === 16) {
+  // Step 2: Dynamic Teams Roster (supports any N >= 1)
+  let teamsData = (draft && Array.isArray(draft.teams) && draft.teams.length >= 1) ? draft.teams : null;
+  if (!teamsData && latestState && Array.isArray(latestState.allTeamsList) && latestState.allTeamsList.length >= 1) {
     teamsData = latestState.allTeamsList.map((t, idx) => ({
       slot: idx + 1,
+      id: t.id || `team_${idx + 1}`,
       name: t.name || `Team ${idx + 1}`,
       username: t.username || `team${idx + 1}`,
       password: t.password || `trade${idx + 1}00`,
@@ -4311,6 +4485,7 @@ function initOrRestoreEventSetup() {
     for (let i = 1; i <= 16; i++) {
       teamsData.push({
         slot: i,
+        id: `team_${i}`,
         name: `Team ${i}`,
         username: `team${i}`,
         password: `trade${i}00`,
@@ -4338,7 +4513,7 @@ function initOrRestoreEventSetup() {
 }
 
 function saveSetupDraft() {
-  const teams = getSetup16TeamsArray();
+  const teams = getSetupTeamsArray();
   const draft = {
     title: (document.getElementById('setupEventTitle')?.value || '').trim(),
     institution: (document.getElementById('setupInstitution')?.value || '').trim(),
@@ -4347,6 +4522,7 @@ function saveSetupDraft() {
     dayDurationSeconds: parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800,
     transactionFeeBps: parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0,
     circuitBreakerPercent: parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20,
+    riskProfile: document.getElementById('setupRiskProfile')?.value || 'BALANCED',
     selectedTickers: Array.from(setupSelectedTickers),
     teams
   };
@@ -4397,10 +4573,27 @@ function switchSetupSection(sec) {
 }
 
 function renderSetupTeamsRoster(teamsList) {
+  setupCurrentTeamsList = Array.isArray(teamsList) && teamsList.length > 0 ? teamsList : [];
+  if (setupCurrentTeamsList.length === 0) {
+    for (let i = 1; i <= 16; i++) {
+      setupCurrentTeamsList.push({
+        slot: i,
+        id: `team_${i}`,
+        username: `team${i}`,
+        name: `Team ${i}`,
+        password: `trade${i}00`,
+        members: `Trader ${i}A, Trader ${i}B`
+      });
+    }
+  }
+
   const tbody = document.getElementById('setupTeamsRosterTbody');
   if (!tbody) return;
 
-  tbody.innerHTML = teamsList.map((t, idx) => {
+  const headerCount = document.getElementById('setupTeamsCountHeader');
+  if (headerCount) headerCount.textContent = setupCurrentTeamsList.length;
+
+  tbody.innerHTML = setupCurrentTeamsList.map((t, idx) => {
     const i = idx + 1;
     const name = escapeHtml(t.name || `Team ${i}`);
     const username = `team${i}`;
@@ -4424,31 +4617,110 @@ function renderSetupTeamsRoster(teamsList) {
         <td style="padding: 6px 12px;">
           <input type="text" id="setupTeamMembers_${i}" class="form-input" style="padding: 6px 10px; font-size: 12px;" value="${members}" oninput="saveSetupDraft()" placeholder="Trader ${i}A, Trader ${i}B" />
         </td>
+        <td style="padding: 6px 12px; text-align: center;">
+          <button type="button" onclick="removeSetupTeamRow(${idx})" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; color: var(--error-red); border-color: rgba(198,75,75,0.3);" title="Delete Team Desk">✕</button>
+        </td>
       </tr>
     `;
   }).join('');
 }
 
-function getSetup16TeamsArray() {
-  const teams = [];
-  for (let i = 1; i <= 16; i++) {
+function getSetupTeamsArray() {
+  const currentTeams = [];
+  const tbody = document.getElementById('setupTeamsRosterTbody');
+  const rowCount = tbody ? tbody.children.length : setupCurrentTeamsList.length;
+  const count = Math.max(1, rowCount || setupCurrentTeamsList.length);
+
+  for (let i = 1; i <= count; i++) {
     const nameInput = document.getElementById(`setupTeamName_${i}`);
     const passInput = document.getElementById(`setupTeamPass_${i}`);
     const membersInput = document.getElementById(`setupTeamMembers_${i}`);
-    teams.push({
-      slot: i,
-      id: `team_${i}`,
-      username: `team${i}`,
-      name: (nameInput ? nameInput.value : `Team ${i}`).trim() || `Team ${i}`,
-      password: (passInput ? passInput.value : `trade${i}00`).trim() || `trade${i}00`,
-      members: (membersInput ? membersInput.value : '').trim()
-    });
+    if (nameInput || passInput) {
+      currentTeams.push({
+        slot: i,
+        id: `team_${i}`,
+        username: `team${i}`,
+        name: (nameInput ? nameInput.value : `Team ${i}`).trim() || `Team ${i}`,
+        password: (passInput ? passInput.value : `trade${i}00`).trim() || `trade${i}00`,
+        members: (membersInput ? membersInput.value : '').trim()
+      });
+    } else if (setupCurrentTeamsList[i - 1]) {
+      currentTeams.push(setupCurrentTeamsList[i - 1]);
+    }
   }
-  return teams;
+  return currentTeams.length > 0 ? currentTeams : setupCurrentTeamsList;
+}
+
+function applyTeamCountPreset(targetCount) {
+  const current = getSetupTeamsArray();
+  const nextTeams = [];
+  for (let i = 1; i <= targetCount; i++) {
+    if (current[i - 1]) {
+      nextTeams.push({
+        ...current[i - 1],
+        slot: i,
+        id: `team_${i}`,
+        username: `team${i}`
+      });
+    } else {
+      nextTeams.push({
+        slot: i,
+        id: `team_${i}`,
+        username: `team${i}`,
+        name: `Team ${i}`,
+        password: `trade${i}00`,
+        members: `Trader ${i}A, Trader ${i}B`
+      });
+    }
+  }
+  setupCurrentTeamsList = nextTeams;
+  renderSetupTeamsRoster(nextTeams);
+  saveSetupDraft();
+  updateReviewStats();
+  showOrderToast(`✓ Updated team roster to ${targetCount} participant desk${targetCount > 1 ? 's' : ''}.`, true);
+}
+
+function addSetupTeamRow() {
+  const current = getSetupTeamsArray();
+  const nextIndex = current.length + 1;
+  current.push({
+    slot: nextIndex,
+    id: `team_${nextIndex}`,
+    username: `team${nextIndex}`,
+    name: `Team ${nextIndex}`,
+    password: `trade${nextIndex}00`,
+    members: `Trader ${nextIndex}A, Trader ${nextIndex}B`
+  });
+  setupCurrentTeamsList = current;
+  renderSetupTeamsRoster(current);
+  saveSetupDraft();
+  updateReviewStats();
+  showOrderToast(`✓ Added Desk #${nextIndex} (${current.length} total desks).`, true);
+}
+
+function removeSetupTeamRow(idx) {
+  const current = getSetupTeamsArray();
+  if (current.length <= 1) {
+    showOrderToast('⚠️ Minimum 1 team required for the championship.', false);
+    return;
+  }
+  current.splice(idx, 1);
+  const reindexed = current.map((t, i) => ({
+    ...t,
+    slot: i + 1,
+    id: `team_${i + 1}`,
+    username: `team${i + 1}`
+  }));
+  setupCurrentTeamsList = reindexed;
+  renderSetupTeamsRoster(reindexed);
+  saveSetupDraft();
+  updateReviewStats();
+  showOrderToast(`✓ Removed team desk. ${reindexed.length} desks remaining.`, true);
 }
 
 function generateRandomTeamPins() {
-  for (let i = 1; i <= 16; i++) {
+  const current = getSetupTeamsArray();
+  for (let i = 1; i <= current.length; i++) {
     const passInput = document.getElementById(`setupTeamPass_${i}`);
     if (passInput) {
       const pin = Math.floor(100000 + Math.random() * 900000).toString();
@@ -4456,25 +4728,26 @@ function generateRandomTeamPins() {
     }
   }
   saveSetupDraft();
-  showOrderToast('🎲 Generated random 6-digit PINs for all 16 teams!', true);
+  showOrderToast(`🎲 Generated random 6-digit PINs for all ${current.length} teams!`, true);
 }
 
 function resetDefaultTeamCredentials() {
-  for (let i = 1; i <= 16; i++) {
+  const current = getSetupTeamsArray();
+  for (let i = 1; i <= current.length; i++) {
     const nameInput = document.getElementById(`setupTeamName_${i}`);
     const passInput = document.getElementById(`setupTeamPass_${i}`);
     if (nameInput) nameInput.value = `Team ${i}`;
     if (passInput) passInput.value = `trade${i}00`;
   }
   saveSetupDraft();
-  showOrderToast('🔄 Reset all 16 teams to standard credentials (trade100..trade1600).', true);
+  showOrderToast(`🔄 Reset all ${current.length} teams to standard credentials (trade100..trade${current.length}00).`, true);
 }
 
 function copySetupCredentialsToClipboard() {
-  const teams = getSetup16TeamsArray();
+  const teams = getSetupTeamsArray();
   const origin = window.location.origin;
   const lines = [
-    'THE TRADING FLOOR CHAMPIONSHIP 2026 — 16 TEAMS CREDENTIALS',
+    `THE TRADING FLOOR CHAMPIONSHIP 2026 — ${teams.length} TEAMS CREDENTIALS`,
     '============================================================',
     ''
   ];
@@ -4489,7 +4762,7 @@ function copySetupCredentialsToClipboard() {
   const fullText = lines.join('\n');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(fullText)
-      .then(() => showOrderToast('📋 All 16 team credentials copied to clipboard!', true))
+      .then(() => showOrderToast(`📋 All ${teams.length} team credentials copied to clipboard!`, true))
       .catch(() => fallbackCopy(fullText));
   } else {
     fallbackCopy(fullText);
@@ -4503,7 +4776,7 @@ function fallbackCopy(text) {
   ta.select();
   try {
     document.execCommand('copy');
-    showOrderToast('📋 All 16 team credentials copied to clipboard!', true);
+    showOrderToast('📋 Team credentials copied to clipboard!', true);
   } catch (e) {
     showOrderToast('⚠️ Could not copy to clipboard. Please copy manually.', false);
   }
@@ -4511,7 +4784,7 @@ function fallbackCopy(text) {
 }
 
 function downloadSetupCredentialsCsv() {
-  const teams = getSetup16TeamsArray();
+  const teams = getSetupTeamsArray();
   const origin = window.location.origin;
   const rows = [
     ['Desk Slot', 'Team Name', 'Username', 'Password', 'Direct URL']
@@ -4526,11 +4799,11 @@ function downloadSetupCredentialsCsv() {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'TheTradingFloor_16_Team_Credentials.csv';
+  a.download = `TheTradingFloor_${teams.length}_Team_Credentials.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  showOrderToast('📥 Downloaded TheTradingFloor_16_Team_Credentials.csv', true);
+  showOrderToast(`📥 Downloaded TheTradingFloor_${teams.length}_Team_Credentials.csv`, true);
 }
 
 function getAvailableStocks() {
@@ -4751,13 +5024,14 @@ function updateReviewStats() {
   const totalDays = parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3;
   const dayDuration = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
   const cb = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
+  const teams = getSetupTeamsArray();
 
   const statTeams = document.getElementById('reviewStatTeams');
   const statStocks = document.getElementById('reviewStatStocks');
   const statCash = document.getElementById('reviewStatCash');
   const statSchedule = document.getElementById('reviewStatSchedule');
 
-  if (statTeams) statTeams.textContent = '16 Teams Configured';
+  if (statTeams) statTeams.textContent = `${teams.length} Team${teams.length > 1 ? 's' : ''} Configured`;
   if (statStocks) statStocks.textContent = `${setupSelectedTickers.size} Stocks Active`;
   if (statCash) statCash.textContent = `₹${cash.toLocaleString('en-IN')} / Team`;
   if (statSchedule) statSchedule.textContent = `${totalDays} Days • ${Math.round(dayDuration / 60)}m / Day (±${cb}%)`;
@@ -4777,13 +5051,14 @@ function openLockSetupConfirmModal() {
     return;
   }
 
-  const teams = getSetup16TeamsArray();
-  if (teams.length !== 16) {
-    showOrderToast('⚠️ Exactly 16 teams are required in Step 2.', false);
+  const teams = getSetupTeamsArray();
+  if (teams.length < 1) {
+    showOrderToast('⚠️ At least 1 participating team is required in Step 2.', false);
     switchSetupSection('teams');
     return;
   }
 
+  const names = new Set();
   for (let i = 0; i < teams.length; i++) {
     if (!teams[i].name) {
       showOrderToast(`⚠️ Team #${teams[i].slot} name cannot be empty.`, false);
@@ -4795,6 +5070,13 @@ function openLockSetupConfirmModal() {
       switchSetupSection('teams');
       return;
     }
+    const lowerName = teams[i].name.toLowerCase();
+    if (names.has(lowerName)) {
+      showOrderToast(`⚠️ Duplicate team name "${teams[i].name}" detected. Each team must have a unique name.`, false);
+      switchSetupSection('teams');
+      return;
+    }
+    names.add(lowerName);
   }
 
   const modal = document.getElementById('lockSetupConfirmModal');
@@ -4820,7 +5102,8 @@ function submitLockEventSetup() {
   const dayDurationSeconds = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
   const transactionFeeBps = parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0;
   const circuitBreakerPercent = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
-  const teams = getSetup16TeamsArray();
+  const riskProfile = document.getElementById('setupRiskProfile')?.value || 'BALANCED';
+  const teams = getSetupTeamsArray();
   const selectedTickers = Array.from(setupSelectedTickers);
 
   ws.send(JSON.stringify({
@@ -4833,11 +5116,74 @@ function submitLockEventSetup() {
     dayDurationSeconds,
     transactionFeeBps,
     circuitBreakerPercent,
+    riskProfile,
     teams,
     selectedTickers
   }));
 
-  showOrderToast('🔒 Submitting tournament setup & activating 16 team credentials...', true);
+  showOrderToast(`🔒 Submitting tournament setup & activating ${teams.length} team credentials...`, true);
+}
+
+// Post-Lock Day 1 Launch Modal Controllers
+function openPostLockDay1Modal(teamsCount) {
+  const modal = document.getElementById('postLockDay1Modal');
+  if (!modal) return;
+  const span = document.getElementById('postLockTeamsCountSpan');
+  if (span) span.textContent = `${teamsCount || 'configured'}`;
+  modal.classList.remove('hidden');
+}
+
+function closePostLockDay1Modal() {
+  const modal = document.getElementById('postLockDay1Modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function executePostLockStartNow() {
+  closePostLockDay1Modal();
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_START_DAY1_NOW',
+    session_token: sessionToken
+  }));
+  switchSpaView('HOST');
+  showOrderToast('🚀 Launching Day 1! 3-2-1 Synchronized Countdown initiated.', true);
+}
+
+function togglePostLockScheduleSection() {
+  const sec = document.getElementById('postLockScheduleSection');
+  if (!sec) return;
+  sec.classList.toggle('hidden');
+  const input = document.getElementById('postLockScheduledTimeInput');
+  if (input && !input.value) {
+    const now = new Date(Date.now() + 5 * 60 * 1000);
+    const offsetMs = now.getTimezoneOffset() * 60000;
+    const localIso = new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+    input.value = localIso;
+  }
+}
+
+function confirmPostLockSchedule() {
+  const input = document.getElementById('postLockScheduledTimeInput');
+  if (!input || !input.value) {
+    showOrderToast('⚠️ Please choose a scheduled opening date and time.', false);
+    return;
+  }
+  const scheduledTime = new Date(input.value).toISOString();
+  closePostLockDay1Modal();
+  if (!ws || !sessionToken) return;
+  ws.send(JSON.stringify({
+    action: 'HOST_SCHEDULE_EVENT',
+    session_token: sessionToken,
+    scheduledStartTime: scheduledTime
+  }));
+  switchSpaView('HOST');
+  showOrderToast('📅 Event scheduled! Participant waiting rooms armed with synchronized countdown.', true);
+}
+
+function executePostLockStartLater() {
+  closePostLockDay1Modal();
+  switchSpaView('HOST');
+  showOrderToast('🏛️ Event ready on Standby. You can launch Day 1 anytime from the Host Operations bar.', true);
 }
 
 function saveEventDetailsFromSetup() {
@@ -7277,7 +7623,7 @@ function renderPresentationScene(sceneName, snapshot) {
     retEl.className = champ.returnPct >= 0 ? 'price-up' : 'price-down';
     document.getElementById('sceneChampion').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 4: 🏆 GRAND CHAMPION';
-    createPresentationConfetti();
+    playDramaticWinnerReveal();
   } else if (normScene === 'PODIUM') {
     const t1 = rankings[0] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
     const t2 = rankings[1] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
@@ -7334,19 +7680,69 @@ function renderPresentationScene(sceneName, snapshot) {
   }
 }
 
-function createPresentationConfetti() {
+let winnerRevealTimer = null;
+
+function playDramaticWinnerReveal() {
+  const presView = document.getElementById('winnerPresentationView');
+  if (presView) {
+    presView.classList.remove('dramatic-screen-rumble');
+    void presView.offsetWidth; // force browser layout reflow
+    presView.classList.add('dramatic-screen-rumble');
+  }
+
+  // Cinematic screen flash
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash-overlay';
+  document.body.appendChild(flash);
+  setTimeout(() => {
+    if (flash.parentNode) flash.parentNode.removeChild(flash);
+  }, 1400);
+
+  // Sound Sequence:
+  // 1) Dramatic heartbeat tension riser
+  playInstitutionalSound('dramatic_tension_riser');
+
+  // 2) Snare drumroll crescendo into seismic sub-bass boom
+  setTimeout(() => {
+    playInstitutionalSound('winner_drumroll_boom');
+  }, 1200);
+
+  // 3) Epic multi-octave brass victory fanfare & golden confetti storm
+  setTimeout(() => {
+    playInstitutionalSound('champion_fanfare_epic');
+    createPresentationConfetti(180);
+  }, 2300);
+
+  // Stop camera rumble after 3.2s so scores and return percentages are crystal clear
+  if (winnerRevealTimer) clearTimeout(winnerRevealTimer);
+  winnerRevealTimer = setTimeout(() => {
+    if (presView) presView.classList.remove('dramatic-screen-rumble');
+  }, 3200);
+}
+
+function triggerDramaticDrumroll() {
+  const presView = document.getElementById('winnerPresentationView');
+  if (presView) {
+    presView.classList.add('dramatic-screen-rumble');
+    setTimeout(() => presView.classList.remove('dramatic-screen-rumble'), 1800);
+  }
+  playInstitutionalSound('dramatic_tension_riser');
+  setTimeout(() => playInstitutionalSound('winner_drumroll_boom'), 1100);
+}
+
+function createPresentationConfetti(particleCount = 120) {
   ['presentationConfetti', 'projPresentationConfetti'].forEach((id) => {
     const container = document.getElementById(id);
     if (!container) return;
     container.innerHTML = '';
-    const colors = ['#B49A70', '#218653', '#D4AF37', '#8C9CAE', '#C64B4B', '#FFFFFF'];
-    for (let i = 0; i < 90; i++) {
+    const colors = ['#B49A70', '#218653', '#D4AF37', '#8C9CAE', '#C64B4B', '#FFFFFF', '#F59E0B', '#10B981'];
+    for (let i = 0; i < particleCount; i++) {
       const piece = document.createElement('div');
       piece.className = 'confetti-piece';
       piece.style.left = `${Math.random() * 100}%`;
       piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.width = `${Math.random() * 8 + 6}px`;
-      piece.style.height = `${Math.random() * 14 + 10}px`;
+      piece.style.width = `${Math.random() * 9 + 6}px`;
+      piece.style.height = `${Math.random() * 16 + 10}px`;
       piece.style.animationDuration = `${Math.random() * 2 + 2}s`;
       piece.style.animationDelay = `${Math.random() * 1.5}s`;
       container.appendChild(piece);
@@ -7941,6 +8337,17 @@ window.openLockSetupConfirmModal = openLockSetupConfirmModal;
 window.closeLockSetupConfirmModal = closeLockSetupConfirmModal;
 window.submitLockEventSetup = submitLockEventSetup;
 window.updateLoginEventStatusBanner = updateLoginEventStatusBanner;
+window.applyTeamCountPreset = applyTeamCountPreset;
+window.addSetupTeamRow = addSetupTeamRow;
+window.removeSetupTeamRow = removeSetupTeamRow;
+window.openPostLockDay1Modal = openPostLockDay1Modal;
+window.closePostLockDay1Modal = closePostLockDay1Modal;
+window.executePostLockStartNow = executePostLockStartNow;
+window.togglePostLockScheduleSection = togglePostLockScheduleSection;
+window.confirmPostLockSchedule = confirmPostLockSchedule;
+window.executePostLockStartLater = executePostLockStartLater;
+window.playDramaticWinnerReveal = playDramaticWinnerReveal;
+window.triggerDramaticDrumroll = triggerDramaticDrumroll;
 
 // Probe authoritative event readiness status for login screen immediately
 try {
