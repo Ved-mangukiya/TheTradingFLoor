@@ -2,7 +2,7 @@
   "name": "the-trading-floor",
   "version": "1.0.0",
   "description": "Real-time LAN stock market simulation engine for The Trading Floor Championship 2026",
-  "author": "Ved Maheshbhai Mangukiya (Surat, Gujarat, India)",
+  "author": "Ved Mangukiya (Surat, Gujarat, India)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js live",

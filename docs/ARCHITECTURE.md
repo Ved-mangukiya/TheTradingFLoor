@@ -89,7 +89,7 @@ Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is h
 
 ## 3. System Designer & Lead Architect
 
-- **Creator & Lead System Architect**: **Ved Maheshbhai Mangukiya**
+- **Creator & Lead System Architect**: **Ved Mangukiya**
 - **Academic Program**: Pursuing Bachelor of Business Administration (BBA)
 - **University**: Gujarat Technological University (GTU)
 - **Location**: Surat, Gujarat, India

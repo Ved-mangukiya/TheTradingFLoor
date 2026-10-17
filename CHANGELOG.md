@@ -10,7 +10,7 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
   - Documented explicit architectural boundaries between **Preview Website** (zero-server client showcase deployed to GitHub Pages) and **Main Event Hosting** (server-authoritative Node.js exchange running on local LAN).
   - Created [`data/README.md`](data/README.md) clearly mapping `scenario_live.json`, `universe_active.json`, `scenario_test.json`, and disaster recovery checkpoints.
 - **Developer Persona & System Architect Elevation**:
-  - Branded all terminal views, modals, documentation, and footers with **Ved Maheshbhai Mangukiya**, Pursuing BBA, Gujarat Technological University, Surat, Gujarat, India.
+  - Branded all terminal views, modals, documentation, and footers with **Ved Mangukiya**, Pursuing BBA, Gujarat Technological University, Surat, Gujarat, India.
   - Complete scrub of legacy coordinator titles, academic years, college acronyms, and institutional codes.
 
 ### Removed

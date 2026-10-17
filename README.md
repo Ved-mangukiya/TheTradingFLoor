@@ -38,11 +38,11 @@ Participants trade real-time simulated blue-chip equities across Indian economic
 
 ## 👨‍💻 LEAD DEVELOPER & SYSTEM ARCHITECT
 
-### **Ved Maheshbhai Mangukiya**
+### **Ved Mangukiya**
 **Lead Developer, Chief System Architect & Sole Creator**  
 *Pursuing Bachelor of Business Administration (BBA) • Gujarat Technological University • Surat, Gujarat, India*
 
-> **Architectural Statement**: Independently conceived, architected, and coded from the ground up by **Ved Maheshbhai Mangukiya**, this platform establishes a standard of financial simulation software unprecedented in collegiate competitions worldwide. Operating with 100% offline autonomy over local campus Wi-Fi, it features sub-millisecond server-authoritative liquidity execution, algorithmic Web Audio API DSP synthesis, automated circuit breaker halting, dual-buffer balance reconciliation, and real-time multi-terminal WebSocket synchronization without a single external cloud dependency.
+> **Architectural Statement**: Independently conceived, architected, and coded from the ground up by **Ved Mangukiya**, this platform establishes a standard of financial simulation software unprecedented in collegiate competitions worldwide. Operating with 100% offline autonomy over local campus Wi-Fi, it features sub-millisecond server-authoritative liquidity execution, algorithmic Web Audio API DSP synthesis, automated circuit breaker halting, dual-buffer balance reconciliation, and real-time multi-terminal WebSocket synchronization without a single external cloud dependency.
 
 ---
 
