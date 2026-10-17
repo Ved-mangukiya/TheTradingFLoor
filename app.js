@@ -521,9 +521,13 @@ let activeTraderTab = 'market';
 let activeHostTab = 'stocks';
 let traderSearchTerm = '';
 let traderSectorFilterVal = 'ALL';
+let traderSortFilterVal = 'default';
+let traderHoldingsOnlyVal = false;
+let dayCompletedDismissed = false;
 
 // Modal Trade State
 let currentTradeModalTicker = null;
+let currentTradeModalSide = 'BUY';
 let teamEquityHistory = [];
 
 function escapeHtml(str) {
@@ -1950,10 +1954,38 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
   ws.send(JSON.stringify({ action: 'LOGIN', username, password }));
 });
 
-// ESC key to lock / return from Projector view
+// Window keydown shortcuts: Trade modal controls & Projector lock
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && currentRole === 'PROJECTOR') {
-    logoutTerminal();
+  // ESC key handler
+  if (e.key === 'Escape') {
+    if (currentTradeModalTicker) {
+      closeTradeModal();
+      return;
+    }
+    if (currentRole === 'PROJECTOR') {
+      logoutTerminal();
+    }
+    return;
+  }
+
+  // Active Trade Modal Controls
+  if (currentTradeModalTicker) {
+    const modal = document.getElementById('tradeModal');
+    if (modal && !modal.classList.contains('hidden')) {
+      if (e.key === 'Enter') {
+        const btn = document.getElementById('btnExecuteTradeOrder');
+        if (btn && !btn.disabled) {
+          e.preventDefault();
+          executeModalTrade();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        stepTradeQuantity(1);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        stepTradeQuantity(-1);
+      }
+    }
   }
 });
 
@@ -2113,11 +2145,92 @@ function switchTraderTab(tabName) {
 }
 
 function filterTraderStocks() {
-  traderSearchTerm = (document.getElementById('traderStockSearch').value || '').toLowerCase().trim();
-  traderSectorFilterVal = document.getElementById('traderSectorFilter').value;
+  const searchInput = document.getElementById('traderStockSearch');
+  const sectorSelect = document.getElementById('traderSectorFilter');
+  const sortSelect = document.getElementById('traderSortFilter');
+  const holdingsCheck = document.getElementById('traderHoldingsOnly');
+
+  traderSearchTerm = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  traderSectorFilterVal = sectorSelect ? sectorSelect.value : 'ALL';
+  traderSortFilterVal = sortSelect ? sortSelect.value : 'default';
+  traderHoldingsOnlyVal = holdingsCheck ? holdingsCheck.checked : false;
+
+  renderTraderSectorChips();
+
   if (latestState && currentRole === 'TRADER') {
     renderTraderView(latestState);
   }
+}
+
+function onTraderSectorSelect(sec) {
+  traderSectorFilterVal = sec;
+  const sectorSelect = document.getElementById('traderSectorFilter');
+  if (sectorSelect) sectorSelect.value = sec;
+  renderTraderSectorChips();
+  if (latestState && currentRole === 'TRADER') {
+    renderTraderView(latestState);
+  }
+}
+
+function clearTraderFilters() {
+  const searchInput = document.getElementById('traderStockSearch');
+  const sectorSelect = document.getElementById('traderSectorFilter');
+  const sortSelect = document.getElementById('traderSortFilter');
+  const holdingsCheck = document.getElementById('traderHoldingsOnly');
+
+  if (searchInput) searchInput.value = '';
+  if (sectorSelect) sectorSelect.value = 'ALL';
+  if (sortSelect) sortSelect.value = 'default';
+  if (holdingsCheck) holdingsCheck.checked = false;
+
+  traderSearchTerm = '';
+  traderSectorFilterVal = 'ALL';
+  traderSortFilterVal = 'default';
+  traderHoldingsOnlyVal = false;
+
+  renderTraderSectorChips();
+
+  if (latestState && currentRole === 'TRADER') {
+    renderTraderView(latestState);
+  }
+}
+
+function renderTraderSectorChips() {
+  const container = document.getElementById('traderSectorChips');
+  if (!container || !latestState || !latestState.companies) return;
+
+  const activeCompanies = latestState.companies.filter((c) => c.isEnabled !== false);
+  const sectors = ['ALL', ...new Set(activeCompanies.map((c) => c.sector).filter(Boolean))];
+
+  // Dynamically populate sector dropdown if changed
+  const sectorSelect = document.getElementById('traderSectorFilter');
+  if (sectorSelect) {
+    const existingOpts = Array.from(sectorSelect.options).map((o) => o.value);
+    const isDifferent = existingOpts.length !== sectors.length || !sectors.every((s) => existingOpts.includes(s));
+    if (isDifferent) {
+      const currentVal = sectorSelect.value || traderSectorFilterVal;
+      sectorSelect.innerHTML = `<option value="ALL">All Sectors</option>` +
+        sectors.filter((s) => s !== 'ALL').map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      sectorSelect.value = sectors.includes(currentVal) ? currentVal : 'ALL';
+    }
+  }
+
+  // Render clickable pills
+  container.innerHTML = sectors.map((sec) => {
+    const isActive = traderSectorFilterVal === sec;
+    const label = sec === 'ALL' ? 'All Stocks' : sec;
+    return `
+      <button type="button" onclick="onTraderSectorSelect('${escapeHtml(sec)}')" class="trader-chip ${isActive ? 'active' : ''}">
+        ${escapeHtml(label)}
+      </button>
+    `;
+  }).join('');
+}
+
+function dismissTraderDayCompleted() {
+  dayCompletedDismissed = true;
+  const overlay = document.getElementById('traderDayCompletedOverlay');
+  if (overlay) overlay.classList.add('hidden');
 }
 
 let traderWaitingRoomTickerHandle = null;
@@ -2174,7 +2287,13 @@ function renderTraderView(state) {
   document.getElementById('traderClock').textContent = formatMMSS(gameState.elapsedSeconds);
 
   const statusEl = document.getElementById('traderMarketStatus');
-  if (gameState.isPaused) {
+  if (gameState.status === 'DAY_COMPLETED') {
+    statusEl.textContent = `DAY ${gameState.currentDay} COMPLETED`;
+    statusEl.className = 'badge badge-champagne';
+  } else if (gameState.status === 'STANDBY') {
+    statusEl.textContent = `DAY ${gameState.currentDay} STANDBY`;
+    statusEl.className = 'badge badge-champagne';
+  } else if (gameState.isPaused) {
     statusEl.textContent = 'MARKET PAUSED';
     statusEl.className = 'badge badge-paused';
   } else {
@@ -2184,11 +2303,53 @@ function renderTraderView(state) {
 
   // Dual Timer & Waiting Room Logic
   const waitingRoomOverlay = document.getElementById('traderWaitingRoomOverlay');
+  const dayCompletedOverlay = document.getElementById('traderDayCompletedOverlay');
   const dualTimerLabel = document.getElementById('traderDualTimerLabel');
   const dualTimerValue = document.getElementById('traderDualTimerValue');
   const dualTimerWrap = document.getElementById('traderDualTimerWrap');
   const softPauseOverlay = document.getElementById('softPauseOverlay');
   const blackoutOverlay = document.getElementById('blackoutOverlay');
+
+  // Handle Dedicated Day Completed Modal for Traders
+  if (gameState.status === 'DAY_COMPLETED') {
+    if (dayCompletedOverlay && !dayCompletedDismissed) {
+      dayCompletedOverlay.classList.remove('hidden');
+      const badge = document.getElementById('traderDayCompletedBadge');
+      const title = document.getElementById('traderDayCompletedTitle');
+      const sub = document.getElementById('traderDayCompletedSubtitle');
+      const netWorthEl = document.getElementById('traderDayCompletedNetWorth');
+      const pnlEl = document.getElementById('traderDayCompletedPnl');
+      const rankEl = document.getElementById('traderDayCompletedRank');
+
+      if (badge) badge.textContent = `DAY ${gameState.currentDay} COMPLETED`;
+      if (title) title.textContent = `Day ${gameState.currentDay} Official Session Concluded`;
+      if (sub) sub.textContent = gameState.currentDay < gameState.totalDays
+        ? `Your team portfolio, trade ledger, and closing valuation have been recorded. Please stand by for the Host to start Day ${gameState.currentDay + 1}.`
+        : `Championship final round completed! Stand by for the official winner presentation.`;
+
+      if (portfolio) {
+        if (netWorthEl) netWorthEl.textContent = formatINR(portfolio.netWorth);
+        const dayPnl = portfolio.netWorth - (portfolio.startingCash || gameState.startingCash || 500000);
+        if (pnlEl) {
+          pnlEl.textContent = `${dayPnl >= 0 ? '+' : ''}${formatINR(dayPnl)}`;
+          pnlEl.className = dayPnl >= 0 ? 'price-up' : 'price-down';
+        }
+        if (rankEl && latestState.leaderboard) {
+          const myIdx = latestState.leaderboard.findIndex((t) => t.id === portfolio.id);
+          if (myIdx !== -1) rankEl.textContent = `#${myIdx + 1}`;
+        }
+      }
+    }
+    if (dualTimerLabel) dualTimerLabel.textContent = 'SESSION:';
+    if (dualTimerValue) dualTimerValue.textContent = 'COMPLETED';
+    if (dualTimerWrap) {
+      dualTimerWrap.style.background = 'rgba(180, 154, 112, 0.12)';
+      dualTimerWrap.style.borderColor = 'rgba(180, 154, 112, 0.35)';
+    }
+  } else {
+    if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+    dayCompletedDismissed = false;
+  }
 
   const isPreEventTrader = gameState.status === 'SCHEDULED' || 
                            gameState.status === 'PRE_EVENT_COUNTDOWN' || 
@@ -2196,7 +2357,7 @@ function renderTraderView(state) {
                            gameState.status === 'NOT_STARTED' ||
                            (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN');
 
-  if (isPreEventTrader) {
+  if (isPreEventTrader && gameState.status !== 'DAY_COMPLETED') {
     if (waitingRoomOverlay) {
       waitingRoomOverlay.classList.remove('hidden');
       if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
@@ -2267,7 +2428,7 @@ function renderTraderView(state) {
         if (dualTimerValue) dualTimerValue.textContent = 'STANDBY';
       }
     }
-  } else {
+  } else if (gameState.status !== 'DAY_COMPLETED') {
     if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
     if (dualTimerLabel) dualTimerLabel.textContent = 'CLOSES IN:';
     if (dualTimerValue) {
@@ -2457,37 +2618,99 @@ function renderTraderView(state) {
   }
 
   // Filter companies for Tab 1 Grid (Ensure disabled shares are never shown)
-  const filteredCompanies = companies.filter((stock) => {
+  let filteredCompanies = companies.filter((stock) => {
     if (stock.isEnabled === false) return false;
     const matchesSearch = stock.ticker.toLowerCase().includes(traderSearchTerm) ||
       stock.name.toLowerCase().includes(traderSearchTerm);
     const matchesSector = traderSectorFilterVal === 'ALL' || stock.sector === traderSectorFilterVal;
-    return matchesSearch && matchesSector;
+    const heldQty = portfolio ? (portfolio.holdings[stock.ticker] || 0) : 0;
+    const matchesHoldings = !traderHoldingsOnlyVal || heldQty > 0;
+    return matchesSearch && matchesSector && matchesHoldings;
   });
 
+  // Apply Multi-Metric Sorting
+  const chgPctVal = (s) => s.dayOpenPrice > 0 ? ((s.currentPrice - s.dayOpenPrice) / s.dayOpenPrice) * 100 : 0;
+  const holdingVal = (s) => (portfolio ? (portfolio.holdings[s.ticker] || 0) : 0) * s.currentPrice;
+
+  if (traderSortFilterVal === 'gainers') {
+    filteredCompanies.sort((a, b) => chgPctVal(b) - chgPctVal(a));
+  } else if (traderSortFilterVal === 'losers') {
+    filteredCompanies.sort((a, b) => chgPctVal(a) - chgPctVal(b));
+  } else if (traderSortFilterVal === 'priceHigh') {
+    filteredCompanies.sort((a, b) => b.currentPrice - a.currentPrice);
+  } else if (traderSortFilterVal === 'priceLow') {
+    filteredCompanies.sort((a, b) => a.currentPrice - b.currentPrice);
+  } else if (traderSortFilterVal === 'value') {
+    filteredCompanies.sort((a, b) => holdingVal(b) - holdingVal(a));
+  }
+
   const grid = document.getElementById('traderTabContentMarket');
+  if (filteredCompanies.length === 0) {
+    grid.innerHTML = `
+      <div class="luxury-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; color: var(--text-muted); border-radius: var(--radius-md);">
+        <div style="font-size: 36px; margin-bottom: 10px;">🔍</div>
+        <h3 style="font-size: 18px; color: var(--text-forest); margin-bottom: 6px; font-weight: 800;">No stocks match your filters</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">Try searching for another company or clear your sector/holdings filter.</p>
+        <button onclick="clearTraderFilters()" class="btn btn-outline" style="padding: 7px 18px; font-size: 12px; font-weight: 700;">
+          Clear All Filters
+        </button>
+      </div>
+    `;
+    return;
+  }
+
   grid.innerHTML = filteredCompanies.map((stock) => {
-    const pctVal = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
+    const pctVal = stock.dayOpenPrice > 0 ? ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100 : 0;
+    const deltaDiff = stock.currentPrice - stock.dayOpenPrice;
     const pct = pctVal.toFixed(2);
     const isUp = pctVal >= 0;
+    const isNeutral = Math.abs(pctVal) < 0.001;
     const heldQty = portfolio ? (portfolio.holdings[stock.ticker] || 0) : 0;
     const avgPrice = portfolio ? (portfolio.avgBuyPrice[stock.ticker] || 0) : 0;
 
-    const quickLots = stock.lot_presets.slice(0, 3).map((lot) => {
+    // Unrealized P&L calculation for position box
+    const totalCost = heldQty * avgPrice;
+    const currentVal = heldQty * stock.currentPrice;
+    const pnl = heldQty > 0 ? currentVal - totalCost : 0;
+    const pnlPct = totalCost > 0 ? (pnl / totalCost) * 100 : 0;
+    const isPnlPos = pnl >= 0;
+
+    // Smart Quick Lot Buttons with Live Affordability Check
+    const quickLots = (stock.lot_presets || [5, 15, 30]).slice(0, 3).map((lot) => {
       const feeBps = gameState.transactionFeeBps || 0;
-      const totalCost = lot * stock.currentPrice * (1 + feeBps / 10000);
-      const canBuy = !stock.isHalted && !gameState.isPaused && portfolio && portfolio.cash >= totalCost;
-      const canSell = !stock.isHalted && !gameState.isPaused && heldQty >= lot;
+      const orderCost = lot * stock.currentPrice * (1 + feeBps / 10000);
+      const isMarketPaused = gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED';
+
+      // Circuit Breaker direction-specific permissions:
+      // UPPER circuit halts BUY, allows SELL
+      // LOWER circuit halts SELL, allows BUY
+      const isBuyHalted = stock.isHalted && stock.haltDirection === 'UPPER';
+      const isSellHalted = stock.isHalted && stock.haltDirection === 'LOWER';
+
+      const canBuy = !isMarketPaused && !isBuyHalted && portfolio && portfolio.cash >= orderCost;
+      const canSell = !isMarketPaused && !isSellHalted && heldQty >= lot;
+
+      let buyTitle = `Buy ${lot} shares of ${stock.ticker} for ~₹${orderCost.toFixed(2)}`;
+      if (isMarketPaused) buyTitle = 'Market is currently paused / closed';
+      else if (isBuyHalted) buyTitle = `Upper circuit ceiling reached (₹${stock.currentPrice.toFixed(2)}). Buying is restricted.`;
+      else if (!canBuy && portfolio) buyTitle = `Insufficient cash: need ₹${orderCost.toFixed(2)}, available ₹${portfolio.cash.toFixed(2)}`;
+
+      let sellTitle = `Sell ${lot} shares of ${stock.ticker} for ~₹${(lot * stock.currentPrice * (1 - feeBps / 10000)).toFixed(2)}`;
+      if (isMarketPaused) sellTitle = 'Market is currently paused / closed';
+      else if (isSellHalted) sellTitle = `Lower circuit floor reached (₹${stock.currentPrice.toFixed(2)}). Selling is restricted.`;
+      else if (!canSell) sellTitle = `Insufficient shares: you own ${heldQty} shares, need ${lot}`;
 
       return `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
           <button onclick="sendOrder('${stock.ticker}', 'BUY', ${lot})"
             ${canBuy ? '' : 'disabled'}
+            title="${escapeHtml(buyTitle)}"
             class="btn btn-buy">
             BUY +${lot}
           </button>
           <button onclick="sendOrder('${stock.ticker}', 'SELL', ${lot})"
             ${canSell ? '' : 'disabled'}
+            title="${escapeHtml(sellTitle)}"
             class="btn btn-sell">
             SELL -${lot}
           </button>
@@ -2495,14 +2718,16 @@ function renderTraderView(state) {
       `;
     }).join('');
 
+    const colorClass = isNeutral ? 'val-neutral' : isUp ? 'price-up' : 'price-down';
+
     return `
       <div class="stock-card ${stock.isHalted ? 'halted' : ''}">
         <div>
           <div class="stock-card-header">
             <div>
-              <span class="stock-sector">${stock.sector}</span>
+              <span class="stock-sector">${escapeHtml(stock.sector || 'Equities')}</span>
               <div class="stock-ticker">${stock.ticker}</div>
-              <div class="stock-name">${stock.name}</div>
+              <div class="stock-name" title="${escapeHtml(stock.name)}">${escapeHtml(stock.name)}</div>
             </div>
             <div style="display: flex; gap: 4px;">
               <button onclick="openFullChartModal('${stock.ticker}')" class="btn btn-outline" style="padding: 3px 7px; font-size: 11px;" title="Enlarge Chart">
@@ -2515,46 +2740,56 @@ function renderTraderView(state) {
           </div>
 
           <div class="stock-price-row">
-            <span class="stock-current-price ${isUp ? 'price-up' : 'price-down'}">
+            <span class="stock-current-price ${colorClass}">
               ₹${stock.currentPrice.toFixed(2)}
             </span>
-            <span class="stock-delta ${isUp ? 'price-up' : 'price-down'}">
-              ${isUp ? '+' : ''}${pct}% ${isUp ? '▲' : '▼'}
+            <span class="stock-delta ${colorClass}">
+              ${deltaDiff >= 0 ? '+' : ''}₹${deltaDiff.toFixed(2)} (${isUp ? '+' : ''}${pct}%) ${isUp ? '▲' : '▼'}
             </span>
           </div>
 
           <!-- Mini Canvas Sparkline -->
-          <div class="sparkline-wrapper" onclick="openFullChartModal('${stock.ticker}')">
+          <div class="sparkline-wrapper" onclick="openFullChartModal('${stock.ticker}')" title="Click to view interactive full-size chart">
             <canvas id="traderCanvas_${stock.ticker}" width="280" height="60" style="width: 100%; height: 100%;"></canvas>
           </div>
 
+          <!-- Directional Circuit Breaker Banner -->
           ${stock.isHalted ? `
-            <div class="badge badge-halted" style="width: 100%; justify-content: center; margin-bottom: 8px;">
-              ⛔ CIRCUIT BREAKER HALTED (${stock.haltDirection})
+            <div class="badge badge-halted" style="width: 100%; justify-content: center; margin-bottom: 8px; font-size: 10px; font-weight: 800; padding: 4px 6px;">
+              ${stock.haltDirection === 'UPPER' 
+                ? `⛔ UPPER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • BUY BLOCKED`
+                : `⛔ LOWER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • SELL BLOCKED`}
             </div>
           ` : ''}
 
-          <!-- Portfolio Position on Card -->
-          <div class="stock-holding-row">
+          <!-- Portfolio Position on Card with Live P&L -->
+          <div class="stock-holding-row" style="background: #fffbf1; border: 1px solid var(--subtle-border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px;">
             <div>
-              <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Held</span>
-              <strong style="font-family: var(--font-mono); color: var(--text-forest);">${heldQty} shares</strong>
+              <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase; font-weight: 700;">Your Shares</span>
+              <strong style="font-family: var(--font-mono); color: var(--text-forest); font-size: 13px;">${heldQty} shares</strong>
             </div>
             <div style="text-align: right;">
-              <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Avg Cost</span>
-              <strong style="font-family: var(--font-mono); color: var(--text-muted);">₹${avgPrice.toFixed(2)}</strong>
+              <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase; font-weight: 700;">
+                ${heldQty > 0 ? 'Avg Cost · P&L' : 'Avg Cost'}
+              </span>
+              <strong style="font-family: var(--font-mono); color: var(--text-muted); font-size: 12px;">₹${avgPrice.toFixed(2)}</strong>
+              ${heldQty > 0 ? `
+                <div class="${isPnlPos ? 'stock-card-pnl-pos' : 'stock-card-pnl-neg'}" style="font-family: var(--font-mono); font-size: 11px; margin-top: 1px;">
+                  ${isPnlPos ? '+' : ''}₹${pnl.toFixed(2)} (${isPnlPos ? '+' : ''}${pnlPct.toFixed(1)}%)
+                </div>
+              ` : ''}
             </div>
           </div>
         </div>
 
         <div>
           <!-- Quick Lot Presets -->
-          <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+          <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
             ${quickLots}
           </div>
           <!-- Custom Quantity Trade Modal Trigger -->
-          <button onclick="openTradeModal('${stock.ticker}')" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 11px;">
-            Trade Custom Quantity...
+          <button onclick="openTradeModal('${stock.ticker}')" class="btn btn-outline" style="width: 100%; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--text-forest); background: #ffffff;">
+            Trade Custom Quantity…
           </button>
         </div>
       </div>
@@ -2609,21 +2844,35 @@ function sendOrder(ticker, type, quantity) {
 }
 
 // Interactive Custom Trade Modal
-function openTradeModal(ticker) {
+function openTradeModal(ticker, side = 'BUY', preferredQty = null) {
   currentTradeModalTicker = ticker;
+  currentTradeModalSide = side;
   if (!latestState) return;
   const stock = latestState.companies.find((c) => c.ticker === ticker);
   if (!stock) return;
 
   document.getElementById('tradeModalTicker').textContent = `${stock.ticker} — ${stock.name}`;
-  document.getElementById('tradeModalSector').textContent = stock.sector;
-  document.getElementById('tradeQuantityInput').value = stock.lot_presets[0] || 10;
+  document.getElementById('tradeModalSector').textContent = stock.sector || 'Equities';
+
+  const defaultQty = preferredQty !== null ? preferredQty : (stock.lot_presets && stock.lot_presets[0] ? stock.lot_presets[0] : 10);
+  const qInput = document.getElementById('tradeQuantityInput');
+  if (qInput) qInput.value = Math.max(1, defaultQty);
 
   const notice = document.getElementById('tradeModalValidationNotice');
   if (notice) notice.classList.add('hidden');
 
+  syncTradeModalSide();
   recalculateTradeModal();
   document.getElementById('tradeModal').classList.remove('hidden');
+
+  // Focus and select quantity input for rapid keyboard trading
+  setTimeout(() => {
+    const input = document.getElementById('tradeQuantityInput');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, 40);
 }
 
 function closeTradeModal() {
@@ -2631,135 +2880,274 @@ function closeTradeModal() {
   document.getElementById('tradeModal').classList.add('hidden');
 }
 
-function setTradeLot(qty) {
+function setTradeSide(side) {
+  if (currentTradeModalSide === side) return;
+  currentTradeModalSide = side;
+  syncTradeModalSide();
+  recalculateTradeModal();
+}
+
+function syncTradeModalSide() {
+  const isBuy = currentTradeModalSide === 'BUY';
+  const tabBuy = document.getElementById('tabTradeBuy');
+  const tabSell = document.getElementById('tabTradeSell');
+  if (tabBuy) tabBuy.className = 'trade-side-tab' + (isBuy ? ' on buy' : '');
+  if (tabSell) tabSell.className = 'trade-side-tab' + (!isBuy ? ' on sell' : '');
+
+  const presetLabel = document.getElementById('tradePresetLabel');
+  const pillsContainer = document.getElementById('tradePresetPillsContainer');
+
+  if (isBuy) {
+    if (presetLabel) presetLabel.textContent = 'Budget Shortcuts:';
+    if (pillsContainer) {
+      pillsContainer.innerHTML = `
+        <button type="button" onclick="setTradeBudgetPreset(25)" class="trade-pill">25% Cash</button>
+        <button type="button" onclick="setTradeBudgetPreset(50)" class="trade-pill">50% Cash</button>
+        <button type="button" onclick="setTradeBudgetPreset(75)" class="trade-pill">75% Cash</button>
+        <button type="button" onclick="setTradeBudgetPreset(100)" class="trade-pill good" title="Use maximum affordable cash">⚡ Max Affordable Buy</button>
+      `;
+    }
+  } else {
+    if (presetLabel) presetLabel.textContent = 'Holding Shortcuts:';
+    if (pillsContainer) {
+      pillsContainer.innerHTML = `
+        <button type="button" onclick="setTradeHoldingPreset(25)" class="trade-pill">25% Held</button>
+        <button type="button" onclick="setTradeHoldingPreset(50)" class="trade-pill">50% Held</button>
+        <button type="button" onclick="setTradeHoldingPreset(75)" class="trade-pill">75% Held</button>
+        <button type="button" onclick="setTradeHoldingPreset(100)" class="trade-pill danger" title="Liquidate all held shares of this stock">⚡ Sell All Held</button>
+      `;
+    }
+  }
+}
+
+function stepTradeQuantity(delta) {
+  const input = document.getElementById('tradeQuantityInput');
+  if (!input) return;
+  const current = parseInt(input.value, 10) || 0;
+  const next = Math.max(1, current + delta);
+  input.value = next;
+  recalculateTradeModal();
+}
+
+function setTradeLotPreset(mode, val) {
+  const input = document.getElementById('tradeQuantityInput');
+  if (!input) return;
+  const current = parseInt(input.value, 10) || 0;
+  if (mode === 'ADD') {
+    input.value = Math.max(1, current + val);
+  } else if (mode === 'SET') {
+    input.value = Math.max(1, val);
+  }
+  recalculateTradeModal();
+}
+
+function setTradeBudgetPreset(pct) {
   if (!latestState || !currentTradeModalTicker) return;
   const stock = latestState.companies.find((c) => c.ticker === currentTradeModalTicker);
   const p = latestState.portfolio;
   if (!stock || !p) return;
-
-  const input = document.getElementById('tradeQuantityInput');
   const feeBps = latestState.gameState.transactionFeeBps || 0;
-  const currentHeld = p.holdings[stock.ticker] || 0;
-
-  if (qty === 'MAX_BUY') {
-    const costPerShare = stock.currentPrice * (1 + feeBps / 10000);
-    const maxShares = Math.floor(p.cash / costPerShare);
-    input.value = Math.max(0, maxShares);
-  } else if (qty === 'SELL_ALL' || qty === 'MAX_SELL') {
-    input.value = currentHeld;
-  } else if (qty === '25%') {
-    input.value = Math.max(1, Math.floor(currentHeld * 0.25));
-  } else if (qty === '50%') {
-    input.value = Math.max(1, Math.floor(currentHeld * 0.50));
-  } else if (qty === '75%') {
-    input.value = Math.max(1, Math.floor(currentHeld * 0.75));
-  } else {
-    input.value = qty;
+  const costPerShare = stock.currentPrice * (1 + feeBps / 10000);
+  const budget = p.cash * (pct / 100);
+  const maxAffordable = Math.floor(budget / costPerShare);
+  const input = document.getElementById('tradeQuantityInput');
+  if (input) {
+    input.value = Math.max(1, maxAffordable);
+    recalculateTradeModal();
   }
-  recalculateTradeModal();
+}
+
+function setTradeHoldingPreset(pct) {
+  if (!latestState || !currentTradeModalTicker) return;
+  const stock = latestState.companies.find((c) => c.ticker === currentTradeModalTicker);
+  const p = latestState.portfolio;
+  if (!stock || !p) return;
+  const held = p.holdings[stock.ticker] || 0;
+  const qty = pct === 100 ? held : Math.floor(held * (pct / 100));
+  const input = document.getElementById('tradeQuantityInput');
+  if (input) {
+    input.value = Math.max(1, qty);
+    recalculateTradeModal();
+  }
+}
+
+function setTradeLot(qty) {
+  if (qty === 'MAX_BUY') setTradeBudgetPreset(100);
+  else if (qty === 'SELL_ALL' || qty === 'MAX_SELL') setTradeHoldingPreset(100);
+  else if (typeof qty === 'string' && qty.endsWith('%')) {
+    const num = parseInt(qty, 10);
+    if (currentTradeModalSide === 'BUY') setTradeBudgetPreset(num);
+    else setTradeHoldingPreset(num);
+  } else {
+    setTradeLotPreset('SET', Number(qty) || 1);
+  }
 }
 
 function recalculateTradeModal() {
   if (!latestState || !currentTradeModalTicker) return;
   const stock = latestState.companies.find((c) => c.ticker === currentTradeModalTicker);
   const p = latestState.portfolio;
-  if (!stock || !p) return;
+  const gs = latestState.gameState;
+  if (!stock || !p || !gs) return;
 
-  const qty = parseInt(document.getElementById('tradeQuantityInput').value, 10) || 0;
+  const input = document.getElementById('tradeQuantityInput');
+  const qty = parseInt(input ? input.value : '0', 10) || 0;
   const price = stock.currentPrice;
   const gross = +(qty * price).toFixed(2);
-  const feeBps = latestState.gameState.transactionFeeBps || 0;
+  const feeBps = gs.transactionFeeBps || 0;
   const fee = +((gross * feeBps) / 10000).toFixed(2);
   const netBuyCost = +(gross + fee).toFixed(2);
   const netSellProceeds = +(gross - fee).toFixed(2);
   const currentHeld = p.holdings[stock.ticker] || 0;
 
-  document.getElementById('tradeModalPrice').textContent = `₹${price.toFixed(2)}`;
-  document.getElementById('tradeModalCash').textContent = formatINR(p.cash);
-  document.getElementById('tradeModalHolding').textContent = `${currentHeld} shares`;
+  // Authoritative max affordable shares calculation
+  const costPerUnit = price * (1 + feeBps / 10000);
+  const maxAffordable = Math.max(0, Math.floor(p.cash / costPerUnit));
 
-  document.getElementById('tradeModalGross').textContent = `₹${gross.toFixed(2)}`;
-  document.getElementById('tradeModalFee').textContent = `₹${fee.toFixed(2)} (${feeBps} bps)`;
-  document.getElementById('tradeModalNet').textContent = `₹${netBuyCost.toFixed(2)}`;
+  // Update header and stat boxes
+  const elPrice = document.getElementById('tradeModalPrice');
+  const elCash = document.getElementById('tradeModalCash');
+  const elHolding = document.getElementById('tradeModalHolding');
+  const elGross = document.getElementById('tradeModalGross');
+  const elFee = document.getElementById('tradeModalFee');
+  const elFeeLabel = document.getElementById('tradeModalFeeLabel');
+  const elNet = document.getElementById('tradeModalNet');
+  const elNetLabel = document.getElementById('tradeModalNetLabel');
+  const elCashAfter = document.getElementById('tradeModalCashAfter');
+  const elCashAfterLabel = document.getElementById('tradeModalCashAfterLabel');
+  const elHint = document.getElementById('tradeAffordableHint');
 
-  const isMarketPaused = latestState.gameState.isPaused || latestState.gameState.isConcluded;
-  const isStockHalted = stock.isHalted;
-  const canBuy = !isMarketPaused && !isStockHalted && qty > 0 && p.cash >= netBuyCost;
-  const canSell = !isMarketPaused && !isStockHalted && qty > 0 && currentHeld >= qty;
+  if (elPrice) elPrice.textContent = `₹${price.toFixed(2)}`;
+  if (elCash) elCash.textContent = formatINR(p.cash);
+  if (elHolding) elHolding.textContent = `${currentHeld} shares`;
+  if (elGross) elGross.textContent = `₹${gross.toFixed(2)}`;
+  if (elFee) elFee.textContent = `₹${fee.toFixed(2)}`;
+  if (elFeeLabel) elFeeLabel.textContent = `Brokerage Fee (${feeBps} bps):`;
 
-  const btnBuy = document.getElementById('btnExecuteBuy');
-  const btnSell = document.getElementById('btnExecuteSell');
-  btnBuy.disabled = !canBuy;
-  btnSell.disabled = !canSell;
-
-  if (qty > 0) {
-    btnBuy.textContent = canBuy ? `Confirm BUY ${qty} Shares` : `BUY (Need ₹${netBuyCost.toLocaleString('en-IN')})`;
-    btnSell.textContent = canSell ? `Confirm SELL ${qty} Shares` : `SELL (Need ${qty} Shares)`;
-  } else {
-    btnBuy.textContent = 'Confirm BUY';
-    btnSell.textContent = 'Confirm SELL';
-  }
-
-  // Educational Live Status / Guidance Box
-  const notice = document.getElementById('tradeModalValidationNotice');
-  if (notice) {
-    if (isMarketPaused) {
-      notice.innerHTML = `<strong>⏸️ Market is currently paused</strong><br>The host has temporarily suspended trading. Orders cannot be placed right now.`;
-      notice.style.backgroundColor = '#FEF3C7';
-      notice.style.color = '#92400E';
-      notice.style.border = '1px solid #FCD34D';
-      notice.classList.remove('hidden');
-    } else if (isStockHalted) {
-      notice.innerHTML = `<strong>⚡ Circuit Breaker Halt</strong><br>Trading in ${stock.ticker} is halted (${stock.haltDirection} circuit limit reached). Orders are blocked until circuit cooling.`;
-      notice.style.backgroundColor = '#FEE2E2';
-      notice.style.color = '#991B1B';
-      notice.style.border = '1px solid #F87171';
-      notice.classList.remove('hidden');
-    } else if (qty <= 0) {
-      notice.innerHTML = `💡 Enter an order quantity above (1 or more shares), or select a quick shortcut button.`;
-      notice.style.backgroundColor = '#F8F7F4';
-      notice.style.color = 'var(--text-charcoal)';
-      notice.style.border = '1px solid var(--subtle-border)';
-      notice.classList.remove('hidden');
-    } else if (p.cash < netBuyCost && currentHeld < qty) {
-      const shortfall = (netBuyCost - p.cash).toFixed(2);
-      const costPerUnit = price * (1 + feeBps / 10000);
-      const maxAffordable = Math.floor(p.cash / costPerUnit);
-      notice.innerHTML = `<strong>⚠️ Insufficient Cash & Shares:</strong><br>• BUY shortfall: ₹${Number(shortfall).toLocaleString('en-IN')} (you can afford at most <strong>${maxAffordable}</strong> shares)<br>• SELL shortage: you only own <strong>${currentHeld}</strong> shares.`;
-      notice.style.backgroundColor = '#FEF2F2';
-      notice.style.color = '#B91C1C';
-      notice.style.border = '1px solid #FCA5A5';
-      notice.classList.remove('hidden');
-    } else if (p.cash < netBuyCost) {
-      const shortfall = (netBuyCost - p.cash).toFixed(2);
-      const costPerUnit = price * (1 + feeBps / 10000);
-      const maxAffordable = Math.floor(p.cash / costPerUnit);
-      notice.innerHTML = `<strong>💰 Insufficient Cash for BUY:</strong><br>Total cost is ₹${Number(netBuyCost).toLocaleString('en-IN')}, but available cash is ₹${Number(p.cash).toLocaleString('en-IN')} (shortfall: ₹${Number(shortfall).toLocaleString('en-IN')}). You can afford at most <strong>${maxAffordable}</strong> shares.`;
-      notice.style.backgroundColor = '#FEF2F2';
-      notice.style.color = '#B91C1C';
-      notice.style.border = '1px solid #FCA5A5';
-      notice.classList.remove('hidden');
-    } else if (currentHeld < qty) {
-      notice.innerHTML = `<strong>📉 Insufficient Shares for SELL:</strong><br>Your portfolio holds <strong>${currentHeld}</strong> shares of ${stock.ticker}. You cannot sell ${qty} shares.`;
-      notice.style.backgroundColor = '#FEF2F2';
-      notice.style.color = '#B91C1C';
-      notice.style.border = '1px solid #FCA5A5';
-      notice.classList.remove('hidden');
+  if (elHint) {
+    if (currentTradeModalSide === 'BUY') {
+      elHint.textContent = `Max Affordable: ${maxAffordable}`;
+      elHint.style.color = qty > maxAffordable ? 'var(--price-down)' : 'var(--text-muted)';
     } else {
-      notice.innerHTML = `<strong>✓ Order Ready:</strong><br>• Buying ${qty} shares costs ₹${netBuyCost.toFixed(2)} (Cash left: ₹${(p.cash - netBuyCost).toFixed(2)})<br>• Selling ${qty} shares credits ₹${netSellProceeds.toFixed(2)} to Cash`;
-      notice.style.backgroundColor = '#ECFDF5';
-      notice.style.color = '#065F46';
-      notice.style.border = '1px solid #A7F3D0';
-      notice.classList.remove('hidden');
+      elHint.textContent = `Held: ${currentHeld}`;
+      elHint.style.color = qty > currentHeld ? 'var(--price-down)' : 'var(--text-muted)';
     }
   }
+
+  const isBuy = currentTradeModalSide === 'BUY';
+  if (elNetLabel) elNetLabel.textContent = isBuy ? 'Net Cash Impact (debit):' : 'Net Cash Proceeds (credit):';
+  if (elNet) elNet.textContent = `${isBuy ? '−' : '+'}₹${(isBuy ? netBuyCost : netSellProceeds).toFixed(2)}`;
+
+  const cashAfter = isBuy ? Math.max(0, p.cash - netBuyCost) : p.cash + netSellProceeds;
+  if (elCashAfterLabel) elCashAfterLabel.textContent = isBuy ? 'Money Left After Buying:' : 'Total Cash After Selling:';
+  if (elCashAfter) elCashAfter.textContent = formatINR(cashAfter);
+
+  const isMarketPaused = gs.isPaused || gs.isConcluded || gs.status === 'DAY_COMPLETED';
+  const isBuyHalted = stock.isHalted && stock.haltDirection === 'UPPER';
+  const isSellHalted = stock.isHalted && stock.haltDirection === 'LOWER';
+
+  let isValid = true;
+  let validationMessage = '';
+  let noticeType = 'INFO';
+
+  if (isMarketPaused) {
+    isValid = false;
+    noticeType = 'WARN';
+    validationMessage = gs.status === 'DAY_COMPLETED'
+      ? `<strong>Day ${gs.currentDay} is concluded.</strong> Trading is closed. Please wait for host to start Day ${gs.currentDay + 1}.`
+      : `<strong>⏸️ Market is currently paused.</strong> The host has temporarily paused trading.`;
+  } else if (isBuy && isBuyHalted) {
+    isValid = false;
+    noticeType = 'ERROR';
+    validationMessage = `<strong>⛔ Upper Circuit Ceiling Reached (₹${price.toFixed(2)})</strong><br>Buying this share is restricted under market rules. Selling is permitted to absorb demand.`;
+  } else if (!isBuy && isSellHalted) {
+    isValid = false;
+    noticeType = 'ERROR';
+    validationMessage = `<strong>⛔ Lower Circuit Floor Reached (₹${price.toFixed(2)})</strong><br>Selling this share is restricted under market rules. Buying is permitted for bargain hunting.`;
+  } else if (qty <= 0) {
+    isValid = false;
+    noticeType = 'WARN';
+    validationMessage = `Please enter an order quantity of at least 1 share.`;
+  } else if (isBuy && p.cash < netBuyCost) {
+    isValid = false;
+    noticeType = 'ERROR';
+    const shortfall = (netBuyCost - p.cash).toFixed(2);
+    validationMessage = `<strong>💰 Not Enough Balance:</strong><br>Buying ${qty} shares costs ₹${Number(netBuyCost).toLocaleString('en-IN')}, but your cash is ₹${Number(p.cash).toLocaleString('en-IN')}. Shortfall: ₹${Number(shortfall).toLocaleString('en-IN')}. You can afford up to <strong>${maxAffordable}</strong> shares with your available cash.`;
+  } else if (!isBuy && currentHeld < qty) {
+    isValid = false;
+    noticeType = 'ERROR';
+    const shortfall = qty - currentHeld;
+    validationMessage = currentHeld === 0
+      ? `<strong>📉 No Shares Held:</strong><br>You own 0 shares of ${stock.ticker}. Switch to the BUY tab to purchase shares first.`
+      : `<strong>📉 Insufficient Shares:</strong><br>You hold <strong>${currentHeld}</strong> shares of ${stock.ticker}, but tried to sell ${qty} shares. Shortfall: <strong>${shortfall}</strong> shares.`;
+  } else {
+    isValid = true;
+    noticeType = 'SUCCESS';
+    validationMessage = isBuy
+      ? `<strong>✓ Order Ready:</strong> Buying ${qty} shares will cost ₹${netBuyCost.toFixed(2)}. Cash remaining: ₹${(p.cash - netBuyCost).toFixed(2)}.`
+      : `<strong>✓ Order Ready:</strong> Selling ${qty} shares will credit ₹${netSellProceeds.toFixed(2)} to your cash balance.`;
+  }
+
+  // Update Dynamic Status Notice Box
+  const notice = document.getElementById('tradeModalValidationNotice');
+  if (notice) {
+    notice.innerHTML = validationMessage;
+    notice.classList.remove('hidden');
+    if (noticeType === 'ERROR') {
+      notice.style.backgroundColor = 'var(--price-down-bg)';
+      notice.style.color = 'var(--price-down)';
+      notice.style.border = '1px solid var(--price-down-border)';
+    } else if (noticeType === 'WARN') {
+      notice.style.backgroundColor = 'var(--warning-bg)';
+      notice.style.color = 'var(--warning-amber)';
+      notice.style.border = '1px solid var(--warning-border)';
+    } else if (noticeType === 'SUCCESS') {
+      notice.style.backgroundColor = 'var(--price-up-bg)';
+      notice.style.color = 'var(--price-up)';
+      notice.style.border = '1px solid var(--price-up-border)';
+    } else {
+      notice.style.backgroundColor = 'var(--surface-cream)';
+      notice.style.color = 'var(--text-charcoal)';
+      notice.style.border = '1px solid var(--subtle-border)';
+    }
+  }
+
+  // Update Single Primary Execution Button
+  const btnTrade = document.getElementById('btnExecuteTradeOrder');
+  if (btnTrade) {
+    btnTrade.disabled = !isValid;
+    if (isBuy) {
+      btnTrade.className = 'btn btn-primary';
+      btnTrade.style.backgroundColor = isValid ? 'var(--price-up)' : '#9CA3AF';
+      btnTrade.style.borderColor = isValid ? 'var(--price-up)' : '#9CA3AF';
+      btnTrade.textContent = isValid ? `Confirm BUY ${qty} Shares` : `Cannot BUY (Check Balance)`;
+    } else {
+      btnTrade.className = 'btn btn-primary';
+      btnTrade.style.backgroundColor = isValid ? 'var(--price-down)' : '#9CA3AF';
+      btnTrade.style.borderColor = isValid ? 'var(--price-down)' : '#9CA3AF';
+      btnTrade.textContent = isValid ? `Confirm SELL ${qty} Shares` : `Cannot SELL (Check Holdings)`;
+    }
+  }
+
+  // Stepper Button states
+  const qMinus = document.getElementById('qMinusBtn');
+  if (qMinus) qMinus.disabled = qty <= 1;
+
+  // Hidden proxy buttons for script/test backwards compatibility
+  const btnBuy = document.getElementById('btnExecuteBuy');
+  const btnSell = document.getElementById('btnExecuteSell');
+  if (btnBuy) btnBuy.disabled = !isValid || !isBuy;
+  if (btnSell) btnSell.disabled = !isValid || isBuy;
 }
 
-function executeModalTrade(type) {
+function executeModalTrade(explicitSide = null) {
   if (!currentTradeModalTicker) return;
-  const qty = parseInt(document.getElementById('tradeQuantityInput').value, 10);
+  const side = explicitSide || currentTradeModalSide;
+  const input = document.getElementById('tradeQuantityInput');
+  const qty = parseInt(input ? input.value : '0', 10);
   if (!qty || qty <= 0) return;
-  sendOrder(currentTradeModalTicker, type, qty);
+  sendOrder(currentTradeModalTicker, side, qty);
+  closeTradeModal();
 }
 
 // Company Details Modal
@@ -2969,8 +3357,9 @@ function renderProjectorView(state) {
 
   const isScheduled = gameState.status === 'SCHEDULED';
   const isStandby = (gameState.status === 'STANDBY' || (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN')) && !isScheduled;
-  const isPaused = gameState.isPaused && !isStandby && !isScheduled && !gameState.isConcluded;
-  const isMarketClosed = gameState.status === 'MARKET_CLOSED';
+  const isDayCompleted = gameState.status === 'DAY_COMPLETED' || gameState.status === 'MARKET_CLOSED';
+  const isPaused = gameState.isPaused && !isStandby && !isScheduled && !gameState.isConcluded && !isDayCompleted;
+  const isMarketClosed = isDayCompleted;
 
   const remMs = (isScheduled && gameState.scheduledStartTime)
     ? Math.max(0, new Date(gameState.scheduledStartTime).getTime() - Date.now())
@@ -3003,6 +3392,24 @@ function renderProjectorView(state) {
     }
   }
 
+  // Day Completed Presentation Banner
+  const projDayCompletedBanner = document.getElementById('projDayCompletedBanner');
+  if (projDayCompletedBanner) {
+    if (isDayCompleted) {
+      projDayCompletedBanner.classList.remove('hidden');
+      const bBadge = document.getElementById('projDayCompletedBadge');
+      const bTitle = document.getElementById('projDayCompletedTitle');
+      const bSub = document.getElementById('projDayCompletedSub');
+      if (bBadge) bBadge.textContent = `DAY ${gameState.currentDay} COMPLETED`;
+      if (bTitle) bTitle.textContent = `Day ${gameState.currentDay} Concluded • Official Session Standings`;
+      if (bSub) bSub.textContent = gameState.currentDay < gameState.totalDays
+        ? `Day ${gameState.currentDay} trading has ended. All portfolios audited and locked. Waiting for host to launch Day ${gameState.currentDay + 1}.`
+        : `Championship trading has concluded. All portfolios audited and locked. Ready for awards ceremony.`;
+    } else {
+      projDayCompletedBanner.classList.add('hidden');
+    }
+  }
+
   // Paused Announcement Banner
   const projPauseBanner = document.getElementById('projPauseBanner');
   if (projPauseBanner) {
@@ -3027,12 +3434,12 @@ function renderProjectorView(state) {
     } else if (isStandby) {
       clockEl.textContent = `STANDBY • 00:00`;
       clockEl.style.color = '';
+    } else if (isDayCompleted) {
+      clockEl.textContent = `SESSION CONCLUDED`;
+      clockEl.style.color = 'var(--champagne-accent)';
     } else if (isPaused) {
       clockEl.textContent = `PAUSED • ${formatMMSS(gameState.elapsedSeconds)}`;
       clockEl.style.color = 'var(--warning-amber)';
-    } else if (isMarketClosed) {
-      clockEl.textContent = `SESSION CLOSED`;
-      clockEl.style.color = 'var(--champagne-accent)';
     } else {
       clockEl.textContent = `CLOCK: ${formatMMSS(gameState.elapsedSeconds)}`;
       clockEl.style.color = '';
@@ -3047,12 +3454,12 @@ function renderProjectorView(state) {
     } else if (isStandby) {
       statusEl.textContent = `DAY ${gameState.currentDay} STANDBY`;
       statusEl.className = 'badge badge-champagne';
+    } else if (isDayCompleted) {
+      statusEl.textContent = `🔔 DAY ${gameState.currentDay} CONCLUDED`;
+      statusEl.className = 'badge badge-champagne';
     } else if (isPaused) {
       statusEl.textContent = gameState.pauseMode === 'BLACKOUT' ? '🕶️ BLACKOUT PAUSED' : '⏸️ MARKET PAUSED';
       statusEl.className = 'badge badge-paused';
-    } else if (isMarketClosed) {
-      statusEl.textContent = `🔔 DAY ${gameState.currentDay} CONCLUDED`;
-      statusEl.className = 'badge badge-champagne';
     } else {
       statusEl.textContent = 'ACTIVE TRADING';
       statusEl.className = 'badge badge-active';
@@ -3065,10 +3472,10 @@ function renderProjectorView(state) {
       tickerEl.textContent = `⏳ PRE-MARKET COUNTDOWN: Day ${gameState.currentDay} opens in ${formatMMSS(remSec)}. All terminals armed. Review your desk strategies!`;
     } else if (isStandby) {
       tickerEl.textContent = `⏳ STANDBY: Day ${gameState.currentDay} will open with a 3-second live countdown when host starts the session. Review your desk strategies.`;
+    } else if (isDayCompleted) {
+      tickerEl.textContent = `🔔 DAY ${gameState.currentDay} CONCLUDED: Trading has ended. Audited standings and net worth valuations displayed on leaderboard. Please wait for host to start Day ${gameState.currentDay + 1}.`;
     } else if (isPaused) {
       tickerEl.textContent = `⏸️ MARKET PAUSED: All trading is frozen. Market will resume with an authoritative 3-second countdown.`;
-    } else if (isMarketClosed) {
-      tickerEl.textContent = `🔔 DAY ${gameState.currentDay} CONCLUDED: Trading has ended. Audited standings and net worth valuations displayed on leaderboard.`;
     } else if (gameState.newsHistory && gameState.newsHistory.length > 0) {
       const latestNews = gameState.newsHistory[0];
       tickerEl.textContent = `[DAY ${latestNews.day} • ${latestNews.type || 'WIRE'}] "${(latestNews.headline || '').toUpperCase()}" — ${latestNews.simple_explanation || ''}`;
@@ -3100,7 +3507,7 @@ function renderProjectorView(state) {
   const durationSec = (projectorState && projectorState.sceneDurationSeconds) || 12;
 
   let activeScene = 'SCENE_MARKET_BOARD';
-  if (isMarketClosed || (isStandby && gameState.currentDay > 1)) {
+  if (isDayCompleted || (isStandby && gameState.currentDay > 1)) {
     // When a day concludes, immediately show the audited Leaderboard to the audience
     activeScene = 'SCENE_LEADERBOARD';
   } else if (mode === 'FIXED_SCREEN') {
@@ -4369,10 +4776,6 @@ function updateHostTournamentFlow(state) {
       actHtml += `<button type="button" onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="font-weight: 700;">⏸ Pause</button>`;
       actHtml += `<button type="button" onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="font-weight: 700;">🕶️ Blackout</button>`;
       actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
-    } else if (gs.isPaused) {
-      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
-      actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
-      actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
     } else if (gs.status === 'DAY_COMPLETED' || gs.status === 'STANDBY' || gs.status === 'MARKET_CLOSED') {
       if (day < total) {
         actHtml += `<button type="button" onclick="openStartNextDayModal()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Start Day ${day + 1} (3-2-1)</button>`;
@@ -4382,6 +4785,10 @@ function updateHostTournamentFlow(state) {
         actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 700;">🏆 Finalize Championship & Reveal Winner</button>`;
         actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
       }
+    } else if (gs.isPaused) {
+      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
+      actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
+      actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
     } else if (gs.status === 'EMERGENCY_STOP') {
       actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume from Emergency Halt</button>`;
       actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
@@ -4474,6 +4881,18 @@ function updateHostTournamentFlow(state) {
       nextBtn.className = 'btn btn-primary';
     }
     if (nextHint) nextHint.textContent = 'Configuration is currently editable';
+  } else if (gs.status === 'DAY_COMPLETED') {
+    if (nextIcon) nextIcon.textContent = '🔔';
+    if (nextBadgePhase) nextBadgePhase.textContent = day < total ? `DAY ${day} CONCLUDED` : 'ALL SESSIONS COMPLETED';
+    if (nextTitle) nextTitle.textContent = day < total ? `Day ${day} Results Audited & Standings Saved` : `All ${total} Days Completed — Standings Finalized`;
+    if (nextDesc) nextDesc.textContent = day < total
+      ? `Day ${day} trading session is officially concluded. Daily student portfolios are locked. Review audited standings or launch Day ${day + 1} with synchronized countdown.`
+      : 'All tournament trading sessions have concluded. All portfolios are locked for ceremonial winner announcement.';
+    if (nextBtn) {
+      nextBtn.textContent = day < total ? `▶ Start Day ${day + 1} (3-2-1) ➔` : '🏆 Finalize Champion & Reveal Winner ➔';
+      nextBtn.className = day < total ? 'btn btn-primary' : 'btn btn-champagne';
+    }
+    if (nextHint) nextHint.textContent = day < total ? `Awaiting Host command to start Day ${day + 1}` : 'Championship ready for ceremonial reveal';
   } else if (gs.isPaused) {
     if (nextIcon) nextIcon.textContent = '⏸️';
     if (nextBadgePhase) nextBadgePhase.textContent = gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSE' : 'SOFT FREEZE';
@@ -4627,17 +5046,17 @@ function handleFlowPrimaryAction() {
     return;
   }
 
-  if (gs.isPaused) {
-    hostResumeMarket();
-    return;
-  }
-
   if (gs.status === 'DAY_COMPLETED') {
     if (day < total) {
       openStartNextDayModal();
     } else {
       hostStartWinnerPresentation();
     }
+    return;
+  }
+
+  if (gs.isPaused) {
+    hostResumeMarket();
     return;
   }
 
