@@ -1,8 +1,8 @@
 {
   "scenario_metadata": {
     "title": "The Trading Floor - Championship 2026",
-    "subtitle": "SSASIT Surat • GTU Intra-College Trading Championship",
-    "institution": "SSASIT Surat (GTU 076)",
+    "subtitle": "Gujarat Technological University • Intra-College Trading Championship",
+    "institution": "Gujarat Technological University",
     "total_days": 3,
     "day_duration_seconds": 1800,
     "starting_cash": 500000,

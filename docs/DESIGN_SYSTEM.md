@@ -96,7 +96,7 @@ To maintain 100% offline autonomy without external CDN font requests:
 - One-click Max Buy and Max Sell calculation shortcuts.
 - Real-time gross value, transaction fee, and remaining cash live simulation.
 
-### 4.4 Institutional Chart Containers & Micro-Badges (`tf-charts.css`)
+### 4.4 Institutional Chart Containers & Micro-Badges (`style.css`)
 - **Card Containers (`.tf-stock-card`)**: Muted cream card (`var(--surface-cream)`), subtle border, smooth hover elevation with champagne glow. Holds `<canvas>` sparkline with dynamic price typography.
 - **Chart Wrappers (`.tf-chart-wrap`)**: Crisp white elevated container (`var(--surface-card)`) with 12px border radius, 1px institutional grid border, and soft elevation shadow (`0 6px 24px rgba(26, 48, 38, 0.06)`).
 - **Status & P&L Chips (`.tf-chip`)**:

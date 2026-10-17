@@ -7,7 +7,6 @@
   <title>The Trading Floor - Championship 2026</title>
   <!-- Institutional Design System (100% Offline-First, Zero External CDN Dependency) -->
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="tf-charts.css" />
 </head>
 
 <body class="ttf-app">
@@ -34,22 +33,24 @@
   <!-- ==========================================================================
        DEVELOPER & SYSTEM ARCHITECTURE MODAL (#developerInfoModal)
        ========================================================================== -->
-  <div id="developerInfoModal" class="hidden modal-overlay" style="z-index: 100010; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.88);">
-    <div class="modal-content" style="max-width: 680px; width: 92%; padding: 36px 32px; border: 2.5px solid var(--champagne-accent); border-radius: var(--radius-md); box-shadow: 0 24px 60px rgba(0,0,0,0.5);">
-      <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 16px; margin-bottom: 20px;">
+  <div id="developerInfoModal" class="hidden modal-overlay" style="z-index: 100010; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(15, 23, 42, 0.90);">
+    <div class="modal-content" style="max-width: 720px; width: 92%; padding: 34px 30px; border: 2.5px solid var(--champagne-accent); border-radius: var(--radius-md); box-shadow: 0 24px 60px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 16px; margin-bottom: 18px;">
         <div style="display: flex; align-items: center; gap: 14px;">
-          <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #1E293B, #0F172A); border: 2px solid var(--podium-gold); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(212,175,55,0.3);">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #0F172A, #1E293B); border: 2.5px solid var(--podium-gold); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 16px rgba(212,175,55,0.4); flex-shrink: 0;">
             👨‍💻
           </div>
           <div>
-            <div class="badge badge-champagne" style="font-size: 10px; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 4px;">
-              LEAD DEVELOPER &amp; SYSTEM ARCHITECT
+            <div class="badge badge-champagne" style="font-size: 10px; font-weight: 800; letter-spacing: 0.12em; margin-bottom: 4px;">
+              LEAD DEVELOPER, SYSTEM ARCHITECT &amp; SOLE CREATOR
             </div>
-            <h2 style="font-size: 24px; color: var(--text-forest); margin: 0; font-family: var(--font-serif); font-weight: 800;">
+            <h2 style="font-size: 25px; color: var(--text-forest); margin: 0; font-family: var(--font-serif); font-weight: 800; letter-spacing: -0.01em;">
               Ved Maheshbhai Mangukiya
             </h2>
-            <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px;">
-              Class Coordinator — First Year BBA (FY BBA)
+            <div style="font-size: 12px; color: var(--champagne-accent); font-weight: 700; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+              <span>📍 Surat, Gujarat, India</span>
+              <span>•</span>
+              <span style="color: var(--text-charcoal);">Pursuing Bachelor of Business Administration (BBA)</span>
             </div>
           </div>
         </div>
@@ -58,38 +59,63 @@
         </button>
       </div>
 
-      <div class="cream-panel" style="padding: 18px; margin-bottom: 18px; border-left: 4px solid var(--podium-gold);">
-        <h4 style="font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--champagne-accent); margin-bottom: 6px;">
-          🏛️ Institutional Affiliation
+      <!-- Visionary Engineering Achievement Banner -->
+      <div class="cream-panel" style="padding: 18px 20px; margin-bottom: 18px; border-left: 4px solid var(--podium-gold); background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(30, 41, 59, 0.02));">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--champagne-accent); margin: 0;">
+            ⚡ Architectural Marvel • Built From Scratch
+          </h4>
+          <span class="badge" style="background: rgba(33, 134, 83, 0.12); color: #047857; font-size: 10px; font-weight: 800;">100% INDEPENDENT ENGINEERING</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-charcoal); line-height: 1.6; margin: 0; font-weight: 500;">
+          Engineered end-to-end by <strong>Ved Maheshbhai Mangukiya</strong>, this proprietary institutional trading platform is a first-of-its-kind financial simulation engine. Operating completely autonomously on a closed local area network with zero external cloud dependencies, it powers high-frequency market matching, multi-screen live state synchronization, and digital signal audio synthesis previously unseen in collegiate competitions worldwide.
+        </p>
+      </div>
+
+      <!-- Academic Affiliation & Location -->
+      <div class="cream-panel" style="padding: 14px 18px; margin-bottom: 18px;">
+        <h4 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px;">
+          🎓 Academic Affiliation &amp; University
         </h4>
-        <div style="font-size: 14px; font-weight: 700; color: var(--text-charcoal); line-height: 1.5;">
-          Shri Swami Atmanand Saraswati Institute of Technology (SSASIT), Surat
+        <div style="font-size: 15px; font-weight: 800; color: var(--text-forest); line-height: 1.4;">
+          Gujarat Technological University (GTU)
         </div>
         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-          Gujarat Technological University (GTU Code: 076) • NAAC A+ Accredited
+          Surat, Gujarat, India • NAAC A+ Accredited University
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 20px;">
+      <!-- Technical Showcase Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px;">
         <div class="cream-panel" style="padding: 14px;">
-          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Simulation Mechanics</div>
-          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Server-Authoritative Real-Time Matching</div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Sub-millisecond trade execution, automated circuit breakers &amp; smoothstep stock movement.</div>
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 4px;">⚡ Sub-Millisecond Liquidity Engine</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Server-Authoritative Matching</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Dual-buffer order matching with strict balance verification, dynamic cash deductions, and 200ms anti-spam debouncing.</div>
         </div>
         <div class="cream-panel" style="padding: 14px;">
-          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">Sound &amp; Interface</div>
-          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Web Audio API &amp; Ivory Luxury Theme</div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">100% offline audio synthesis, zero external CDN scripts, canvas sparkline charts.</div>
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 4px;">🛡️ 100% Offline-First Invariant</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Zero External CDN Architecture</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Zero internet dependence. Runs flawlessly on venue LAN / Wi-Fi routers with local fonts, icons, and pure CSS tokens.</div>
+        </div>
+        <div class="cream-panel" style="padding: 14px;">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 4px;">🔊 Web Audio API DSP Synthesis</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Algorithmic Sound Generator</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">All opening bells, circuit sirens, countdown pulses, and victory fanfares synthesized mathematically via oscillator nodes.</div>
+        </div>
+        <div class="cream-panel" style="padding: 14px;">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--champagne-accent); margin-bottom: 4px;">🔄 Multi-Terminal Synchronization</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text-forest);">Unified WebSocket Mesh</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Harmonizes Trader Desks, Host Command Centre, Stage Projector Displays, and Sound Consoles in real-time.</div>
         </div>
       </div>
 
       <div style="background: rgba(30, 41, 59, 0.04); border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border: 1px solid var(--subtle-border);">
         <div>
           <div style="font-size: 12px; font-weight: 800; color: var(--text-charcoal);">
-            © 2026 Ved Mangukiya. All Rights Reserved.
+            © 2026 Ved Maheshbhai Mangukiya. All Rights Reserved.
           </div>
           <div style="font-size: 11px; color: var(--text-muted);">
-            Engineered exclusively for The Trading Floor Championship 2026.
+            Surat, Gujarat, India • Masterwork of The Trading Floor Championship 2026.
           </div>
         </div>
         <button type="button" onclick="closeDeveloperInfoModal()" class="btn btn-primary" style="padding: 8px 18px; font-size: 12px;">
@@ -441,10 +467,10 @@
           👨‍💻 Developer &amp; System Architecture Info
         </button>
         <div style="font-size: 11px; font-weight: 800; color: var(--text-charcoal); line-height: 1.4;">
-          © 2026 Ved Mangukiya. All Rights Reserved.
+          © 2026 Ved Maheshbhai Mangukiya. All Rights Reserved.
         </div>
         <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-          Class Coordinator (FY BBA) • SSASIT Surat (GTU Code: 076)
+          Lead Developer &amp; Architect • Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India
         </div>
       </div>
     </div>
@@ -473,8 +499,7 @@
         <h2 id="waitingRoomTitle"
           style="font-size: 28px; color: var(--text-forest); margin-bottom: 6px; font-family: var(--font-serif); font-weight: 900;">
           The Trading Floor Championship</h2>
-        <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">SSASIT Surat
-          (GTU 076) • Official Trading Terminal</p>
+        <p id="waitingRoomSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">Gujarat Technological University • Official Trading Terminal</p>
 
         <div class="waiting-room-stats-grid"
           style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
@@ -848,12 +873,12 @@
     <!-- Trader View Footer Branding -->
     <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
       <div style="color: var(--text-muted);">
-        <strong style="color: var(--text-charcoal);">The Trading Floor Championship 2026</strong> • © 2026 Ved Mangukiya. All Rights Reserved.
+        <strong style="color: var(--text-charcoal);">The Trading Floor Championship 2026</strong> • © 2026 Ved Maheshbhai Mangukiya. All Rights Reserved.
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="color: var(--text-muted);">SSASIT Surat (GTU Code: 076)</span>
+        <span style="color: var(--text-muted);">Gujarat Technological University • Surat, Gujarat, India</span>
         <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 10px; padding: 4px 10px; border-radius: 999px;">
-          👨‍💻 Developer Info
+          👨‍💻 Developer &amp; Architect Info
         </button>
       </div>
     </footer>
@@ -1314,8 +1339,8 @@
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Host
-                Institution / College</label>
-              <input type="text" id="setupInstitution" class="form-input" value="SSASIT Surat (GTU Code: 076)" />
+                Institution / University</label>
+              <input type="text" id="setupInstitution" class="form-input" value="Gujarat Technological University" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
@@ -2439,10 +2464,10 @@
     <!-- Host View Footer Branding -->
     <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
       <div style="color: var(--text-muted);">
-        <strong style="color: var(--text-charcoal);">Host Operations Desk</strong> • Architected by Ved Mangukiya • © 2026 All Rights Reserved.
+        <strong style="color: var(--text-charcoal);">Host Operations Desk</strong> • Architected &amp; Engineered by Ved Maheshbhai Mangukiya • © 2026 All Rights Reserved.
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="color: var(--text-muted);">Class Coordinator (FY BBA) • SSASIT Surat (GTU Code: 076)</span>
+        <span style="color: var(--text-muted);">Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India</span>
         <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 10px; padding: 4px 10px; border-radius: 999px;">
           👨‍💻 Developer &amp; Architecture Info
         </button>
@@ -2850,7 +2875,7 @@
         </div>
       </div>
       <div style="font-size: 11px; font-weight: 700; color: #94A3B8; white-space: nowrap; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 8px;">
-        <span>© 2026 Ved Mangukiya • All Rights Reserved</span>
+        <span>© 2026 Ved Maheshbhai Mangukiya • Gujarat Technological University</span>
         <button type="button" onclick="openDeveloperInfoModal()" class="btn-demo-pill" style="font-size: 10px; padding: 2px 8px;">Info</button>
       </div>
     </footer>
@@ -3536,7 +3561,7 @@
         <div class="form-group">
           <label class="form-label" for="settingEventTitle">Event Title</label>
           <input id="settingEventTitle" type="text" class="form-input"
-            placeholder="e.g. SSASIT B-School Trading Championship 2026" />
+            placeholder="e.g. GTU Intra-College Trading Championship 2026" />
         </div>
         <div class="settings-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div class="form-group">
@@ -4155,8 +4180,8 @@
               value="The Trading Floor Championship 2026" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="scheduleInstitutionInput">Host Institution / Chapter</label>
-            <input id="scheduleInstitutionInput" type="text" class="form-input" value="SSASIT Surat (GTU 076)" />
+            <label class="form-label" for="scheduleInstitutionInput">Host Institution / University</label>
+            <input id="scheduleInstitutionInput" type="text" class="form-input" value="Gujarat Technological University" />
           </div>
         </div>
       </div>
@@ -4192,7 +4217,6 @@
     </div>
   </div>
 
-  <script src="tf-charts.js"></script>
   <script src="app.js"></script>
 </body>
 

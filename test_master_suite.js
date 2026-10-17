@@ -496,7 +496,7 @@ async function runTests() {
     ws1.send(JSON.stringify({
       action: 'HOST_UPDATE_EVENT_CONFIG',
       session_token: hostToken,
-      title: 'SSASIT B-School Championship 2026',
+      title: 'GTU B-School Championship 2026',
       transactionFeeBps: 10,
       circuitBreakerPercent: 20
     }));

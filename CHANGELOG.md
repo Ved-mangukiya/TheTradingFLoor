@@ -4,6 +4,23 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
 
 ---
 
+## [2.2.0] — 2026-10-17
+### Added
+- **Architectural Separation & Database Transparency**:
+  - Documented explicit architectural boundaries between **Preview Website** (zero-server client showcase deployed to GitHub Pages) and **Main Event Hosting** (server-authoritative Node.js exchange running on local LAN).
+  - Created [`data/README.md`](data/README.md) clearly mapping `scenario_live.json`, `universe_active.json`, `scenario_test.json`, and disaster recovery checkpoints.
+- **Developer Persona & System Architect Elevation**:
+  - Branded all terminal views, modals, documentation, and footers with **Ved Maheshbhai Mangukiya**, Pursuing BBA, Gujarat Technological University, Surat, Gujarat, India.
+  - Complete scrub of legacy coordinator titles, academic years, college acronyms, and institutional codes.
+
+### Removed
+- Removed confusing duplicate root `index.html` to establish `public/index.html` as the single canonical SPA entry point.
+- Purged legacy standalone test scripts (`test_2hour_heavy_load.js`, `test_checkpoint_disaster_recovery.js`, `test_load_stress.js`, `test_projector_pagination.js`, `test_upgrade_master.js`) in favor of unified `test_master_suite.js`.
+- Removed redundant batch files (`Start_Live_Scenario.bat`, `Start_Test_Scenario.bat`, `Open_Host_Panel.bat`, `Open_Projector.bat`) and `.env.example`.
+- Purged historical test audit logs and temporary test checkpoints.
+
+---
+
 ## [2.1.0] — 2026-10-16
 ### Added
 - **Disaster Recovery Checkpoints & Instant Game Restore**:

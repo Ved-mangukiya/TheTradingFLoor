@@ -8,7 +8,8 @@
 
 ## TABLE OF CONTENTS
 1. [What This Software Is](#1-what-this-software-is)
-2. [Key Tournament Features](#2-key-tournament-features)
+2. [Lead Developer & System Architect](#-lead-developer--system-architect)
+3. [Key Tournament Features](#2-key-tournament-features)
 3. [Interface Previews & Live Roles](#3-interface-previews--live-roles)
 4. [System Requirements](#4-system-requirements)
 5. [One-Time Installation Instructions (Windows)](#5-one-time-installation-instructions-windows)
@@ -32,6 +33,16 @@
 **The Trading Floor Championship 2026** is a standalone, server-authoritative stock market exchange simulator. It turns any ordinary laptop into a high-speed institutional stock exchange that hosts dozens of competing student teams over local Wi-Fi. 
 
 Participants trade real-time simulated blue-chip equities across Indian economic sectors (IT, Banking, Automotive, Energy, FMCG, Pharmaceuticals). Prices move organically using a mean-reverting geometric random walk model, responding to breaking economic news shocks, sector developments, and circuit breaker trading halts.
+
+---
+
+## 👨‍💻 LEAD DEVELOPER & SYSTEM ARCHITECT
+
+### **Ved Maheshbhai Mangukiya**
+**Lead Developer, Chief System Architect & Sole Creator**  
+*Pursuing Bachelor of Business Administration (BBA) • Gujarat Technological University • Surat, Gujarat, India*
+
+> **Architectural Statement**: Independently conceived, architected, and coded from the ground up by **Ved Maheshbhai Mangukiya**, this platform establishes a standard of financial simulation software unprecedented in collegiate competitions worldwide. Operating with 100% offline autonomy over local campus Wi-Fi, it features sub-millisecond server-authoritative liquidity execution, algorithmic Web Audio API DSP synthesis, automated circuit breaker halting, dual-buffer balance reconciliation, and real-time multi-terminal WebSocket synchronization without a single external cloud dependency.
 
 ---
 

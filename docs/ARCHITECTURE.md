@@ -75,7 +75,7 @@ To operate without internet and without external audio assets:
   - `POST /api/restore`: Ingests a previously exported snapshot and re-establishes server state cleanly.
 
 ### 2.5 High-Performance Institutional Charting Engine (`TFCharts`)
-Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is handled by a bespoke vanilla Canvas 2D engine (`public/tf-charts.js` + `public/tf-charts.css`):
+Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is handled by a bespoke vanilla Canvas 2D engine unified directly within `public/app.js` and styled in `public/style.css`:
 - **Monotone Cubic Splines (Fritsch-Carlson)**: Unlike standard Catmull-Rom or Bezier curves which notoriously overshoot market peaks and troughs, monotone tangents guarantee the price curve never dips below the true low or breaches the true high.
 - **HiDPI Screen Scaling**: Automatically rescales backing store based on `window.devicePixelRatio`, preventing blurry lines on Retina, Apple Silicon, and 4K auditorium projectors.
 - **Shared 60 FPS RAF Loop**: Single `requestAnimationFrame` loop driven by an internal `Map` registry. Automatically cleans up event listeners and unregisters canvases when removed from the DOM.
@@ -84,3 +84,13 @@ Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is h
   2. `drawInteractiveMainChart(canvasId, stock, containerElement)`: High-fidelity interactive chart modal with snapping hover crosshair, floating coordinates tooltip, Day High/Low dashed guides, Day Open right-axis badge, live price pill, and prominent `TRADING HALTED` banner. Automatically resizes via `ResizeObserver`.
   3. `drawPortfolioEquityCurve(canvasId, equityHistory, opts)`: Real-time team net worth tracker against the ₹5,00,000 baseline, featuring dual-zone P&L fills (green profit zone / red drawdown zone) and live `IN PROFIT` / `DRAWDOWN` badges.
   4. **Auditorium Projector Variant (`.tf-projector`)**: High-contrast, double-thickness typography and canvas scaling engineered for 50-foot viewing distances.
+
+---
+
+## 3. System Designer & Lead Architect
+
+- **Creator & Lead System Architect**: **Ved Maheshbhai Mangukiya**
+- **Academic Program**: Pursuing Bachelor of Business Administration (BBA)
+- **University**: Gujarat Technological University (GTU)
+- **Location**: Surat, Gujarat, India
+- **Engineering Benchmark**: Conceived, engineered, and optimized end-to-end from first principles with zero external framework bloat, zero CDN reliance, sub-millisecond server-authoritative liquidity execution, programmatic Web Audio synthesis, and crash-resilient deterministic state restoration. A system architecture unprecedented in collegiate financial simulations worldwide.

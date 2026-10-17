@@ -26,11 +26,10 @@ This guide covers the system requirements, development tools, browser support, a
 ## 2. Command-Line & Automation Utilities
 
 ### 2.1 1-Click Windows Launchers
-Located in the repository root for non-technical event coordinators:
-- **`Launch_The_Trading_Floor.bat`**: Comprehensive desktop launcher. Detects Node.js, runs `npm install` if required, resolves local LAN IP, starts the server in live event mode, and automatically opens the Host Controller in your browser.
-- **`Open_Host_Panel.bat`**: Shortcut to open `http://localhost:3000/?role=host` in the default browser.
-- **`Open_Projector.bat`**: Shortcut to open `http://localhost:3000/?role=projector` in full-screen on secondary stage monitors.
-- **`Start_Test_Scenario.bat`**: Launches the engine in dry-run mode (`scenario_test.json`) with fictional companies for training.
+Located in the repository root for streamlined event operations:
+- **`Launch_The_Trading_Floor.bat`**: Master championship desktop launcher. Detects portable or system Node.js, installs dependencies, resolves local LAN IP, starts the authoritative server in live event mode, and automatically opens the Host Operations Desk.
+- **`Create_Live_Demo_Link.bat`**: Generates an instant public HTTPS link via Cloudflare Tunnel (`npx untun`) for live remote presentations to HOD and faculty on their phones or laptops.
+- **`Pack_Portable_USB_Zip.bat`**: Packages the entire project, including offline documentation and portable tools, into a clean standalone ZIP archive for tournament-day USB drives.
 
 ### 2.2 Developer NPM Scripts
 Configured in `package.json`:

@@ -113,8 +113,8 @@ let newsEvents = [];
 let teams = {};
 let gameState = {
   title: 'The Trading Floor - Championship 2026',
-  subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
-  institution: 'SSASIT Surat (GTU 076)',
+  subtitle: 'Gujarat Technological University • Intra-College Trading Championship',
+  institution: 'Gujarat Technological University',
   status: 'PAUSED',
   configLocked: false,
   startMode: 'IMMEDIATE',
@@ -444,8 +444,8 @@ function loadScenario(mode = 'live', forceBaseline = false) {
   const meta = scenarioData.scenario_metadata;
   gameState = {
     title: meta.title || 'The Trading Floor - Championship 2026',
-    subtitle: 'SSASIT Surat • GTU Intra-College Trading Championship',
-    institution: 'SSASIT Surat (GTU 076)',
+    subtitle: meta.subtitle || 'Gujarat Technological University • Intra-College Trading Championship',
+    institution: meta.institution || 'Gujarat Technological University',
     status: 'PAUSED',
     configLocked: false,
     startMode: 'IMMEDIATE',
