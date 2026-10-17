@@ -25,8 +25,11 @@
       │                                                          │
       │                                                          └──> HOST_RESUME_COUNTDOWN ──> [LIVE]
       │
-      ▼  If currentDay >= totalDays: HOST_FINISH_EVENT
-[FINAL_ANALYSIS] (Audited Portfolio Standings Review)
+      ▼  If currentDay == totalDays: FINAL_DAY_COMPLETED (requiresExplicitFinalization)
+[DAY_COMPLETED / FINAL REVIEW] (Pre-Generated Standings Audit • Host Review)
+      │
+      ▼  HOST_CONCLUDE_CHAMPIONSHIP (Requires status === 'DAY_COMPLETED' & currentDay === totalDays)
+[CHAMPIONSHIP_CONCLUDED] (Audited Results Snapshot Locked • isConcluded = true)
       │
       ▼  HOST_START_WINNER_PRESENTATION
 [WINNER_ANNOUNCEMENT] (Ceremonial Reveal: Bronze ➔ Silver ➔ Champion ➔ Podium)

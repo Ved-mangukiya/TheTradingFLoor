@@ -41,6 +41,8 @@ The Trading Floor Championship is architected as an offline-first, client-server
   - $\Delta P_{\text{flow}}$: Instantaneous order-flow liquidity pressure ($+Q \times P \times 2\times 10^{-6}$ on BUY, $-Q \times P \times 2\times 10^{-6}$ on SELL, capped at $\pm 0.8\%$ per trade).
 - **Active Transition Shock Engine**: When news breaks, target stocks undergo exponential price adjustments over 30–60 seconds, weighted by each company's $\beta$ (news sensitivity).
 - **Circuit Breakers**: Evaluated on every tick. If $|P_t - P_{\text{day\_open}}| / P_{\text{day\_open}} \ge \text{Limit}$ (default: 20%), trading in that stock is immediately frozen, setting `isHalted = true` and broadcasting a circuit breaker alarm.
+- **Circuit Breaker Reference Immutability**: $P_{\text{day\_open}}$ is established strictly at the start of each trading day and is immutable throughout active trading. Manual unhalting and sector unhalting clear halts without altering $P_{\text{day\_open}}$, guaranteeing boundary integrity.
+- **News Event Idempotency Registry**: Server maintains `firedNewsEventsPerDay = new Map()` (key: `day_${dayNum}_${event_id}`). Guaranteed execution exactly once per intended trading day, preventing duplicate shocks across tab reconnects or server restarts.
 
 ### 2.2 WebSocket Communication Protocol
 All real-time interaction occurs over a persistent WebSocket connection:
@@ -50,6 +52,9 @@ All real-time interaction occurs over a persistent WebSocket connection:
   - `TRADER`: Receives only tradeable enabled stocks, team's own portfolio/cash, team's own executed trades, public leaderboard, and active news flash. Never receives other teams' private holdings.
   - `PROJECTOR`: Receives public enabled stocks, top 5 leaderboard rankings, and active news flashes.
   - `HOST`: Receives full administrative state including `allCompaniesUniverse` (both enabled and disabled shares), all teams' raw balances, all executed trades, and audit counters.
+- **Cryptographic Trade Identifiers**:
+  - All BUY, SELL, and LIQUIDATE_ALL transactions generate RFC 4122 v4 UUIDs via `crypto.randomUUID()`.
+  - An integer `seq` counter is preserved alongside the UUID for monotonic ordering and display.
 
 ### 2.3 Offline Institutional Audio Engine (High-Suspense Synthesis)
 To operate without internet and without external audio assets:
@@ -64,7 +69,7 @@ To operate without internet and without external audio assets:
 
 ### 2.4 Data Persistence, Crash Recovery & Host Tournament Reset
 - **Live Crash Recovery Auto-Save**: In active live mode, the engine automatically serializes the full in-memory state (`gameState`, `companies`, `teams`, `executedTrades`, `tradeSeqCounter`, `newsEvents`, `USERS`) to `data/live_game_state.json` every 4 seconds and immediately upon critical events (trades, news, circuit breaker, day transition).
-  - **Reboot Resumption**: If the server crashes or restarts, it detects `live_game_state.json`, restores portfolios, prices, and trade logs, and automatically sets `gameState.isPaused = true`. The Host simply opens the Host Panel and presses "▶ Resume".
+  - **Intelligent State-Preserving Resumption**: Restoring state from checkpoints or crash files preserves legitimate stopped lifecycle states (`SETUP`, `STANDBY`, `DAY_COMPLETED`, `CHAMPIONSHIP_CONCLUDED`). Only active `LIVE` market trading is paused into `pauseMode = 'RECOVERY'` awaiting Host 3-2-1 resume. Stale countdown timers are cleared and `firedNewsEventsPerDay` is rebuilt.
 - **Safe Championship Reset & Setup Wizard**:
   - `HOST_RESET_ENTIRE_CHAMPIONSHIP`: Enforces high-friction typing security (`"RESET"` required). Destroys `live_game_state.json`, disconnects all student sessions, broadcasts `CHAMPIONSHIP_RESET`, and launches the Host Setup Wizard.
   - `HOST_INITIALIZE_NEW_CHAMPIONSHIP`: Configures tournament parameters (title, starting cash, days, session duration, transaction fees, circuit breaker band), custom team roster (names, usernames, passwords, student members), and tradeable share universe.
@@ -73,6 +78,8 @@ To operate without internet and without external audio assets:
 - **Full State Backup & Restore API**:
   - `GET /api/backup`: Serializes game state, teams, companies, and executed trades into a complete JSON snapshot.
   - `POST /api/restore`: Ingests a previously exported snapshot and re-establishes server state cleanly.
+- **Protected Analytics APIs**:
+  - `GET /api/team-investments` and `GET /api/team-investments/:teamId` enforce `requireHostAuth` middleware, blocking unauthorized access with HTTP 403 Forbidden.
 
 ### 2.5 High-Performance Institutional Charting Engine (`TFCharts`)
 Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is handled by a bespoke vanilla Canvas 2D engine unified directly within `public/app.js` and styled in `public/style.css`:
@@ -84,6 +91,14 @@ Operating strictly under the **Offline-First Zero-CDN Invariant**, charting is h
   2. `drawInteractiveMainChart(canvasId, stock, containerElement)`: High-fidelity interactive chart modal with snapping hover crosshair, floating coordinates tooltip, Day High/Low dashed guides, Day Open right-axis badge, live price pill, and prominent `TRADING HALTED` banner. Automatically resizes via `ResizeObserver`.
   3. `drawPortfolioEquityCurve(canvasId, equityHistory, opts)`: Real-time team net worth tracker against the ₹5,00,000 baseline, featuring dual-zone P&L fills (green profit zone / red drawdown zone) and live `IN PROFIT` / `DRAWDOWN` badges.
   4. **Auditorium Projector Variant (`.tf-projector`)**: High-contrast, double-thickness typography and canvas scaling engineered for 50-foot viewing distances.
+
+### 2.6 Responsive Architecture & Classroom Projector Optimization
+- **Dynamic Role Attribute**: `switchSpaView(role)` assigns `document.body.setAttribute('data-role', role)`, enabling pure CSS targeting (`body[data-role="PROJECTOR"]`, `body[data-role="TRADER"]`) without inline JS style hacks.
+- **Classroom 4:3 Aspect-Ratio Media Query**: Target query `@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 1.4/1)` adapts the auditorium display for standard Indian college projectors (`1024×768` and `800×600`).
+  - Automatically re-partitions cards into $4 \times 2$ (8-card) or $3 \times 2$ (6-card) layouts with zero horizontal scroll.
+  - Safe margins (5% horizontal, 8% vertical) guard against hardware overscan/bezel cutoffs.
+- **Mobile & Tablet Touch Breakpoints**: Breakpoints at 640px and 1024px provide single-column mobile layouts and 2-column tablet grids with touch targets $\ge 44\text{px}$ and smooth momentum scrolling.
+- **Loading & Skeleton System**: Visual feedback via `.btn-loading`, `.skeleton`, and animated progress bars provides instantaneous feedback during asynchronous WebSocket requests.
 
 ---
 

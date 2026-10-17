@@ -1051,12 +1051,12 @@
       </div>
     </div>
 
-    <!-- Day Completed Waiting Overlay for Trader Desks -->
-    <div id="traderDayCompletedOverlay" class="hidden modal-overlay" style="z-index: 106;">
+    <!-- Day Completed Waiting Overlay for Trader Desks (Strict Isolation from Pause) -->
+    <div id="traderDayCompletedOverlay" class="hidden modal-overlay" style="z-index: 10000; overflow-y: auto; padding: 24px 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
       <div class="modal-content"
-        style="max-width: 640px; text-align: center; padding: 36px 32px; border: 2px solid var(--champagne-accent); box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+        style="max-width: 680px; width: 100%; text-align: center; padding: 32px 28px; border: 2px solid var(--champagne-accent); box-shadow: 0 25px 50px rgba(0,0,0,0.35); border-radius: 16px; margin: auto;">
         <div class="brand-icon"
-          style="margin: 0 auto 16px auto; width: 54px; height: 54px; font-size: 26px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); background: var(--text-forest); color: #fff;">
+          style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 26px; border-radius: 14px; box-shadow: 0 4px 14px rgba(63,98,146,0.25); background: #3f6292; color: #fff; display: flex; align-items: center; justify-content: center;">
           ✓</div>
         <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
           <span class="badge badge-champagne" style="font-size: 12px; font-weight: 800; letter-spacing: 0.08em;" id="traderDayCompletedBadge">
@@ -1067,43 +1067,71 @@
           </span>
         </div>
         <h2 id="traderDayCompletedTitle"
-          style="font-size: 26px; color: var(--text-forest); margin-bottom: 8px; font-family: var(--font-serif); font-weight: 900;">
-          Day 1 Official Session Concluded
+          style="font-size: 28px; color: var(--text-forest); margin-bottom: 6px; font-family: var(--font-serif); font-weight: 900;">
+          Day 1 Concluded
         </h2>
-        <p id="traderDayCompletedSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">
-          Your team portfolio, trade ledger, and closing valuation have been recorded. Please stand by for the Host to start Day 2.
+        <p id="traderDayCompletedSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+          Trading session completed successfully. All student portfolios audited and locked.
         </p>
 
+        <!-- Team Personal Metrics Summary Grid -->
         <div class="waiting-room-stats-grid"
-          style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
-          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Closing Net Worth</div>
+          style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+          <div class="cream-panel" style="padding: 12px 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Closing Net Worth</div>
             <div id="traderDayCompletedNetWorth"
-              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">₹5,00,000.00</div>
+              style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--text-forest); margin-top: 3px;">₹5,00,000.00</div>
           </div>
-          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Day P&L</div>
+          <div class="cream-panel" style="padding: 12px 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Day P&L</div>
             <div id="traderDayCompletedPnl"
-              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--price-up); margin-top: 4px;">+₹0.00</div>
+              style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--price-up); margin-top: 3px;">+₹0.00</div>
           </div>
-          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Rank</div>
+          <div class="cream-panel" style="padding: 12px 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Rank</div>
             <div id="traderDayCompletedRank"
-              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--champagne-accent); margin-top: 4px;">#1</div>
+              style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: var(--champagne-accent); margin-top: 3px;">#1</div>
           </div>
         </div>
 
-        <div class="cream-panel"
-          style="padding: 18px; margin-bottom: 20px; border: 2px dashed var(--champagne-accent); background: #FAF9F6; border-radius: 14px;">
-          <div style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 6px;">
-            ⏳ Awaiting Host To Start Next Day
+        <!-- Section Divider -->
+        <div style="height: 1px; background: var(--subtle-border); margin: 18px 0 16px 0;"></div>
+
+        <!-- FINAL DAY LEADERBOARD (Authoritative Dynamic Rankings List) -->
+        <div style="text-align: left; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase;">
+              FINAL DAY LEADERBOARD
+            </span>
+            <span id="traderDayCompletedLeaderboardType" class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">
+              SESSION STANDINGS
+            </span>
           </div>
-          <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4;">
-            Your cash and share holdings carry over seamlessly to the next day. The floor terminal will automatically unlock when Day 2 begins.
-          </p>
+          <div id="traderDayCompletedLeaderboardList" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+            <!-- Rendered dynamically by renderTraderDayCompletedLeaderboard() -->
+          </div>
         </div>
 
-        <button onclick="dismissTraderDayCompleted()" class="btn btn-outline" style="padding: 8px 20px; font-size: 12px; font-weight: 700;">
+        <!-- Section Divider -->
+        <div style="height: 1px; background: var(--subtle-border); margin: 16px 0 18px 0;"></div>
+
+        <!-- Waiting For Host Banner (with #3f6292 theme) -->
+        <div class="cream-panel" id="traderDayCompletedWaitingBanner"
+          style="padding: 14px 18px; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(63, 98, 146, 0.25); background: rgba(63, 98, 146, 0.05); display: flex; align-items: center; gap: 14px; text-align: left;">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(63, 98, 146, 0.12); color: #3f6292; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+            ⏱️
+          </div>
+          <div style="flex: 1;">
+            <div id="traderDayCompletedWaitTitle" style="font-size: 14px; font-weight: 800; color: #3f6292; margin-bottom: 2px;">
+              Waiting for the host
+            </div>
+            <div id="traderDayCompletedWaitDesc" style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+              The next trading day has not started yet. Your cash and share holdings carry over seamlessly.
+            </div>
+          </div>
+        </div>
+
+        <button onclick="dismissTraderDayCompleted()" class="btn btn-outline" style="padding: 8px 24px; font-size: 12px; font-weight: 700;">
           Review Portfolio & Past Orders
         </button>
       </div>
@@ -1842,72 +1870,72 @@
 
         <!-- Setup Step Sub-Navigation -->
         <div class="setup-sub-nav">
-          <button type="button" id="setupNavBtnDetails" onclick="switchSetupSection('details')"
+          <button type="button" id="hostTabSetup_NavBtnDetails" onclick="switchSetupSection('details')"
             class="setup-nav-btn active">
             📋 1. Event Details
           </button>
-          <button type="button" id="setupNavBtnTeams" onclick="switchSetupSection('teams')" class="setup-nav-btn">
+          <button type="button" id="hostTabSetup_NavBtnTeams" onclick="switchSetupSection('teams')" class="setup-nav-btn">
             👥 2. Teams Roster
           </button>
-          <button type="button" id="setupNavBtnUniverse" onclick="switchSetupSection('universe')" class="setup-nav-btn">
+          <button type="button" id="hostTabSetup_NavBtnUniverse" onclick="switchSetupSection('universe')" class="setup-nav-btn">
             🏛️ 3. Stock Selection
           </button>
           <button type="button" id="setupNavBtnSchedule" onclick="switchSetupSection('schedule')" class="setup-nav-btn">
             ⏱️ 4. Schedule &amp; Timing
           </button>
-          <button type="button" id="setupNavBtnNews" onclick="switchSetupSection('news')" class="setup-nav-btn">
+          <button type="button" id="hostTabSetup_NavBtnNews" onclick="switchSetupSection('news')" class="setup-nav-btn">
             ⚡ 5. News Plan
           </button>
-          <button type="button" id="setupNavBtnReview" onclick="switchSetupSection('review')" class="setup-nav-btn">
+          <button type="button" id="hostTabSetup_NavBtnReview" onclick="switchSetupSection('review')" class="setup-nav-btn">
             🔒 6. Review &amp; Lock
           </button>
         </div>
 
         <!-- Section 1: Event Details & Rules -->
-        <div id="setupSectionDetails" class="setup-sec-panel">
+        <div id="hostTabSetup_SectionDetails" class="setup-sec-panel">
           <div
             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px;">
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Championship
                 Title</label>
-              <input type="text" id="setupEventTitle" class="form-input" value="The Trading Floor Championship 2026" />
+              <input type="text" id="hostTabSetup_EventTitle" class="form-input" value="The Trading Floor Championship 2026" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Host
                 Institution / University</label>
-              <input type="text" id="setupInstitution" class="form-input" value="Gujarat Technological University" />
+              <input type="text" id="hostTabSetup_Institution" class="form-input" value="Gujarat Technological University" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Starting
                 Capital per Team (₹)</label>
-              <input type="number" id="setupStartingCash" class="form-input" value="500000" />
+              <input type="number" id="hostTabSetup_StartingCash" class="form-input" value="500000" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Total
                 Competition Days</label>
-              <input type="number" id="setupTotalDays" class="form-input" value="3" min="1" max="10" />
+              <input type="number" id="hostTabSetup_TotalDays" class="form-input" value="3" min="1" max="10" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Session
                 Duration (seconds)</label>
-              <input type="number" id="setupDayDuration" class="form-input" value="1800" min="60" max="7200" />
+              <input type="number" id="hostTabSetup_DayDuration" class="form-input" value="1800" min="60" max="7200" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Transaction
                 Fee (Basis Points)</label>
-              <input type="number" id="setupTransactionFee" class="form-input" value="0" min="0" max="200" />
+              <input type="number" id="hostTabSetup_TransactionFee" class="form-input" value="0" min="0" max="200" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
                 style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Circuit
                 Breaker Limit (± %)</label>
-              <input type="number" id="setupCircuitBreaker" class="form-input" value="20" min="5" max="50" />
+              <input type="number" id="hostTabSetup_CircuitBreaker" class="form-input" value="20" min="5" max="50" />
             </div>
             <div class="cream-panel" style="padding: 16px;">
               <label
@@ -1926,7 +1954,7 @@
         </div>
 
         <!-- Section 2: Teams Roster -->
-        <div id="setupSectionTeams" class="hidden setup-sec-panel">
+        <div id="hostTabSetup_SectionTeams" class="hidden setup-sec-panel">
           <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
             <div>
@@ -1968,7 +1996,7 @@
         </div>
 
         <!-- Section 3: Stock Selection (Verified 20 NSE Companies) -->
-        <div id="setupSectionUniverse" class="hidden setup-sec-panel">
+        <div id="hostTabSetup_SectionUniverse" class="hidden setup-sec-panel">
           <div id="setupUniverseLockedNotice" class="hidden cream-panel"
             style="padding: 12px 18px; margin-bottom: 16px; border: 2px solid #CBD5E1; background: #F8FAFC;">
             <span style="font-weight: 800; color: #1E293B;">🔒 Selected Stocks — Locked for This Event</span>
@@ -2068,7 +2096,7 @@
         </div>
 
         <!-- Section 5: News Plan & Storylines -->
-        <div id="setupSectionNews" class="hidden setup-sec-panel">
+        <div id="hostTabSetup_SectionNews" class="hidden setup-sec-panel">
           <div style="margin-bottom: 14px;">
             <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">Multi-Day Journalistic
               News Timeline</h3>
@@ -2076,7 +2104,7 @@
               Public headlines are neutral (no buy/sell tips). Price impacts are server-authoritative and immutable once
               locked.</p>
           </div>
-          <div id="setupNewsPreviewList"
+          <div id="hostTabSetup_NewsPreviewList"
             style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; margin-bottom: 24px;">
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -2088,7 +2116,7 @@
         </div>
 
         <!-- Section 6: Review & Lock Event -->
-        <div id="setupSectionReview" class="hidden setup-sec-panel">
+        <div id="hostTabSetup_SectionReview" class="hidden setup-sec-panel">
           <div class="cream-panel"
             style="padding: 24px; border: 2px solid var(--champagne-accent); margin-bottom: 24px;">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
@@ -2107,21 +2135,21 @@
                 style="background: #FFFFFF; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border);">
                 <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
                   Teams Configured</div>
-                <div id="reviewStatTeams" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">16 Teams
+                <div id="hostTabSetup_ReviewStatTeams" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">16 Teams
                 </div>
               </div>
               <div
                 style="background: #FFFFFF; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border);">
                 <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
                   Tradeable Stocks</div>
-                <div id="reviewStatStocks" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">20
+                <div id="hostTabSetup_ReviewStatStocks" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">20
                   Verified (NSE)</div>
               </div>
               <div
                 style="background: #FFFFFF; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border);">
                 <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
                   Starting Capital</div>
-                <div id="reviewStatCash" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">₹5,00,000
+                <div id="hostTabSetup_ReviewStatCash" style="font-size: 18px; font-weight: 800; color: var(--text-forest);">₹5,00,000
                   / Team</div>
               </div>
               <div
@@ -2426,7 +2454,7 @@
           <div>
             <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">💼 Team Investment Analytics &amp; Portfolio Ledgers</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
-              Audited performance ledger clearly distinguishing <strong>Available Liquid Cash</strong>, <strong>Invested Cost Basis</strong>, and <strong>Current Holdings Market Value</strong>. Click any team row to inspect full stock allocation and trade history.
+              Audited performance ledger clearly distinguishing <strong>Available Liquid Cash</strong>, <strong>Money Invested in Shares</strong>, and <strong>Current Holdings Market Value</strong>. Click any team row to inspect full stock allocation and trade history.
             </p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -2449,7 +2477,7 @@
               <option value="pnl">Net Profit / Loss (High to Low)</option>
               <option value="return">Return % (High to Low)</option>
               <option value="cash">Available Cash (High to Low)</option>
-              <option value="cost">Invested Cost (High to Low)</option>
+              <option value="cost">Money Invested (High to Low)</option>
               <option value="holdings">Holdings Count (High to Low)</option>
               <option value="name">Team Name (A-Z)</option>
             </select>
@@ -2464,7 +2492,7 @@
                 <th style="padding: 10px;">Rank</th>
                 <th style="padding: 10px;">Team Name</th>
                 <th style="padding: 10px; text-align: right;" title="Available liquid cash not currently invested in shares">Available Cash</th>
-                <th style="padding: 10px; text-align: right;" title="Cost basis of active holdings: sum of quantity * average purchase price">Invested Cost</th>
+                <th style="padding: 10px; text-align: right;" title="Total money spent to purchase active shares: sum of quantity * average purchase price">Money Invested</th>
                 <th style="padding: 10px; text-align: right;" title="Current market value of shares: sum of quantity * current market price">Holdings Value</th>
                 <th style="padding: 10px; text-align: right; font-weight: 800;" title="Total portfolio valuation: Available Cash + Holdings Value">Portfolio Value</th>
                 <th style="padding: 10px; text-align: right;" title="Net profit or loss: Portfolio Value - Starting Capital">Net P&amp;L (₹)</th>
@@ -4023,7 +4051,7 @@
         </div>
         <div style="border-top: 1px solid var(--subtle-border); margin: 6px 0;"></div>
         <div style="display: flex; justify-content: space-between; font-size: 14px;">
-          <span style="font-weight: 700; color: var(--text-forest);" id="tradeModalNetLabel">Net Cash Impact (debit):</span>
+          <span style="font-weight: 700; color: var(--text-forest);" id="tradeModalNetLabel">Total Amount to Pay:</span>
           <span id="tradeModalNet" style="font-weight: 800;">₹0.00</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 13px;">
@@ -4901,9 +4929,9 @@
           <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Uninvested Capital</div>
         </div>
         <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 1px solid var(--subtle-border);">
-          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Invested Cost Basis</div>
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Money Invested in Shares</div>
           <div id="invModalCost" style="font-family: var(--font-mono); font-size: 17px; font-weight: 800; color: #1E40AF; margin-top: 2px;">₹0.00</div>
-          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Cost Basis of Shares</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Total Buy Value</div>
         </div>
         <div class="cream-panel" style="padding: 12px 14px; border-radius: 10px; border: 1px solid var(--subtle-border);">
           <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Holdings Market Value</div>
@@ -4938,7 +4966,7 @@
                 <th style="padding: 8px 10px;">Sector</th>
                 <th style="padding: 8px 10px; text-align: right;">Quantity</th>
                 <th style="padding: 8px 10px; text-align: right;">Avg Buy Price</th>
-                <th style="padding: 8px 10px; text-align: right;">Total Cost Basis</th>
+                <th style="padding: 8px 10px; text-align: right;">Amount Invested</th>
                 <th style="padding: 8px 10px; text-align: right;">Current Price</th>
                 <th style="padding: 8px 10px; text-align: right;">Market Value</th>
                 <th style="padding: 8px 10px; text-align: right;">Unrealized P&amp;L</th>
@@ -5099,10 +5127,51 @@
         </p>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" onclick="closeLifecycleModal('modalEmergencyStop')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="closeEmergencyStopModal()" class="btn btn-outline">Cancel</button>
         <button type="button" onclick="executeEmergencyStop()" class="btn btn-outline" style="background: var(--error-red); color: #FFF; border-color: var(--error-red); font-weight: 800;">
           🛑 ACTIVATE EMERGENCY HALT
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lifecycle Modal: Circuit Breaker Test & Simulation -->
+  <div id="modalCircuitTest" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--warning-amber); border-radius: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 32px;">⚡</span>
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin: 0;">Circuit Breaker Simulation &amp; Test</h2>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Demonstrate Upper / Lower limits or release active halts live</div>
+        </div>
+      </div>
+      <div class="cream-panel" style="padding: 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border-left: 4px solid var(--warning-amber);">
+        <p style="margin: 0 0 12px 0; color: var(--text-forest); font-size: 12px;">
+          Circuit breakers simulate real-world NSE/BSE market halts. Upper circuits prevent buying (+20%), while Lower circuits prevent panic selling (-20%).
+        </p>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Select Stock:</label>
+          <select id="circuitTestStockSelect" class="form-input" style="width: 100%; font-size: 13px; padding: 8px 12px;"></select>
+        </div>
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Simulate Circuit Halt:</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button type="button" onclick="triggerCircuitTest('UPPER')" class="btn btn-outline" style="border-color: #16A34A; color: #16A34A; font-weight: 800; padding: 10px;">
+              🚀 Upper Circuit (+20%)<br><span style="font-size: 10px; font-weight: 600;">Buy Blocked • Selling OK</span>
+            </button>
+            <button type="button" onclick="triggerCircuitTest('LOWER')" class="btn btn-outline" style="border-color: #DC2626; color: #DC2626; font-weight: 800; padding: 10px;">
+              📉 Lower Circuit (-20%)<br><span style="font-size: 10px; font-weight: 600;">Sell Blocked • Buying OK</span>
+            </button>
+          </div>
+        </div>
+        <div>
+          <button type="button" onclick="triggerCircuitTest('RELEASE')" class="btn btn-sage" style="width: 100%; font-weight: 800; padding: 10px;">
+            🔓 Release Halt &amp; Resume Normal Trading
+          </button>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" onclick="closeCircuitTestModal()" class="btn btn-outline">Close</button>
       </div>
     </div>
   </div>

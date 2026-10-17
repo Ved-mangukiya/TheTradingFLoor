@@ -2,6 +2,44 @@
 
 All notable changes to **The Trading Floor Championship 2026** platform are documented in this file.
 
+## [2.5.1] — 2026-10-17
+### Added
+- **Classroom 4:3 Projector Native Optimization**:
+  - Added dedicated media query aspect-ratio detection (`@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 1.4/1)`) specifically targeting standard Indian college classroom projectors (`1024×768` and `800×600`).
+  - Native $4 \times 2$ grid (8 cards) for 1024×768 and $3 \times 2$ grid (6 cards) for 800×600, guaranteeing zero horizontal scrollbar and 100% viewport containment.
+  - Scaled typography for long-distance auditorium legibility (18–36px headline and metric sizing) and vertical medal podium orientation for 4:3 projector winner presentation.
+  - Safe margins (5% horizontal, 8% vertical) protecting against optical projector bezel clipping.
+- **Mobile-First & Tablet Responsive Suite**:
+  - Mobile layouts (320px–640px) with single-column stacked cards, full-screen order entry modals, and 16px form inputs to prevent mobile browser auto-zoom.
+  - Tablet layouts (641px–1024px) with 2-column stock grids and touch-optimized controls.
+  - Touch targets meeting WCAG 2.2 standards ($\ge 44 \times 44\text{px}$) with `-webkit-overflow-scrolling: touch` momentum scrolling.
+  - Role-targeted CSS targeting via dynamic `data-role` attribute on `document.body`.
+- **P1/P2 UX & DX Improvements**:
+  - **RFC 4122 Trade UUIDs**: Migrated `tradeId` generation in `server.js` from sequential strings to cryptographically unique 128-bit `crypto.randomUUID()`, eliminating collision risks across server restarts while maintaining `seq` counters for chronological display.
+  - **Loading States & Skeleton UI**: Added `.btn-loading` with animated spinner, `.skeleton`, `.skeleton-card`, `.spinner-inline`, and indeterminate progress bars in `public/style.css`.
+  - **Comprehensive Keyboard Shortcuts & Help Modal**: Added global `?` shortcut opening the Keyboard Shortcuts Help Modal, along with `Ctrl+Space` (Pause/Resume), `Ctrl+S` (Save Checkpoint), `Ctrl+D` (Advance Day), `F` (Fullscreen), and `L` (Lock Projector).
+  - **Enhanced Toast Notifications**: Added `showEnhancedToast()` with action button callbacks and `setButtonLoading()` helper utilities.
+
+### Fixed
+- **P0 Circuit Breaker Anchor Immutability (CRITICAL SECURITY)**:
+  - Eliminated rogue resets of `dayOpenPrice = currentPrice` during manual unhalt (`HOST_UNHALT_STOCK`) and sector unhalt (`HOST_SECTOR_HALT`), strictly anchoring daily circuit limits ($\pm 20\%$) to true day opening prices.
+  - Guarded `HOST_RANDOMIZE_PRICES` to only reset `dayOpenPrice` when in `SETUP` mode.
+- **P0 Private Investment Analytics Authentication (CRITICAL SECURITY)**:
+  - Applied `requireHostAuth` middleware to `GET /api/team-investments` and `GET /api/team-investments/:teamId`, blocking unauthenticated public access to confidential team portfolios with HTTP 403 Forbidden.
+  - Corrected trade filtering to match authoritative `team_id` / `teamId` fields.
+- **P0 News Event Idempotency & Per-Day Registry**:
+  - Implemented `firedNewsEventsPerDay` Map registry in `server.js` to ensure news events fire strictly once per intended trading day, preventing duplicate shocks on reconnection.
+  - Automated registry clearing upon day rollover (`HOST_NEXT_DAY`) and full reset, with seamless state restoration from saved checkpoints.
+- **P0 Day Completion vs Championship Finalization**:
+  - Concluding the final day now transitions to `DAY_COMPLETED` and broadcasts `FINAL_DAY_COMPLETED` with `requiresExplicitFinalization: true`.
+  - `HOST_CONCLUDE_CHAMPIONSHIP` strictly requires prior `DAY_COMPLETED` status on the final day, preventing premature conclusions and allowing host audit review.
+- **P0 Checkpoint Restoration Lifecycle Preservation**:
+  - Restoring saved checkpoints now preserves legitimate stopped states (`SETUP`, `STANDBY`, `DAY_COMPLETED`, `CHAMPIONSHIP_CONCLUDED`, `FINAL_ANALYSIS`), pausing only if active live trading was underway (`pauseMode = 'RECOVERY'`), and clears stale countdown timers.
+- **P0 Next Day Rollover Validation**:
+  - `HOST_NEXT_DAY` requires `status === 'DAY_COMPLETED'` before advancing, clearing per-day news registries and scheduling clean news plans for subsequent rounds.
+- **UTF-8 Character Encoding Restoration**:
+  - Restored clean UTF-8 encoding across `server.js` (removing BOM and fixing corrupted symbols `₹`, `🚀`, `•`, `⚡`, `💼`, `—`).
+
 ---
 
 ## [2.5.0] — 2026-10-17

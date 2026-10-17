@@ -56,6 +56,9 @@ const auditLog = {
 const executedTrades = [];
 let tradeSeqCounter = 0;
 
+// Per-day fired news events registry to prevent duplicate triggers within same trading day
+const firedNewsEventsPerDay = new Map(); // key: `day_${dayNum}_${event_id}`, value: true
+
 let seqCounter = 0;
 let isAuditDirty = false;
 let isFlushingAudit = false;
@@ -353,10 +356,22 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
 
     activeScenarioMode = data.activeScenarioMode || 'live';
     gameState = data.gameState;
-    // ALWAYS pause on restore so the market safely waits for Host to resume
+    
+    // Clear active countdown timer if any to prevent stale countdown from previous session
+    if (activeCountdownTimer) {
+      clearTimeout(activeCountdownTimer);
+      activeCountdownTimer = null;
+    }
+    gameState.activeCountdown = null;
+    
+    // Preserve legitimate lifecycle states like DAY_COMPLETED, SETUP, STANDBY, CHAMPIONSHIP_CONCLUDED
+    // Only force pause if state was actively trading (LIVE) to ensure safe recovery
+    const legitimateStoppedStates = ['SETUP', 'STANDBY', 'DAY_COMPLETED', 'CHAMPIONSHIP_CONCLUDED', 'FINAL_ANALYSIS'];
+    if (!legitimateStoppedStates.includes(gameState.status)) {
+      gameState.status = 'PAUSED';
+    }
     gameState.isPaused = true;
-    gameState.status = 'PAUSED';
-    gameState.pauseMode = 'VISIBLE_FROZEN';
+    gameState.pauseMode = 'RECOVERY';
     gameState.pauseStartedAt = Date.now();
 
     companies = data.companies;
@@ -376,11 +391,21 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
       Object.assign(USERS, data.traderUsers);
     }
 
+    // Rebuild per-day fired news events registry from restored events
+    firedNewsEventsPerDay.clear();
+    newsEvents.forEach((ev) => {
+      if (ev.triggered && ev.day <= gameState.currentDay) {
+        const firedKey = `day_${ev.day}_${ev.event_id}`;
+        firedNewsEventsPerDay.set(firedKey, true);
+      }
+    });
+
     saveLiveGameState();
     restartEngineInterval();
     recordAuditEvent('CHECKPOINT_RESTORED', {
       source: sourceLabel,
       day: gameState.currentDay,
+      status: gameState.status,
       elapsedSeconds: gameState.elapsedSeconds,
       tradesCount: executedTrades.length
     });
@@ -885,7 +910,16 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   if (eventObj.triggered && eventObj.phase !== 'SCHEDULED') {
     return false; // Idempotent: prevent duplicate news triggers
   }
+
+  // Per-day fired event tracking: prevent same event firing multiple times within same trading day
+  const firedKey = `day_${gameState.currentDay}_${eventObj.event_id}`;
+  if (firedNewsEventsPerDay.has(firedKey)) {
+    return false; // Already fired today
+  }
+  
   eventObj.triggered = true;
+  firedNewsEventsPerDay.set(firedKey, true);
+  
   const impacts = eventObj.impacts || {};
 
   // 5-Phase News Flow: Reading & Discussion Window (No instant price shock!)
@@ -938,7 +972,7 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     readingDurationSec: eventObj.readingDurationSec,
     reactionStartSecond: eventObj.reactionStartSecond,
     impacts: eventObj.impacts,
-    timestamp: new Date().toLocaleTimeString()
+    timestamp: new Date().toISOString()
   };
 
   gameState.activeNewsFlash = newsRecord;
@@ -1023,7 +1057,13 @@ function releaseCircuitBreaker(stock) {
 
 // Authoritative Unified Day Conclusion Function (handles both auto-clock expiry and host action)
 function concludeCurrentDay(isAutoClose = false) {
+  if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
+    return gameState.dailyLeaderboards ? gameState.dailyLeaderboards[`day_${gameState.currentDay}`] : null;
+  }
+
   const day = gameState.currentDay;
+  gameState.isAutomaticEnd = !!isAutoClose;
+  gameState.concludedReason = isAutoClose ? 'TIMER_EXPIRY' : 'MANUAL_HOST_ACTION';
   const standings = calculateLeaderboard();
   const closingPrices = {};
   companies.forEach((c) => { closingPrices[c.ticker] = c.currentPrice; });
@@ -1082,13 +1122,18 @@ function concludeCurrentDay(isAutoClose = false) {
   gameState.dailyClosingPrices[`day_${day}`] = closingPrices;
 
   // Transition market state explicitly to DAY_COMPLETED (not paused by host)
-  gameState.isPaused = true;
+  gameState.isPaused = false;
   gameState.status = 'DAY_COMPLETED';
-  gameState.pauseMode = 'VISIBLE_FROZEN';
-  gameState.pauseStartedAt = Date.now();
+  gameState.pauseMode = 'NONE';
+  gameState.pauseStartedAt = null;
+  if (activeCountdownTimer) {
+    clearTimeout(activeCountdownTimer);
+    activeCountdownTimer = null;
+  }
   gameState.activeCountdown = null;
 
-  recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length, isAutomaticEnd: isAutoClose });
+  const conclusionReason = isAutoClose ? 'TIMER_EXPIRY' : 'MANUAL_HOST_ACTION';
+  recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length, isAutomaticEnd: isAutoClose, reason: conclusionReason });
   broadcastAudioCue('bell_close', 'lifecycle', { day });
   broadcastAll({ type: 'BELL_EVENT', bell: 'CLOSE', day });
   broadcastAll({
@@ -1096,27 +1141,34 @@ function concludeCurrentDay(isAutoClose = false) {
     day,
     status: gameState.status,
     daySnapshot,
-    isAutomaticEnd: isAutoClose
+    isAutomaticEnd: isAutoClose,
+    reason: conclusionReason
   });
   broadcastAll({
     type: 'DAY_FINALIZED',
     day,
     status: gameState.status,
     daySnapshot,
-    isAutomaticEnd: isAutoClose
+    isAutomaticEnd: isAutoClose,
+    reason: conclusionReason
   });
 
-  // If this was the final planned day, prepare official championship snapshot
+  // CRITICAL: Do NOT auto-finalize championship when final day ends
+  // Host must explicitly finalize to review standings and ensure integrity
+  // Pre-generate final results for host review, but do not mark as concluded
   if (gameState.currentDay >= gameState.totalDays) {
     const winnerData = getConcludedLeaderboard();
     const snapshot = generateOfficialResultsSnapshot();
-    gameState.isConcluded = true;
     gameState.winnerData = winnerData;
+    gameState.finalResultsSnapshot = snapshot;
+    // Do NOT set isConcluded here - require explicit HOST_FINALIZE_CHAMPIONSHIP action
     broadcastAll({
-      type: 'CHAMPIONSHIP_CONCLUDED',
+      type: 'FINAL_DAY_COMPLETED',
+      day: gameState.currentDay,
       winnerData,
       snapshot,
-      title: gameState.title
+      title: gameState.title,
+      requiresExplicitFinalization: true
     });
   }
 
@@ -1142,7 +1194,7 @@ setInterval(() => {
     }
   }
 
-  if (gameState.isPaused || gameState.isConcluded) return;
+  if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') return;
 
   gameState.elapsedSeconds++;
 
@@ -1174,7 +1226,7 @@ function restartEngineInterval() {
   if (priceLoopHandle) clearInterval(priceLoopHandle);
 
   priceLoopHandle = setInterval(() => {
-    if (gameState.isPaused || gameState.isConcluded) return;
+    if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') return;
 
     companies.forEach((stock) => {
       if (!stock.isEnabled) return;
@@ -1829,8 +1881,14 @@ function startResumeCountdown(triggeredBy = 'HOST') {
   if (gameState.activeCountdown) {
     return { ok: false, reason: 'A resume countdown is already active in progress' };
   }
-  if (!gameState.isPaused) {
-    return { ok: false, reason: 'Market is already live and running' };
+  if (gameState.status === 'DAY_COMPLETED') {
+    return { ok: false, reason: `Day ${gameState.currentDay} has ended. Trading cannot be resumed. Review the results and prepare the next day.` };
+  }
+  if (gameState.isConcluded) {
+    return { ok: false, reason: 'Cannot resume: The championship is already concluded.' };
+  }
+  if (!gameState.isPaused && gameState.status !== 'STANDBY' && gameState.status !== 'SCHEDULED') {
+    return { ok: false, reason: 'Trading is already active. Market is running live.' };
   }
 
   const now = Date.now();
@@ -1872,6 +1930,9 @@ function startResumeCountdown(triggeredBy = 'HOST') {
 
   activeCountdownTimer = setTimeout(() => {
     activeCountdownTimer = null;
+    if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
+      return;
+    }
     gameState.activeCountdown = null;
     gameState.isPaused = false;
     gameState.pauseMode = 'NONE';
@@ -2027,6 +2088,21 @@ function broadcastAll(obj) {
 // 7. WEBSOCKET MESSAGE ROUTER
 // ==========================================
 wss.on('connection', (ws) => {
+  // Push authoritative public event access status immediately upon socket connection
+  const publicLocked = !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN' || gameState.status === 'STANDBY' || gameState.status === 'DAY_COMPLETED');
+  try {
+    ws.send(JSON.stringify({
+      type: 'PUBLIC_EVENT_STATUS',
+      status: gameState.status,
+      configLocked: publicLocked,
+      title: gameState.title,
+      subtitle: gameState.subtitle,
+      institution: gameState.institution,
+      currentDay: gameState.currentDay,
+      totalDays: gameState.totalDays
+    }));
+  } catch (e) {}
+
   ws.on('message', (rawMessage) => {
     let data;
     try {
@@ -2144,12 +2220,16 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // --- 4. TRADER ORDER EXECUTION ---
     if (data.action === 'ORDER' && session.role === 'TRADER') {
-      if (gameState.isPaused || gameState.isConcluded) {
+      if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') {
+        const reason = gameState.status === 'DAY_COMPLETED'
+          ? `🔔 Day ${gameState.currentDay} trading has concluded. All portfolios are locked until the Host opens Day ${gameState.currentDay + 1}.`
+          : gameState.isConcluded
+          ? '🏆 Championship trading has concluded. All portfolios and standings are finalized.'
+          : '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.';
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
-          reason: '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.'
+          reason
         }));
         return;
       }
@@ -2215,6 +2295,13 @@ wss.on('connection', (ws) => {
           }));
           return;
         }
+        if (!stock.haltDirection || stock.haltDirection === 'BOTH' || stock.haltDirection === 'CIRCUIT' || stock.haltDirection === 'HALT') {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: `Trading in ${stock.ticker} is currently halted under circuit breaker / regulatory restrictions.`
+          }));
+          return;
+        }
       }
 
       const execPrice = stock.currentPrice;
@@ -2255,7 +2342,7 @@ wss.on('connection', (ws) => {
 
         tradeSeqCounter++;
         const tradeRecord = {
-          tradeId: `TRD_${tradeSeqCounter}`,
+          tradeId: crypto.randomUUID(),
           seq: tradeSeqCounter,
           timestamp: new Date().toLocaleTimeString(),
           exactIso: new Date().toISOString(),
@@ -2325,7 +2412,7 @@ wss.on('connection', (ws) => {
 
         tradeSeqCounter++;
         const tradeRecord = {
-          tradeId: `TRD_${tradeSeqCounter}`,
+          tradeId: crypto.randomUUID(),
           seq: tradeSeqCounter,
           timestamp: new Date().toLocaleTimeString(),
           exactIso: new Date().toISOString(),
@@ -2447,7 +2534,7 @@ wss.on('connection', (ws) => {
 
         tradeSeqCounter++;
         const tradeRecord = {
-          tradeId: `TRD_${tradeSeqCounter}`,
+          tradeId: crypto.randomUUID(),
           seq: tradeSeqCounter,
           timestamp: new Date().toLocaleTimeString(),
           exactIso: new Date().toISOString(),
@@ -2505,7 +2592,7 @@ wss.on('connection', (ws) => {
 
       // Enforce configuration lock: prevent modifying shares while tournament is active
       if (gameState.configLocked) {
-        if (['HOST_ADD_SHARE', 'HOST_REMOVE_SHARE', 'HOST_DELETE_SHARE', 'HOST_EDIT_SHARE'].includes(data.action)) {
+        if (['HOST_ADD_SHARE', 'HOST_REMOVE_SHARE', 'HOST_DELETE_SHARE', 'HOST_EDIT_SHARE', 'HOST_DUPLICATE_SHARE', 'HOST_APPLY_MARKET_TEMPLATE', 'HOST_RESET_UNIVERSE_BASELINE'].includes(data.action)) {
           ws.send(JSON.stringify({
             type: 'EVENT_CONFIG_LOCKED',
             reason: 'EVENT_CONFIG_LOCKED: Configuration is permanently frozen for competition integrity. Tradeable stock universe cannot be modified while tournament is active.'
@@ -2528,6 +2615,14 @@ wss.on('connection', (ws) => {
 
       // 5.0 Explicit Host Event Lock (Pre-Event Setup Freeze & Team Credential Activation)
       if (data.action === 'HOST_SET_EVENT_LOCK' || data.action === 'HOST_LOCK_EVENT') {
+        if (gameState.status === 'LIVE' || gameState.elapsedSeconds > 0 || gameState.currentDay > 1) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot modify event configuration: The tournament is already underway. Event settings are permanently locked.'
+          }));
+          return;
+        }
+
         const errors = [];
         if (data.eventTitle !== undefined && (!data.eventTitle || !data.eventTitle.trim())) {
           errors.push('Event title cannot be blank.');
@@ -2775,6 +2870,20 @@ wss.on('connection', (ws) => {
 
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
+        if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Cannot pause market: Day ${gameState.currentDay} is already concluded.`
+          }));
+          return;
+        }
+        if (gameState.isPaused && gameState.status !== 'COUNTDOWN' && !activeCountdownTimer) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Trading is already paused. Resume trading when you are ready.'
+          }));
+          return;
+        }
         const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
         if (activeCountdownTimer) {
           clearTimeout(activeCountdownTimer);
@@ -3044,12 +3153,28 @@ wss.on('connection', (ws) => {
 
       // 5.2h Host Conclude / Finalize Current Day Results
       if (data.action === 'HOST_FINALIZE_DAY' || data.action === 'HOST_CONCLUDE_DAY') {
+        if (gameState.status === 'DAY_COMPLETED') {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Day ${gameState.currentDay} is already concluded. Stand by to advance to Day ${gameState.currentDay + 1} or finalize the championship.`
+          }));
+          return;
+        }
         concludeCurrentDay(false);
         return;
       }
 
-      // 5.2i Start Next Day
+      // 5.2i Start Next Day (Requires Current Day to be Completed)
       if (data.action === 'HOST_NEXT_DAY' || data.action === 'HOST_START_NEXT_DAY') {
+        // Validate that current day has been properly concluded
+        if (gameState.status !== 'DAY_COMPLETED') {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot advance to next day. Current day must be concluded first.'
+          }));
+          return;
+        }
+
         if (gameState.currentDay < gameState.totalDays) {
           const oldDay = gameState.currentDay;
           gameState.currentDay++;
@@ -3059,6 +3184,18 @@ wss.on('connection', (ws) => {
           gameState.pauseMode = 'VISIBLE_FROZEN';
           gameState.pauseStartedAt = Date.now();
           gameState.activeCountdown = null;
+
+          // Clear fired news events for new day
+          firedNewsEventsPerDay.clear();
+
+          // Reset news events triggered status for new day
+          newsEvents.forEach((ev) => {
+            if (ev.day === gameState.currentDay) {
+              ev.triggered = false;
+              ev.phase = 'SCHEDULED';
+              ev.impactsApplied = false;
+            }
+          });
 
           companies.forEach((stock) => {
             stock.previousClosePrice = stock.currentPrice;
@@ -3210,8 +3347,8 @@ wss.on('connection', (ws) => {
         if (stock) {
           stock.isHalted = false;
           stock.haltDirection = null;
-          stock.dayOpenPrice = stock.currentPrice;
-          recordAuditEvent('CIRCUIT_BREAKER_RELEASED', { ticker: stock.ticker, new_reference_price: stock.currentPrice });
+          // CRITICAL: Do NOT reset dayOpenPrice during unhalt - it must remain the day's opening reference
+          recordAuditEvent('CIRCUIT_BREAKER_RELEASED', { ticker: stock.ticker, current_price: stock.currentPrice, day_open_ref: stock.dayOpenPrice });
           broadcastTick();
         }
       }
@@ -3383,7 +3520,7 @@ wss.on('connection', (ws) => {
           if (c.sector === targetSector && c.isEnabled) {
             c.isHalted = haltAction;
             c.haltDirection = haltAction ? 'MANUAL' : null;
-            if (!haltAction) c.dayOpenPrice = c.currentPrice;
+            // CRITICAL: Do NOT reset dayOpenPrice when unhalting sector
           }
         });
 
@@ -3399,7 +3536,10 @@ wss.on('connection', (ws) => {
           const factor = 1 + (Math.random() * 2 - 1) * (variance / 100);
           stock.base_price = +(stock.base_price * factor).toFixed(2);
           stock.currentPrice = stock.base_price;
-          stock.dayOpenPrice = stock.base_price;
+          // ONLY reset dayOpenPrice if we're in SETUP mode, not during live trading
+          if (gameState.status === 'SETUP' || gameState.elapsedSeconds === 0) {
+            stock.dayOpenPrice = stock.base_price;
+          }
           stock.dayHigh = stock.base_price;
           stock.dayLow = stock.base_price;
           stock.history = [{ time: gameState.elapsedSeconds, price: stock.base_price }];
@@ -3465,6 +3605,14 @@ wss.on('connection', (ws) => {
 
       // 5.18 Custom Team Roster Setup
       if (data.action === 'HOST_CONFIGURE_TEAMS') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'EVENT_CONFIG_LOCKED',
+            reason: 'Team roster and credentials cannot be modified while tournament setup is locked.'
+          }));
+          return;
+        }
+
         if (Array.isArray(data.teams) && data.teams.length > 0) {
           Object.keys(USERS).forEach((key) => {
             if (USERS[key].role === 'TRADER') delete USERS[key];
@@ -3512,15 +3660,46 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.19 Conclude Championship & Launch Winner Podium
-      if (data.action === 'HOST_CONCLUDE_CHAMPIONSHIP') {
+      // 5.19 Finalize Championship Explicitly (Separate from Day Completion)
+      if (data.action === 'HOST_CONCLUDE_CHAMPIONSHIP' || data.action === 'HOST_FINALIZE_CHAMPIONSHIP') {
+        // Require final day to be completed first
+        if (gameState.status !== 'DAY_COMPLETED' || gameState.currentDay !== gameState.totalDays) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Championship finalization requires the final day (Day ${gameState.totalDays}) to be completed. Current: Day ${gameState.currentDay}/${gameState.totalDays}, Status: ${gameState.status}`
+          }));
+          return;
+        }
+
+        // Generate official final results
         const winnerData = getConcludedLeaderboard();
+        const snapshot = generateOfficialResultsSnapshot();
+        
         gameState.isPaused = true;
         gameState.isConcluded = true;
+        gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         gameState.winnerData = winnerData;
+        gameState.finalResultsSnapshot = snapshot;
 
-        recordAuditEvent('CHAMPIONSHIP_CONCLUDED', { winners: winnerData });
-        broadcastAll({ type: 'CHAMPIONSHIP_CONCLUDED', winnerData, title: gameState.title });
+        recordAuditEvent('CHAMPIONSHIP_FINALIZED', { winners: winnerData, totalDays: gameState.currentDay });
+        
+        // Send acknowledgment to requesting client first
+        ws.send(JSON.stringify({
+          type: 'CHAMPIONSHIP_CONCLUDED',
+          winnerData,
+          snapshot,
+          title: gameState.title,
+          finalDay: gameState.currentDay
+        }));
+        
+        // Then broadcast to all other clients
+        broadcastAll({
+          type: 'CHAMPIONSHIP_CONCLUDED',
+          winnerData,
+          snapshot,
+          title: gameState.title,
+          finalDay: gameState.currentDay
+        });
         broadcastTick();
       }
 
@@ -3618,11 +3797,14 @@ wss.on('connection', (ws) => {
           c.history = [{ time: 0, price: base }];
         });
 
-        // 6. Reset all news events
+        // 6. Reset all news events and clear per-day fired registry
         newsEvents.forEach((ev) => {
           ev.triggered = false;
           ev.cancelled = false;
+          ev.phase = 'SCHEDULED';
+          ev.impactsApplied = false;
         });
+        firedNewsEventsPerDay.clear();
 
         recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST' });
 
@@ -3869,8 +4051,8 @@ app.get('/api/event-status', (req, res) => {
   });
 });
 
-// 8.1c Team Investment Analytics Endpoint
-app.get('/api/team-investments', (req, res) => {
+// 8.1c Team Investment Analytics Endpoint (HOST AUTH REQUIRED)
+app.get('/api/team-investments', requireHostAuth, (req, res) => {
   const teams = calculateTeamInvestments();
   res.json({
     success: true,
@@ -3882,15 +4064,15 @@ app.get('/api/team-investments', (req, res) => {
   });
 });
 
-app.get('/api/team-investments/:teamId', (req, res) => {
+app.get('/api/team-investments/:teamId', requireHostAuth, (req, res) => {
   const teamId = req.params.teamId;
   const investments = calculateTeamInvestments();
   const teamInv = investments.find((t) => t.id === teamId || t.teamId === teamId || t.username === teamId);
   if (!teamInv) {
     return res.status(404).json({ success: false, error: 'Team not found.' });
   }
-  // Attach team trade history
-  const teamTrades = executedTrades.filter((tr) => tr.team_id === teamInv.id || tr.team_name === teamInv.name);
+  // Attach team trade history - filter by actual team_id field from trades
+  const teamTrades = executedTrades.filter((tr) => tr.team_id === teamInv.id || tr.teamId === teamInv.id);
   res.json({
     success: true,
     ...teamInv,

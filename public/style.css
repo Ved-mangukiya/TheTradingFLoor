@@ -729,27 +729,28 @@ textarea.form-input {
 
 .projector-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 16px;
   flex: 1;
-  margin: 14px 0;
+  margin: 10px 0;
   min-height: 0;
-  overflow-y: auto;
-  align-content: start;
+  overflow: hidden;
+  align-content: stretch;
 }
 
 .projector-card {
   background-color: #FFFFFF;
   border: 2px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   min-width: 0;
-  min-height: 155px;
+  height: 100%;
   box-sizing: border-box;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -781,9 +782,22 @@ textarea.form-input {
   min-width: 0;
 }
 
+.projector-rank-badge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 900;
+  color: #1E40AF;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  line-height: 1;
+}
+
 .projector-ticker {
-  font-size: clamp(16px, 1.4vw, 24px);
-  font-weight: 800;
+  font-size: clamp(20px, 1.8vw, 28px);
+  font-weight: 900;
   color: var(--text-forest);
   line-height: 1.15;
   white-space: nowrap;
@@ -795,7 +809,7 @@ textarea.form-input {
 
 .projector-price {
   font-family: var(--font-mono);
-  font-size: clamp(18px, 1.6vw, 26px);
+  font-size: clamp(24px, 2.2vw, 36px);
   font-weight: 900;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -806,16 +820,16 @@ textarea.form-input {
 
 .projector-delta {
   font-family: var(--font-mono);
-  font-size: clamp(12px, 1.1vw, 15px);
-  font-weight: 700;
+  font-size: clamp(14px, 1.2vw, 17px);
+  font-weight: 800;
   white-space: nowrap;
   line-height: 1.2;
 }
 
 .projector-sector {
-  font-size: clamp(10px, 0.9vw, 12px);
+  font-size: clamp(11px, 1vw, 13px);
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -828,9 +842,9 @@ textarea.form-input {
 }
 
 .projector-card.halted .projector-delta {
-  font-size: clamp(11px, 1vw, 13px);
+  font-size: clamp(12px, 1.1vw, 15px);
   color: var(--error-red);
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .projector-ticker-strip {
@@ -2799,4 +2813,833 @@ th.th-wrap {
   font-weight: 700;
 }
 
+
+/* ==========================================================================
+   RESPONSIVE DESIGN ENHANCEMENTS - Mobile First & Projector 4:3 Optimization
+   Added: 2026-10-17 - Comprehensive responsive fixes
+   ========================================================================== */
+
+/* ========== MOBILE FIRST - BASE (320px+) ========== */
+@media (max-width: 640px) {
+  /* Root font size adjustment for mobile */
+  html, body {
+    font-size: 13px;
+  }
+
+  /* Touch-friendly button sizing */
+  .btn {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  /* App header mobile optimization */
+  .app-header {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    position: relative;
+  }
+
+  .header-brand {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-metrics-bar {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .metric-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--surface-cream);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Stock grid mobile - single column */
+  .stock-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .stock-card {
+    padding: 14px;
+  }
+
+  /* Modal full-screen on mobile */
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Login card mobile */
+  .login-card {
+    max-width: 100%;
+    border-radius: 0;
+    min-height: 100vh;
+    padding: 24px 20px;
+  }
+
+  /* Form inputs touch-friendly */
+  .form-input,
+  .form-select {
+    min-height: 48px;
+    font-size: 16px; /* Prevent iOS zoom */
+    padding: 12px 16px;
+  }
+
+  /* Trading desk mobile layout */
+  .trader-layout {
+    flex-direction: column;
+  }
+
+  .trader-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  /* Portfolio cards stack */
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Tabs mobile */
+  .tab-group {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-button {
+    min-width: auto;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ========== TABLETS (641px - 1024px) ========== */
+@media (min-width: 641px) and (max-width: 1024px) {
+  html, body {
+    font-size: 13.5px;
+  }
+
+  .stock-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .app-header {
+    padding: 12px 16px;
+  }
+
+  .modal-content {
+    max-width: 90% !important;
+    width: 90% !important;
+  }
+
+  /* Host control panel - responsive */
+  .host-hub-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ========== PROJECTOR 4:3 ASPECT RATIO (1024x768, 800x600) ========== */
+@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 1.4/1) {
+  /* Detect 4:3 projector screens */
+  body[data-role="projector"],
+  body[data-role="PROJECTOR"] {
+    font-size: 16px; /* Larger for distance viewing */
+  }
+
+  /* Projector-specific optimizations */
+  .projector-board {
+    max-width: 95%;
+    margin: 0 auto;
+    padding: 2.5%;
+  }
+
+  /* Stock grid for projector - optimized 4x2 layout */
+  body[data-role="projector"] .stock-grid,
+  body[data-role="PROJECTOR"] .stock-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 90%;
+    margin: 0 auto;
+  }
+
+  /* Larger text for projector */
+  body[data-role="projector"] .stock-ticker,
+  body[data-role="PROJECTOR"] .stock-ticker {
+    font-size: 24px;
+  }
+
+  body[data-role="projector"] .stock-current-price,
+  body[data-role="PROJECTOR"] .stock-current-price {
+    font-size: 26px;
+  }
+
+  body[data-role="projector"] h1,
+  body[data-role="PROJECTOR"] h1 {
+    font-size: 36px;
+  }
+
+  body[data-role="projector"] h2,
+  body[data-role="PROJECTOR"] h2 {
+    font-size: 28px;
+  }
+
+  /* Winner podium 4:3 layout */
+  body[data-role="projector"] .podium-container,
+  body[data-role="PROJECTOR"] .podium-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  body[data-role="projector"] .podium-card,
+  body[data-role="PROJECTOR"] .podium-card {
+    max-width: 600px;
+    width: 100%;
+  }
+}
+
+/* ========== PROJECTOR LOW RESOLUTION (800x600) ========== */
+@media (max-width: 800px) and (min-aspect-ratio: 4/3) {
+  body[data-role="projector"],
+  body[data-role="PROJECTOR"] {
+    font-size: 14px;
+  }
+
+  body[data-role="projector"] .stock-grid,
+  body[data-role="PROJECTOR"] .stock-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3x2 for 800x600 */
+  }
+
+  body[data-role="projector"] .stock-card,
+  body[data-role="PROJECTOR"] .stock-card {
+    padding: 12px;
+  }
+}
+
+/* ========== DESKTOP (1025px+) - Enhanced ========== */
+@media (min-width: 1025px) {
+  .stock-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  /* Better spacing for large screens */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+}
+
+/* ========== LARGE DESKTOP (1920px+) ========== */
+@media (min-width: 1920px) {
+  html, body {
+    font-size: 15px;
+  }
+
+  .stock-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+
+  .container {
+    max-width: 1600px;
+  }
+}
+
+/* ========== TOUCH DEVICE OPTIMIZATIONS ========== */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch-specific styles */
+  .btn,
+  .tab-button,
+  .stock-card {
+    -webkit-tap-highlight-color: rgba(180, 154, 112, 0.2);
+  }
+
+  /* Larger touch targets */
+  .btn {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Remove hover effects on touch */
+  .stock-card:hover,
+  .luxury-card:hover {
+    transform: none;
+  }
+
+  /* Better scrolling */
+  .stock-grid,
+  .tab-group,
+  .modal-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent text selection during drag */
+  .stock-card,
+  .btn,
+  .tab-button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* ========== ACCESSIBILITY - REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========== DARK MODE SUPPORT (Optional Enhancement) ========== */
+@media (prefers-color-scheme: dark) {
+  /* Future dark mode support - currently using light theme always */
+  /* Can be enabled by removing this comment and uncommenting below */
+  /*
+  :root {
+    --bg-ivory: #1A1D1F;
+    --card-white: #242729;
+    --text-forest: #E8F0EC;
+    --text-charcoal: #E2E4E3;
+  }
+  */
+}
+
+/* ========== PRINT OPTIMIZATIONS ========== */
+@media print {
+  /* Force A4 portrait */
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+
+  body {
+    font-size: 10pt;
+  }
+
+  .stock-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8pt;
+  }
+
+  /* Hide interactive elements */
+  .btn,
+  button,
+  .tab-group {
+    display: none !important;
+  }
+
+  /* Show full data */
+  .hidden {
+    display: block !important;
+  }
+}
+
+/* ========== LANDSCAPE MOBILE (Horizontal phone/tablet) ========== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-header {
+    position: static; /* Don't stick on landscape */
+    padding: 8px 12px;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Compress spacing */
+  .stock-card {
+    padding: 10px;
+  }
+
+  .sparkline-wrapper {
+    height: 40px; /* Smaller chart */
+  }
+}
+
+/* ========== HOST CONTROL PANEL MOBILE ========== */
+@media (max-width: 768px) {
+  .host-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .host-action-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .host-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stack hub navigation */
+  .hub-nav {
+    flex-direction: column;
+  }
+
+  .hub-nav-button {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ========== NEWS MODAL RESPONSIVE ========== */
+@media (max-width: 640px) {
+  #newsFlashModal .modal-content {
+    padding: 20px 16px;
+  }
+
+  #flashHeadline {
+    font-size: 20px;
+  }
+
+  .news-impact-badge {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* ========== WINNER PODIUM MOBILE ========== */
+@media (max-width: 768px) {
+  .podium-container {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .podium-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .podium-first,
+  .podium-second,
+  .podium-third {
+    order: 0; /* Stack in normal order on mobile */
+  }
+
+  #podiumEventTitle {
+    font-size: 24px;
+  }
+}
+
+/* ========== TRADING MODAL RESPONSIVE ========== */
+@media (max-width: 640px) {
+  .trade-modal-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .trade-tab {
+    flex: 1;
+    min-height: 48px;
+  }
+
+  .quantity-preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .quantity-preset-btn {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  /* Quick lot steppers */
+  .lot-stepper-group {
+    display: flex;
+    gap: 6px;
+  }
+
+  .lot-stepper-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+}
+
+/* ========== UTILITY CLASSES FOR RESPONSIVE ========== */
+.hide-mobile {
+  display: none !important;
+}
+
+@media (min-width: 641px) {
+  .hide-mobile {
+    display: block !important;
+  }
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* ========== IMPROVED EMPTY STATES ========== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-charcoal);
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 400px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.empty-state-action {
+  margin-top: 12px;
+}
+
+/* ========== LOADING STATES ========== */
+.skeleton-loader {
+  background: linear-gradient(
+    90deg,
+    var(--surface-cream) 0%,
+    var(--champagne-light) 50%,
+    var(--surface-cream) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-card {
+  height: 200px;
+}
+
+/* ========== STATUS BANNERS ========== */
+.status-banner {
+  width: 100%;
+  padding: 12px 20px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+
+.status-banner-paused {
+  background-color: var(--warning-bg);
+  color: var(--warning-amber);
+  border-bottom: 2px solid var(--warning-border);
+}
+
+.status-banner-halted {
+  background-color: var(--error-bg);
+  color: var(--error-red);
+  border-bottom: 2px solid var(--error-border);
+  animation: pulseHalt 1.5s infinite;
+}
+
+.status-banner-completed {
+  background-color: var(--price-up-bg);
+  color: var(--price-up);
+  border-bottom: 2px solid var(--price-up-border);
+}
+
+@media (max-width: 640px) {
+  .status-banner {
+    font-size: 12px;
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* ==========================================
+   P1/P2 UX IMPROVEMENTS - LOADING STATES & EMPTY STATES
+   Added: October 17, 2026
+   ========================================== */
+
+/* Button Loading State */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  cursor: wait;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin-loader 0.6s linear infinite;
+}
+
+@keyframes spin-loader {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton Loading Placeholders */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+  min-height: 1em;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+  height: 1em;
+  margin-bottom: 0.5em;
+}
+
+.skeleton-title {
+  height: 1.5em;
+  width: 60%;
+  margin-bottom: 0.8em;
+}
+
+.skeleton-card {
+  padding: 1em;
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--radius-md);
+}
+
+/* Empty State Containers */
+.empty-state {
+  text-align: center;
+  padding: 3em 2em;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 3em;
+  margin-bottom: 0.5em;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--text-charcoal);
+  margin-bottom: 0.5em;
+}
+
+.empty-state-message {
+  font-size: 0.95em;
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0 auto 1.5em;
+}
+
+.empty-state-action {
+  margin-top: 1em;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--podium-gold), var(--champagne-accent));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-indeterminate {
+  width: 30%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* Inline Loading Spinner */
+.spinner-inline {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  animation: spin-loader 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Pulse Animation for Status Indicators */
+.status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Fade-in animation for content that loads */
+.fade-in {
+  animation: fade-in 0.4s ease-in;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Keyboard Shortcut Help Modal Styles */
+.keyboard-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1em;
+  margin-top: 1em;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8em;
+  background: rgba(255,255,255,0.03);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.shortcut-keys {
+  display: flex;
+  gap: 4px;
+}
+
+.key-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--champagne-accent);
+  min-width: 28px;
+  text-align: center;
+}
+
+.shortcut-description {
+  font-size: 0.9em;
+  color: var(--text-charcoal);
+}
+
+/* Success/Error Toast Enhancements */
+.toast-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+}
+
+.toast-action-btn {
+  padding: 4px 12px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.toast-action-btn:hover {
+  background: rgba(255,255,255,0.3);
+}
 

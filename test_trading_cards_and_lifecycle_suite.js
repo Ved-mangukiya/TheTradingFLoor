@@ -10,9 +10,12 @@
 const http = require('http');
 const WebSocket = require('ws');
 const assert = require('assert');
+const { spawn } = require('child_process');
 
-const HTTP_URL = 'http://localhost:3000';
-const WS_URL = 'ws://localhost:3000';
+const TEST_PORT = process.env.PORT || 3090;
+const HTTP_URL = `http://127.0.0.1:${TEST_PORT}`;
+const WS_URL = `ws://127.0.0.1:${TEST_PORT}`;
+let serverProcess = null;
 
 function httpGet(path) {
   return new Promise((resolve, reject) => {
@@ -34,25 +37,53 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+async function ensureServerRunning() {
+  try {
+    const res = await httpGet('/api/health');
+    if (res.status === 200) return;
+  } catch (e) {}
+
+  let serverReady = false;
+  serverProcess = spawn(process.execPath, ['server.js', 'test'], {
+    cwd: __dirname,
+    env: { ...process.env, PORT: String(TEST_PORT) },
+    stdio: 'pipe'
+  });
+
+  serverProcess.stdout.on('data', (d) => {
+    if (d.toString().includes('ONLINE')) serverReady = true;
+  });
+
+  for (let i = 0; i < 30; i++) {
+    if (serverReady) break;
+    await delay(200);
+  }
+}
+
 async function runTestSuite() {
   console.log('\n================================================================');
   console.log(' 🧪 RUNNING TRADING CARDS, FILTERS, CIRCUIT BREAKERS & DAY SUITE');
   console.log('================================================================\n');
 
+  await ensureServerRunning();
+
   let passed = 0;
+  let wsHost = null;
+  let wsTrader = null;
 
-  // -------------------------------------------------------------
-  // STAGE 1: STOCK UNIVERSE & FILTERING DATA INTEGRITY
-  // -------------------------------------------------------------
-  console.log('[STAGE 1] Stock Universe, Data Schema & Authoritative Filters');
-  const healthRes = await httpGet('/api/health');
-  assert.strictEqual(healthRes.status, 200, 'Expected status 200 from /api/health');
-  assert.strictEqual(healthRes.body.status, 'ONLINE');
-  console.log(`  ✓ PASS: Server health verified. Active shares count: ${healthRes.body.active_shares_count}`);
-  passed++;
+  try {
+    // -------------------------------------------------------------
+    // STAGE 1: STOCK UNIVERSE & FILTERING DATA INTEGRITY
+    // -------------------------------------------------------------
+    console.log('[STAGE 1] Stock Universe, Data Schema & Authoritative Filters');
+    const healthRes = await httpGet('/api/health');
+    assert.strictEqual(healthRes.status, 200, 'Expected status 200 from /api/health');
+    assert.strictEqual(healthRes.body.status, 'ONLINE');
+    console.log(`  ✓ PASS: Server health verified. Active shares count: ${healthRes.body.active_shares_count}`);
+    passed++;
 
-  // Connect Host to get authoritative companies universe
-  const wsHost = new WebSocket(WS_URL);
+    // Connect Host to get authoritative companies universe
+    wsHost = new WebSocket(WS_URL);
   let hostToken = null;
   let hostGameState = null;
   let companies = [];
@@ -175,7 +206,7 @@ async function runTestSuite() {
   wsHost.send(JSON.stringify({ action: 'HOST_START_EVENT_NOW', session_token: hostToken }));
   await delay(400);
 
-  const wsTrader = new WebSocket(WS_URL);
+  wsTrader = new WebSocket(WS_URL);
   let traderToken = null;
   let traderPortfolio = null;
   let traderMessages = [];
@@ -568,15 +599,21 @@ async function runTestSuite() {
   passed++;
 
   // Close websockets
-  wsTrader.close();
-  wsHost.close();
+  if (wsTrader && wsTrader.readyState === WebSocket.OPEN) wsTrader.close();
+  if (wsHost && wsHost.readyState === WebSocket.OPEN) wsHost.close();
 
   console.log('\n================================================================');
   console.log(` 📋 VERIFICATION COMPLETE: ALL ${passed} TESTS PASSED CLEANLY!`);
   console.log('================================================================\n');
+  } finally {
+    if (wsTrader && wsTrader.readyState === WebSocket.OPEN) wsTrader.close();
+    if (wsHost && wsHost.readyState === WebSocket.OPEN) wsHost.close();
+    if (serverProcess) serverProcess.kill();
+  }
 }
 
 runTestSuite().catch(err => {
   console.error('\n❌ Test Suite Failed:', err);
+  if (serverProcess) serverProcess.kill();
   process.exit(1);
 });

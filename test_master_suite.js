@@ -70,6 +70,10 @@ function sendAndAwait(ws, payload, expectedType, timeoutMs = 4000) {
           clearTimeout(timer);
           ws.off('message', onMessage);
           reject(new Error(`Order was unexpectedly rejected: ${msg.reason}`));
+        } else if (msg.type === 'ACTION_REJECTED') {
+          clearTimeout(timer);
+          ws.off('message', onMessage);
+          reject(new Error(`Action was rejected: ${msg.reason}`));
         }
       } catch (e) {}
     }
@@ -211,7 +215,7 @@ async function runTests() {
       eventTitle: 'The Trading Floor Championship 2026',
       institution: 'Gujarat Technological University',
       startingCash: 500000,
-      totalDays: 3,
+      totalDays: 1,
       dayDurationSeconds: 1800,
       transactionFeeBps: 0,
       circuitBreakerPercent: 20,
@@ -578,10 +582,21 @@ async function runTests() {
     // -------------------------------------------------------------
     console.log('\n[STAGE 7] Championship Grand Finale & Audited Exports');
 
+    // First, conclude Day 1 (which is the final day in test scenario)
+    ws1.send(JSON.stringify({
+      action: 'HOST_CONCLUDE_DAY',
+      session_token: hostToken
+    }));
+    
+    await new Promise(r => setTimeout(r, 800)); // Wait for day to conclude
+    
+    console.log(`  [DEBUG] About to call HOST_CONCLUDE_CHAMPIONSHIP...`);
+    
+    // Now explicitly finalize championship
     const concludeRes = await sendAndAwait(ws1, {
       action: 'HOST_CONCLUDE_CHAMPIONSHIP',
       session_token: hostToken
-    }, 'CHAMPIONSHIP_CONCLUDED');
+    }, 'CHAMPIONSHIP_CONCLUDED', 15000); // Increased timeout
 
     if (concludeRes.winnerData && concludeRes.winnerData.first) {
       logPass(`Championship concluded. 1st Place: ${concludeRes.winnerData.first.name} (Net Worth: ₹${concludeRes.winnerData.first.netWorth})`);

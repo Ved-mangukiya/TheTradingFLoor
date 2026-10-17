@@ -1,7 +1,7 @@
 {
   "scenario_metadata": {
     "title": "The Trading Floor - Dry Run Test Mode",
-    "total_days": 2,
+    "total_days": 1,
     "day_duration_seconds": 600,
     "starting_cash": 500000,
     "tick_interval_ms": 1500,

@@ -28,6 +28,11 @@ Role privileges are strictly enforced on the server before executing any command
 | **`TRADER`** | Place market BUY and SELL orders for their own team, view own portfolio, view own trade log, view public market prices. | Market engine control, modifying other teams' cash, triggering news, halting stocks. |
 | **`PROJECTOR`**| View public market prices, public top-5 standings, active news flashes, and podium finale. | Placing orders, modifying settings, viewing private team cash or credentials. |
 
+### 2.3 Protected Financial Analytics Endpoints
+- Private team portfolio data (`investedCost`, `holdingsDetail`, `realizedPnl`, cash breakdown) is protected by `requireHostAuth` middleware.
+- `GET /api/team-investments` and `GET /api/team-investments/:teamId` reject unauthenticated or non-Host callers with HTTP 403 Forbidden.
+- Session tokens must be passed via `?token=<session_token>` query parameter or HTTP Authorization header.
+
 ---
 
 ## 3. Server-Side Input Validation & Anti-Tamper Guarantees
@@ -52,3 +57,9 @@ When broadcasting state snapshots (`getSanitizedPublicState`):
 To prevent malicious code execution in Microsoft Excel or Google Sheets when exporting team names or stock symbols:
 - Every cell in standings, trade logs, and universe exports is checked by `sanitizeCsvCell()`.
 - If a string begins with dangerous formula prefixes (`=`, `+`, `-`, `@`, `\t`, `\r`), it is prepended with a single quote (`'`), rendering it as safe plaintext.
+
+### 3.4 Cryptographically Unique Trade Identifiers (RFC 4122 UUID v4)
+- Trade IDs are generated using Node.js's native `crypto.randomUUID()` (e.g. `f47ac10b-58cc-4372-a567-0e02b2c3d479`).
+- Guarantees 128-bit global uniqueness with zero collision probability even across multiple server restarts, rapid order concurrency, or distributed replay.
+- An auxiliary monotonic sequence number (`seq`) is retained in every trade record for deterministic chronological sorting and auditor traceability.
+

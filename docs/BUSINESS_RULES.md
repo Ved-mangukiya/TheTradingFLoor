@@ -119,10 +119,11 @@ A circuit halt can be released via three authoritative pathways:
 2. **Mean-Reversion Background Drift Buffer (0.8%)**:
    - Background random price drift is clamped at the limit and requires a minimum 0.8% movement away from the ceiling ($P_{\text{current}} \le \text{Upper Limit} - 0.008 \times P_{\text{day\_open}}$) or floor ($P_{\text{current}} \ge \text{Lower Limit} + 0.008 \times P_{\text{day\_open}}$) before triggering release. This permanently prevents premature unhalting caused by micro-noise.
 3. **Host Manual Release**:
-   - Host can click **Release Halt** in the Host Control Panel, resetting $P_{\text{day\_open}} = P_{\text{current}}$ and immediately restoring unconstrained trading.
+   - Host can click **Release Halt** in the Host Control Panel, setting `isHalted = false` and `haltDirection = null` to immediately restore unconstrained trading.
+   - **Critical Invariant**: $P_{\text{day\_open}}$ remains strictly immutable and is NEVER reset during unhalting, guaranteeing that daily circuit breaker limits ($\pm 20\%$) remain mathematically anchored to the true opening price.
 - Upon release:
   - `isHalted = false`, `haltDirection = null`.
-  - Records `CIRCUIT_RECOVERY` audit event.
+  - Records `CIRCUIT_BREAKER_RELEASED` audit event with current price and immutable `day_open_ref`.
   - Broadcasts `CIRCUIT_RECOVERY_ALERT` to remove warning badges across all trader and projector screens.
 
 ---
@@ -130,6 +131,7 @@ A circuit halt can be released via three authoritative pathways:
 ## 4. Anti-Tamper & Security Rules
 - **Rate Limit Window**: A 200ms throttle is enforced per team session token. Rapid-fire duplicate clicks are rejected.
 - **Role Isolation**: Only authenticated Host sessions (`role === 'HOST'`) can trigger pauses, resumes, day advances, news injections, or universe modifications.
+- **Private API Authentication**: `GET /api/team-investments` and `GET /api/team-investments/:teamId` are protected by `requireHostAuth` middleware.
 - **Formula Injection Mitigation**: All CSV reports sanitize cell values starting with `=`, `+`, `-`, or `@` by prefixing a single quote (`'`).
 
 ---
@@ -160,6 +162,14 @@ To support college students with zero professional trading background:
   - Emits `DAY_CONCLUDED` and `DAY_FINALIZED` with `status: 'DAY_COMPLETED'`.
   - Plays closing bell sound cue (`bell_close`).
   - Activates `#traderDayCompletedOverlay` on trader terminals and `#projDayCompletedBanner` on auditorium projectors.
+
+### 6.1b Final Day Conclusion vs Championship Finalization (`HOST_CONCLUDE_CHAMPIONSHIP`)
+- When the final scheduled day concludes (`currentDay >= totalDays`):
+  - State transitions strictly to `DAY_COMPLETED` (NOT automatically `CHAMPIONSHIP_CONCLUDED`).
+  - Broadcasts `FINAL_DAY_COMPLETED` with `requiresExplicitFinalization: true` and pre-calculated winner standings for Host review.
+  - The Host must explicitly execute `HOST_CONCLUDE_CHAMPIONSHIP` (or `HOST_FINALIZE_CHAMPIONSHIP`) to officially finalize the championship.
+  - Server validation rejects any conclusion attempt if `gameState.status !== 'DAY_COMPLETED'` or `currentDay !== totalDays`.
+  - Once validated, transitions to `gameState.status = 'CHAMPIONSHIP_CONCLUDED'`, `isConcluded = true`, archives the authoritative `finalResultsSnapshot`, and broadcasts `CHAMPIONSHIP_CONCLUDED` to launch the auditorium winner ceremony.
 
 ### 6.2 Advancing to the Next Day (`HOST_START_NEXT_DAY`)
 - **Pre-Conditions**:

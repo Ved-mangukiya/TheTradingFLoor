@@ -32,5 +32,15 @@ This document honestly outlines verified system boundaries, operational limitati
 | :---: | :--- | :---: | :---: | :--- |
 | **SEC-01** | Rapid double-click order duplicate spam | Medium | RESOLVED | 200ms per-session debounce enforced in `server.js`. |
 | **SEC-02** | CSV Formula Injection vulnerability | High | RESOLVED | `sanitizeCsvCell()` prepends `'` to dangerous `=+-@` characters. |
+| **SEC-03** | Private team investments endpoints publicly accessible | Critical | RESOLVED | `requireHostAuth` middleware applied to `/api/team-investments` and `/api/team-investments/:teamId` returning 403 Forbidden. |
+| **MKT-01** | Circuit breaker anchor reset on manual or sector unhalt | Critical | RESOLVED | Immutable `dayOpenPrice` enforced in `server.js`; unhalting never modifies reference price. |
+| **ENG-01** | News events firing multiple times in same trading day | High | RESOLVED | `firedNewsEventsPerDay` Map registry tracks executed events per day; cleared on day advance. |
+| **LFC-01** | Final trading day automatically finalized championship | High | RESOLVED | Explicit two-step process: `concludeCurrentDay` concludes Day $N$; `HOST_CONCLUDE_CHAMPIONSHIP` requires `status === 'DAY_COMPLETED'`. |
+| **RES-01** | Checkpoint restoration forced `PAUSED` on stopped states | Medium | RESOLVED | Legitimate stopped states (`SETUP`, `DAY_COMPLETED`, `CHAMPIONSHIP_CONCLUDED`) preserved; `pauseMode = 'RECOVERY'`. |
+| **ORD-01** | Sequential trade IDs risk collisions across server restarts | Low | RESOLVED | Migrated to RFC 4122 `crypto.randomUUID()` while retaining sequential `seq` counter for ordering. |
+| **ENC-01** | Character encoding corruption (`â‚¹`, `ðŸš€`, etc.) in `server.js` | Medium | RESOLVED | Restored clean UTF-8 encoding across `server.js` with zero character corruption. |
 | **NET-01** | Sudden LAN drop or browser refresh | Medium | RESOLVED | `RESUME_SESSION` token protocol automatically restores portfolio. |
 | **UI-01** | Disabled stocks visible on trader screens | High | RESOLVED | Server filters `companies` payload by `isEnabled !== false`. |
+| **DOM-01** | 21 duplicate element IDs in `public/index.html` | Low | RESOLVED | Duplicate IDs in `#hostTabContentSetup` namespaced with `hostTabSetup_`; standalone `#eventSetupView` remains canonical. `tools/find_duplicate_ids.js` verified 0 duplicates. |
+| **TST-01** | Integration test suite unauthenticated HTTP calls | Low | RESOLVED | `test_dynamic_upgrade_suite.js` updated to verify 403 Forbidden without token, and uses Host session token for authorized calls; self-contained auto-boot enabled for all test suites (`npm run test:all` 86/86 passing). |
+

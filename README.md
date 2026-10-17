@@ -50,15 +50,35 @@ Participants trade real-time simulated blue-chip equities across Indian economic
 - **🃏 Paper Trading Cards UX**: Structured information hierarchy inspired by institutional trading cards: distinct identity, live price delta, Day Open reference, position unrealized P&L badges (`+₹Z (+W%)`), embedded quick lot steppers (`+5`, `-5`), and dedicated `Trade` buttons.
 - **🔍 Advanced Universe Filtering**: Live search box, clickable dynamic sector chips (`#traderSectorChips`), multi-metric sorter (Gainers, Losers, Price High/Low, Highest Value), and "Holdings Only" filter toggle.
 - **🧮 Interactive Trade Modal & Affordability Engine**: Tabbed BUY/SELL switcher, stepper controls, quick lot pills (`+1`..`+100`), budget/holding preset pills (`25%`, `50%`, `75%`, `Max` / `All`), live fee & remaining cash calculation, and educational balance validation shortfalls.
-- **🚨 Directional Upper & Lower Circuit Breakers**: Upper circuit (+20%) clamps price, blocks BUY, and permits SELL; Lower circuit (-20%) clamps price, blocks SELL, and permits BUY. Counter-directional order flow injects recovery liquidity; 0.8% drift buffer prevents micro-noise unhalts; strict stock isolation keeps other stocks trading.
-- **📅 Explicit Day 1 ➔ Day 2 Lifecycle State Machine**: Concluded days enter `DAY_COMPLETED` (distinct from `PAUSED`), displaying high-visibility `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily leaderboard snapshot; Host primary action opens "Start Day 2" modal directly; balances carry over cleanly.
+- **🚨 Directional Upper & Lower Circuit Breakers**: Upper circuit (+20%) clamps price, blocks BUY, and permits SELL; Lower circuit (-20%) clamps price, blocks SELL, and permits BUY. Counter-directional order flow injects recovery liquidity; 0.8% drift buffer prevents micro-noise unhalts; strict stock isolation keeps other stocks trading. Immutable $P_{\text{day\_open}}$ reference guarantees integrity.
+- **📅 Explicit Day 1 ➔ Day 2 Lifecycle State Machine**: Concluded days enter `DAY_COMPLETED` (distinct from `PAUSED`), displaying high-visibility `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily leaderboard snapshot; Host primary action opens "Start Day 2" modal directly; balances carry over cleanly. Explicit Host finalization required to conclude tournament.
+- **🖥️ Classroom 4:3 Projector Native Layouts**: Specialized aspect-ratio detection (`@media (min-aspect-ratio: 4/3)`) tailored for standard Indian college auditorium projectors (`1024×768` and `800×600`). Native $4 \times 2$ (8 cards) and $3 \times 2$ (6 cards) grids with distance-scaled typography and safe viewing margins.
+- **📱 Mobile-First & Tablet Responsive Suite**: Full responsive touch layouts for mobile phone traders (320px–640px) with single-column cards, full-screen order entry modals, and $\ge 44\text{px}$ touch targets.
+- **⌨️ Keyboard Shortcuts & Help Modal**: Global `?` key opens the Keyboard Shortcuts Help Modal. Host controls (`Ctrl+Space`, `Ctrl+S`, `Ctrl+D`), Projector controls (`F`, `L`), and Trader order controls (`Enter`, `↑`/`↓`, `Esc`).
+- **🔒 RFC 4122 Cryptographic Trade UUIDs**: 128-bit collision-proof `crypto.randomUUID()` trade identifiers with sequential sequence counters for audit clarity.
 - **🏛️ Market Builder & Universe Manager**: Host controls which shares trade. Enable, disable, edit starting prices, duplicate shares, randomize prices ($\pm 10\%$), or apply 1-click presets without writing code.
 - **⚡ Synchronized 3-2-1 Resume Countdown**: When the host unpauses, a dramatic 3-second visual countdown freezes orders until the exact opening bell chimes across all screens.
 - **📢 Breaking News Flashover**: Scheduled macro shocks and custom host breaking news alerts pop up across all trader screens with audio siren cues and 60-second private impact reveal.
 - **🏆 Grand Finale Winner Podium**: Synchronized podium ceremony celebrating 1st (Gold), 2nd (Silver), and 3rd (Bronze) teams with animated confetti, screen rumbling, and victory fanfare.
 - **🔊 100% Offline Audio Synthesizer**: Programmatic Web Audio API sounds for opening bells, circuit alarms, sirens, and victory fanfare. Zero external MP3 files needed.
-- **🛡️ Anti-Tamper & Security**: Authoritative server validation, 200ms order rate limiting, role-based access control, and formula injection protection in CSV exports.
-- **🧪 85/85 Automated Regression Tests**: 100% verified across 3 automated test suites (`test_master_suite.js`, `test_dynamic_upgrade_suite.js`, `test_trading_cards_and_lifecycle_suite.js`).
+- **🛡️ Anti-Tamper & Security**: Authoritative server validation, 200ms order rate limiting, role-based access control with `requireHostAuth` on financial analytics, and formula injection protection in CSV exports.
+- **🧪 100% Verified Automated Regression Suite**: Complete end-to-end regression across all stages verified by automated master test suite.
+
+---
+
+### ⌨️ KEYBOARD SHORTCUTS REFERENCE
+
+| Key Shortcut | Role / Context | Action Performed |
+| :--- | :--- | :--- |
+| <kbd>?</kbd> (Shift + /) | **All Terminals** | Open Interactive Keyboard Shortcuts Help Modal |
+| <kbd>Esc</kbd> | **All Terminals** | Close active modal / Exit Projector Terminal |
+| <kbd>Enter</kbd> | **Trader Terminal** | Execute Trade (when Trade Modal is open) |
+| <kbd>↑</kbd> / <kbd>↓</kbd> | **Trader Terminal** | Increase / Decrease Share Quantity |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | **Host Panel** | Pause / Resume Live Market |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> | **Host Panel** | Save Instant Named Checkpoint |
+| <kbd>Ctrl</kbd> + <kbd>D</kbd> | **Host Panel** | Advance to Next Day (when Day is Concluded) |
+| <kbd>F</kbd> | **Projector View** | Toggle Fullscreen Mode |
+| <kbd>L</kbd> | **Projector View** | Lock / Unlock Projector Terminal Screen |
 
 ---
 
