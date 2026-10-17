@@ -412,40 +412,37 @@
   <section id="loginView"
     style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
     <div class="luxury-card login-card" style="max-width: 440px; width: 100%; padding: 36px;">
-      <div style="text-align: center; margin-bottom: 28px;">
+      <div style="text-align: center; margin-bottom: 26px;">
         <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 22px;">TF</div>
-        <div class="badge badge-sage" style="margin-bottom: 10px;">
-          Institutional Simulation Engine
-        </div>
         <h1 id="loginEventTitle" style="font-size: 26px; line-height: 1.2; margin-bottom: 6px;">The Trading Floor</h1>
-        <p style="font-size: 13px; color: var(--text-muted);">Championship 2026 • Local LAN Trading Desk</p>
+        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Championship 2026</p>
       </div>
 
       <!-- Live Event Readiness / Team Login Gate Banner -->
-      <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border); background: var(--surface-cream); display: flex; align-items: center; gap: 10px; text-align: left;">
-        <span id="loginEventStatusIcon" style="font-size: 20px; line-height: 1;">⏳</span>
+      <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border); background: var(--surface-cream); display: flex; align-items: center; gap: 12px; text-align: left;">
+        <span id="loginEventStatusIcon" style="font-size: 22px; line-height: 1;">⏳</span>
         <div style="flex: 1;">
-          <div id="loginEventStatusTitle" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Event Setup in Progress</div>
-          <div id="loginEventStatusDesc" style="font-size: 11px; color: var(--text-muted); line-height: 1.35; margin-top: 1px;">The host is preparing the event. Team login will open once setup is complete.</div>
+          <div id="loginEventStatusTitle" style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Competition Setup in Progress</div>
+          <div id="loginEventStatusDesc" style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-top: 2px;">The host is getting everything ready. Team logins will open soon.</div>
         </div>
       </div>
 
       <form id="loginForm">
         <div class="form-group">
-          <label class="form-label" for="loginUsername">Terminal ID / Username</label>
+          <label class="form-label" for="loginUsername">Username</label>
           <input id="loginUsername" type="text" required placeholder="e.g. team1, host, projector" class="form-input"
             style="font-family: var(--font-mono);" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="loginPassword">Access Password / PIN</label>
+          <label class="form-label" for="loginPassword">Password</label>
           <input id="loginPassword" type="password" required placeholder="••••••••" class="form-input"
             style="font-family: var(--font-mono);" />
         </div>
         <p id="loginError" class="hidden"
           style="color: var(--error-red); background-color: var(--error-bg); border: 1px solid var(--error-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; margin-bottom: 14px;">
         </p>
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px;">
-          Authenticate Terminal
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800;">
+          Log In
         </button>
       </form>
 
@@ -633,6 +630,17 @@
 
           <div class="cream-panel" style="padding: 16px;">
             <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
+              Simulation Risk &amp; Opportunity Profile
+            </label>
+            <select id="setupRiskProfile" onchange="saveSetupDraft()" class="form-input">
+              <option value="BALANCED" selected>Balanced (1.0x Opportunity • Standard GTU Championship)</option>
+              <option value="HIGH_OPPORTUNITY">High Opportunity (1.45x Opportunity • Dynamic Price Action &amp; Noticeable Profits)</option>
+              <option value="CONSERVATIVE">Conservative (0.75x Opportunity • Low Volatility &amp; Capital Preservation)</option>
+            </select>
+          </div>
+
+          <div class="cream-panel" style="padding: 16px;">
+            <label style="font-size: 12px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">
               Reference Benchmark Source
             </label>
             <input type="text" class="form-input" value="National Stock Exchange of India (NSE EOD Official)" readonly style="background: #F1F5F9; color: #475569;" />
@@ -641,18 +649,18 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" onclick="switchSetupSection('teams')" class="btn btn-primary" style="font-weight: 800; padding: 10px 20px;">
-            Next: 16 Teams Roster ➔
+            Next: Team Roster ➔
           </button>
         </div>
       </div>
 
-      <!-- Section 2: Teams Roster (Exactly 16 Teams) -->
+      <!-- Section 2: Teams Roster (Dynamic Any Team Count) -->
       <div id="setupSectionTeams" class="hidden setup-sec-panel luxury-card" style="padding: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
           <div>
-            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">👥 2. Participating Teams &amp; Passwords (16 Desks)</h2>
+            <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">👥 2. Participating Teams &amp; Passwords (<span id="setupTeamsCountHeader">16</span> Desks)</h2>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
-              Configure all 16 participant team desks. Passwords can be customized or generated. Passwords activate only after setup lock.
+              Configure all participant team desks. Passwords can be customized or generated. Passwords activate only after setup lock.
             </p>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -663,10 +671,23 @@
               🔄 Reset Standard Passwords
             </button>
             <button type="button" onclick="copySetupCredentialsToClipboard()" class="btn btn-sage" style="font-size: 12px; padding: 6px 14px; font-weight: 700;">
-              📋 Copy All 16 Logins
+              📋 Copy All Credentials
             </button>
             <button type="button" onclick="downloadSetupCredentialsCsv()" class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
               📥 Download Logins CSV
+            </button>
+          </div>
+
+          <!-- Dynamic Team Presets Toolbar -->
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; margin-top: 8px; padding-top: 10px; border-top: 1px dashed var(--subtle-border);">
+            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Team Capacity Presets:</span>
+            <button type="button" onclick="applyTeamCountPreset(1)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">Solo (1)</button>
+            <button type="button" onclick="applyTeamCountPreset(2)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">2 Teams</button>
+            <button type="button" onclick="applyTeamCountPreset(4)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">4 Teams</button>
+            <button type="button" onclick="applyTeamCountPreset(8)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">8 Teams</button>
+            <button type="button" onclick="applyTeamCountPreset(16)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; font-weight: 800; border-color: var(--champagne-accent);">16 Teams (GTU Standard)</button>
+            <button type="button" onclick="addSetupTeamRow()" class="btn btn-sage" style="padding: 4px 12px; font-size: 11px; font-weight: 800; margin-left: auto;">
+              + Add Team Desk
             </button>
           </div>
         </div>
@@ -675,15 +696,16 @@
           <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
             <thead>
               <tr style="background: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
-                <th style="padding: 8px 12px; width: 80px;">Slot</th>
+                <th style="padding: 8px 12px; width: 70px;">Slot</th>
                 <th style="padding: 8px 12px;">Team Display Name</th>
                 <th style="padding: 8px 12px; width: 120px;">Username</th>
                 <th style="padding: 8px 12px; width: 140px;">Password / PIN</th>
                 <th style="padding: 8px 12px;">Student Members (Optional)</th>
+                <th style="padding: 8px 12px; width: 70px; text-align: center;">Action</th>
               </tr>
             </thead>
             <tbody id="setupTeamsRosterTbody" style="font-family: var(--font-mono);">
-              <!-- 16 Team Rows rendered dynamically -->
+              <!-- Team Rows rendered dynamically -->
             </tbody>
           </table>
         </div>
@@ -800,7 +822,7 @@
         <div style="margin-bottom: 20px; border-bottom: 1px solid var(--subtle-border); padding-bottom: 14px;">
           <h2 style="font-size: 20px; color: var(--text-forest); margin-bottom: 4px;">🔒 5. Pre-Event Verification &amp; Final Lock</h2>
           <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
-            Verify your configuration before locking. Once locked, 16 team credentials become active for student login and trading rules freeze.
+            Verify your configuration before locking. Once locked, all configured team credentials become active for student login and trading rules freeze.
           </p>
         </div>
 
@@ -809,7 +831,7 @@
           <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
             <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Competition Roster</div>
             <div id="reviewStatTeams" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">16 Teams Configured</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Slots 1 to 16 with credentials</div>
+            <div id="reviewStatTeamsDesc" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Configured desks with credentials</div>
           </div>
 
           <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
@@ -827,7 +849,7 @@
           <div class="cream-panel" style="padding: 16px; border: 1px solid var(--subtle-border);">
             <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-muted);">Schedule &amp; Duration</div>
             <div id="reviewStatSchedule" style="font-size: 22px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">3 Days • 30m / Day</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Circuit breaker: 20%</div>
+            <div id="reviewStatScheduleDesc" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Circuit breaker: 20%</div>
           </div>
         </div>
 
@@ -838,7 +860,7 @@
             Ready to Lock Championship Setup?
           </h3>
           <p style="font-size: 13px; color: var(--text-muted); max-width: 680px; margin: 0 auto 20px auto; line-height: 1.6;">
-            Confirming the lock will authoritatively register the 16 team credentials on the server, open team logins for student participants, and transition you directly to the Live Host Operations Command Centre.
+            Confirming the lock will authoritatively register all team credentials on the server, open team logins for student participants, and transition you directly to the Live Host Operations Command Centre.
           </p>
 
           <button type="button" onclick="openLockSetupConfirmModal()" class="btn btn-primary" style="padding: 14px 36px; font-size: 15px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 16px rgba(33,134,83,0.3);">
@@ -869,7 +891,7 @@
       </p>
 
       <div style="text-align: left; background: var(--surface-cream); border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 24px; font-size: 12px; line-height: 1.6;">
-        <div style="margin-bottom: 6px;">✓ <strong>16 Team Desks:</strong> Activates credentials for teams 1–16.</div>
+        <div style="margin-bottom: 6px;">✓ <strong>Team Desks:</strong> Activates credentials for all configured teams.</div>
         <div style="margin-bottom: 6px;">✓ <strong>Stock Selection:</strong> Permanently freezes the active tradeable equities.</div>
         <div style="margin-bottom: 6px;">✓ <strong>News Engine:</strong> Locks the scheduled multi-day journalistic wire timeline.</div>
         <div>✓ <strong>Host Control:</strong> Unlocks the full Live Host Operations Command Centre.</div>
@@ -881,6 +903,69 @@
         </button>
         <button type="button" onclick="submitLockEventSetup()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
           Yes, Lock Event &amp; Open Logins
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post-Lock Day 1 Launch Modal -->
+  <div id="postLockDay1Modal" class="hidden modal-overlay" style="z-index: 135;">
+    <div class="modal-content" style="max-width: 580px; padding: 32px 28px; text-align: center; border: 2px solid var(--champagne-accent); box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: #ECFDF5; color: #059669; font-size: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; border: 2px solid #A7F3D0;">
+        ✓
+      </div>
+      <div class="badge" style="background: #ECFDF5; color: #047857; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; padding: 4px 14px; margin-bottom: 10px; border: 1px solid #A7F3D0;">
+        COMPETITION READY • LOGINS OPEN
+      </div>
+      <h2 style="font-size: 24px; font-weight: 900; color: var(--text-forest); margin-bottom: 6px;">
+        Championship Setup Locked &amp; Active!
+      </h2>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; max-width: 480px; margin: 0 auto 20px auto;">
+        All <strong id="postLockTeamsCountSpan">configured</strong> team logins are now active. Connected participant screens have unlocked. Choose how you would like to begin Day 1:
+      </p>
+
+      <!-- 3 Start Options -->
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; text-align: left;">
+        <!-- Option 1: Start Now -->
+        <button type="button" onclick="executePostLockStartNow()" class="btn btn-primary" style="padding: 16px 20px; font-size: 15px; font-weight: 800; background: var(--price-up); border-color: var(--price-up); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(33,134,83,0.25);">
+          <div>
+            <div style="font-size: 15px; font-weight: 900;">▶ Start Day 1 Now</div>
+            <div style="font-size: 11px; font-weight: 400; opacity: 0.9; margin-top: 2px;">Synchronized 3-2-1 countdown across all screens then opening bell</div>
+          </div>
+          <span style="font-size: 20px;">⚡</span>
+        </button>
+
+        <!-- Option 2: Schedule Day 1 -->
+        <div class="cream-panel" style="padding: 14px 16px; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="togglePostLockScheduleSection()">
+            <div>
+              <div style="font-size: 14px; font-weight: 800; color: var(--text-forest);">📅 Schedule Day 1 Start Time</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Arm the student waiting room with a synchronized countdown timer</div>
+            </div>
+            <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px;">Select Time ▾</button>
+          </div>
+
+          <div id="postLockScheduleSection" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--subtle-border);">
+            <label style="font-size: 11px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Opening Bell Date &amp; Time (Local):</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="datetime-local" id="postLockScheduledTimeInput" class="form-input" style="flex: 1; padding: 8px 12px; font-family: var(--font-mono); font-size: 13px;" />
+              <button type="button" onclick="confirmPostLockSchedule()" class="btn btn-sage" style="padding: 8px 16px; font-size: 12px; font-weight: 800; white-space: nowrap;">
+                Confirm Schedule
+              </button>
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">
+              *Desks will display the countdown in the waiting room and automatically unlock when the timer hits zero.
+            </div>
+          </div>
+        </div>
+
+        <!-- Option 3: Start Later / Open Host Command Centre -->
+        <button type="button" onclick="executePostLockStartLater()" class="btn btn-outline" style="padding: 12px 16px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-charcoal);">🚪 Start Later (Open Host Operations Panel)</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Keep market in Standby. Launch anytime from the Host Operations Bar.</div>
+          </div>
+          <span>➔</span>
         </button>
       </div>
     </div>
@@ -947,17 +1032,15 @@
             style="font-family: var(--font-mono); font-size: 52px; font-weight: 900; color: var(--text-forest); letter-spacing: 3px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.08);">
             00:00:00</div>
           <p id="waitingRoomTimerNote"
-            style="font-size: 13px; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">Trading desks and all
-            20 NSE stocks will unlock automatically when timer reaches zero.</p>
+            style="font-size: 13px; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">Trading desks and active
+            stocks will unlock automatically when timer reaches zero.</p>
         </div>
 
         <div
-          style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
-          <span>⚡ 20 Live Stocks Loaded</span>
+          style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 16px; font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
+          <span id="waitingRoomStockSummary">Selected Corporate Equities Ready</span>
           <span>•</span>
-          <span>🔒 Order Security Ready</span>
-          <span>•</span>
-          <span>🔔 Hall Sound Engine Armed</span>
+          <span>Live Trading Floor Execution</span>
         </div>
 
         <div
@@ -3542,33 +3625,33 @@
       </div>
 
       <!-- Scene 4: 1st Place Gold Champion Reveal -->
-      <div id="sceneChampion" class="hidden luxury-card"
-        style="max-width: 860px; width: 100%; text-align: center; padding: 48px 36px; border: 4px solid var(--champagne-accent); box-shadow: 0 20px 50px rgba(180, 83, 9, 0.2);">
-        <div class="trophy-bounce" style="font-size: 96px; margin-bottom: 12px;">🏆</div>
+      <div id="sceneChampion" class="hidden luxury-card golden-aura-glow"
+        style="max-width: 860px; width: 100%; text-align: center; padding: 48px 36px; border: 4px solid var(--champagne-accent); position: relative;">
+        <div id="presChampionTrophy" class="trophy-bounce trophy-intense-slam" style="font-size: 108px; margin-bottom: 12px;">🏆</div>
         <div class="badge badge-champagne"
-          style="font-size: 15px; font-weight: 900; letter-spacing: 0.15em; padding: 6px 20px; margin-bottom: 14px;">★
+          style="font-size: 15px; font-weight: 900; letter-spacing: 0.15em; padding: 6px 20px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(212,175,55,0.3);">★
           GRAND CHAMPION 2026 ★</div>
         <h1 id="presChampionTeam"
-          style="font-size: 46px; color: var(--text-forest); margin-bottom: 4px; font-family: var(--font-serif);">Team
+          style="font-size: 48px; color: var(--text-forest); margin-bottom: 4px; font-family: var(--font-serif); font-weight: 900;">Team
           Name</h1>
         <p id="presChampionMembers"
-          style="font-size: 16px; color: var(--text-muted); font-weight: 600; margin-bottom: 28px;"></p>
+          style="font-size: 16px; color: var(--text-muted); font-weight: 700; margin-bottom: 28px;"></p>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent); background: #FFFFFF;">
             <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Final
               Net Worth</div>
             <div id="presChampionVal"
               style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--text-forest); margin-top: 4px;">
               ₹0.00</div>
           </div>
-          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent); background: #FFFFFF;">
             <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Total
               Profit Generated</div>
             <div id="presChampionPnl"
               style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--price-up); margin-top: 4px;">
               +₹0.00</div>
           </div>
-          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent);">
+          <div class="cream-panel" style="padding: 20px; border: 2px solid var(--champagne-accent); background: #FFFFFF;">
             <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Total
               Return %</div>
             <div id="presChampionReturn"
@@ -3671,15 +3754,21 @@
         <button onclick="presNextScene()" class="btn btn-primary"
           style="padding: 6px 14px; font-size: 12px; font-weight: 800;">Next Scene ▶</button>
       </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
         <button onclick="hostSetPresentationScene('INTRO')" class="btn btn-outline"
           style="padding: 4px 10px; font-size: 11px;">1. Verification</button>
         <button onclick="hostSetPresentationScene('BRONZE')" class="btn btn-outline"
           style="padding: 4px 10px; font-size: 11px;">2. 🥉 Bronze</button>
         <button onclick="hostSetPresentationScene('SILVER')" class="btn btn-outline"
           style="padding: 4px 10px; font-size: 11px;">3. 🥈 Silver</button>
+        <button onclick="triggerDramaticDrumroll()" class="btn btn-outline"
+          style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-color: #D97706; color: #B45309; background: #FFFBEB;">
+          🥁 Tension Drumroll
+        </button>
         <button onclick="hostSetPresentationScene('CHAMPION')" class="btn btn-champagne"
-          style="padding: 4px 10px; font-size: 11px; font-weight: 800;">4. 🏆 Champion</button>
+          style="padding: 4px 12px; font-size: 11px; font-weight: 900; background: #D97706; color: #FFFFFF; border-color: #B45309; box-shadow: 0 2px 8px rgba(217,119,6,0.3);">
+          🏆 4. Reveal Champion (Epic)
+        </button>
         <button onclick="hostSetPresentationScene('PODIUM')" class="btn btn-outline"
           style="padding: 4px 10px; font-size: 11px;">5. 🎖️ Grand Podium</button>
         <button onclick="hostSetPresentationScene('LEADERBOARD')" class="btn btn-outline"

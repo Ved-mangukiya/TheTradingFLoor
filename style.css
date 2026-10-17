@@ -941,6 +941,87 @@ textarea.form-input {
   }
 }
 
+/* DRAMATIC WINNER REVEAL INTENSE ANIMATIONS */
+@keyframes dramaticRumble {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-4px, 3px) rotate(-0.5deg); }
+  20% { transform: translate(4px, -3px) rotate(0.5deg); }
+  30% { transform: translate(-5px, -2px) rotate(-1deg); }
+  40% { transform: translate(5px, 3px) rotate(1deg); }
+  50% { transform: translate(-3px, 4px) rotate(-0.5deg); }
+  60% { transform: translate(4px, 2px) rotate(0.5deg); }
+  70% { transform: translate(-4px, -3px) rotate(-0.5deg); }
+  80% { transform: translate(3px, -2px) rotate(0.5deg); }
+  90% { transform: translate(-2px, 3px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.dramatic-screen-rumble {
+  animation: dramaticRumble 0.35s cubic-bezier(.36,.07,.19,.97) infinite both;
+}
+
+@keyframes goldenAuraPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 20px 50px rgba(180, 83, 9, 0.3);
+    border-color: #D4AF37;
+  }
+  50% {
+    box-shadow: 0 0 60px 30px rgba(212, 175, 55, 0.95), 0 30px 80px rgba(180, 83, 9, 0.6);
+    border-color: #F59E0B;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 20px 50px rgba(180, 83, 9, 0.3);
+    border-color: #D4AF37;
+  }
+}
+
+.golden-aura-glow {
+  animation: goldenAuraPulse 1.6s infinite ease-in-out !important;
+}
+
+@keyframes championTrophyIntense {
+  0% {
+    transform: scale(0.3) rotate(-20deg);
+    opacity: 0;
+    filter: drop-shadow(0 0 0 rgba(212,175,55,0));
+  }
+  45% {
+    transform: scale(1.45) rotate(10deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 45px #F59E0B);
+  }
+  65% {
+    transform: scale(0.88) rotate(-5deg);
+    filter: drop-shadow(0 0 30px #F59E0B);
+  }
+  80% {
+    transform: scale(1.15) rotate(2deg);
+  }
+  100% {
+    transform: scale(1.0) rotate(0deg);
+    filter: drop-shadow(0 0 25px rgba(212,175,55,0.85));
+  }
+}
+
+.trophy-intense-slam {
+  display: inline-block;
+  animation: championTrophyIntense 1.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+@keyframes screenWhiteout {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.screen-flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, #FFFBEB 20%, #FDE68A 100%);
+  z-index: 120;
+  pointer-events: none;
+  animation: screenWhiteout 1.2s ease-out forwards;
+}
+
 /* 13. TOAST NOTIFICATION */
 .toast-notice {
   position: fixed;
