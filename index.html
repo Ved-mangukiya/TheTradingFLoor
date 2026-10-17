@@ -183,42 +183,54 @@
     </div>
   </div>
 
-  <!-- 1.2 Breaking News Flashover Modal -->
+  <!-- 1.2 Breaking News Flashover Modal (High-Pressure Market Shock) -->
   <div id="newsFlashModal" class="hidden modal-overlay" style="z-index: 110;">
-    <div class="modal-content" style="max-width: 720px; border: 3px solid var(--champagne-accent);">
-      <div
-        style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 16px; gap: 8px;">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-          <span class="badge"
-            style="background-color: var(--error-bg); color: var(--error-red); border: 1px solid var(--error-border);">
-            📰 MARKET WIRE UPDATE
-          </span>
-          <span id="flashTrafficBadge" class="badge-news-good">🟢 GOOD NEWS</span>
-          <span id="flashEventType"
-            style="font-family: var(--font-mono); font-weight: 700; color: var(--champagne-accent); font-size: 12px;">
-            SECTOR SHOCK
+    <div class="modal-content news-flash-pressure" style="max-width: 740px; border-radius: 18px; padding: 26px 30px; box-shadow: 0 0 50px rgba(220, 38, 38, 0.4), 0 25px 60px rgba(0,0,0,0.45);">
+      <!-- Urgent Wire Ribbon -->
+      <div style="background: linear-gradient(90deg, #991B1B 0%, #DC2626 50%, #991B1B 100%); color: #FFF; padding: 8px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #FEF08A; animation: pulseGlow 0.8s infinite;"></span>
+          <span style="font-size: 13px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase;">
+            🔴 HIGH VOLATILITY WIRE ALERT • MARKET IMPACT IN PROGRESS
           </span>
         </div>
-        <span id="flashCountdownBadge"
-          style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); white-space: nowrap;">
-          Closing in 20s
+        <span id="flashCountdownBadge" style="font-family: var(--font-mono); font-size: 12px; font-weight: 700; background: rgba(0,0,0,0.35); padding: 3px 10px; border-radius: 4px;">
+          Auto-closing in 20s
         </span>
       </div>
 
-      <h2 id="flashHeadline" style="font-size: 26px; line-height: 1.25; margin-bottom: 14px;"></h2>
-
-      <div class="cream-panel" style="padding: 16px; margin-bottom: 18px;">
-        <span
-          style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">
-          Impact Analysis
-        </span>
-        <p id="flashExplanation"
-          style="font-size: 16px; font-weight: 600; color: var(--text-forest); line-height: 1.45;"></p>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--subtle-border); padding-bottom: 10px; margin-bottom: 14px; gap: 8px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <span id="flashTrafficBadge" class="badge-news-good">🟢 GOOD NEWS</span>
+          <span id="flashEventType" style="font-family: var(--font-mono); font-weight: 800; color: var(--champagne-accent); font-size: 12px;">
+            SECTOR SHOCK
+          </span>
+          <span id="flashAffectedTickers" class="badge badge-sage" style="font-size: 11px; font-weight: 800;">
+            MARKET-WIDE IMPACT
+          </span>
+        </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end;">
-        <button onclick="dismissNewsFlash()" class="btn btn-sage">
-          Dismiss & Return to Terminal
+      <h2 id="flashHeadline" style="font-size: 24px; line-height: 1.25; margin-bottom: 14px; font-weight: 900; color: var(--text-forest); font-family: var(--font-serif);"></h2>
+
+      <div id="flashCalloutBox" class="cream-panel" style="padding: 16px 20px; margin-bottom: 16px; border-left: 4px solid var(--champagne-accent); border-radius: 10px; background: #FAF9F6;">
+        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px; letter-spacing: 0.05em;">
+          Immediate Market Reaction &amp; Analysis
+        </span>
+        <p id="flashExplanation" style="font-size: 15px; font-weight: 600; color: var(--text-forest); line-height: 1.5; margin: 0 0 10px 0;"></p>
+        <div id="flashDeskMandate" style="font-size: 11px; font-weight: 700; color: #B45309; background: #FEF3C7; padding: 6px 12px; border-radius: 6px; border: 1px solid #FCD34D;">
+          ⚠️ DESK ACTION MANDATE: Re-evaluate open orders and risk exposure before continuous matching prices adjust.
+        </div>
+      </div>
+
+      <!-- Shrinking countdown progress bar -->
+      <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden; margin-bottom: 18px;">
+        <div id="flashCountdownBar" style="height: 100%; width: 100%; background: linear-gradient(90deg, #DC2626, #F59E0B); transition: width 1s linear;"></div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button onclick="dismissNewsFlash()" class="btn btn-sage" style="font-weight: 800; padding: 8px 20px;">
+          Acknowledge &amp; Return to Terminal [✕]
         </button>
       </div>
     </div>
@@ -333,10 +345,13 @@
           Trading paused on this stock.</div>
       </div>
     </div>
-    <button onclick="dismissCircuitAlertBanner()"
-      style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.45); color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
-      OK
-    </button>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span id="circuitAlertCountdownText" style="font-size: 11px; font-family: var(--font-mono); opacity: 0.85;">(Auto-closing in 8s)</span>
+      <button onclick="dismissCircuitAlertBanner()"
+        style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.45); color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
+        OK [✕]
+      </button>
+    </div>
   </div>
 
   <!-- 1.6 Full Screen Blackout Blind Overlay (Screen Hidden Mode) -->
@@ -901,7 +916,7 @@
         <button type="button" onclick="closeLockSetupConfirmModal()" class="btn btn-outline" style="padding: 10px 18px;">
           Cancel / Keep Editing
         </button>
-        <button type="button" onclick="submitLockEventSetup()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
+        <button type="button" id="btnSubmitLockSetup" onclick="submitLockEventSetup()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
           Yes, Lock Event &amp; Open Logins
         </button>
       </div>
@@ -3177,6 +3192,94 @@
       <!-- Real-Time Market & Sector Indices Ticker Strip (Persistent Across Projector) -->
       <div id="projIndicesTickerBar" class="indices-ticker-bar" style="margin-bottom: 14px;"></div>
 
+      <!-- Dedicated Auditorium Hero Start Timer & Opening Ceremony Stage -->
+      <div id="projEventOpeningHero" class="hidden proj-hero-countdown-container">
+        <!-- Top Institutional Header & Badges -->
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid rgba(212, 175, 55, 0.25); padding-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="badge" style="background: rgba(212, 175, 55, 0.15); color: #F59E0B; border: 1px solid #D4AF37; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; padding: 4px 12px;">
+              ★ AUDITORIUM CENTRAL STAGE • OPENING CEREMONY ★
+            </span>
+            <span id="projHeroLiveStatusBadge" class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 11px; font-weight: 800;">
+              🟢 TERMINALS ARMED &amp; SYNCHRONIZED
+            </span>
+          </div>
+          <span id="projHeroSessionPill" class="badge" style="background: linear-gradient(135deg, #D97706 0%, #B45309 100%); color: #FFFFFF; font-weight: 900; font-size: 12px; letter-spacing: 0.08em; padding: 5px 16px; border-radius: 999px; box-shadow: 0 2px 8px rgba(180, 83, 9, 0.4);">
+            DAY 1 PRE-MARKET
+          </span>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 22px;">
+          <h1 id="projHeroEventTitle" style="font-family: var(--font-serif); font-size: clamp(28px, 3.4vw, 44px); font-weight: 900; color: #FFFFFF; margin: 0 0 6px 0; letter-spacing: -0.01em; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+            The Trading Floor Championship 2026
+          </h1>
+          <div id="projHeroInstitution" style="font-size: clamp(13px, 1.3vw, 16px); color: #CBD5E1; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+            Gujarat Technological University • SSASIT
+          </div>
+        </div>
+
+        <!-- The Central Glowing Monospace Countdown Box -->
+        <div class="proj-hero-timer-box">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+            <span class="proj-timer-beacon"></span>
+            <span id="projHeroTimerLabel" style="font-size: 14px; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.15em;">
+              MARKET OPENING BELL IN
+            </span>
+          </div>
+
+          <!-- Giant Digits Display -->
+          <div id="projHeroTimerDigits" class="proj-hero-timer-digits">
+            00:00
+          </div>
+
+          <!-- Dynamic Progress Bar -->
+          <div class="proj-hero-progress-track">
+            <div id="projHeroProgressBarFill" class="proj-hero-progress-fill" style="width: 100%;"></div>
+          </div>
+
+          <div id="projHeroTargetTimeDisplay" style="font-family: var(--font-mono); font-size: 13px; color: #94A3B8; margin-top: 14px; font-weight: 600;">
+            Scheduled Opening: Calculating...
+          </div>
+        </div>
+
+        <!-- Floor Readiness & Market Intelligence Matrix (4 Luxury Cards) -->
+        <div class="proj-hero-stats-grid">
+          <div class="proj-hero-stat-card">
+            <div style="font-size: 20px; margin-bottom: 4px;">🏛️</div>
+            <div class="proj-hero-stat-label">Trading Desks</div>
+            <div id="projHeroDesksCount" class="proj-hero-stat-value">3 Desks Armed</div>
+            <div class="proj-hero-stat-sub">Live Synchronized Terminals</div>
+          </div>
+
+          <div class="proj-hero-stat-card">
+            <div style="font-size: 20px; margin-bottom: 4px;">📈</div>
+            <div class="proj-hero-stat-label">Active Equities</div>
+            <div id="projHeroEquitiesCount" class="proj-hero-stat-value">8 Real Companies</div>
+            <div class="proj-hero-stat-sub">Baselined For Session</div>
+          </div>
+
+          <div class="proj-hero-stat-card">
+            <div style="font-size: 20px; margin-bottom: 4px;">⏱️</div>
+            <div class="proj-hero-stat-label">Session Duration</div>
+            <div id="projHeroDurationDisplay" class="proj-hero-stat-value">30 Minutes</div>
+            <div class="proj-hero-stat-sub">Continuous Matching</div>
+          </div>
+
+          <div class="proj-hero-stat-card">
+            <div style="font-size: 20px; margin-bottom: 4px;">🛡️</div>
+            <div class="proj-hero-stat-label">Risk Governance</div>
+            <div id="projHeroCircuitDisplay" class="proj-hero-stat-value">±20% Circuit Limit</div>
+            <div class="proj-hero-stat-sub">Directional Liquidity Halts</div>
+          </div>
+        </div>
+
+        <!-- Bottom Strategy Wire Strip -->
+        <div style="margin-top: 22px; padding: 12px 20px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: #E2E8F0; text-align: center;">
+          <span style="color: #F59E0B; font-size: 15px;">⚡</span>
+          <span><strong>AUDITORIUM NOTICE:</strong> Continuous order matching engine arms on opening bell. Review sector allocations and breaking macroeconomic indicators.</span>
+        </div>
+      </div>
+
       <!-- Standby Announcement Banner (Displays when Day is in Standby before Host starts it) -->
       <div id="projStandbyBanner" class="hidden luxury-card"
         style="padding: 24px; text-align: center; margin-bottom: 14px; border: 2px dashed var(--champagne-accent); background: linear-gradient(135deg, #FFFFFF 0%, var(--surface-cream) 100%);">
@@ -3991,6 +4094,11 @@
           <span style="font-size: 12px; color: var(--text-muted);">Your Current Holding</span>
           <span id="tradeModalHolding" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700;">0 shares</span>
         </div>
+        <!-- 52W High / Low & Key Metrics -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--subtle-border); font-size: 11px;">
+          <div><span style="color: var(--text-muted);">52W Range:</span> <strong id="tradeModal52W" style="font-family: var(--font-mono); color: var(--text-forest);">₹0.00 − ₹0.00</strong></div>
+          <div style="text-align: right;"><span style="color: var(--text-muted);">Fundamentals:</span> <strong id="tradeModalFundSummary" style="font-family: var(--font-mono); color: var(--text-forest);">N/A</strong></div>
+        </div>
       </div>
 
       <!-- Side Switch Tabs: BUY vs SELL -->
@@ -4085,55 +4193,81 @@
 
   <!-- Modal B: Company Profile & Fundamentals Modal -->
   <div id="detailsModal" class="hidden modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 580px;">
       <div class="modal-header">
-        <h2 id="modalTitle" style="font-size: 18px;">Company Profile & Financials</h2>
+        <div>
+          <h2 id="modalTitle" style="font-size: 18px;">Company Profile & Financials</h2>
+          <span id="modalIndustry" class="stock-sector" style="margin-top: 2px; display: inline-block;">Industry</span>
+        </div>
         <button onclick="closeDetailsModal()" class="modal-close-btn">✕</button>
       </div>
+
+      <!-- Real-Time 52-Week Breakout Alert Banner -->
+      <div id="modal52WAlert" style="display: none;"></div>
+
       <p id="modalSummary" class="cream-panel"
-        style="padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--text-charcoal);"></p>
+        style="padding: 12px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; color: var(--text-charcoal);"></p>
+
+      <!-- 52-Week Range Visual Progress Meter -->
+      <div class="cream-panel" style="padding: 12px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; font-family: var(--font-mono);">
+          <span style="color: var(--price-down); font-weight: 700;">52W L: <span id="modalLow52Text">₹0.00</span></span>
+          <span style="color: var(--text-forest); font-weight: 800;">CMP: <span id="modalCMP">₹0.00</span></span>
+          <span style="color: var(--price-up); font-weight: 700;">52W H: <span id="modalHigh52Text">₹0.00</span></span>
+        </div>
+        <div style="height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; position: relative;">
+          <div id="modal52WBar" style="height: 100%; width: 50%; background: linear-gradient(90deg, #DC2626, #F59E0B, #16A34A); border-radius: 4px; transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
       <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
         <div class="cream-panel" style="padding: 10px;">
-          <span
-            style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Sector</span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Sector</span>
           <span id="modalSector" style="font-weight: 700; color: var(--text-forest);"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Face
-            Value</span>
-          <span id="modalFaceValue" style="font-family: var(--font-mono); font-weight: 700;"></span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Market Cap</span>
+          <span id="modalMarketCap" style="font-weight: 800; color: var(--text-forest); font-family: var(--font-mono);"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week
-            High</span>
-          <span id="modalHigh52"
-            style="font-family: var(--font-mono); font-weight: 700; color: var(--price-up);"></span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week High</span>
+          <span id="modalHigh52" style="font-family: var(--font-mono); font-weight: 700; color: var(--price-up);"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week
-            Low</span>
-          <span id="modalLow52"
-            style="font-family: var(--font-mono); font-weight: 700; color: var(--price-down);"></span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">52-Week Low</span>
+          <span id="modalLow52" style="font-family: var(--font-mono); font-weight: 700; color: var(--price-down);"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">P/E
-            Ratio</span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">P/E Ratio</span>
           <span id="modalPE" style="font-family: var(--font-mono); font-weight: 700;"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Market
-            Cap</span>
-          <span id="modalMarketCap" style="font-weight: 700;"></span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Return on Equity (ROE)</span>
+          <span id="modalROE" style="font-family: var(--font-mono); font-weight: 700; color: var(--price-up);"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span
-            style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Debt-to-Equity</span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">ROCE</span>
+          <span id="modalROCE" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Debt-to-Equity</span>
           <span id="modalDE" style="font-family: var(--font-mono); font-weight: 700;"></span>
         </div>
         <div class="cream-panel" style="padding: 10px;">
-          <span
-            style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Exchange</span>
-          <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-forest);">NSE / BSE</span>
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Book Value</span>
+          <span id="modalBookValue" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Promoter Holding</span>
+          <span id="modalPromoter" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Dividend Yield</span>
+          <span id="modalDividend" style="font-family: var(--font-mono); font-weight: 700;"></span>
+        </div>
+        <div class="cream-panel" style="padding: 10px;">
+          <span style="color: var(--text-muted); display: block; font-size: 10px; text-transform: uppercase;">Stock Beta</span>
+          <span id="modalBeta" style="font-family: var(--font-mono); font-weight: 700;"></span>
         </div>
       </div>
     </div>
@@ -5047,8 +5181,11 @@
           <li>You can start the session whenever the room is ready using <strong>▶ Start Market (3-2-1)</strong>.</li>
         </ul>
       </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
         <button type="button" onclick="closeLifecycleModal('modalStartNextDay')" class="btn btn-outline">Cancel</button>
+        <button type="button" onclick="executeStartNextDayAndSchedule()" class="btn btn-outline" style="border-color: #2563EB; color: #1D4ED8; font-weight: 800;">
+          ⏱️ Advance &amp; Schedule Countdown...
+        </button>
         <button type="button" onclick="executeStartNextDay()" class="btn btn-primary" style="background: var(--price-up); border-color: var(--price-up); font-weight: 800;">
           ▶️ Advance to Next Day (Standby)
         </button>

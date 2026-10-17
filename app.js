@@ -512,6 +512,7 @@
 let ws = null;
 let sessionToken = sessionStorage.getItem('ttf_session_token') || null;
 let currentRole = null;
+let isLoggedIn = false;
 let latestState = null;
 let flashTimerHandle = null;
 let currentSelectedTickerForChart = null;
@@ -1317,6 +1318,7 @@ function launchDemoRole(role) {
   getSharedAudioContext();
 
   currentRole = role;
+  isLoggedIn = true;
   sessionToken = 'demo_token_' + role.toLowerCase();
   sessionStorage.setItem('ttf_session_token', sessionToken);
 
@@ -1338,6 +1340,7 @@ function exitDemoMode() {
   sessionToken = null;
   sessionStorage.removeItem('ttf_session_token');
   currentRole = null;
+  isLoggedIn = false;
   switchSpaView(null);
   var quickAccessCard = document.getElementById('demoQuickAccessCard');
   if (quickAccessCard) quickAccessCard.classList.remove('hidden');
@@ -1478,6 +1481,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     if (msg.type === 'LOGIN_SUCCESS') {
       sessionToken = msg.session_token;
       currentRole = msg.role;
+      isLoggedIn = true;
       sessionStorage.setItem('ttf_session_token', sessionToken);
       if (msg.initialState) {
         latestState = msg.initialState;
@@ -1522,11 +1526,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       playInstitutionalSound('emergency_klaxon');
       document.body.classList.add('circuit-strobe-active');
       setTimeout(() => { document.body.classList.remove('circuit-strobe-active'); }, 5000);
-      const banner = document.getElementById('circuitBreakerAlertBanner');
-      if (banner) {
-        document.getElementById('circuitAlertText').textContent = `${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`;
-        banner.classList.remove('hidden');
-      }
+      showCircuitAlertBanner(`${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`);
       showOrderToast(`🚨 CIRCUIT BREAKER: ${msg.ticker} halted (${msg.direction} limit at ₹${msg.price.toFixed(2)})`, false);
       return;
     }
@@ -1645,11 +1645,17 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'EVENT_CONFIG_LOCKED' || msg.type === 'EVENT_CONFIG_LOCKED_ACK') {
+      closeLockSetupConfirmModal();
+      try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
+
       if (!latestState) latestState = {};
       if (!latestState.gameState) latestState.gameState = {};
       latestState.gameState.configLocked = true;
       latestState.gameState.status = msg.status || (msg.gameState && msg.gameState.status) || 'STANDBY';
       if (msg.gameState) latestState.gameState = { ...latestState.gameState, ...msg.gameState };
+      if (msg.companies) latestState.companies = msg.companies;
+      if (msg.allCompaniesUniverse) latestState.allCompaniesUniverse = msg.allCompaniesUniverse;
+      if (msg.scenarioMode) latestState.scenarioMode = msg.scenarioMode;
 
       if (isLoggedIn) {
         playInstitutionalSound('competition_ready');
@@ -1661,11 +1667,17 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         const hostEl = document.getElementById('hostView');
         if (setupEl) setupEl.classList.add('hidden');
         if (hostEl) hostEl.classList.remove('hidden');
-        showOrderToast(`🔒 ${msg.message || msg.reason || 'Configuration locked! Live championship active and 16 team logins open.'}`, true);
+        showOrderToast(`🔒 ${msg.message || msg.reason || 'Configuration locked! Live championship active and team logins open.'}`, true);
         if (msg.type === 'EVENT_CONFIG_LOCKED_ACK') {
           openPostLockDay1Modal(msg.teamsCount || 16);
         }
-        if (latestState) renderHostView(latestState);
+        if (latestState) {
+          try {
+            renderHostView(latestState);
+          } catch (renderErr) {
+            console.error('[RENDER HOST VIEW ERROR]', renderErr);
+          }
+        }
       }
       return;
     }
@@ -2888,6 +2900,12 @@ function renderTraderView(state) {
     const upperLimit = +(refForCB * (1 + cbPct / 100)).toFixed(2);
     const lowerLimit = +(refForCB * (1 - cbPct / 100)).toFixed(2);
 
+    const f = stock.fundamentals || {};
+    const w52High = stock.week52High || (f.high_52w ? parseFloat(f.high_52w) : +(refForCB * 1.25).toFixed(2));
+    const w52Low = stock.week52Low || (f.low_52w ? parseFloat(f.low_52w) : +(refForCB * 0.75).toFixed(2));
+    const is52WHighBreakout = !!(stock.isNew52WHigh || stock.currentPrice >= w52High);
+    const is52WLowBreakdown = !!(stock.isNew52WLow || stock.currentPrice <= w52Low);
+
     return `
       <div class="stock-card ${stock.isHalted ? 'halted' : ''}">
         <div>
@@ -2917,10 +2935,29 @@ function renderTraderView(state) {
           </div>
 
           <!-- Circuit Limit Bands (Floor & Cap) -->
-          <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin: 3px 0 6px 0; background: #FAF9F6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--subtle-border);">
+          <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin: 3px 0 4px 0; background: #FAF9F6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--subtle-border);">
             <span title="Lower Circuit Limit (-${cbPct}%)">Floor: ₹${lowerLimit.toFixed(2)}</span>
             <span style="font-weight: 700; color: var(--text-muted);">±${cbPct}% Limit</span>
             <span title="Upper Circuit Limit (+${cbPct}%)">Cap: ₹${upperLimit.toFixed(2)}</span>
+          </div>
+
+          <!-- 52-Week Range & Breakout Alert Banner -->
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-family: var(--font-mono); margin: 2px 0 4px 0; background: #FAF9F6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--subtle-border);">
+            <span title="52-Week Low" style="color: var(--price-down); font-weight: 700;">52W L: ₹${Number(w52Low).toFixed(2)}</span>
+            ${is52WHighBreakout
+              ? `<span class="badge" style="background: #FEF3C7; color: #B45309; font-weight: 800; font-size: 9px; padding: 1px 6px; border: 1px solid #F59E0B; animation: pulse 1.5s infinite;">🔥 NEW 52W HIGH</span>`
+              : is52WLowBreakdown
+              ? `<span class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 800; font-size: 9px; padding: 1px 6px; border: 1px solid #38BDF8;">❄️ NEW 52W LOW</span>`
+              : `<span style="color: var(--text-muted); font-size: 9px; font-weight: 600;">52W Range</span>`
+            }
+            <span title="52-Week High" style="color: var(--price-up); font-weight: 700;">52W H: ₹${Number(w52High).toFixed(2)}</span>
+          </div>
+
+          <!-- Micro Corporate Fundamentals Bar -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 4px; font-size: 10px; color: var(--text-muted); font-family: var(--font-sans); margin-bottom: 6px; background: #fff; padding: 3px 4px; border-radius: 4px; border: 1px solid var(--subtle-border);">
+            <div><span style="font-size: 9px; color: var(--text-muted); display: block;">MCAP</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${f.market_cap || 'N/A'}</strong></div>
+            <div><span style="font-size: 9px; color: var(--text-muted); display: block;">P/E</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${f.pe_ratio !== undefined ? f.pe_ratio : 'N/A'}</strong></div>
+            <div><span style="font-size: 9px; color: var(--text-muted); display: block;">BETA</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${(stock.beta || 1.0).toFixed(2)}</strong></div>
           </div>
 
           <!-- Mini Canvas Sparkline -->
@@ -3201,6 +3238,27 @@ function recalculateTradeModal() {
   if (elFee) elFee.textContent = `₹${fee.toFixed(2)}`;
   if (elFeeLabel) elFeeLabel.textContent = `Brokerage Fee (${feeBps} bps):`;
 
+  // 52W High / Low & Fundamentals in Trade Modal
+  const el52W = document.getElementById('tradeModal52W');
+  const elFund = document.getElementById('tradeModalFundSummary');
+  if (el52W) {
+    const high52 = Number(stock.week52High || (stock.fundamentals && stock.fundamentals.high_52w) || (stock.base_price * 1.25));
+    const low52 = Number(stock.week52Low || (stock.fundamentals && stock.fundamentals.low_52w) || (stock.base_price * 0.75));
+    const isNew52H = !!(stock.isNew52WHigh || price >= high52);
+    const isNew52L = !!(stock.isNew52WLow || price <= low52);
+    if (isNew52H) {
+      el52W.innerHTML = `<span style="color: #B45309; font-weight: 800;">🔥 NEW 52W HIGH ₹${price.toFixed(2)}</span>`;
+    } else if (isNew52L) {
+      el52W.innerHTML = `<span style="color: #0369A1; font-weight: 800;">❄️ NEW 52W LOW ₹${price.toFixed(2)}</span>`;
+    } else {
+      el52W.textContent = `₹${low52.toFixed(2)} − ₹${high52.toFixed(2)}`;
+    }
+  }
+  if (elFund) {
+    const f = stock.fundamentals || {};
+    elFund.textContent = `${f.market_cap || 'N/A'} • P/E ${f.pe_ratio !== undefined ? f.pe_ratio : 'N/A'}`;
+  }
+
   if (elHint) {
     if (currentTradeModalSide === 'BUY') {
       elHint.textContent = `Max Affordable: ${maxAffordable}`;
@@ -3341,15 +3399,79 @@ function openDetailsModal(ticker) {
   if (!stock) return;
   const f = stock.fundamentals || {};
 
+  const high52 = Number(stock.week52High || f.high_52w || (stock.base_price * 1.25));
+  const low52 = Number(stock.week52Low || f.low_52w || (stock.base_price * 0.75));
+  const curPrice = Number(stock.currentPrice || stock.base_price);
+  const is52H = !!(stock.isNew52WHigh || curPrice >= high52);
+  const is52L = !!(stock.isNew52WLow || curPrice <= low52);
+
   document.getElementById('modalTitle').textContent = `${stock.ticker} — ${stock.name}`;
   document.getElementById('modalSummary').textContent = f.summary || `${stock.name} is a leading corporation in the ${stock.sector} sector.`;
   document.getElementById('modalSector').textContent = stock.sector;
-  document.getElementById('modalFaceValue').textContent = `₹${(f.face_value || 1).toFixed(2)}`;
-  document.getElementById('modalHigh52').textContent = `₹${(f.high_52w || stock.base_price).toLocaleString('en-IN')}`;
-  document.getElementById('modalLow52').textContent = `₹${(f.low_52w || stock.base_price).toLocaleString('en-IN')}`;
+  document.getElementById('modalHigh52').textContent = `₹${high52.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById('modalLow52').textContent = `₹${low52.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   document.getElementById('modalPE').textContent = f.pe_ratio !== undefined ? f.pe_ratio : 'N/A';
   document.getElementById('modalMarketCap').textContent = f.market_cap || 'N/A';
   document.getElementById('modalDE').textContent = f.debt_to_equity !== undefined ? f.debt_to_equity : 'N/A';
+
+  const elIndustry = document.getElementById('modalIndustry');
+  if (elIndustry) elIndustry.textContent = f.industry || stock.sector;
+  const elROE = document.getElementById('modalROE');
+  if (elROE) elROE.textContent = f.roe || 'N/A';
+  const elROCE = document.getElementById('modalROCE');
+  if (elROCE) elROCE.textContent = f.roce || 'N/A';
+  const elBookValue = document.getElementById('modalBookValue');
+  if (elBookValue) elBookValue.textContent = f.book_value || 'N/A';
+  const elPromoter = document.getElementById('modalPromoter');
+  if (elPromoter) elPromoter.textContent = f.promoter_holding || 'N/A';
+  const elDividend = document.getElementById('modalDividend');
+  if (elDividend) elDividend.textContent = f.dividend_yield || 'N/A';
+  const elBeta = document.getElementById('modalBeta');
+  if (elBeta) elBeta.textContent = (stock.beta || 1.0).toFixed(2);
+
+  // 52W Breakout alert banner
+  const alertEl = document.getElementById('modal52WAlert');
+  if (alertEl) {
+    if (is52H) {
+      alertEl.style.display = 'block';
+      alertEl.style.background = '#FEF3C7';
+      alertEl.style.color = '#B45309';
+      alertEl.style.border = '1px solid #F59E0B';
+      alertEl.style.padding = '8px 12px';
+      alertEl.style.marginBottom = '12px';
+      alertEl.style.borderRadius = '6px';
+      alertEl.style.fontSize = '12px';
+      alertEl.style.fontWeight = '800';
+      alertEl.innerHTML = `🔥 52-WEEK RECORD HIGH BREAKOUT: Current price ₹${curPrice.toFixed(2)} has surged past the 52-week peak!`;
+    } else if (is52L) {
+      alertEl.style.display = 'block';
+      alertEl.style.background = '#E0F2FE';
+      alertEl.style.color = '#0369A1';
+      alertEl.style.border = '1px solid #38BDF8';
+      alertEl.style.padding = '8px 12px';
+      alertEl.style.marginBottom = '12px';
+      alertEl.style.borderRadius = '6px';
+      alertEl.style.fontSize = '12px';
+      alertEl.style.fontWeight = '800';
+      alertEl.innerHTML = `❄️ 52-WEEK RECORD LOW BREAKDOWN: Current price ₹${curPrice.toFixed(2)} has touched a fresh 52-week low!`;
+    } else {
+      alertEl.style.display = 'none';
+    }
+  }
+
+  // 52W Meter Bar
+  const elLowText = document.getElementById('modalLow52Text');
+  const elHighText = document.getElementById('modalHigh52Text');
+  const elCMP = document.getElementById('modalCMP');
+  const elBar = document.getElementById('modal52WBar');
+  if (elLowText) elLowText.textContent = `₹${low52.toFixed(2)}`;
+  if (elHighText) elHighText.textContent = `₹${high52.toFixed(2)}`;
+  if (elCMP) elCMP.textContent = `₹${curPrice.toFixed(2)}`;
+  if (elBar) {
+    const range = high52 - low52;
+    const pct = range > 0 ? Math.min(100, Math.max(0, ((curPrice - low52) / range) * 100)) : 50;
+    elBar.style.width = `${pct.toFixed(1)}%`;
+  }
 
   document.getElementById('detailsModal').classList.remove('hidden');
 }
@@ -3554,13 +3676,8 @@ function renderProjectorView(state) {
   const projStandbyBanner = document.getElementById('projStandbyBanner');
   if (projStandbyBanner) {
     if (isScheduled) {
-      projStandbyBanner.classList.remove('hidden');
-      const bBadge = document.getElementById('projStandbyDayBadge');
-      const bTitle = document.getElementById('projStandbyTitle');
-      const bSub = document.getElementById('projStandbySub');
-      if (bBadge) bBadge.textContent = `DAY ${gameState.currentDay} SCHEDULED`;
-      if (bTitle) bTitle.textContent = `Day ${gameState.currentDay} Scheduled • Opens in ${formatMMSS(remSec)}`;
-      if (bSub) bSub.textContent = `Trading desks are connected. Synchronized opening countdown is live in auditorium and all terminals.`;
+      // Dedicated auditorium hero timer (#projEventOpeningHero) handles scheduled state
+      projStandbyBanner.classList.add('hidden');
     } else if (isStandby) {
       projStandbyBanner.classList.remove('hidden');
       const bBadge = document.getElementById('projStandbyDayBadge');
@@ -3740,30 +3857,179 @@ function renderProjectorView(state) {
     SCENE_NEWS: document.getElementById('projSceneNews')
   };
 
-  Object.keys(sceneElements).forEach((sKey) => {
-    const el = sceneElements[sKey];
-    if (el) {
-      if (sKey === activeScene) el.classList.remove('hidden');
-      else el.classList.add('hidden');
+  const heroEl = document.getElementById('projEventOpeningHero');
+
+  if (isScheduled) {
+    if (heroEl) {
+      heroEl.classList.remove('hidden');
+      renderProjectorHeroCountdown(state, remSec);
     }
-  });
+    if (sceneBadge) {
+      sceneBadge.textContent = `⏳ PRE-MARKET: OPENS IN ${formatMMSS(remSec)}`;
+      sceneBadge.className = 'badge badge-champagne';
+    }
+    // Hide standard scenes while auditorium hero countdown is active
+    Object.keys(sceneElements).forEach((sKey) => {
+      const el = sceneElements[sKey];
+      if (el) el.classList.add('hidden');
+    });
+  } else {
+    if (heroEl) heroEl.classList.add('hidden');
+    // Normal scene toggling:
+    Object.keys(sceneElements).forEach((sKey) => {
+      const el = sceneElements[sKey];
+      if (el) {
+        if (sKey === activeScene) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      }
+    });
+
+    // Render scene-specific contents
+    if (activeScene === 'SCENE_MARKET_BOARD') {
+      renderProjectorMarketBoard((companies || []).filter((c) => c.isEnabled !== false));
+    } else if (activeScene === 'SCENE_INDICES') {
+      renderProjectorIndices(projIndicesList);
+    } else if (activeScene === 'SCENE_STRATEGY') {
+      renderProjectorStrategy(teamSectorAllocations || state.teamSectorAllocations || []);
+    } else if (activeScene === 'SCENE_LEADERBOARD') {
+      renderProjectorLeaderboard(leaderboard || state.leaderboard || [], gameState);
+    } else if (activeScene === 'SCENE_NEWS') {
+      renderProjectorNews(gameState.newsHistory || []);
+    }
+  }
 
   // Always render persistent real-time indices ticker strip on projector
   const projIndicesList = marketIndices || (gameState && gameState.marketIndices) || calculateClientIndices(companies);
   renderAllIndicesBars(projIndicesList);
+}
 
-  // Render scene-specific contents
-  if (activeScene === 'SCENE_MARKET_BOARD') {
-    renderProjectorMarketBoard((companies || []).filter((c) => c.isEnabled !== false));
-  } else if (activeScene === 'SCENE_INDICES') {
-    renderProjectorIndices(projIndicesList);
-  } else if (activeScene === 'SCENE_STRATEGY') {
-    renderProjectorStrategy(teamSectorAllocations || state.teamSectorAllocations || []);
-  } else if (activeScene === 'SCENE_LEADERBOARD') {
-    renderProjectorLeaderboard(leaderboard || state.leaderboard || [], gameState);
-  } else if (activeScene === 'SCENE_NEWS') {
-    renderProjectorNews(gameState.newsHistory || []);
+// ==========================================
+// AUDITORIUM PROJECTOR HERO COUNTDOWN ENGINE
+// ==========================================
+let projectorHeroTickerHandle = null;
+
+function renderProjectorHeroCountdown(state, remSec) {
+  const { gameState, companies, leaderboard } = state;
+  if (!gameState) return;
+
+  const titleEl = document.getElementById('projHeroEventTitle');
+  const instEl = document.getElementById('projHeroInstitution');
+  const sessionPill = document.getElementById('projHeroSessionPill');
+  const digitsEl = document.getElementById('projHeroTimerDigits');
+  const fillEl = document.getElementById('projHeroProgressBarFill');
+  const targetTimeEl = document.getElementById('projHeroTargetTimeDisplay');
+  const desksEl = document.getElementById('projHeroDesksCount');
+  const equitiesEl = document.getElementById('projHeroEquitiesCount');
+  const durEl = document.getElementById('projHeroDurationDisplay');
+  const circuitEl = document.getElementById('projHeroCircuitDisplay');
+
+  if (titleEl) titleEl.textContent = gameState.title || 'The Trading Floor Championship 2026';
+  if (instEl) instEl.textContent = gameState.institution || 'Gujarat Technological University • SSASIT';
+  if (sessionPill) sessionPill.textContent = `DAY ${gameState.currentDay || 1} PRE-MARKET`;
+
+  if (desksEl) {
+    const count = Object.keys(leaderboard || {}).length || 3;
+    desksEl.textContent = `${count} Desks Armed`;
   }
+  if (equitiesEl) {
+    const compCount = (companies || []).filter(c => c.isEnabled !== false).length || 8;
+    equitiesEl.textContent = `${compCount} Real Equities`;
+  }
+  if (durEl) {
+    const mins = Math.round((gameState.dayDurationSeconds || 1800) / 60);
+    durEl.textContent = `${mins} Minutes`;
+  }
+  if (circuitEl) {
+    circuitEl.textContent = `±${gameState.circuitBreakerPercent || 20}% Circuit Limit`;
+  }
+
+  // Format digits
+  const hrs = Math.floor(remSec / 3600);
+  const mins = Math.floor((remSec % 3600) / 60);
+  const secs = remSec % 60;
+  let formatted = '';
+  if (hrs > 0) {
+    formatted = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  } else {
+    formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  if (digitsEl) {
+    if (remSec <= 3 && remSec > 0) {
+      digitsEl.textContent = `${remSec}`;
+      digitsEl.style.transform = 'scale(1.18)';
+      digitsEl.style.color = '#F59E0B';
+      setTimeout(() => { if (digitsEl) digitsEl.style.transform = 'scale(1)'; }, 150);
+    } else if (remSec === 0) {
+      digitsEl.textContent = 'OPEN!';
+      digitsEl.style.color = 'var(--price-up)';
+    } else {
+      digitsEl.textContent = formatted;
+      digitsEl.style.color = '#FFFFFF';
+    }
+  }
+
+  if (targetTimeEl && gameState.scheduledStartTime) {
+    try {
+      const dt = new Date(gameState.scheduledStartTime);
+      targetTimeEl.textContent = `Scheduled Floor Opening: ${dt.toLocaleTimeString()} • Synchronized Live Clock`;
+    } catch (e) {
+      targetTimeEl.textContent = `Opening in ${formatted}`;
+    }
+  }
+
+  if (fillEl) {
+    const maxSec = 300;
+    const pct = Math.min(100, Math.max(5, (remSec / maxSec) * 100));
+    fillEl.style.width = `${pct}%`;
+  }
+
+  ensureProjectorHeroTicker();
+}
+
+function ensureProjectorHeroTicker() {
+  if (projectorHeroTickerHandle) return;
+  projectorHeroTickerHandle = setInterval(() => {
+    if (!latestState || !latestState.gameState) return;
+    const gs = latestState.gameState;
+    if (gs.status !== 'SCHEDULED' || !gs.scheduledStartTime) {
+      clearInterval(projectorHeroTickerHandle);
+      projectorHeroTickerHandle = null;
+      return;
+    }
+    const remMs = Math.max(0, new Date(gs.scheduledStartTime).getTime() - Date.now());
+    const remSec = Math.floor(remMs / 1000);
+    const digitsEl = document.getElementById('projHeroTimerDigits');
+    const hrs = Math.floor(remSec / 3600);
+    const mins = Math.floor((remSec % 3600) / 60);
+    const secs = remSec % 60;
+    const formatted = hrs > 0
+      ? `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+      : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    if (digitsEl) {
+      if (remSec <= 3 && remSec > 0) {
+        digitsEl.textContent = `${remSec}`;
+        digitsEl.style.transform = 'scale(1.18)';
+        digitsEl.style.color = '#F59E0B';
+        setTimeout(() => { if (digitsEl) digitsEl.style.transform = 'scale(1)'; }, 150);
+      } else if (remSec === 0) {
+        digitsEl.textContent = 'OPEN!';
+        digitsEl.style.color = 'var(--price-up)';
+      } else {
+        digitsEl.textContent = formatted;
+        digitsEl.style.color = '#FFFFFF';
+      }
+    }
+    const clockEl = document.getElementById('projClockText');
+    if (clockEl) clockEl.textContent = `OPENS IN: ${formatted}`;
+    const statusEl = document.getElementById('projStatusText');
+    if (statusEl) statusEl.textContent = `⏳ OPENS IN ${formatted}`;
+    const fillEl = document.getElementById('projHeroProgressBarFill');
+    if (fillEl) {
+      const pct = Math.min(100, Math.max(5, (remSec / 300) * 100));
+      fillEl.style.width = `${pct}%`;
+    }
+  }, 1000);
 }
 
 // Scene 1: All-Stocks High-Visibility Grid with Automatic Zero-Scroll Pagination, Live Rankings & Spotlight
@@ -3918,8 +4184,9 @@ function renderProjectorMarketBoard(companies) {
                 </div>
                 <span id="projPrice_${stock.ticker}" class="projector-price price-up">₹${curPrice.toFixed(2)}</span>
               </div>
-              <div class="projector-card-sub">
+              <div class="projector-card-sub" style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
                 <span id="projDelta_${stock.ticker}" class="projector-delta price-up">+0.00% ▲</span>
+                <span id="proj52w_${stock.ticker}" class="projector-52w-strip" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); font-weight: 600;">52W Range</span>
                 <span class="projector-sector">${escapeHtml(stock.sector || '')}</span>
               </div>
             </div>
@@ -3966,6 +4233,21 @@ function renderProjectorMarketBoard(companies) {
         ? `⛔ HALTED (${stock.haltDirection || 'CIRCUIT'})`
         : `${isUp ? '+' : ''}${pct}% ${isUp ? '▲' : '▼'}`;
       deltaEl.className = isUp ? 'price-up' : 'price-down';
+    }
+
+    const w52El = document.getElementById(`proj52w_${stock.ticker}`);
+    if (w52El) {
+      const high52 = Number(stock.week52High || (stock.fundamentals && stock.fundamentals.high_52w) || (ref * 1.25));
+      const low52 = Number(stock.week52Low || (stock.fundamentals && stock.fundamentals.low_52w) || (ref * 0.75));
+      const isNew52H = !!(stock.isNew52WHigh || curPrice >= high52);
+      const isNew52L = !!(stock.isNew52WLow || curPrice <= low52);
+      if (isNew52H) {
+        w52El.innerHTML = `<span style="background: #FEF3C7; color: #B45309; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #F59E0B; animation: pulse 1.5s infinite;">🔥 52W HIGH ₹${curPrice.toFixed(2)}</span>`;
+      } else if (isNew52L) {
+        w52El.innerHTML = `<span style="background: #E0F2FE; color: #0369A1; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #38BDF8;">❄️ 52W LOW ₹${curPrice.toFixed(2)}</span>`;
+      } else {
+        w52El.textContent = `52W: ₹${low52.toFixed(0)} - ₹${high52.toFixed(0)}`;
+      }
     }
 
     if (window.drawSmoothMiniSparkline) {
@@ -5532,6 +5814,18 @@ function executeStartNextDay() {
   }
 }
 
+function executeStartNextDayAndSchedule() {
+  closeStartNextDayModal();
+  if (Date.now() - lastStartNextDayActionTime < 500) return;
+  lastStartNextDayActionTime = Date.now();
+  if (ws && sessionToken) {
+    ws.send(JSON.stringify({ action: 'HOST_START_NEXT_DAY', session_token: sessionToken }));
+  }
+  setTimeout(() => {
+    openScheduleEventModal();
+  }, 400);
+}
+
 function openAddDayModal() {
   const gs = latestState?.gameState;
   const total = gs?.totalDays || 3;
@@ -6574,6 +6868,11 @@ function openLockSetupConfirmModal() {
 function closeLockSetupConfirmModal() {
   const modal = document.getElementById('lockSetupConfirmModal');
   if (modal) modal.classList.add('hidden');
+  const btn = document.getElementById('btnSubmitLockSetup');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Yes, Lock Event & Open Logins';
+  }
 }
 
 function submitLockEventSetup() {
@@ -6581,6 +6880,12 @@ function submitLockEventSetup() {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     showOrderToast('⚠️ Server connection not open. Please reconnect.', false);
     return;
+  }
+
+  const btn = document.getElementById('btnSubmitLockSetup');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Submitting & Locking...';
   }
 
   const title = (document.getElementById('setupEventTitle')?.value || '').trim();
@@ -6592,7 +6897,13 @@ function submitLockEventSetup() {
   const circuitBreakerPercent = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
   const riskProfile = document.getElementById('setupRiskProfile')?.value || 'BALANCED';
   const teams = getSetupTeamsArray();
-  const selectedTickers = Array.from(setupSelectedTickers);
+  let selectedTickers = Array.from(setupSelectedTickers || []);
+  if (!selectedTickers || selectedTickers.length < 4) {
+    const fallbackTickers = (latestState && latestState.allCompaniesUniverse && latestState.allCompaniesUniverse.length >= 4)
+      ? latestState.allCompaniesUniverse.map((c) => c.ticker)
+      : DEFAULT_CATALOGUE_COMPANIES.map((c) => c.ticker);
+    selectedTickers = Array.from(new Set([...(selectedTickers || []), ...fallbackTickers]));
+  }
 
   ws.send(JSON.stringify({
     action: 'HOST_SET_EVENT_LOCK',
@@ -7132,26 +7443,27 @@ function renderHostView(state) {
     hostStatusText = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED';
   }
 
-  document.getElementById('hostScenarioModeBadge').textContent = `${state.scenarioMode.toUpperCase()} MODE`;
-  document.getElementById('hostClockInfo').textContent =
-    `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${hostStatusText} • Shift Offset: ${gameState.totalShiftOffsetSeconds}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
+  const modeBadge = document.getElementById('hostScenarioModeBadge');
+  if (modeBadge) {
+    modeBadge.textContent = `${(state.scenarioMode || (latestState && latestState.scenarioMode) || 'live').toUpperCase()} MODE`;
+  }
+  const clockInfo = document.getElementById('hostClockInfo');
+  if (clockInfo) {
+    clockInfo.textContent =
+      `Day ${gameState.currentDay} / ${gameState.totalDays} • Clock: ${formatMMSS(gameState.elapsedSeconds)} / ${formatMMSS(gameState.dayDurationSeconds)} • Status: ${hostStatusText} • Shift Offset: ${gameState.totalShiftOffsetSeconds || 0}s • Fee: ${gameState.transactionFeeBps || 0} bps`;
+  }
 
   // Render Configuration Lock Status Banner
+  const lockBanner = document.getElementById('hostConfigLockBanner');
   const lockIcon = document.getElementById('hostConfigLockIcon');
   const lockTitle = document.getElementById('hostConfigLockTitle');
   const lockDesc = document.getElementById('hostConfigLockDesc');
   const lockBadge = document.getElementById('hostConfigLockBadge');
 
   if (gameState.configLocked) {
-    if (lockIcon) lockIcon.textContent = '🔒';
-    if (lockTitle) lockTitle.textContent = 'EVENT CONFIGURATION LOCKED (LIVE TOURNAMENT ACTIVE)';
-    if (lockDesc) lockDesc.textContent = 'Starting capital, tradeable share universe, and scoring formulas are locked on the server. Market simulation is authoritative.';
-    if (lockBadge) {
-      lockBadge.textContent = 'CONFIG LOCKED';
-      lockBadge.style.background = '#FEE2E2';
-      lockBadge.style.color = '#991B1B';
-    }
+    if (lockBanner) lockBanner.classList.add('hidden');
   } else {
+    if (lockBanner) lockBanner.classList.remove('hidden');
     if (lockIcon) lockIcon.textContent = '🔓';
     if (lockTitle) lockTitle.textContent = 'CONFIGURATION UNLOCKED (DRAFT SETUP MODE)';
     if (lockDesc) lockDesc.textContent = 'Tournament parameters, starting capital, and share universe are currently editable. Launching or scheduling will lock them.';
@@ -8327,24 +8639,64 @@ function prepareFullNewsModal(news) {
   const headEl = document.getElementById('flashHeadline');
   const expEl = document.getElementById('flashExplanation');
   const trafficBadge = document.getElementById('flashTrafficBadge');
+  const tickersEl = document.getElementById('flashAffectedTickers');
+  const mandateEl = document.getElementById('flashDeskMandate');
+  const barEl = document.getElementById('flashCountdownBar');
 
   if (evtEl) evtEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'}`;
   if (headEl) headEl.textContent = news.headline;
   if (expEl) expEl.textContent = news.simple_explanation || news.explanation || '';
 
+  const isGood = (news.sentiment === 'POSITIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('GOOD')) || (news.deltaPct > 0);
+  const isBad = (news.sentiment === 'NEGATIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('BAD')) || (news.deltaPct < 0);
+
   if (trafficBadge) {
-    const isGood = (news.sentiment === 'POSITIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('GOOD')) || (news.deltaPct > 0);
-    const isBad = (news.sentiment === 'NEGATIVE') || (news.trafficLightBadge && news.trafficLightBadge.includes('BAD')) || (news.deltaPct < 0);
     if (isGood) {
-      trafficBadge.textContent = '🟢 GOOD NEWS (PRICE UP)';
+      trafficBadge.textContent = '🟢 BULLISH RALLY (BUY SURGE)';
       trafficBadge.className = 'badge-news-good';
     } else if (isBad) {
-      trafficBadge.textContent = '🔴 BAD NEWS (PRICE DOWN)';
+      trafficBadge.textContent = '🔴 PANIC SELLOFF (HIGH RISK)';
       trafficBadge.className = 'badge-news-bad';
     } else {
-      trafficBadge.textContent = '🔵 NEUTRAL UPDATE';
+      trafficBadge.textContent = '⚡ HIGH VOLATILITY SHOCK';
       trafficBadge.className = 'badge-news-neutral';
     }
+  }
+
+  if (tickersEl) {
+    if (news.ticker) {
+      tickersEl.textContent = `TARGET: ${news.ticker}`;
+      tickersEl.style.display = 'inline-block';
+    } else if (news.sector) {
+      tickersEl.textContent = `SECTOR: ${news.sector.toUpperCase()}`;
+      tickersEl.style.display = 'inline-block';
+    } else {
+      tickersEl.textContent = 'BROAD MARKET IMPACT';
+      tickersEl.style.display = 'inline-block';
+    }
+  }
+
+  if (mandateEl) {
+    if (isGood) {
+      mandateEl.innerHTML = '🚀 <strong>DESK MANDATE:</strong> Bullish momentum incoming. Monitor ask prices and protect against premature profit-taking.';
+      mandateEl.style.borderColor = '#86EFAC';
+      mandateEl.style.background = '#F0FDF4';
+      mandateEl.style.color = '#166534';
+    } else if (isBad) {
+      mandateEl.innerHTML = '⚠️ <strong>DESK MANDATE:</strong> Extreme downside pressure expected. Re-evaluate open positions and limit orders immediately!';
+      mandateEl.style.borderColor = '#FCA5A5';
+      mandateEl.style.background = '#FEF2F2';
+      mandateEl.style.color = '#991B1B';
+    } else {
+      mandateEl.innerHTML = '⚡ <strong>DESK MANDATE:</strong> Macro realignment across all sectors. High spread expected on matching order books.';
+      mandateEl.style.borderColor = '#FCD34D';
+      mandateEl.style.background = '#FEF3C7';
+      mandateEl.style.color = '#92400E';
+    }
+  }
+
+  if (barEl) {
+    barEl.style.width = '100%';
   }
 }
 
@@ -8356,12 +8708,15 @@ function showNewsFlashModal(news) {
 
   let remaining = 20;
   const badge = document.getElementById('flashCountdownBadge');
-  if (badge) badge.textContent = `Closing in ${remaining}s`;
+  const barEl = document.getElementById('flashCountdownBar');
+  if (badge) badge.textContent = `Auto-closing in ${remaining}s`;
+  if (barEl) barEl.style.width = '100%';
 
   if (flashTimerHandle) clearInterval(flashTimerHandle);
   flashTimerHandle = setInterval(() => {
     remaining--;
-    if (badge) badge.textContent = `Closing in ${remaining}s`;
+    if (badge) badge.textContent = `Auto-closing in ${remaining}s`;
+    if (barEl) barEl.style.width = `${(remaining / 20) * 100}%`;
     if (remaining <= 0) {
       dismissNewsFlash();
     }
@@ -9538,8 +9893,10 @@ function openScheduleEventModal() {
   const modal = document.getElementById('scheduleEventModal');
   if (!modal) return;
 
-  if (latestState && latestState.gameState) {
-    const gs = latestState.gameState;
+  const gs = latestState?.gameState;
+  const currentDay = gs?.currentDay || 1;
+
+  if (gs) {
     const titleInput = document.getElementById('scheduleEventTitleInput');
     const instInput = document.getElementById('scheduleInstitutionInput');
     const durInput = document.getElementById('scheduleDurationSecInput');
@@ -9554,8 +9911,15 @@ function openScheduleEventModal() {
     if (policySelect) policySelect.value = gs.pausePolicy || 'TRADING_TIME';
   }
 
-  // Default to immediate
-  selectStartMode('IMMEDIATE');
+  // Update modal header for Day X
+  const modalHeaderTitle = document.querySelector('#scheduleEventModal h2');
+  if (modalHeaderTitle) {
+    modalHeaderTitle.textContent = `Day ${currentDay} Schedule & Countdown`;
+  }
+
+  // Default to SCHEDULED mode with quick 2-min preset
+  selectStartMode('SCHEDULED');
+  setQuickScheduleMinutes(2);
   modal.classList.remove('hidden');
 }
 
@@ -9670,7 +10034,54 @@ function confirmScheduleOrStartEvent() {
   closeScheduleEventModal();
 }
 
+let circuitBannerTimeoutHandle = null;
+let circuitBannerIntervalHandle = null;
+
+function showCircuitAlertBanner(text) {
+  const banner = document.getElementById('circuitBreakerAlertBanner');
+  const alertText = document.getElementById('circuitAlertText');
+  const cdText = document.getElementById('circuitAlertCountdownText');
+  if (!banner) return;
+  if (alertText) alertText.textContent = text;
+
+  if (circuitBannerTimeoutHandle) {
+    clearTimeout(circuitBannerTimeoutHandle);
+    circuitBannerTimeoutHandle = null;
+  }
+  if (circuitBannerIntervalHandle) {
+    clearInterval(circuitBannerIntervalHandle);
+    circuitBannerIntervalHandle = null;
+  }
+
+  let remaining = 8;
+  if (cdText) cdText.textContent = `(Auto-closing in ${remaining}s)`;
+  banner.classList.remove('hidden');
+
+  circuitBannerIntervalHandle = setInterval(() => {
+    remaining--;
+    if (cdText) cdText.textContent = `(Auto-closing in ${remaining}s)`;
+    if (remaining <= 0) {
+      if (circuitBannerIntervalHandle) {
+        clearInterval(circuitBannerIntervalHandle);
+        circuitBannerIntervalHandle = null;
+      }
+    }
+  }, 1000);
+
+  circuitBannerTimeoutHandle = setTimeout(() => {
+    dismissCircuitAlertBanner();
+  }, 8000);
+}
+
 function dismissCircuitAlertBanner() {
+  if (circuitBannerTimeoutHandle) {
+    clearTimeout(circuitBannerTimeoutHandle);
+    circuitBannerTimeoutHandle = null;
+  }
+  if (circuitBannerIntervalHandle) {
+    clearInterval(circuitBannerIntervalHandle);
+    circuitBannerIntervalHandle = null;
+  }
   const banner = document.getElementById('circuitBreakerAlertBanner');
   if (banner) banner.classList.add('hidden');
   document.body.classList.remove('circuit-strobe-active');
