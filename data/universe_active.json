@@ -15,14 +15,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹19.9 Lakh Cr",
+      "market_cap": "₹19.95 Lakh Cr",
       "pe_ratio": 26.8,
-      "high_52w": 3217,
-      "low_52w": 2220,
+      "high_52w": 3217.9,
+      "low_52w": 2220.3,
       "face_value": 10,
       "debt_to_equity": 0.38,
-      "dividend_yield": "0.3%",
-      "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes."
+      "dividend_yield": "0.35%",
+      "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes.",
+      "industry": "Oil Refining, Telecom & Retail",
+      "roe": "14.2%",
+      "roce": "16.8%",
+      "book_value": "₹1,180",
+      "promoter_holding": "50.3%"
     }
   },
   {
@@ -41,14 +46,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹3.60 Lakh Cr",
+      "market_cap": "₹3.62 Lakh Cr",
       "pe_ratio": 16.4,
-      "high_52w": 1179,
-      "low_52w": 620,
+      "high_52w": 1179.05,
+      "low_52w": 620.5,
       "face_value": 2,
       "debt_to_equity": 1.15,
-      "dividend_yield": "0.6%",
-      "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover."
+      "dividend_yield": "0.62%",
+      "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover.",
+      "industry": "Automotive & Commercial Vehicles",
+      "roe": "32.5%",
+      "roce": "24.1%",
+      "book_value": "₹245",
+      "promoter_holding": "46.4%"
     }
   },
   {
@@ -67,14 +77,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹3.85 Lakh Cr",
-      "pe_ratio": 28.5,
+      "market_cap": "₹3.90 Lakh Cr",
+      "pe_ratio": 28.2,
       "high_52w": 13680,
       "low_52w": 9700,
       "face_value": 5,
       "debt_to_equity": 0.01,
-      "dividend_yield": "1.0%",
-      "summary": "India's undisputed passenger car volume leader with vast dealership penetration and heavy net-cash balance sheet."
+      "dividend_yield": "1.05%",
+      "summary": "Undisputed leader in Indian passenger vehicle market commanding >40% market share with zero net debt.",
+      "industry": "Passenger Vehicles & Utility Cars",
+      "roe": "17.4%",
+      "roce": "22.6%",
+      "book_value": "₹2,680",
+      "promoter_holding": "58.2%"
     }
   },
   {
@@ -99,8 +114,13 @@
       "low_52w": 1450,
       "face_value": 5,
       "debt_to_equity": 0.12,
-      "dividend_yield": "0.7%",
-      "summary": "Dominant SUV and agricultural tractor titan with rapidly expanding electric SUV pipeline and high return on capital."
+      "dividend_yield": "0.72%",
+      "summary": "Dominant SUV and agricultural tractor titan with rapidly expanding electric SUV pipeline and high return on capital.",
+      "industry": "Automotive SUVs & Farm Equipment",
+      "roe": "21.6%",
+      "roce": "23.4%",
+      "book_value": "₹520",
+      "promoter_holding": "19.3%"
     }
   },
   {
@@ -119,14 +139,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹15.0 Lakh Cr",
+      "market_cap": "₹15.02 Lakh Cr",
       "pe_ratio": 31.4,
       "high_52w": 4585,
       "low_52w": 3310,
       "face_value": 1,
       "debt_to_equity": 0,
-      "dividend_yield": "2.8%",
-      "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios."
+      "dividend_yield": "2.85%",
+      "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios.",
+      "industry": "IT Consulting & Enterprise Software",
+      "roe": "51.2%",
+      "roce": "65.4%",
+      "book_value": "₹285",
+      "promoter_holding": "71.8%"
     }
   },
   {
@@ -145,14 +170,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹7.80 Lakh Cr",
+      "market_cap": "₹7.82 Lakh Cr",
       "pe_ratio": 27.9,
       "high_52w": 1990,
       "low_52w": 1358,
       "face_value": 5,
       "debt_to_equity": 0.05,
-      "dividend_yield": "2.2%",
-      "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe."
+      "dividend_yield": "2.20%",
+      "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe.",
+      "industry": "IT Services & Cloud Solutions",
+      "roe": "31.8%",
+      "roce": "41.2%",
+      "book_value": "₹212",
+      "promoter_holding": "14.7%"
     }
   },
   {
@@ -171,14 +201,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹12.8 Lakh Cr",
+      "market_cap": "₹12.85 Lakh Cr",
       "pe_ratio": 19.2,
       "high_52w": 1794,
       "low_52w": 1363,
       "face_value": 1,
       "debt_to_equity": 6.8,
-      "dividend_yield": "1.2%",
-      "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach."
+      "dividend_yield": "1.22%",
+      "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach.",
+      "industry": "Private Sector Banking",
+      "roe": "16.8%",
+      "roce": "14.5%",
+      "book_value": "₹595",
+      "promoter_holding": "0.0% (Widely Held)"
     }
   },
   {
@@ -197,14 +232,19 @@
     "max_price": 500000,
     "isEnabled": true,
     "fundamentals": {
-      "market_cap": "₹8.70 Lakh Cr",
+      "market_cap": "₹8.72 Lakh Cr",
       "pe_ratio": 17.5,
       "high_52w": 1330,
       "low_52w": 910,
       "face_value": 2,
       "debt_to_equity": 5.9,
-      "dividend_yield": "0.9%",
-      "summary": "Fastest growing large private lender known for industry-leading net interest margins and prudent risk underwriting."
+      "dividend_yield": "0.95%",
+      "summary": "Fastest growing large private lender known for industry-leading net interest margins and prudent risk underwriting.",
+      "industry": "Private Sector Banking",
+      "roe": "18.9%",
+      "roce": "15.8%",
+      "book_value": "₹385",
+      "promoter_holding": "0.0% (Widely Held)"
     }
   },
   {
@@ -223,14 +263,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹7.30 Lakh Cr",
+      "market_cap": "₹7.32 Lakh Cr",
       "pe_ratio": 11.2,
       "high_52w": 912,
       "low_52w": 555,
       "face_value": 1,
       "debt_to_equity": 9.2,
-      "dividend_yield": "1.7%",
-      "summary": "Nation's largest public sector banking pillar commanding approximately one-fourth of entire Indian banking credit and deposits."
+      "dividend_yield": "1.70%",
+      "summary": "Nation's largest public sector banking pillar commanding approximately one-fourth of entire Indian banking credit and deposits.",
+      "industry": "Public Sector Banking",
+      "roe": "17.2%",
+      "roce": "13.4%",
+      "book_value": "₹465",
+      "promoter_holding": "57.5%"
     }
   },
   {
@@ -255,8 +300,13 @@
       "low_52w": 6180,
       "face_value": 2,
       "debt_to_equity": 3.6,
-      "dividend_yield": "0.5%",
-      "summary": "India's highest valuation consumer non-banking lender with massive omnichannel customer acquisition and fintech franchise."
+      "dividend_yield": "0.52%",
+      "summary": "India's highest valuation consumer non-banking lender with massive omnichannel customer acquisition and fintech franchise.",
+      "industry": "Consumer Non-Banking Finance (NBFC)",
+      "roe": "22.4%",
+      "roce": "20.1%",
+      "book_value": "₹1,420",
+      "promoter_holding": "54.8%"
     }
   },
   {
@@ -281,8 +331,13 @@
       "low_52w": 2860,
       "face_value": 2,
       "debt_to_equity": 0.7,
-      "dividend_yield": "1.0%",
-      "summary": "Pinnacle engineering, construction, and defence conglomerate with record order book spanning domestic metro, rail, and West Asian energy plants."
+      "dividend_yield": "1.02%",
+      "summary": "Pinnacle engineering, construction, and defence conglomerate with record order book spanning domestic metro, rail, and West Asian energy plants.",
+      "industry": "Infrastructure Engineering & EPC",
+      "roe": "15.5%",
+      "roce": "18.2%",
+      "book_value": "₹680",
+      "promoter_holding": "0.0% (Institutionally Held)"
     }
   },
   {
@@ -301,14 +356,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹9.10 Lakh Cr",
+      "market_cap": "₹9.12 Lakh Cr",
       "pe_ratio": 48,
       "high_52w": 1780,
       "low_52w": 915,
       "face_value": 5,
       "debt_to_equity": 1.9,
-      "dividend_yield": "0.5%",
-      "summary": "Leading telecommunications network operator across India and Africa with highest industry Average Revenue Per User (ARPU)."
+      "dividend_yield": "0.55%",
+      "summary": "Leading telecommunications network operator across India and Africa with highest industry Average Revenue Per User (ARPU).",
+      "industry": "Telecommunications & Cloud Services",
+      "roe": "19.8%",
+      "roce": "17.4%",
+      "book_value": "₹185",
+      "promoter_holding": "53.2%"
     }
   },
   {
@@ -333,8 +393,13 @@
       "low_52w": 399,
       "face_value": 1,
       "debt_to_equity": 0,
-      "dividend_yield": "2.9%",
-      "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout."
+      "dividend_yield": "2.95%",
+      "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout.",
+      "industry": "FMCG, Cigarettes, Hotels & Agri",
+      "roe": "29.4%",
+      "roce": "38.6%",
+      "book_value": "₹65",
+      "promoter_holding": "0.0% (Widely Held / BAT)"
     }
   },
   {
@@ -353,14 +418,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹6.45 Lakh Cr",
+      "market_cap": "₹6.48 Lakh Cr",
       "pe_ratio": 58.2,
       "high_52w": 3035,
       "low_52w": 2170,
       "face_value": 1,
       "debt_to_equity": 0.02,
-      "dividend_yield": "1.6%",
-      "summary": "Premier FMCG FMCG brand owner present in 9 out of 10 Indian households across personal care, beauty, home, and nutrition categories."
+      "dividend_yield": "1.65%",
+      "summary": "Premier FMCG brand owner present in 9 out of 10 Indian households across personal care, beauty, home, and nutrition categories.",
+      "industry": "FMCG - Personal Care & Foods",
+      "roe": "20.5%",
+      "roce": "27.8%",
+      "book_value": "₹220",
+      "promoter_holding": "61.9%"
     }
   },
   {
@@ -379,14 +449,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹4.12 Lakh Cr",
+      "market_cap": "₹4.15 Lakh Cr",
       "pe_ratio": 37.5,
       "high_52w": 1960,
       "low_52w": 1100,
       "face_value": 1,
       "debt_to_equity": 0.08,
-      "dividend_yield": "0.8%",
-      "summary": "India's top pharmaceutical enterprise by market share with expanding specialty dermatology, ophthalmology, and oncology global franchise."
+      "dividend_yield": "0.82%",
+      "summary": "India's top pharmaceutical enterprise by market share with expanding specialty dermatology, ophthalmology, and oncology global franchise.",
+      "industry": "Pharmaceuticals & Global Formulations",
+      "roe": "16.8%",
+      "roce": "19.2%",
+      "book_value": "₹310",
+      "promoter_holding": "54.5%"
     }
   },
   {
@@ -411,8 +486,13 @@
       "low_52w": 232,
       "face_value": 10,
       "debt_to_equity": 1.45,
-      "dividend_yield": "1.9%",
-      "summary": "National thermal generation giant driving aggressive solar and nuclear decarbonization targets to supply one-fourth of national electricity."
+      "dividend_yield": "1.92%",
+      "summary": "National thermal generation giant driving aggressive solar and nuclear decarbonization targets to supply one-fourth of national electricity.",
+      "industry": "Power Generation & Green Energy",
+      "roe": "13.6%",
+      "roce": "11.8%",
+      "book_value": "₹185",
+      "promoter_holding": "51.1%"
     }
   },
   {
@@ -431,14 +511,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹3.16 Lakh Cr",
+      "market_cap": "₹3.18 Lakh Cr",
       "pe_ratio": 19.4,
       "high_52w": 366,
       "low_52w": 198,
       "face_value": 10,
       "debt_to_equity": 1.35,
-      "dividend_yield": "3.3%",
-      "summary": "State-backed high-voltage inter-state transmission utility transmitting approximately 85% of India's bulk inter-regional electric power."
+      "dividend_yield": "3.35%",
+      "summary": "State-backed high-voltage inter-state transmission utility transmitting approximately 85% of India's bulk inter-regional electric power.",
+      "industry": "Power Transmission Infrastructure",
+      "roe": "19.2%",
+      "roce": "14.8%",
+      "book_value": "₹96",
+      "promoter_holding": "51.3%"
     }
   },
   {
@@ -457,14 +542,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹2.06 Lakh Cr",
+      "market_cap": "₹2.08 Lakh Cr",
       "pe_ratio": 38,
       "high_52w": 184,
       "low_52w": 118,
       "face_value": 1,
       "debt_to_equity": 0.85,
-      "dividend_yield": "2.2%",
-      "summary": "Major integrated global steelmaker with massive low-cost captive iron ore mines in Odisha and Jharkhand and ongoing European green transition."
+      "dividend_yield": "2.20%",
+      "summary": "Major integrated global steelmaker with massive low-cost captive iron ore mines in Odisha and Jharkhand and ongoing European green transition.",
+      "industry": "Iron & Steel Manufacturing",
+      "roe": "8.5%",
+      "roce": "12.4%",
+      "book_value": "₹78",
+      "promoter_holding": "33.2%"
     }
   },
   {
@@ -483,14 +573,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹2.40 Lakh Cr",
+      "market_cap": "₹2.42 Lakh Cr",
       "pe_ratio": 29.5,
       "high_52w": 1050,
       "low_52w": 735,
       "face_value": 1,
       "debt_to_equity": 1.1,
-      "dividend_yield": "0.7%",
-      "summary": "India's highest crude steel production capacity producer with rapid domestic plant expansions and high automotive steel share."
+      "dividend_yield": "0.75%",
+      "summary": "India's highest crude steel production capacity producer with rapid domestic plant expansions and high automotive steel share.",
+      "industry": "Iron & Steel Production",
+      "roe": "14.8%",
+      "roce": "15.2%",
+      "book_value": "₹320",
+      "promoter_holding": "44.8%"
     }
   },
   {
@@ -509,14 +604,19 @@
     "max_price": 500000,
     "isEnabled": false,
     "fundamentals": {
-      "market_cap": "₹3.06 Lakh Cr",
+      "market_cap": "₹3.08 Lakh Cr",
       "pe_ratio": 85,
       "high_52w": 3886,
       "low_52w": 3055,
       "face_value": 1,
       "debt_to_equity": 0.65,
-      "dividend_yield": "0.3%",
-      "summary": "India's most trusted lifestyle and jewellery retailer through Tanishq, Fastrack, Titan Eyeplus, and luxury watches."
+      "dividend_yield": "0.32%",
+      "summary": "India's most trusted lifestyle and jewellery retailer through Tanishq, Fastrack, Titan Eyeplus, and luxury watches.",
+      "industry": "Consumer Luxury, Jewellery & Watches",
+      "roe": "31.2%",
+      "roce": "34.5%",
+      "book_value": "₹140",
+      "promoter_holding": "52.9%"
     }
   }
 ]

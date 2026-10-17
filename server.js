@@ -375,6 +375,20 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
     gameState.pauseStartedAt = Date.now();
 
     companies = data.companies;
+    companies.forEach((c) => {
+      const basePrice = parseFloat(c.base_price) || 100;
+      const f = c.fundamentals || {};
+      if (!c.week52High || isNaN(c.week52High)) {
+        c.week52High = parseFloat(f.high_52w) || +(basePrice * 1.25).toFixed(2);
+      }
+      if (!c.week52Low || isNaN(c.week52Low)) {
+        c.week52Low = parseFloat(f.low_52w) || +(basePrice * 0.75).toFixed(2);
+      }
+      if (c.currentPrice > c.week52High) c.week52High = c.currentPrice;
+      if (c.currentPrice < c.week52Low) c.week52Low = c.currentPrice;
+      c.isNew52WHigh = c.currentPrice >= c.week52High;
+      c.isNew52WLow = c.currentPrice <= c.week52Low;
+    });
     teams = data.teams;
     if (Array.isArray(data.executedTrades)) {
       executedTrades.length = 0;
@@ -529,28 +543,56 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     }
   }
 
-  companies = rawCompanies.map((c) => ({
-    ticker: (c.ticker || '').toUpperCase().trim(),
-    name: c.name || c.ticker,
-    sector: c.sector || 'General',
-    base_price: parseFloat(c.base_price) || 100,
-    lot_presets: Array.isArray(c.lot_presets) && c.lot_presets.length > 0 ? c.lot_presets : [1, 5, 10, 50, 100],
-    beta: parseFloat(c.beta) || 1.0,
-    volatility_factor: parseFloat(c.volatility_factor) || 0.004,
-    min_price: parseFloat(c.min_price) || 1,
-    max_price: parseFloat(c.max_price) || 50000,
-    isEnabled: c.isEnabled !== false,
-    fundamentals: c.fundamentals || {},
-    currentPrice: parseFloat(c.base_price) || 100,
-    dayOpenPrice: parseFloat(c.base_price) || 100,
-    previousClosePrice: parseFloat(c.base_price) || 100,
-    dayHigh: parseFloat(c.base_price) || 100,
-    dayLow: parseFloat(c.base_price) || 100,
-    isHalted: false,
-    haltDirection: null,
-    activeTransition: null,
-    history: [{ time: 0, price: parseFloat(c.base_price) || 100 }]
-  }));
+  companies = rawCompanies.map((c, idx) => {
+    const basePrice = parseFloat(c.base_price) || 100;
+    const f = c.fundamentals || {};
+    let week52High = parseFloat(f.high_52w);
+    let week52Low = parseFloat(f.low_52w);
+    if (isNaN(week52High) || week52High <= 0) week52High = +(basePrice * 1.25).toFixed(2);
+    if (isNaN(week52Low) || week52Low <= 0) week52Low = +(basePrice * 0.75).toFixed(2);
+    if (week52High < basePrice) week52High = +(basePrice * 1.05).toFixed(2);
+    if (week52Low > basePrice) week52Low = +(basePrice * 0.95).toFixed(2);
+
+    // Intraday wave parameters for realistic divergence (prevents all stocks moving together)
+    const trendPhase = ((idx * 1.73) % (Math.PI * 2));
+    const trendFreq = 0.012 + ((idx % 7) * 0.005);
+    // Balanced market breadth: ~35% positive bias, ~35% negative bias, ~30% neutral oscillation
+    const sentimentBias = (idx % 3 === 0) ? 0.00015 : (idx % 3 === 1) ? -0.00015 : 0;
+
+    return {
+      ticker: (c.ticker || '').toUpperCase().trim(),
+      name: c.name || c.ticker,
+      sector: c.sector || 'General',
+      base_price: basePrice,
+      lot_presets: Array.isArray(c.lot_presets) && c.lot_presets.length > 0 ? c.lot_presets : [1, 5, 10, 50, 100],
+      beta: parseFloat(c.beta) || 1.0,
+      volatility_factor: parseFloat(c.volatility_factor) || 0.005,
+      min_price: parseFloat(c.min_price) || 1,
+      max_price: parseFloat(c.max_price) || 500000,
+      isEnabled: c.isEnabled !== false,
+      fundamentals: {
+        ...f,
+        high_52w: week52High,
+        low_52w: week52Low
+      },
+      currentPrice: basePrice,
+      dayOpenPrice: basePrice,
+      previousClosePrice: basePrice,
+      dayHigh: basePrice,
+      dayLow: basePrice,
+      week52High,
+      week52Low,
+      isNew52WHigh: false,
+      isNew52WLow: false,
+      trendPhase,
+      trendFreq,
+      sentimentBias,
+      isHalted: false,
+      haltDirection: null,
+      activeTransition: null,
+      history: [{ time: 0, price: basePrice }]
+    };
+  });
 
   newsEvents = scenarioData.news_events.map((ev) => ({
     ...ev,
@@ -1308,19 +1350,50 @@ function restartEngineInterval() {
         }
       }
 
-      // 2. Realistic Gaussian + micro-drift + Ornstein-Uhlenbeck mean-reversion
-      const gaussianComponent = gaussianRandom() * stock.volatility_factor * stock.currentPrice * 0.25;
-      const microDrift = (Math.random() - 0.495) * stock.volatility_factor * stock.currentPrice * 0.35;
-      // Subtle gravitational anchor towards baseline price (prevents unrealistic runaway divergence)
-      const meanReversion = -0.0003 * (stock.currentPrice - stock.base_price);
-      const totalDrift = gaussianComponent + microDrift + meanReversion;
+      // 2. Realistic Gaussian + micro-drift + cyclical waves + mean-reversion
+      // Dynamic volatility calibrated to institutional simulation: balanced, exciting, no positive bias
+      const effectiveVol = Math.max(0.0035, (stock.volatility_factor || 0.004) * (stock.beta || 1.0) * 1.5);
+      const gaussianComponent = gaussianRandom() * effectiveVol * stock.currentPrice * 0.45;
+      // UNBIASED microDrift: Mean is exactly 0 (Math.random() - 0.50) to prevent artificial upward profit creep
+      const microDrift = (Math.random() - 0.50) * effectiveVol * stock.currentPrice * 0.35;
+      // Intraday cyclical sine wave creates natural swings and divergences across stocks
+      const cyclicalWave = Math.cos((gameState.elapsedSeconds * (stock.trendFreq || 0.02)) + (stock.trendPhase || 0)) * effectiveVol * stock.currentPrice * 0.35;
+      // Mild sentiment drift creates clear winning and losing stocks to prevent ties
+      const trendDrift = (stock.sentimentBias || 0) * stock.currentPrice;
+      // Gentle mean-reversion towards dayOpenPrice prevents runaway divergence
+      const meanReversion = -0.00015 * (stock.currentPrice - stock.dayOpenPrice);
+      const totalDrift = gaussianComponent + microDrift + cyclicalWave + trendDrift + meanReversion;
 
       const minBound = stock.min_price || 1;
-      const maxBound = stock.max_price || 100000;
+      const maxBound = stock.max_price || 500000;
       stock.currentPrice = Math.max(minBound, Math.min(maxBound, +(stock.currentPrice + totalDrift).toFixed(2)));
 
       if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
       if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+
+      // 52-Week High / Low Real-Time Breakout Check & Dynamic Update
+      if (!stock.week52High || isNaN(stock.week52High)) {
+        stock.week52High = parseFloat(stock.fundamentals?.high_52w) || +(stock.base_price * 1.25).toFixed(2);
+      }
+      if (!stock.week52Low || isNaN(stock.week52Low)) {
+        stock.week52Low = parseFloat(stock.fundamentals?.low_52w) || +(stock.base_price * 0.75).toFixed(2);
+      }
+      if (stock.currentPrice > stock.week52High) {
+        stock.week52High = stock.currentPrice;
+        if (!stock.fundamentals) stock.fundamentals = {};
+        stock.fundamentals.high_52w = stock.currentPrice;
+        stock.isNew52WHigh = true;
+        stock.isNew52WLow = false;
+      } else if (stock.currentPrice < stock.week52Low) {
+        stock.week52Low = stock.currentPrice;
+        if (!stock.fundamentals) stock.fundamentals = {};
+        stock.fundamentals.low_52w = stock.currentPrice;
+        stock.isNew52WLow = true;
+        stock.isNew52WHigh = false;
+      } else {
+        stock.isNew52WHigh = false;
+        stock.isNew52WLow = false;
+      }
 
       // 3. Track history
       stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
@@ -1706,6 +1779,10 @@ function getSanitizedPublicState(role, teamId) {
       dayOpenPrice: c.dayOpenPrice,
       dayHigh: c.dayHigh,
       dayLow: c.dayLow,
+      week52High: c.week52High || (c.fundamentals && parseFloat(c.fundamentals.high_52w)) || +(c.base_price * 1.25).toFixed(2),
+      week52Low: c.week52Low || (c.fundamentals && parseFloat(c.fundamentals.low_52w)) || +(c.base_price * 0.75).toFixed(2),
+      isNew52WHigh: !!(c.isNew52WHigh || c.currentPrice >= (c.week52High || 999999)),
+      isNew52WLow: !!(c.isNew52WLow || c.currentPrice <= (c.week52Low || 0)),
       lot_presets: c.lot_presets,
       beta: c.beta,
       isHalted: c.isHalted,
@@ -1790,6 +1867,12 @@ function getSanitizedPublicState(role, teamId) {
       base_price: c.base_price,
       currentPrice: c.currentPrice,
       dayOpenPrice: c.dayOpenPrice,
+      dayHigh: c.dayHigh,
+      dayLow: c.dayLow,
+      week52High: c.week52High || (c.fundamentals && parseFloat(c.fundamentals.high_52w)) || +(c.base_price * 1.25).toFixed(2),
+      week52Low: c.week52Low || (c.fundamentals && parseFloat(c.fundamentals.low_52w)) || +(c.base_price * 0.75).toFixed(2),
+      isNew52WHigh: !!(c.isNew52WHigh || c.currentPrice >= (c.week52High || 999999)),
+      isNew52WLow: !!(c.isNew52WLow || c.currentPrice <= (c.week52Low || 0)),
       beta: c.beta,
       volatility_factor: c.volatility_factor,
       lot_presets: c.lot_presets,
@@ -2331,9 +2414,16 @@ wss.on('connection', (ws) => {
         team.tradeCount++;
 
         // Dynamic market impact (order flow buying pressure)
-        const buyImpact = +(Math.max(0.10, stock.currentPrice * Math.min(0.003, Math.max(0.0001, (qty / 100) * 0.0005)))).toFixed(2);
-        stock.currentPrice = Math.min(stock.max_price || 100000, +(stock.currentPrice + buyImpact).toFixed(2));
+        const buyImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
+        stock.currentPrice = Math.min(stock.max_price || 500000, +(stock.currentPrice + buyImpact).toFixed(2));
         if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
+        if (stock.currentPrice > stock.week52High) {
+          stock.week52High = stock.currentPrice;
+          if (!stock.fundamentals) stock.fundamentals = {};
+          stock.fundamentals.high_52w = stock.currentPrice;
+          stock.isNew52WHigh = true;
+          stock.isNew52WLow = false;
+        }
 
         // Circuit Recovery: If stock was at lower limit and buying pressure lifts it above floor, unhalt
         if (stock.isHalted && stock.haltDirection === 'LOWER' && stock.currentPrice > lowerLimit) {
@@ -2401,9 +2491,16 @@ wss.on('connection', (ws) => {
         team.tradeCount++;
 
         // Dynamic market impact (order flow selling pressure)
-        const sellImpact = +(Math.max(0.10, stock.currentPrice * Math.min(0.003, Math.max(0.0001, (qty / 100) * 0.0005)))).toFixed(2);
+        const sellImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
         stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
         if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+        if (stock.currentPrice < stock.week52Low) {
+          stock.week52Low = stock.currentPrice;
+          if (!stock.fundamentals) stock.fundamentals = {};
+          stock.fundamentals.low_52w = stock.currentPrice;
+          stock.isNew52WLow = true;
+          stock.isNew52WHigh = false;
+        }
 
         // Circuit Recovery: If stock was at upper limit and selling pressure drops it below ceiling, unhalt
         if (stock.isHalted && stock.haltDirection === 'UPPER' && stock.currentPrice < upperLimit) {
@@ -2789,12 +2886,16 @@ wss.on('connection', (ws) => {
         });
 
         const activeTeamCount = Object.keys(teams).length;
+        const hostState = getSanitizedPublicState('HOST');
         ws.send(JSON.stringify({
           type: 'EVENT_CONFIG_LOCKED_ACK',
           ok: true,
           message: `Event setup confirmed and locked. All ${activeTeamCount} team credentials are now active!`,
           teamsCount: activeTeamCount,
-          gameState
+          gameState,
+          companies: hostState.companies,
+          allCompaniesUniverse: hostState.allCompaniesUniverse,
+          scenarioMode: activeScenarioMode
         }));
 
         broadcastTick();
@@ -3409,8 +3510,16 @@ wss.on('connection', (ws) => {
             isHalted: false,
             haltDirection: null,
             activeTransition: null,
+            week52High: +(base_price * 1.25).toFixed(2),
+            week52Low: +(base_price * 0.75).toFixed(2),
+            isNew52WHigh: false,
+            isNew52WLow: false,
             history: [{ time: gameState.elapsedSeconds, price: base_price }],
-            fundamentals: { summary }
+            fundamentals: {
+              summary,
+              high_52w: +(base_price * 1.25).toFixed(2),
+              low_52w: +(base_price * 0.75).toFixed(2)
+            }
           };
 
           companies.push(newStock);
