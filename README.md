@@ -47,13 +47,18 @@ Participants trade real-time simulated blue-chip equities across Indian economic
 ---
 
 ## 2. KEY TOURNAMENT FEATURES
+- **🃏 Paper Trading Cards UX**: Structured information hierarchy inspired by institutional trading cards: distinct identity, live price delta, Day Open reference, position unrealized P&L badges (`+₹Z (+W%)`), embedded quick lot steppers (`+5`, `-5`), and dedicated `Trade` buttons.
+- **🔍 Advanced Universe Filtering**: Live search box, clickable dynamic sector chips (`#traderSectorChips`), multi-metric sorter (Gainers, Losers, Price High/Low, Highest Value), and "Holdings Only" filter toggle.
+- **🧮 Interactive Trade Modal & Affordability Engine**: Tabbed BUY/SELL switcher, stepper controls, quick lot pills (`+1`..`+100`), budget/holding preset pills (`25%`, `50%`, `75%`, `Max` / `All`), live fee & remaining cash calculation, and educational balance validation shortfalls.
+- **🚨 Directional Upper & Lower Circuit Breakers**: Upper circuit (+20%) clamps price, blocks BUY, and permits SELL; Lower circuit (-20%) clamps price, blocks SELL, and permits BUY. Counter-directional order flow injects recovery liquidity; 0.8% drift buffer prevents micro-noise unhalts; strict stock isolation keeps other stocks trading.
+- **📅 Explicit Day 1 ➔ Day 2 Lifecycle State Machine**: Concluded days enter `DAY_COMPLETED` (distinct from `PAUSED`), displaying high-visibility `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily leaderboard snapshot; Host primary action opens "Start Day 2" modal directly; balances carry over cleanly.
 - **🏛️ Market Builder & Universe Manager**: Host controls which shares trade. Enable, disable, edit starting prices, duplicate shares, randomize prices ($\pm 10\%$), or apply 1-click presets without writing code.
 - **⚡ Synchronized 3-2-1 Resume Countdown**: When the host unpauses, a dramatic 3-second visual countdown freezes orders until the exact opening bell chimes across all screens.
-- **🚨 Automated Circuit Breakers**: Any stock moving $\ge 20\%$ from its day open reference price halts automatically with an institutional alarm, preventing runaway crashes.
-- **📢 Breaking News Flashover**: Scheduled macro shocks and custom host breaking news alerts pop up across all trader screens with audio siren cues.
-- **🏆 Grand Finale Winner Podium**: Synchronized podium ceremony celebrating 1st (Gold), 2nd (Silver), and 3rd (Bronze) teams with animated confetti and fanfare.
+- **📢 Breaking News Flashover**: Scheduled macro shocks and custom host breaking news alerts pop up across all trader screens with audio siren cues and 60-second private impact reveal.
+- **🏆 Grand Finale Winner Podium**: Synchronized podium ceremony celebrating 1st (Gold), 2nd (Silver), and 3rd (Bronze) teams with animated confetti, screen rumbling, and victory fanfare.
 - **🔊 100% Offline Audio Synthesizer**: Programmatic Web Audio API sounds for opening bells, circuit alarms, sirens, and victory fanfare. Zero external MP3 files needed.
 - **🛡️ Anti-Tamper & Security**: Authoritative server validation, 200ms order rate limiting, role-based access control, and formula injection protection in CSV exports.
+- **🧪 85/85 Automated Regression Tests**: 100% verified across 3 automated test suites (`test_master_suite.js`, `test_dynamic_upgrade_suite.js`, `test_trading_cards_and_lifecycle_suite.js`).
 
 ---
 
@@ -63,19 +68,21 @@ The application operates four coordinated experiences from a single server:
 1. **Host Control Centre (`?role=host&pass=host2026`)**:
    - Master 4-Hub architecture:
      - **🏠 1. Home**: Next Step guidance card, interactive readiness checklist, connected terminals monitor, live audit feed.
-     - **⚙️ 2. Event**: 6-step guided wizard (Details → Teams → Companies → Schedule → News Plan → Review & Lock) with automatic lock and pre-start unlock safeguard.
-     - **📈 3. Live Market**: Single Market Operations Bar (Resume 3-2-1, Pause, Blackout, Conclude), stock boards, News Control Centre with 60-second privacy countdown, and live trade stream.
-     - **🖥️ 4. Stage & Results**: Projector scene remote (Auto-Cycle / Fixed Screen), Winner Presentation remote, Venue Sound Console channel controls, audited reports, and Safe Championship Reset card.
+     - **⚙️ 2. Event**: 8-step guided wizard (Details → Teams → Companies → Trading Rules → Schedule → News Plan → Projector & Sound → Review & Lock) with automatic lock and pre-start unlock safeguard.
+     - **📈 3. Live Market**: Single Market Operations Bar (Resume 3-2-1, Pause, Blackout, Conclude Day, Add Day, Emergency Stop), stock boards, News Control Centre with 60-second privacy countdown, and live trade stream.
+     - **🖥️ 4. Stage & Results**: Projector scene remote (Auto-Cycle / Fixed Screen), Team Investment Analytics, Winner Presentation remote, Venue Sound Console channel controls, audited reports, and Safe Championship Reset card.
 
 2. **Student Trading Desk (`?role=trader&team=team1&pass=trade100`)**:
-   - Stock cards with live tick prices, day open/high/low, and smooth Bezier sparklines.
+   - Upgraded stock cards with live tick prices, day open/high/low, live sparklines, and active position P&L badges (`+₹Z (+W%)`).
+   - Dynamic universe filters: live search, sector dropdown, quick sector chips, multi-metric sorter, and "Holdings Only" checkbox.
    - Non-blocking institutional breaking news wire toast with 15-second animated progress bar.
-   - 1-click Order Ticket with quantity presets and live fee/cash impact calculation.
+   - Interactive Trade Modal with tabbed BUY/SELL switcher, quick lot pills, dynamic budget presets (`% cash` / `% held`), and real-time affordability recalculation.
    - Real-time portfolio valuation, cash balance, and executed trade receipts.
 
 3. **Stage Auditorium Projector (`?role=projector&pass=screen2026`)**:
    - High-contrast auditorium display legible from 50 feet away in 1080p and 4K.
-   - Auto-cycle rotation through Market Board, Real Indices (`NIFTY_TF20`, `BANK_TF`, `IT_TF`, `AUTO_TF`), Macro Sector Strategy, Standings, and News.
+   - Auto-cycle rotation through Market Board (8 cards per page with live ranking badges `#1..#N`), Real Indices (`NIFTY_TF20`, `BANK_TF`, `IT_TF`, `AUTO_TF`), Macro Sector Strategy, Standings, and News.
+   - Dedicated `#projDayCompletedBanner` on day conclusion presenting audited daily snapshot without "Market Paused" confusion.
    - Embedded full-screen Winner Reveal stage (`Bronze → Silver → Champion → Podium → Standings`).
 
 4. **Venue Sound Console (`?role=sound&pass=sound2026`)**:
@@ -130,8 +137,14 @@ npm start
 # 3. Or start dry-run test mode (fictional mock companies)
 npm run start:test
 
-# 4. Run automated test suite
+# 4. Run primary automated test suite (52 tests)
 npm test
+
+# 5. Run complete 85-scenario regression suite across all 3 suites
+npm run test:all
+
+# 6. Run targeted trading cards, filters & circuit breakers suite (24 tests)
+npm run test:cards
 ```
 
 ---

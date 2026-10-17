@@ -555,7 +555,19 @@ function applyStockTransition(stock, shockPct, durationSec, newsHeadline = null)
   // Always begin smoothly from the current official price (never snap):
   const startPrice = stock.currentPrice;
   const targetPrice = +(startPrice * (1 + shockPct / 100)).toFixed(2);
-  const durSec = Math.max(10, durationSec || 45);
+  if (durationSec === 0) {
+    stock.activeTransition = null;
+    stock.currentPrice = targetPrice;
+    const upperLimit = +(stock.dayOpenPrice * (1 + gameState.circuitBreakerPercent / 100)).toFixed(2);
+    const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
+    if (stock.currentPrice >= upperLimit && !stock.isHalted) {
+      triggerCircuitBreaker(stock, 'UPPER');
+    } else if (stock.currentPrice <= lowerLimit && !stock.isHalted) {
+      triggerCircuitBreaker(stock, 'LOWER');
+    }
+    return;
+  }
+  const durSec = Math.max(1, durationSec !== undefined ? durationSec : 45);
   const startTimeMs = Date.now();
   const startTimeStr = new Date(startTimeMs).toLocaleTimeString();
   stock.activeTransition = {
@@ -842,9 +854,14 @@ function applyNewsImpactsToStocks(eventObj) {
     Object.keys(impacts).forEach((ticker) => {
       if (ticker.startsWith('SECTOR_')) return;
       const stock = companies.find((s) => s.ticker === ticker);
-      if (!stock || !stock.isEnabled || stock.isHalted) return;
+      if (!stock || !stock.isEnabled) return;
       const { delta_pct, duration_sec } = impacts[ticker];
       const shockPct = delta_pct * oppMult;
+      if (stock.isHalted) {
+        if (stock.haltDirection === 'UPPER' && shockPct < 0) releaseCircuitBreaker(stock);
+        else if (stock.haltDirection === 'LOWER' && shockPct > 0) releaseCircuitBreaker(stock);
+        else return;
+      }
       applyStockTransition(stock, shockPct, duration_sec, headline);
     });
 
@@ -978,6 +995,133 @@ function triggerCircuitBreaker(stock, direction) {
     direction,
     price: stock.currentPrice
   });
+  broadcastTick();
+}
+
+function releaseCircuitBreaker(stock) {
+  if (!stock.isHalted) return;
+  const oldDir = stock.haltDirection;
+  stock.isHalted = false;
+  stock.haltDirection = null;
+
+  recordAuditEvent('CIRCUIT_RECOVERY', {
+    ticker: stock.ticker,
+    previous_direction: oldDir,
+    price: stock.currentPrice,
+    day_open_price: stock.dayOpenPrice
+  });
+
+  broadcastAll({
+    type: 'CIRCUIT_RECOVERY_ALERT',
+    ticker: stock.ticker,
+    name: stock.name,
+    previousDirection: oldDir,
+    price: stock.currentPrice
+  });
+  broadcastTick();
+}
+
+// Authoritative Unified Day Conclusion Function (handles both auto-clock expiry and host action)
+function concludeCurrentDay(isAutoClose = false) {
+  const day = gameState.currentDay;
+  const standings = calculateLeaderboard();
+  const closingPrices = {};
+  companies.forEach((c) => { closingPrices[c.ticker] = c.currentPrice; });
+
+  const prevSnapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${day - 1}`];
+
+  const dailyRankings = standings.map((item, idx) => {
+    const t = teams[item.id] || {};
+    const startingCash = t.startingCash || gameState.startingCash || 500000;
+    const currentPortfolioValue = item.netWorth;
+    const prevClosingValue = prevSnapshot
+      ? (prevSnapshot.rankings.find((r) => r.teamId === item.id)?.closingPortfolioValue || startingCash)
+      : startingCash;
+
+    const dailyPnl = +(currentPortfolioValue - prevClosingValue).toFixed(2);
+    const dailyReturnPct = prevClosingValue > 0 ? +(((currentPortfolioValue - prevClosingValue) / prevClosingValue) * 100).toFixed(2) : 0;
+    const cumulativePnl = +(currentPortfolioValue - startingCash).toFixed(2);
+    const cumulativeReturnPct = startingCash > 0 ? +(((currentPortfolioValue - startingCash) / startingCash) * 100).toFixed(2) : 0;
+
+    let prevRank = idx + 1;
+    if (prevSnapshot && prevSnapshot.rankings) {
+      const pIdx = prevSnapshot.rankings.findIndex((r) => r.teamId === item.id);
+      if (pIdx !== -1) prevRank = pIdx + 1;
+    }
+    const rankDelta = prevRank - (idx + 1);
+
+    return {
+      teamId: item.id,
+      teamName: item.name,
+      rank: idx + 1,
+      prevRank,
+      rankDelta,
+      openingPortfolioValue: prevClosingValue,
+      closingPortfolioValue: currentPortfolioValue,
+      dailyPnl,
+      dailyReturnPct,
+      cumulativePnl,
+      cumulativeReturnPct,
+      cash: item.cash,
+      holdingsValue: item.holdingsValue,
+      tradeCount: item.tradeCount
+    };
+  });
+
+  const daySnapshot = {
+    day,
+    finalizedAt: new Date().toISOString(),
+    closingPrices,
+    rankings: dailyRankings,
+    isAutomaticEnd: isAutoClose
+  };
+
+  if (!gameState.dailyLeaderboards) gameState.dailyLeaderboards = {};
+  if (!gameState.dailyClosingPrices) gameState.dailyClosingPrices = {};
+  gameState.dailyLeaderboards[`day_${day}`] = daySnapshot;
+  gameState.dailyClosingPrices[`day_${day}`] = closingPrices;
+
+  // Transition market state explicitly to DAY_COMPLETED (not paused by host)
+  gameState.isPaused = true;
+  gameState.status = 'DAY_COMPLETED';
+  gameState.pauseMode = 'VISIBLE_FROZEN';
+  gameState.pauseStartedAt = Date.now();
+  gameState.activeCountdown = null;
+
+  recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length, isAutomaticEnd: isAutoClose });
+  broadcastAudioCue('bell_close', 'lifecycle', { day });
+  broadcastAll({ type: 'BELL_EVENT', bell: 'CLOSE', day });
+  broadcastAll({
+    type: 'DAY_CONCLUDED',
+    day,
+    status: gameState.status,
+    daySnapshot,
+    isAutomaticEnd: isAutoClose
+  });
+  broadcastAll({
+    type: 'DAY_FINALIZED',
+    day,
+    status: gameState.status,
+    daySnapshot,
+    isAutomaticEnd: isAutoClose
+  });
+
+  // If this was the final planned day, prepare official championship snapshot
+  if (gameState.currentDay >= gameState.totalDays) {
+    const winnerData = getConcludedLeaderboard();
+    const snapshot = generateOfficialResultsSnapshot();
+    gameState.isConcluded = true;
+    gameState.winnerData = winnerData;
+    broadcastAll({
+      type: 'CHAMPIONSHIP_CONCLUDED',
+      winnerData,
+      snapshot,
+      title: gameState.title
+    });
+  }
+
+  broadcastTick();
+  return daySnapshot;
 }
 
 // ==========================================
@@ -1019,28 +1163,10 @@ setInterval(() => {
     }
   });
 
+  // Automatic Day Clock Expiration
   if (gameState.elapsedSeconds >= gameState.dayDurationSeconds) {
-    gameState.isPaused = true;
-    gameState.status = 'MARKET_CLOSED';
-    gameState.pauseStartedAt = Date.now();
-    recordAuditEvent('DAY_CLOSE', { day: gameState.currentDay });
-    broadcastAudioCue('bell_close', 'lifecycle', { day: gameState.currentDay });
-    broadcastAll({ type: 'BELL_EVENT', bell: 'CLOSE', day: gameState.currentDay });
-
-    if (gameState.currentDay >= gameState.totalDays) {
-      const winnerData = getConcludedLeaderboard();
-      const snapshot = generateOfficialResultsSnapshot();
-      gameState.isConcluded = true;
-      gameState.winnerData = winnerData;
-      gameState.status = 'FINAL_ANALYSIS';
-      broadcastAll({
-        type: 'CHAMPIONSHIP_CONCLUDED',
-        winnerData,
-        snapshot,
-        title: gameState.title
-      });
-    }
-    broadcastTick();
+    recordAuditEvent('DAY_CLOSE_CLOCK_EXPIRED', { day: gameState.currentDay, elapsed: gameState.elapsedSeconds });
+    concludeCurrentDay(true);
   }
 }, 1000);
 
@@ -1053,7 +1179,38 @@ function restartEngineInterval() {
     companies.forEach((stock) => {
       if (!stock.isEnabled) return;
 
+      const upperLimit = +(stock.dayOpenPrice * (1 + gameState.circuitBreakerPercent / 100)).toFixed(2);
+      const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
+
       if (stock.isHalted) {
+        // While at UPPER circuit limit: upward drift is clamped.
+        // Background drift requires at least 0.8% buffer away from ceiling before unhalting (or active counter-order execution)
+        const unhaltUpperThreshold = +(upperLimit - (stock.dayOpenPrice * 0.008)).toFixed(2);
+        const unhaltLowerThreshold = +(lowerLimit + (stock.dayOpenPrice * 0.008)).toFixed(2);
+
+        if (stock.haltDirection === 'UPPER') {
+          const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
+          const randDrift = (Math.random() - 0.58) * stock.volatility_factor * stock.currentPrice * 0.2;
+          const downwardPull = Math.min(0, meanReversion + randDrift);
+          if (downwardPull < -0.02) {
+            stock.currentPrice = Math.min(upperLimit, +(stock.currentPrice + downwardPull).toFixed(2));
+            if (stock.currentPrice <= unhaltUpperThreshold) {
+              releaseCircuitBreaker(stock);
+            }
+          }
+        } else if (stock.haltDirection === 'LOWER') {
+          // While at LOWER circuit limit: downward drift is clamped.
+          // Background drift requires at least 0.8% buffer away from floor before unhalting (or active counter-order execution)
+          const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
+          const randDrift = (Math.random() - 0.42) * stock.volatility_factor * stock.currentPrice * 0.2;
+          const upwardPull = Math.max(0, meanReversion + randDrift);
+          if (upwardPull > 0.02) {
+            stock.currentPrice = Math.max(lowerLimit, +(stock.currentPrice + upwardPull).toFixed(2));
+            if (stock.currentPrice >= unhaltLowerThreshold) {
+              releaseCircuitBreaker(stock);
+            }
+          }
+        }
         stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
         return;
       }
@@ -1116,10 +1273,11 @@ function restartEngineInterval() {
       // 3. Track history
       stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
 
-      // 4. Circuit Breaker Check
-      const dayDelta = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
-      if (Math.abs(dayDelta) >= gameState.circuitBreakerPercent && !stock.isHalted) {
-        triggerCircuitBreaker(stock, dayDelta > 0 ? 'UPPER' : 'LOWER');
+      // 4. Circuit Breaker Check & Boundary Clamping
+      if (stock.currentPrice >= upperLimit && !stock.isHalted) {
+        triggerCircuitBreaker(stock, 'UPPER');
+      } else if (stock.currentPrice <= lowerLimit && !stock.isHalted) {
+        triggerCircuitBreaker(stock, 'LOWER');
       }
     });
 
@@ -2039,12 +2197,24 @@ wss.on('connection', (ws) => {
         return;
       }
 
+      const upperLimit = +(stock.dayOpenPrice * (1 + gameState.circuitBreakerPercent / 100)).toFixed(2);
+      const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
+
       if (stock.isHalted) {
-        ws.send(JSON.stringify({
-          type: 'ORDER_REJECTED',
-          reason: `Trading halted in ${stock.ticker} (${stock.haltDirection} Circuit Breaker). Price moved over ±${gameState.circuitBreakerPercent || 15}%. Trading is temporarily frozen.`
-        }));
-        return;
+        if (stock.haltDirection === 'UPPER' && data.type === 'BUY') {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: `Upper circuit ceiling reached (₹${stock.currentPrice.toFixed(2)}). Buying is restricted under market rules. Selling is permitted.`
+          }));
+          return;
+        }
+        if (stock.haltDirection === 'LOWER' && data.type === 'SELL') {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: `Lower circuit floor reached (₹${stock.currentPrice.toFixed(2)}). Selling is restricted under market rules. Buying is permitted.`
+          }));
+          return;
+        }
       }
 
       const execPrice = stock.currentPrice;
@@ -2074,9 +2244,14 @@ wss.on('connection', (ws) => {
         team.tradeCount++;
 
         // Dynamic market impact (order flow buying pressure)
-        const buyImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        const buyImpact = +(Math.max(0.10, stock.currentPrice * Math.min(0.003, Math.max(0.0001, (qty / 100) * 0.0005)))).toFixed(2);
         stock.currentPrice = Math.min(stock.max_price || 100000, +(stock.currentPrice + buyImpact).toFixed(2));
         if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
+
+        // Circuit Recovery: If stock was at lower limit and buying pressure lifts it above floor, unhalt
+        if (stock.isHalted && stock.haltDirection === 'LOWER' && stock.currentPrice > lowerLimit) {
+          releaseCircuitBreaker(stock);
+        }
 
         tradeSeqCounter++;
         const tradeRecord = {
@@ -2139,9 +2314,14 @@ wss.on('connection', (ws) => {
         team.tradeCount++;
 
         // Dynamic market impact (order flow selling pressure)
-        const sellImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        const sellImpact = +(Math.max(0.10, stock.currentPrice * Math.min(0.003, Math.max(0.0001, (qty / 100) * 0.0005)))).toFixed(2);
         stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
         if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+
+        // Circuit Recovery: If stock was at upper limit and selling pressure drops it below ceiling, unhalt
+        if (stock.isHalted && stock.haltDirection === 'UPPER' && stock.currentPrice < upperLimit) {
+          releaseCircuitBreaker(stock);
+        }
 
         tradeSeqCounter++;
         const tradeRecord = {
@@ -2864,83 +3044,8 @@ wss.on('connection', (ws) => {
 
       // 5.2h Host Conclude / Finalize Current Day Results
       if (data.action === 'HOST_FINALIZE_DAY' || data.action === 'HOST_CONCLUDE_DAY') {
-        const day = gameState.currentDay;
-        const standings = calculateLeaderboard();
-        const closingPrices = {};
-        companies.forEach((c) => { closingPrices[c.ticker] = c.currentPrice; });
-
-        const prevSnapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${day - 1}`];
-
-        const dailyRankings = standings.map((item, idx) => {
-          const t = teams[item.id] || {};
-          const startingCash = t.startingCash || gameState.startingCash || 500000;
-          const currentPortfolioValue = item.netWorth;
-          const prevClosingValue = prevSnapshot
-            ? (prevSnapshot.rankings.find((r) => r.teamId === item.id)?.closingPortfolioValue || startingCash)
-            : startingCash;
-
-          const dailyPnl = +(currentPortfolioValue - prevClosingValue).toFixed(2);
-          const dailyReturnPct = +(((currentPortfolioValue - prevClosingValue) / prevClosingValue) * 100).toFixed(2);
-          const cumulativePnl = +(currentPortfolioValue - startingCash).toFixed(2);
-          const cumulativeReturnPct = +(((currentPortfolioValue - startingCash) / startingCash) * 100).toFixed(2);
-
-          let prevRank = idx + 1;
-          if (prevSnapshot && prevSnapshot.rankings) {
-            const pIdx = prevSnapshot.rankings.findIndex((r) => r.teamId === item.id);
-            if (pIdx !== -1) prevRank = pIdx + 1;
-          }
-          const rankDelta = prevRank - (idx + 1);
-
-          return {
-            teamId: item.id,
-            teamName: item.name,
-            rank: idx + 1,
-            prevRank,
-            rankDelta,
-            openingPortfolioValue: prevClosingValue,
-            closingPortfolioValue: currentPortfolioValue,
-            dailyPnl,
-            dailyReturnPct,
-            cumulativePnl,
-            cumulativeReturnPct,
-            cash: item.cash,
-            holdingsValue: item.holdingsValue,
-            tradeCount: item.tradeCount
-          };
-        });
-
-        const daySnapshot = {
-          day,
-          finalizedAt: new Date().toISOString(),
-          closingPrices,
-          rankings: dailyRankings
-        };
-
-        if (!gameState.dailyLeaderboards) gameState.dailyLeaderboards = {};
-        if (!gameState.dailyClosingPrices) gameState.dailyClosingPrices = {};
-        gameState.dailyLeaderboards[`day_${day}`] = daySnapshot;
-        gameState.dailyClosingPrices[`day_${day}`] = closingPrices;
-
-        // Transition market state to DAY_COMPLETED
-        gameState.isPaused = true;
-        gameState.status = 'DAY_COMPLETED';
-        gameState.pauseMode = 'VISIBLE_FROZEN';
-        gameState.pauseStartedAt = Date.now();
-        gameState.activeCountdown = null;
-
-        recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length });
-        broadcastAudioCue('bell_close', 'lifecycle', { day });
-        broadcastAll({
-          type: 'DAY_CONCLUDED',
-          day,
-          daySnapshot
-        });
-        broadcastAll({
-          type: 'DAY_FINALIZED',
-          day,
-          daySnapshot
-        });
-        broadcastTick();
+        concludeCurrentDay(false);
+        return;
       }
 
       // 5.2i Start Next Day
@@ -2971,6 +3076,14 @@ wss.on('connection', (ws) => {
             type: 'DAY_TRANSITION',
             oldDay,
             newDay: gameState.currentDay,
+            currentDay: gameState.currentDay,
+            totalDays: gameState.totalDays
+          });
+          broadcastAll({
+            type: 'DAY_ADVANCED',
+            oldDay,
+            newDay: gameState.currentDay,
+            currentDay: gameState.currentDay,
             totalDays: gameState.totalDays
           });
           broadcastTick();
@@ -3060,7 +3173,7 @@ wss.on('connection', (ws) => {
         const explanation = (data.explanation || '').trim();
         const type = (data.type || 'SPECIAL SHOCK').toUpperCase().trim();
         const ticker = (data.ticker || '').trim().toUpperCase();
-        const durationSec = parseInt(data.durationSec, 10) || 45;
+        const durationSec = data.durationSec !== undefined ? parseInt(data.durationSec, 10) : 45;
         const deltaPct = parseFloat(data.deltaPct);
 
         let impacts = data.impacts || null;
@@ -3099,6 +3212,16 @@ wss.on('connection', (ws) => {
           stock.haltDirection = null;
           stock.dayOpenPrice = stock.currentPrice;
           recordAuditEvent('CIRCUIT_BREAKER_RELEASED', { ticker: stock.ticker, new_reference_price: stock.currentPrice });
+          broadcastTick();
+        }
+      }
+
+      // 5.6b Direct Circuit Breaker Trigger / Halt Simulation
+      if (data.action === 'HOST_TRIGGER_CIRCUIT_BREAKER' || data.action === 'HOST_HALT_STOCK') {
+        const stock = companies.find((c) => c.ticker === data.ticker);
+        const direction = (data.direction || 'UPPER').toUpperCase();
+        if (stock) {
+          triggerCircuitBreaker(stock, direction);
           broadcastTick();
         }
       }

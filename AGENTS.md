@@ -57,6 +57,8 @@
 5. **News Secrecy & 60-Second Reveal**: News impacts are masked by default (`[🔒 Private Price Impact Details Hidden]`). When revealed by the host, they automatically hide after 60s or upon tab navigation. Trader and projector terminals NEVER receive private impact percentages.
 6. **Rate Limiting & Anti-Spam**: A 200ms debounce per team session prevents double-click spam.
 7. **Formula Injection Protection**: In all CSV exports, any value starting with `=`, `+`, `-`, or `@` is prepended with `'` to prevent spreadsheet formula execution.
+8. **Directional Circuit Breakers & Stock Isolation**: Upper circuit (+20%) restricts BUY and permits SELL; Lower circuit (-20%) restricts SELL and permits BUY; counter-directional order flow injects recovery liquidity; background price loop requires 0.8% buffer before mean-reversion unhalt. A stock-level halt NEVER freezes the wider market.
+9. **Explicit Day State Machine**: Day conclusion sets `status = 'DAY_COMPLETED'`, shows `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily snapshot, and never displays ambiguous "Paused by Host" banners. Balances and holdings carry over into subsequent days.
 
 ---
 
@@ -66,3 +68,4 @@
 - **Enabled Stocks Filtering**: Traders and projectors only receive stocks where `isEnabled !== false`. Hosts receive `allCompaniesUniverse` so they can manage disabled/excluded stocks.
 - **Projector DOM Stability**: Do NOT rebuild projector card DOM nodes on every tick. Rebuilding destroys canvas contexts and causes visual flickering. Only rebuild when the page flips or when active tickers change.
 - **Batch Files & Non-Technical Users**: The primary users are college professors, organizers, and student coordinators. Launchers (`Launch_The_Trading_Floor.bat`) must provide clear, human-readable terminal output, auto-detect `%~dp0tools\node.exe`, and support zero-config startup.
+- **Full Verification Before Commits**: Always run `npm run test:all` (or `npm test`) to ensure all 85 test scenarios pass before reporting work as complete.

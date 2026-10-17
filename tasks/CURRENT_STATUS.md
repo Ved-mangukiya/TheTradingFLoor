@@ -1,8 +1,8 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
 **Date**: 2026-10-17  
-**Version**: 2.4.0 (Flexible Multi-Day Lifecycle, Idempotent News Engine, Zero Horizontal Scroll Indices, Live Stock Rankings, TV Post-News Reaction Spotlight, Team Investment Analytics & Segmented Allocation Visualizer)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (61/61 Automated Tests Passing: 9 Dynamic Upgrade Suite + 52 Master Suite)  
+**Version**: 2.5.0 (Paper Trading Cards UX, Directional Circuit Breakers, Advanced Universe Filters, Real-Time Affordability Engine & Explicit Day Lifecycle State Machine)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (85/85 Automated Tests Passing: 24 Cards/Lifecycle Suite + 9 Dynamic Upgrade Suite + 52 Master Suite)  
 
 ---
 
@@ -142,3 +142,45 @@
   - Launches local server and exposes it via secure Cloudflare Tunnel (`npx -y untun tunnel --port 3000`), giving Ved an instant public HTTPS link for live demonstration.
 - [x] **Production Event Day LAN Invariant Preserved**:
   - When accessed on localhost or local LAN IP (`192.168.x.x`), the system connects 100% directly to the authoritative Node.js server. Demo overlays stay hidden.
+
+---
+
+## 12. Paper Trading Cards UX, Universe Filters & Directional Circuit Breakers (v2.5.0)
+- [x] **Upgraded Stock Trading Cards (Inspired by Paper Trading Cards `media_1792231121505.html`)**:
+  - Structured card layout: Clean stock identity, sector badge, current price, day open, and percentage delta.
+  - Position Unrealized P&L: Displays live profit/loss breakdown (`+₹Z (+W%)`) with color-coded badges for active positions.
+  - Integrated Quick Stepper & Lot Presets: Quick-adjust lot buttons (`+5`, `-5`) directly accessible.
+  - Primary Trade Action Trigger: Clean `Trade` button launching the unified interactive Trade Modal.
+- [x] **Advanced Universe Filtering & Multi-Metric Sorting**:
+  - Live Search Box: Instant case-insensitive ticker and company name search.
+  - Sector Filtering: Dynamic sector dropdown plus clickable sector chips (`#traderSectorChips`).
+  - Multi-Metric Sorter: Gainers, Losers, Price: High to Low, Price: Low to High, Highest Value.
+  - "Holdings Only" Toggle: Instant checkbox filter isolating actively owned assets.
+  - Empty-State Reset: Educational guidance card with 1-click `Reset All Filters` when no stocks match.
+- [x] **Interactive Trade Modal with Real-Time Affordability Engine**:
+  - Tabbed BUY / SELL Switcher: Clear visual side toggle updating context, limits, and guidance.
+  - Stepper Controls: Responsive `−` / `+` share quantity adjustment buttons.
+  - Quick Lot Pills: `+1`, `+5`, `+10`, `+25`, `+50`, `+100`.
+  - Dynamic Budget / Holding Preset Pills:
+    - BUY Mode: `25%`, `50%`, `75%`, `Max` of available cash.
+    - SELL Mode: `25%`, `50%`, `75%`, `All` of held shares.
+  - Live Affordability Recalculation:
+    - Gross trade value, transaction fee, and total cash impact updated in real-time.
+    - Remaining Cash in Hand preview before order dispatch.
+    - Educational balance validation: High-contrast shortfall alerts explaining exactly how many shares can be afforded.
+- [x] **Directional Upper & Lower Circuit Breakers**:
+  - Upper Circuit Limit ($+20\%$): Clamps price at ceiling, blocks BUY orders, and permits SELL orders to inject downward liquidity.
+  - Lower Circuit Limit ($-20\%$): Clamps price at floor, blocks SELL orders, and permits BUY orders to inject upward liquidity.
+  - Order-Flow Circuit Recovery: Counter-directional trades dynamically adjust price and unhalt the stock.
+  - 0.8% Mean-Reversion Buffer: Background 1-second price loop prevents premature unhalting on micro-noise.
+  - Strict Stock Isolation: A circuit halt on one stock never freezes the broader market or other stocks.
+- [x] **Explicit Day 1 ➔ Day 2 Lifecycle State Machine**:
+  - Non-Ambiguous Status: Timer expiration and manual conclusion set `status = 'DAY_COMPLETED'` (never ambiguously "Paused by Host").
+  - Trader Station Guidance: Displays high-visibility `#traderDayCompletedOverlay` ("Day X Concluded • Standby for Day X+1").
+  - Auditorium Projector Banner: Dedicated `#projDayCompletedBanner` with audited daily leaderboard snapshot.
+  - Seamless Balance Carry-Over: Cash, share holdings, and trade history carry over cleanly into subsequent competition days.
+- [x] **Comprehensive Automated Verification**:
+  - `test_trading_cards_and_lifecycle_suite.js`: **24/24 PASSED (100%)**
+  - `test_dynamic_upgrade_suite.js`: **9/9 PASSED (100%)**
+  - `test_master_suite.js`: **52/52 PASSED (100%)**
+  - **Total Automated Verification: 85/85 Passing Tests (0 Failures)**.

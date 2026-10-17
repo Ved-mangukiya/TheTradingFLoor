@@ -36,40 +36,59 @@ This test plan defines the automated and manual verification procedures for vali
 
 ---
 
-## 3. Running the Automated Test Suite
+## 3. Automated Test Suites & Commands
 
-The automated test suite is located in `test_master_suite.js`.
+The project maintains three comprehensive automated test suites providing 100% end-to-end verification without requiring internet connectivity:
 
-To run:
+### 3.1 Test Suites Overview
+
+| Suite | File | Tests | Purpose & Coverage |
+| :--- | :--- | :---: | :--- |
+| **Master Regression Suite** | `test_master_suite.js` | **52** | Spawns isolated test server on port 3088. Tests end-to-end authentication, setup lock, order accounting, team isolation, rate limiting, share manager, news shocks, CSV sanitization, disaster recovery, market indices, and winner ceremonies. |
+| **Dynamic Upgrade & Lifecycle** | `test_dynamic_upgrade_suite.js` | **9** | Verifies team investment analytics REST endpoints, lifecycle controls (`HOST_EMERGENCY_STOP`, `HOST_CONCLUDE_DAY`, `HOST_ADD_DAY`), news idempotency, and final review state. |
+| **Trading Cards & Lifecycle Suite** | `test_trading_cards_and_lifecycle_suite.js` | **24** | Verifies universe filtering (sectors, search, gainers/losers), real-time order affordability & shortfall messages, directional circuit breakers (upper/lower gating & recovery), and Day 1 ➔ Day 2 transitions with snapshot locking. |
+| **Total Test Coverage** | **All 3 Suites** | **85** | **85 / 85 Tests Passing (100% Reliability)** |
+
+### 3.2 Exact Execution Commands
+
 ```bash
+# Run the primary master test suite (52 tests)
 npm test
+
+# Run all 3 test suites sequentially (85 tests)
+npm run test:all
+
+# Run the trading cards, filters & circuit breaker suite (24 tests)
+npm run test:cards
+
+# Run the dynamic upgrade & analytics suite (9 tests)
+npm run test:upgrade
 ```
 
-Expected output:
+### 3.3 Sample Verified Test Output (`npm test`)
+
 ```
-======================================================================
-  THE TRADING FLOOR CHAMPIONSHIP 2026 -- MASTER AUTOMATED TEST SUITE
-======================================================================
-[TEST 1] HTTP Static Server & Health Check ... PASS
-[TEST 2] Host Authentication & Session Token Generation ... PASS
-[TEST 3] Trader Authentication (team1) ... PASS
-[TEST 4] Market Pause & Order Rejection While Paused ... PASS
-[TEST 5] Market Resume via 3-2-1 Countdown Protocol ... PASS
-[TEST 6] Valid BUY Order Execution & Cash/Holdings Accounting ... PASS
-[TEST 7] Valid SELL Order Execution & Realized P&L Accounting ... PASS
-[TEST 8] Insufficient Cash Order Rejection ... PASS
-[TEST 9] Insufficient Holdings Order Rejection ... PASS
-[TEST 10] Rate Limiting & Rapid Order Spam Protection ... PASS
-[TEST 11] Circuit Breaker Auto-Trigger & Trading Halt Rejection ... PASS
-[TEST 12] Circuit Breaker Release by Host ... PASS
-[TEST 13] Host Custom Breaking News Injection & Price Impact ... PASS
-[TEST 14] Dynamic Share Universe: Add New Stock ... PASS
-[TEST 15] Dynamic Share Universe: Disable Stock & Trade Rejection ... PASS
-[TEST 16] Dynamic Share Universe: Re-enable Stock & Execution ... PASS
-[TEST 17] Dynamic Share Universe: Apply Template & Export Endpoints ... PASS
-[TEST 18] Millisecond Audit Logging & CSV Export Sanitization ... PASS
-[TEST 19] Client Reconnection & Session Continuity ... PASS
-======================================================================
-  SUMMARY: ALL TESTS PASSED SUCCESSFULLY (19/19)
-======================================================================
+================================================================
+ 🧪 STARTING TRADING FLOOR CHAMPIONSHIP AUTOMATED VERIFICATION
+================================================================
+[STAGE 1] System Health & Rest Endpoints
+  ✓ PASS: Server health verified. Active scenario: test, Companies: 8
+[STAGE 2] Authentication & Security Verification
+  ✓ PASS: Host authenticated. Session token generated (32-char hex).
+  ✓ PASS: Team login correctly gated on server before event setup is locked.
+  ✓ PASS: Host confirmed & locked authoritative event setup.
+  ✓ PASS: Trader Team 1 authenticated after setup lock. Initial cash: ₹500000
+[STAGE 3] Market Clock & State Transitions
+  ✓ PASS: Order correctly rejected while market is in paused state.
+  ✓ PASS: Host triggered resume countdown with authoritative server target timestamp.
+[STAGE 4] Trade Execution & Portfolio Valuation
+  ✓ PASS: Buy executed: 10 APEXAUTO @ ₹800.00.
+  ✓ PASS: Sell executed: 4 APEXAUTO @ ₹800.10.
+  ✓ PASS: Oversell rejected: Insufficient shares.
+  ✓ PASS: Overbuy rejected: Insufficient cash.
+  ✓ PASS: Team isolation verified (zero cross-contamination).
+...
+================================================================
+ 📋 TEST SUITE SUMMARY: 52 PASSED, 0 FAILED
+================================================================
 ```

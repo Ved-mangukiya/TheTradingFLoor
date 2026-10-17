@@ -84,24 +84,46 @@ Teams are ranked strictly by:
 
 ---
 
-## 3. Circuit Breaker Rules & Halts
+## 3. Circuit Breaker Rules & Directional Order Gating
 
-### 3.1 Trigger Conditions
-On each 1500ms market tick, every stock's price is evaluated against its official **Day Open Reference Price** ($P_{\text{day\_open}}$):
+### 3.1 Trigger Conditions & Mathematical Limits
+On each 1000ms price loop tick, every stock's price is evaluated against its official **Day Open Reference Price** ($P_{\text{day\_open}}$):
 $$\Delta P = \frac{P_{\text{current}} - P_{\text{day\_open}}}{P_{\text{day\_open}}} \times 100$$
-If $|\Delta P| \ge \text{CircuitBreakerLimit}$ (Default: 20%):
-1. Stock trading status is flagged `isHalted = true`.
-2. `haltDirection` is recorded as `'UPPER'` ($\Delta P \ge +20\%$) or `'LOWER'` ($\Delta P \le -20\%$).
-3. Synthetic circuit breaker alarm chimes on all connected clients.
-4. An authoritative audit event (`CIRCUIT_BREAKER_TRIGGERED`) is recorded.
-5. All subsequent buy and sell orders in that stock are rejected with `"Trading halted on {TICKER} due to circuit breaker limit."`
+$$\text{Upper Limit} = \text{round}\left(P_{\text{day\_open}} \times \left(1 + \frac{\text{CircuitBreakerPercent}}{100}\right), 2\right)$$
+$$\text{Lower Limit} = \text{round}\left(P_{\text{day\_open}} \times \left(1 - \frac{\text{CircuitBreakerPercent}}{100}\right), 2\right)$$
 
-### 3.2 Halt Release Behavior
-- Circuit breaker halts remain in effect until the Host clicks **Release Halt** in the Host Control Panel.
+If $P_{\text{current}} \ge \text{Upper Limit}$ or $P_{\text{current}} \le \text{Lower Limit}$:
+1. Stock trading status is flagged `isHalted = true`.
+2. Direction is recorded: `haltDirection = 'UPPER'` or `'LOWER'`.
+3. Price is clamped strictly at the boundary ($\text{Upper Limit}$ or $\text{Lower Limit}$).
+4. An institutional circuit breaker alarm chimes on all connected clients (`circuit_alarm`).
+5. An authoritative audit event (`CIRCUIT_BREAKER`) is recorded in the immutable audit log.
+6. Emits `CIRCUIT_BREAKER_ALERT` WebSocket event to update all client badges in real-time.
+7. **Strict Stock Isolation**: The circuit halt applies exclusively to the affected stock. All other active universe equities continue trading normally, and the overall market clock continues ticking.
+
+### 3.2 Directional Order Enforcement Rules
+- **At UPPER Circuit Ceiling**:
+  - **BUY Orders**: Rejected by server with educational message:
+    `"Upper circuit ceiling reached (₹{PRICE}). Buying is restricted under market rules. Selling is permitted."`
+  - **SELL Orders**: Permitted and executed normally, providing downward liquidity and allowing traders to exit long positions.
+- **At LOWER Circuit Floor**:
+  - **SELL Orders**: Rejected by server with educational message:
+    `"Lower circuit floor reached (₹{PRICE}). Selling is restricted under market rules. Buying is permitted."`
+  - **BUY Orders**: Permitted and executed normally, providing upward liquidity and allowing traders to accumulate undervalued shares.
+
+### 3.3 Halt Release & Circuit Recovery Mechanics
+A circuit halt can be released via three authoritative pathways:
+1. **Order-Flow Market Impact Recovery**:
+   - A executed SELL order on an UPPER-halted stock introduces selling pressure ($P_{\text{new}} < \text{Upper Limit}$), immediately triggering `releaseCircuitBreaker(stock)`.
+   - A executed BUY order on a LOWER-halted stock introduces buying pressure ($P_{\text{new}} > \text{Lower Limit}$), immediately triggering `releaseCircuitBreaker(stock)`.
+2. **Mean-Reversion Background Drift Buffer (0.8%)**:
+   - Background random price drift is clamped at the limit and requires a minimum 0.8% movement away from the ceiling ($P_{\text{current}} \le \text{Upper Limit} - 0.008 \times P_{\text{day\_open}}$) or floor ($P_{\text{current}} \ge \text{Lower Limit} + 0.008 \times P_{\text{day\_open}}$) before triggering release. This permanently prevents premature unhalting caused by micro-noise.
+3. **Host Manual Release**:
+   - Host can click **Release Halt** in the Host Control Panel, resetting $P_{\text{day\_open}} = P_{\text{current}}$ and immediately restoring unconstrained trading.
 - Upon release:
-  1. `isHalted` is set to `false`.
-  2. $P_{\text{day\_open}}$ is reset to the current price ($P_{\text{current}}$) to establish a fresh reference baseline.
-  3. Normal trading resumes immediately.
+  - `isHalted = false`, `haltDirection = null`.
+  - Records `CIRCUIT_RECOVERY` audit event.
+  - Broadcasts `CIRCUIT_RECOVERY_ALERT` to remove warning badges across all trader and projector screens.
 
 ---
 
@@ -118,3 +140,39 @@ To support college students with zero professional trading background:
 2. **Contextual In-Modal Feedback**: The interactive Trade Modal recalculates affordability in real-time, displaying amber/red notices when cash or shares are insufficient before order dispatch.
 3. **Audio & Visual Accessibility**: Failed or rejected orders trigger a distinct dual-tone warning buzzer (`order_rejected`) and a high-visibility, auto-dismissing toast with a manual close button.
 4. **Permanent Test Substring Guarantees**: All enhanced messages preserve essential substrings (`paused`, `Insufficient shares`, `Insufficient cash`, `Trading is not enabled`, `RESET`) to ensure 100% automated test compliance.
+
+---
+
+## 6. Multi-Day Lifecycle Transitions & Snapshot Locking
+
+### 6.1 Day Conclusion (`concludeCurrentDay`)
+- **Trigger**: Automatic clock expiration ($t \ge T_{\text{day\_duration}}$) or manual Host action (`HOST_CONCLUDE_DAY`).
+- **State Transition**:
+  - `gameState.status = 'DAY_COMPLETED'`
+  - `gameState.isPaused = true`
+  - `gameState.pauseMode = 'VISIBLE_FROZEN'`
+- **Official Daily Snapshot**:
+  - Captures each team's opening value, closing value, daily P&L, daily return %, cumulative P&L, cumulative return %, cash, equity, and trade count.
+  - Computes daily ranks and rank deltas ($\Delta \text{Rank} = \text{Rank}_{\text{prev}} - \text{Rank}_{\text{current}}$).
+  - Locks snapshot permanently into `gameState.dailyLeaderboards['day_X']` and `gameState.dailyClosingPrices['day_X']`.
+  - Accessible via authenticated REST endpoint: `GET /api/daily-snapshot/:day`.
+- **Broadcast**:
+  - Emits `DAY_CONCLUDED` and `DAY_FINALIZED` with `status: 'DAY_COMPLETED'`.
+  - Plays closing bell sound cue (`bell_close`).
+  - Activates `#traderDayCompletedOverlay` on trader terminals and `#projDayCompletedBanner` on auditorium projectors.
+
+### 6.2 Advancing to the Next Day (`HOST_START_NEXT_DAY`)
+- **Pre-Conditions**:
+  - `currentDay < totalDays` (If on final day, host must use `HOST_ADD_DAY` to extend tournament).
+  - Current day must be concluded (`status === 'DAY_COMPLETED'`).
+- **State Updates**:
+  - `currentDay = currentDay + 1`
+  - `elapsedSeconds = 0`
+  - `status = 'STANDBY'`, `isPaused = true`
+  - For each stock: $P_{\text{prev\_close}} = P_{\text{current}}$, $P_{\text{day\_open}} = P_{\text{current}}$, $P_{\text{high}} = P_{\text{current}}$, $P_{\text{low}} = P_{\text{current}}$, active transitions cleared, history reset to `{ time: 0, price: currentPrice }`.
+- **Financial Carry-Over Invariant**:
+  - Available Cash and equity share holdings carry forward 100% intact into subsequent days.
+  - Trader trade count and realized P&L persist cumulatively across the entire championship.
+- **Broadcast**:
+  - Emits `DAY_TRANSITION` and `DAY_ADVANCED` with `oldDay`, `newDay`, and `totalDays`.
+  - Trader terminals clear the day-completed overlay and display: `"Day {N} Standby: Waiting for Host to open the floor"`.

@@ -3,44 +3,51 @@
 ## 1. Executive Summary & Vision
 **The Trading Floor Championship 2026** is an institutional-grade, real-time stock market simulation platform engineered specifically for collegiate competitions, business school conclaves, and finance festivals. 
 
-Operating on a local area network (LAN) with zero external internet dependencies, it bridges the gap between theoretical classroom finance and fast-paced trading floor execution. The system provides an authentic simulation of the Indian stock market (BSE/NSE mechanics), featuring 12 blue-chip Indian equities across 6 major economic sectors, dynamic order book execution, realistic circuit breaker halts, macroeconomic news shocks, and automated audited performance rankings.
+Operating on a local area network (LAN) with zero external internet dependencies, it bridges the gap between theoretical classroom finance and fast-paced trading floor execution. The system provides an authentic simulation of the Indian stock market (BSE/NSE mechanics), featuring 20 blue-chip Indian equities across major economic sectors, dynamic order book execution, directional circuit breaker halts, macroeconomic news shocks, and automated audited performance rankings.
 
 ---
 
 ## 2. Target Audience & Roles
-The application natively serves three distinct user roles within a single lightweight architecture:
+The application natively serves four distinct user roles within a single lightweight architecture:
 
 ### 2.1 Host / Competition Director (`ROLE_HOST`)
 - **Profile**: Faculty coordinators, student competition organizers, and event administrators.
 - **Objectives**: Complete oversight and absolute control of the simulation.
 - **Capabilities**:
-  - Live start, pause (with 3-2-1 countdown), and day advancement controls.
+  - Live start, pause (with 3-2-1 countdown), day conclusion, and day advancement controls.
   - Real-time share universe management (curate active stocks, modify volatility/beta, toggle tradeability).
-  - Breaking news wire broadcast (trigger scheduled shocks or draft custom breaking alerts).
-  - Circuit breaker overrides and manual halt releases.
-  - Team roster setup, credentials management, starting cash configuration, and transaction fee controls.
+  - Breaking news wire broadcast (trigger scheduled shocks or draft custom breaking alerts with 60s private impact reveal).
+  - Directional circuit breaker overrides and manual halt releases.
+  - Dynamic team roster setup ($N \ge 1$), credentials management, starting cash configuration, and transaction fee controls.
+  - Team investment analytics view with segmented asset allocation bars.
   - Download audited reports (standings CSV, trades log CSV, audit timeline CSV, raw JSON ledger).
   - Grand Finale winner podium ceremony activation.
 
 ### 2.2 Trader Teams (`ROLE_TRADER`)
-- **Profile**: Student teams (1–16 teams, up to 4 members per team).
-- **Objectives**: Maximize portfolio net worth and percentage return over the tournament days.
+- **Profile**: Student teams (dynamic capacity: Solo, 2, 4, 8, 16, or Custom $N \ge 1$ teams).
+- **Objectives**: Maximize portfolio net worth and percentage return over tournament days.
 - **Capabilities**:
-  - Real-time stock desk with live pricing, sparkline curves, day open/high/low, and 52-week fundamentals.
-  - Lightning-fast one-click order ticket with quantity shortcuts (Max Buy, Max Sell, 1, 5, 10, 50, 100).
-  - Live portfolio valuation, cash balance tracking, and unrealized/realized P&L calculations.
+  - Paper Trading Cards UX: Clean visual hierarchy with sector pills, day open references, live sparklines, and active position unrealized P&L badges (`+₹Z (+W%)`).
+  - Advanced Universe Filters: Live search, dynamic sector chips (`#traderSectorChips`), multi-metric sorter (Gainers, Losers, Price High/Low, Highest Value), and "Holdings Only" filter.
+  - Interactive Trade Modal: Tabbed BUY/SELL switcher, stepper controls, quick lot pills (`+1`..`+100`), dynamic budget presets (`25%`, `50%`, `75%`, `Max` cash / `All` held shares), and live affordability recalculation with educational shortfall alerts.
+  - Live portfolio valuation, cash balance tracking, and realized P&L calculations.
   - Order history log with authoritative server timestamps and transaction fee receipts.
-  - Live breaking news feed with audio visual alerts and trading impact explanations.
+  - Breaking news toast banner with 15-second progress bar and audio cues.
 
 ### 2.3 Stage Projector / Spectator (`ROLE_PROJECTOR`)
 - **Profile**: Public auditorium projector screens, audience displays, and live broadcast monitors.
 - **Objectives**: Maximize stage excitement, tension, and spectator engagement.
 - **Capabilities**:
   - High-visibility full-screen view (clean ivory luxury palette, high contrast, legible from 50 feet away).
-  - Top 5 live championship standings podium with real-time net worth and return percentages.
-  - 12-company stock ticker grid with organic Bezier curves and circuit breaker status indicators.
-  - Prominent simulation clock, tournament day indicator, and breaking news banners.
-  - Synchronized grand finale podium ceremony with animated confetti and trophy fanfare.
+  - Zero-scroll stock board pagination (8 cards per page in $4 \times 2$ grid, auto-rotating every 8s, with live rankings `#1..#N`).
+  - Spotlight Bar: Permanently visible Top Percentage Gainer and Top Percentage Loser cards.
+  - Benchmark and sector indices (`NIFTY_TF20`, `BANK_TF`, `IT_TF`, `AUTO_TF`) with flex-wrap zero horizontal scroll.
+  - Dedicated `#projDayCompletedBanner` on day conclusion with audited daily rankings snapshot.
+  - Synchronized grand finale podium ceremony with animated confetti, screen rumbling, and trophy fanfare.
+
+### 2.4 Venue Sound Console (`ROLE_SOUND`)
+- **Profile**: Dedicated audio laptop plugged into auditorium PA system.
+- **Capabilities**: Real-time Web Audio API procedural synthesis of opening bells, closing bells, sirens, tension drumrolls, and victory fanfares.
 
 ---
 

@@ -2706,3 +2706,97 @@ th.th-wrap {
   .tf-stock-card, .tf-chip--halted { transition: none; animation: none; }
 }
 
+/* ==========================================================================
+   PAPER TRADING CARDS INSPIRATION & ADVANCED TRADER FILTERS (2026 UPGRADE)
+   ========================================================================== */
+.trader-chip {
+  border: 1px solid var(--subtle-border);
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-forest);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.trader-chip:hover {
+  border-color: var(--text-forest);
+  background: var(--surface-cream);
+}
+.trader-chip.active {
+  background: var(--text-forest);
+  color: #ffffff;
+  border-color: var(--text-forest);
+  box-shadow: 0 2px 6px rgba(38, 61, 53, 0.2);
+}
+
+.trade-side-tab {
+  border: none;
+  background: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+.trade-side-tab.on.buy {
+  background: var(--price-up);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(33, 134, 83, 0.25);
+}
+.trade-side-tab.on.sell {
+  background: var(--price-down);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(198, 75, 75, 0.25);
+}
+
+.trade-pill {
+  border: 1px solid var(--subtle-border);
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-charcoal);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.trade-pill:hover:not(:disabled) {
+  border-color: var(--text-forest);
+  background: var(--surface-cream);
+}
+.trade-pill:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.trade-pill.good {
+  background: #EAF5EE;
+  color: var(--price-up);
+  border-color: #BCE3CB;
+}
+.trade-pill.danger {
+  background: #FBEFEF;
+  color: var(--price-down);
+  border-color: #F3C7C7;
+}
+.trade-pill.reset {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.stock-card-pnl-pos {
+  color: var(--price-up);
+  font-weight: 700;
+}
+.stock-card-pnl-neg {
+  color: var(--price-down);
+  font-weight: 700;
+}
+
+

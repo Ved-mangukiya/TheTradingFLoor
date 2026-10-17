@@ -4,6 +4,48 @@ All notable changes to **The Trading Floor Championship 2026** platform are docu
 
 ---
 
+## [2.5.0] — 2026-10-17
+### Added
+- **Paper Trading Cards UX & Structured Information Hierarchy**:
+  - Upgraded stock trading cards inspired by the Paper Trading Cards reference (`media_1792231121505.html`).
+  - Structured card layout cleanly segregating stock identity (symbol, name, sector pill) from financial metrics (current price, day open, high/low range, and percentage delta).
+  - Position Unrealized P&L: Displays live profit/loss breakdown (`+₹Z (+W%)`) with color-coded badges for active positions.
+  - Quick lot stepper controls (`-5`, `+5`) and dedicated `Trade` action button launching the unified interactive Trade Modal.
+- **Advanced Stock Filtering & Multi-Metric Universe Sorter**:
+  - Instant case-insensitive search by ticker and company name.
+  - Dynamic sector dropdown plus clickable sector chips (`#traderSectorChips`) populated from the active share universe.
+  - Multi-Metric Sorter: Gainers, Losers, Price: High to Low, Price: Low to High, Highest Holding Value.
+  - "Holdings Only" filter toggle to isolate actively owned stocks with 1 click.
+  - Empty-state card with educational guidance and 1-click `Reset All Filters` button.
+- **Interactive Trade Modal with Real-Time Affordability Engine**:
+  - Tabbed BUY / SELL switcher updating context, boundaries, and validation.
+  - Stepper controls (`−` / `+`) and quick lot pills (`+1`, `+5`, `+10`, `+25`, `+50`, `+100`).
+  - Dynamic Budget / Holding Preset Pills:
+    - BUY Mode: `25%`, `50%`, `75%`, `Max` of available cash.
+    - SELL Mode: `25%`, `50%`, `75%`, `All` of held shares.
+  - Real-time gross trade value, fee calculation, total cash impact, and remaining cash in hand preview before order execution.
+  - Educational balance validation: High-contrast shortfall alerts explaining exact missing funds and maximum affordable shares.
+- **Directional Upper & Lower Circuit Breakers**:
+  - Upper Circuit Limit ($+20\%$): Clamps price at ceiling, blocks BUY orders, and permits SELL orders to inject downward liquidity.
+  - Lower Circuit Limit ($-20\%$): Clamps price at floor, blocks SELL orders, and permits BUY orders to inject upward liquidity.
+  - Order-Flow Circuit Recovery: Counter-directional trades dynamically adjust price and unhalt the stock.
+  - Strict Stock Isolation: A circuit halt on one stock never freezes the broader market or other companies.
+- **Explicit Day 1 ➔ Day 2 Lifecycle State Machine**:
+  - Non-Ambiguous Status: Timer expiration and manual conclusion transition state explicitly to `DAY_COMPLETED` (never ambiguously "Paused by Host").
+  - Trader Station Guidance: Displays high-visibility `#traderDayCompletedOverlay` ("Day X Concluded • Standby for Day X+1").
+  - Auditorium Projector Banner: Dedicated `#projDayCompletedBanner` with audited daily leaderboard snapshot.
+  - Host Live Operations Bar automatically recognizes `DAY_COMPLETED` and offers the direct "Start Day 2" modal.
+  - Seamless balance, equity, and trade history carry-over across competition days.
+- **Automated Verification Suite Expansion**:
+  - Created `test_trading_cards_and_lifecycle_suite.js` (24/24 passing).
+  - Total automated verification: **85/85 tests passing (0 failures)** across 3 suites (`test_master_suite.js`, `test_dynamic_upgrade_suite.js`, `test_trading_cards_and_lifecycle_suite.js`).
+
+### Fixed
+- **Circuit Breaker Micro-Drift Noise**: Background 1-second price loop now enforces a minimum 0.8% mean-reversion buffer away from circuit limits before unhalting, preventing premature unhalting on 5 paise of noise.
+- **Host Day Flow Action Conflict**: Prioritized `DAY_COMPLETED` status in Host Live Market bar so clicking the primary action directly opens the "Start Day 2" modal instead of mistakenly calling `hostResumeMarket`.
+
+---
+
 ## [2.4.0] — 2026-10-17
 ### Added
 - **Flexible Multi-Day Lifecycle & Distinct Operations**:

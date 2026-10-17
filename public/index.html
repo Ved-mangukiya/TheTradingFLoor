@@ -1050,6 +1050,64 @@
         </div>
       </div>
     </div>
+
+    <!-- Day Completed Waiting Overlay for Trader Desks -->
+    <div id="traderDayCompletedOverlay" class="hidden modal-overlay" style="z-index: 106;">
+      <div class="modal-content"
+        style="max-width: 640px; text-align: center; padding: 36px 32px; border: 2px solid var(--champagne-accent); box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+        <div class="brand-icon"
+          style="margin: 0 auto 16px auto; width: 54px; height: 54px; font-size: 26px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); background: var(--text-forest); color: #fff;">
+          ✓</div>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span class="badge badge-champagne" style="font-size: 12px; font-weight: 800; letter-spacing: 0.08em;" id="traderDayCompletedBadge">
+            DAY 1 COMPLETED
+          </span>
+          <span class="badge" style="background: rgba(33, 134, 83, 0.12); color: #047857; font-size: 12px; font-weight: 800; border: 1px solid rgba(33, 134, 83, 0.3);">
+            🔒 TRADING CLOSED
+          </span>
+        </div>
+        <h2 id="traderDayCompletedTitle"
+          style="font-size: 26px; color: var(--text-forest); margin-bottom: 8px; font-family: var(--font-serif); font-weight: 900;">
+          Day 1 Official Session Concluded
+        </h2>
+        <p id="traderDayCompletedSubtitle" style="font-size: 14px; color: var(--text-muted); margin-bottom: 22px;">
+          Your team portfolio, trade ledger, and closing valuation have been recorded. Please stand by for the Host to start Day 2.
+        </p>
+
+        <div class="waiting-room-stats-grid"
+          style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px;">
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Closing Net Worth</div>
+            <div id="traderDayCompletedNetWorth"
+              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--text-forest); margin-top: 4px;">₹5,00,000.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Day P&L</div>
+            <div id="traderDayCompletedPnl"
+              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--price-up); margin-top: 4px;">+₹0.00</div>
+          </div>
+          <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: 10px;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Session Rank</div>
+            <div id="traderDayCompletedRank"
+              style="font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--champagne-accent); margin-top: 4px;">#1</div>
+          </div>
+        </div>
+
+        <div class="cream-panel"
+          style="padding: 18px; margin-bottom: 20px; border: 2px dashed var(--champagne-accent); background: #FAF9F6; border-radius: 14px;">
+          <div style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin-bottom: 6px;">
+            ⏳ Awaiting Host To Start Next Day
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4;">
+            Your cash and share holdings carry over seamlessly to the next day. The floor terminal will automatically unlock when Day 2 begins.
+          </p>
+        </div>
+
+        <button onclick="dismissTraderDayCompleted()" class="btn btn-outline" style="padding: 8px 20px; font-size: 12px; font-weight: 700;">
+          Review Portfolio & Past Orders
+        </button>
+      </div>
+    </div>
     <!-- Top Header Ribbon -->
     <header class="app-header">
       <div class="header-brand">
@@ -1127,20 +1185,33 @@
         </button>
       </div>
 
-      <!-- Search & Sector Filters -->
-      <div class="trader-filters-wrap" style="display: flex; align-items: center; gap: 8px;">
-        <input id="traderStockSearch" type="text" placeholder="Search company or ticker..."
-          oninput="filterTraderStocks()" class="form-input" style="padding: 5px 10px; font-size: 12px; width: 180px;" />
-        <select id="traderSectorFilter" onchange="filterTraderStocks()" class="form-input"
-          style="padding: 5px 10px; font-size: 12px; width: 140px;">
+      <!-- Search, Sector & Sort Filters -->
+      <div class="trader-filters-wrap" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <input id="traderStockSearch" type="search" placeholder="Search company or ticker..."
+          oninput="filterTraderStocks()" class="form-input" style="padding: 6px 12px; font-size: 12px; width: 170px;" />
+        <select id="traderSectorFilter" onchange="onTraderSectorSelect(this.value)" class="form-input"
+          style="padding: 6px 10px; font-size: 12px; width: 135px;">
           <option value="ALL">All Sectors</option>
-          <option value="Automobile">Automobile</option>
-          <option value="Information Tech">Information Tech</option>
-          <option value="Banking & Finance">Banking & Finance</option>
-          <option value="Renewable Energy">Renewable Energy</option>
-          <option value="Pharmaceuticals">Pharmaceuticals</option>
         </select>
+        <select id="traderSortFilter" onchange="filterTraderStocks()" class="form-input"
+          style="padding: 6px 10px; font-size: 12px; width: 145px;">
+          <option value="default">Sort: Default</option>
+          <option value="gainers">Top Gainers (%)</option>
+          <option value="losers">Top Losers (%)</option>
+          <option value="priceHigh">Price: High → Low</option>
+          <option value="priceLow">Price: Low → High</option>
+          <option value="value">Holding Value</option>
+        </select>
+        <label class="trader-filter-toggle" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-forest); cursor: pointer; user-select: none; margin-left: 4px;">
+          <input type="checkbox" id="traderHoldingsOnly" onchange="filterTraderStocks()" style="cursor: pointer;" />
+          <span>Holdings Only</span>
+        </label>
       </div>
+    </div>
+
+    <!-- Quick Click Sector Filter Chips Bar -->
+    <div style="max-width: 1600px; width: 100%; margin: 8px auto 0 auto; padding: 0 24px;">
+      <div id="traderSectorChips" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;"></div>
     </div>
 
     <!-- Real-Time Market & Sector Indices Ticker Strip -->
@@ -3111,6 +3182,21 @@
           portfolio balances are frozen safely. Trading will resume with a 3-second live countdown.</p>
       </div>
 
+      <!-- Day Completed Presentation Banner (Displays when day timer ends or day concludes) -->
+      <div id="projDayCompletedBanner" class="hidden luxury-card"
+        style="padding: 24px; text-align: center; margin-bottom: 14px; border: 2px solid var(--price-up); background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 6px;">
+          <span style="font-size: 28px;">🔔</span>
+          <span class="badge badge-champagne"
+            style="font-size: 12px; font-weight: 800; letter-spacing: 0.08em; padding: 4px 12px;">★ AUDITORIUM STAGE ★</span>
+          <span id="projDayCompletedBadge" class="badge badge-active" style="font-size: 12px; font-weight: 800;">DAY 1 COMPLETED</span>
+        </div>
+        <h2 id="projDayCompletedTitle"
+          style="font-size: 24px; font-weight: 900; color: var(--text-forest); margin: 4px 0; font-family: var(--font-serif);">
+          Day 1 Concluded • Official Session Standings</h2>
+        <p id="projDayCompletedSub" style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin: 0;">Trading for this session has officially ended. All student portfolios are audited and locked. Waiting for host to launch Day 2.</p>
+      </div>
+
       <!-- Scene 1: All Real Companies Market Board with Persistent Top Gainers/Losers & Automatic Zero-Scroll Pagination -->
       <div id="projSceneMarketBoardWrapper" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
         <!-- Persistent Stage Spotlight: Top Gainer, Top Loser & Market Breadth -->
@@ -3862,11 +3948,11 @@
         <button onclick="closeTradeModal()" class="modal-close-btn">✕</button>
       </div>
 
-      <div class="cream-panel" style="padding: 14px; margin-bottom: 16px;">
+      <div class="cream-panel" style="padding: 14px; margin-bottom: 14px;">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
           <span style="font-size: 12px; color: var(--text-muted);">Current Market Price</span>
           <span id="tradeModalPrice"
-            style="font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: var(--text-forest);">₹0.00</span>
+            style="font-family: var(--font-mono); font-size: 22px; font-weight: 800; color: var(--text-forest);">₹0.00</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px;">
           <span style="font-size: 12px; color: var(--text-muted);">Your Available Cash</span>
@@ -3875,55 +3961,56 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
           <span style="font-size: 12px; color: var(--text-muted);">Your Current Holding</span>
-          <span id="tradeModalHolding" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700;">0
-            shares</span>
+          <span id="tradeModalHolding" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700;">0 shares</span>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="tradeQuantityInput">Order Quantity (Shares)</label>
-        <input id="tradeQuantityInput" type="number" min="1" step="1" value="10" oninput="recalculateTradeModal()"
-          class="form-input" style="font-family: var(--font-mono); font-size: 16px; font-weight: 700;" />
+      <!-- Side Switch Tabs: BUY vs SELL -->
+      <div class="trade-modal-tabs" style="display: grid; grid-template-columns: 1fr 1fr; background: var(--warm-beige); border-radius: 10px; padding: 4px; margin-bottom: 14px;">
+        <button type="button" id="tabTradeBuy" onclick="setTradeSide('BUY')" class="trade-side-tab on buy">
+          BUY SHARES
+        </button>
+        <button type="button" id="tabTradeSell" onclick="setTradeSide('SELL')" class="trade-side-tab sell">
+          SELL SHARES
+        </button>
       </div>
 
-      <!-- Quick Lot Preset Pills -->
-      <div style="margin-bottom: 12px;">
-        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Quick Quantity
-          Shortcuts:</div>
+      <!-- Quantity Stepper Row -->
+      <div class="form-group" style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+          <label class="form-label" for="tradeQuantityInput" style="margin: 0;">Order Quantity (Shares)</label>
+          <span id="tradeAffordableHint" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);"></span>
+        </div>
+        <div style="display: flex; align-items: stretch; border: 1px solid var(--subtle-border); border-radius: 10px; background: #fffbf1; overflow: hidden;">
+          <button type="button" id="qMinusBtn" onclick="stepTradeQuantity(-1)" style="border: none; background: #f3ecd9; width: 48px; font-size: 20px; font-weight: 800; color: var(--text-forest); cursor: pointer;" aria-label="Decrease quantity">−</button>
+          <input id="tradeQuantityInput" type="number" min="1" step="1" value="10" oninput="recalculateTradeModal()"
+            class="form-input" style="flex: 1; border: none; background: transparent; text-align: center; font-family: var(--font-mono); font-size: 20px; font-weight: 800; padding: 10px; outline: none; color: var(--text-forest);" />
+          <button type="button" id="qPlusBtn" onclick="stepTradeQuantity(1)" style="border: none; background: #f3ecd9; width: 48px; font-size: 20px; font-weight: 800; color: var(--text-forest); cursor: pointer;" aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+
+      <!-- Quick Add Pills -->
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Quick Quantity Add:</div>
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button type="button" onclick="setTradeLot(1)" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">+1</button>
-          <button type="button" onclick="setTradeLot(5)" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">+5</button>
-          <button type="button" onclick="setTradeLot(10)" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">+10</button>
-          <button type="button" onclick="setTradeLot(50)" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">+50</button>
-          <button type="button" onclick="setTradeLot(100)" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">+100</button>
+          <button type="button" onclick="setTradeLotPreset('ADD', 1)" class="trade-pill">+1</button>
+          <button type="button" onclick="setTradeLotPreset('ADD', 5)" class="trade-pill">+5</button>
+          <button type="button" onclick="setTradeLotPreset('ADD', 10)" class="trade-pill">+10</button>
+          <button type="button" onclick="setTradeLotPreset('ADD', 50)" class="trade-pill">+50</button>
+          <button type="button" onclick="setTradeLotPreset('ADD', 100)" class="trade-pill">+100</button>
+          <button type="button" onclick="setTradeLotPreset('SET', 1)" class="trade-pill reset">Reset (1)</button>
         </div>
       </div>
 
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Holding & Budget
-          Shortcuts:</div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button type="button" onclick="setTradeLot('25%')" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">25% Held</button>
-          <button type="button" onclick="setTradeLot('50%')" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">50% Held</button>
-          <button type="button" onclick="setTradeLot('75%')" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px;">75% Held</button>
-          <button type="button" onclick="setTradeLot('SELL_ALL')" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px; color: #DC2626; font-weight: 700; border-color: #FCA5A5; background: #FEF2F2;">⚡
-            Sell All Held</button>
-          <button type="button" onclick="setTradeLot('MAX_BUY')" class="btn btn-outline"
-            style="padding: 3px 9px; font-size: 11px; color: #059669; font-weight: 700; border-color: #6EE7B7; background: #ECFDF5;">⚡
-            Max Affordable Buy</button>
+      <!-- Holding & Budget Shortcuts (Context Sensitive) -->
+      <div style="margin-bottom: 14px;">
+        <div id="tradePresetLabel" style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Budget Shortcuts:</div>
+        <div id="tradePresetPillsContainer" style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <!-- Dynamically populated by syncTradeModalSide -->
         </div>
       </div>
 
-      <!-- Order Value Breakdown -->
+      <!-- Order Value Breakdown & Cash Impact -->
       <div class="cream-panel"
         style="padding: 12px; margin-bottom: 14px; font-family: var(--font-mono); font-size: 12px;">
         <div style="display: flex; justify-content: space-between;">
@@ -3931,31 +4018,39 @@
           <span id="tradeModalGross" style="font-weight: 700;">₹0.00</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-          <span style="color: var(--text-muted);">Brokerage Fee:</span>
+          <span style="color: var(--text-muted);" id="tradeModalFeeLabel">Brokerage Fee (0 bps):</span>
           <span id="tradeModalFee" style="color: var(--text-muted);">₹0.00</span>
         </div>
         <div style="border-top: 1px solid var(--subtle-border); margin: 6px 0;"></div>
         <div style="display: flex; justify-content: space-between; font-size: 14px;">
-          <span style="font-weight: 700; color: var(--text-forest);">Net Cash Impact:</span>
+          <span style="font-weight: 700; color: var(--text-forest);" id="tradeModalNetLabel">Net Cash Impact (debit):</span>
           <span id="tradeModalNet" style="font-weight: 800;">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 13px;">
+          <span style="color: var(--text-muted);" id="tradeModalCashAfterLabel">Cash Remaining After Trade:</span>
+          <span id="tradeModalCashAfter" style="font-weight: 800; color: var(--text-forest);">₹0.00</span>
         </div>
       </div>
 
       <!-- Interactive Dynamic Status / Guidance Notice -->
       <div id="tradeModalValidationNotice" class="hidden"
-        style="padding: 10px 14px; margin-bottom: 16px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.45;">
+        style="padding: 10px 14px; margin-bottom: 14px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.45;">
       </div>
 
-      <!-- Execution Buttons -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <button id="btnExecuteBuy" onclick="executeModalTrade('BUY')" class="btn btn-primary"
-          style="background-color: var(--price-up); border-color: var(--price-up); padding: 12px; font-size: 14px; font-weight: 700;">
-          Confirm BUY
+      <!-- Single Primary Action Button -->
+      <div>
+        <button id="btnExecuteTradeOrder" onclick="executeModalTrade()" class="btn btn-primary"
+          style="width: 100%; padding: 13px; font-size: 15px; font-weight: 800; border-radius: var(--radius-sm); transition: all 0.15s ease;">
+          Confirm BUY 10 Shares
         </button>
-        <button id="btnExecuteSell" onclick="executeModalTrade('SELL')" class="btn btn-primary"
-          style="background-color: var(--price-down); border-color: var(--price-down); padding: 12px; font-size: 14px; font-weight: 700;">
-          Confirm SELL
-        </button>
+      </div>
+
+      <!-- Backward-compatible hidden proxy buttons for tests/scripts -->
+      <button id="btnExecuteBuy" onclick="executeModalTrade('BUY')" style="display: none;"></button>
+      <button id="btnExecuteSell" onclick="executeModalTrade('SELL')" style="display: none;"></button>
+
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px;">
+        Enter to confirm • Esc to close • ↑ / ↓ to adjust quantity
       </div>
     </div>
   </div>
