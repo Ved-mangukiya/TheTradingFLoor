@@ -5,6 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
+const {
+  LOCKED_STATUSES,
+  CANONICAL_STATUSES,
+  syncDerivedStateFlags,
+  canExecuteTrades,
+  canTransitionTo
+} = require('./server/state_machine');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,6 +122,10 @@ let companies = [];
 let newsEvents = [];
 let teams = {};
 let gameState = {
+  eventId: 'EVT_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+  stateVersion: 1,
+  isReset: false,
+  resetMessage: null,
   title: 'The Trading Floor - Championship 2026',
   subtitle: 'Gujarat Technological University • Intra-College Trading Championship',
   institution: 'Gujarat Technological University',
@@ -218,6 +229,7 @@ function setupDefaultTeams(count = 12, startingCash = 500000) {
       members,
       cash: startingCash,
       startingCash,
+      dayOpeningPortfolioValue: startingCash,
       holdings,
       avgBuyPrice,
       realizedPnl: 0,
@@ -264,6 +276,16 @@ function saveLiveGameState() {
       if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
     });
 
+    const activeSessions = Array.from(sessions.entries()).map(([tok, s]) => ({
+      token: tok,
+      role: s.role,
+      id: s.id,
+      name: s.name,
+      username: s.username,
+      members: s.members || '',
+      lastOrderAt: s.lastOrderAt || 0
+    }));
+
     const stateToSave = {
       savedAt: new Date().toISOString(),
       activeScenarioMode,
@@ -273,7 +295,8 @@ function saveLiveGameState() {
       executedTrades,
       tradeSeqCounter,
       newsEvents,
-      traderUsers
+      traderUsers,
+      activeSessions
     };
     fs.writeFileSync(LIVE_STATE_FILE, JSON.stringify(stateToSave, null, 2));
   } catch (err) {
@@ -287,6 +310,16 @@ function createCheckpoint(label = 'manual') {
     Object.keys(USERS).forEach((k) => {
       if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
     });
+
+    const activeSessions = Array.from(sessions.entries()).map(([tok, s]) => ({
+      token: tok,
+      role: s.role,
+      id: s.id,
+      name: s.name,
+      username: s.username,
+      members: s.members || '',
+      lastOrderAt: s.lastOrderAt || 0
+    }));
 
     const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `checkpoint_Day${gameState ? gameState.currentDay : 1}_${gameState ? gameState.elapsedSeconds : 0}s_${label}_${timestampStr}.json`;
@@ -303,7 +336,8 @@ function createCheckpoint(label = 'manual') {
       executedTrades,
       tradeSeqCounter,
       newsEvents,
-      traderUsers
+      traderUsers,
+      activeSessions
     };
 
     fs.writeFileSync(fullPath, JSON.stringify(snapshot, null, 2));
@@ -356,6 +390,18 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
 
     activeScenarioMode = data.activeScenarioMode || 'live';
     gameState = data.gameState;
+    if (!gameState.eventId) {
+      gameState.eventId = 'EVT_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    if (!gameState.stateVersion) {
+      gameState.stateVersion = 1;
+    }
+    if (gameState.isReset === undefined) {
+      gameState.isReset = false;
+    }
+    if (gameState.resetMessage === undefined) {
+      gameState.resetMessage = null;
+    }
     
     // Clear active countdown timer if any to prevent stale countdown from previous session
     if (activeCountdownTimer) {
@@ -366,7 +412,7 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
     
     // Preserve legitimate lifecycle states like DAY_COMPLETED, SETUP, STANDBY, CHAMPIONSHIP_CONCLUDED
     // Only force pause if state was actively trading (LIVE) to ensure safe recovery
-    const legitimateStoppedStates = ['SETUP', 'STANDBY', 'DAY_COMPLETED', 'CHAMPIONSHIP_CONCLUDED', 'FINAL_ANALYSIS'];
+    const legitimateStoppedStates = ['SETUP', 'STANDBY', 'DAY_COMPLETED', 'CHAMPIONSHIP_CONCLUDED', 'FINAL_ANALYSIS', 'EMERGENCY_STOP'];
     if (!legitimateStoppedStates.includes(gameState.status)) {
       gameState.status = 'PAUSED';
     }
@@ -403,6 +449,15 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
         if (USERS[k].role === 'TRADER') delete USERS[k];
       });
       Object.assign(USERS, data.traderUsers);
+    }
+
+    if (Array.isArray(data.activeSessions)) {
+      sessions.clear();
+      data.activeSessions.forEach((s) => {
+        if (s && s.token) {
+          sessions.set(s.token, s);
+        }
+      });
     }
 
     // Rebuild per-day fired news events registry from restored events
@@ -482,6 +537,10 @@ function loadScenario(mode = 'live', forceBaseline = false) {
 
   const meta = scenarioData.scenario_metadata;
   gameState = {
+    eventId: (gameState && gameState.eventId) || ('EVT_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8).toUpperCase()),
+    stateVersion: (gameState && gameState.stateVersion) || 1,
+    isReset: false,
+    resetMessage: null,
     title: meta.title || 'The Trading Floor - Championship 2026',
     subtitle: meta.subtitle || 'Gujarat Technological University • Intra-College Trading Championship',
     institution: meta.institution || 'Gujarat Technological University',
@@ -556,8 +615,8 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     // Intraday wave parameters for realistic divergence (prevents all stocks moving together)
     const trendPhase = ((idx * 1.73) % (Math.PI * 2));
     const trendFreq = 0.012 + ((idx % 7) * 0.005);
-    // Balanced market breadth: ~35% positive bias, ~35% negative bias, ~30% neutral oscillation
-    const sentimentBias = (idx % 3 === 0) ? 0.00015 : (idx % 3 === 1) ? -0.00015 : 0;
+    // Unbiased market breadth: True statistical fairness (E[ΔP] = 0); divergence driven by cyclical waves
+    const sentimentBias = 0;
 
     return {
       ticker: (c.ticker || '').toUpperCase().trim(),
@@ -848,6 +907,7 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
       generatedEvents.push({
         event_id: `EVT_D${d}_0${fIdx + 1}`,
         day: d,
+        relative_position: frac,
         trigger_second: triggerSec,
         reading_duration_sec: readingWindowSec,
         type: tpl.type,
@@ -860,6 +920,111 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
   }
 
   return generatedEvents;
+}
+
+function getReadingWindowForDuration(durationSec) {
+  if (durationSec <= 300) return 12;
+  if (durationSec <= 600) return 18;
+  if (durationSec <= 1200) return 22;
+  return 25;
+}
+
+// Validates schedule feasibility under competition constraints
+function validateScheduleFeasibility(events, dayDurationSeconds) {
+  if (!Array.isArray(events) || events.length === 0) {
+    return { valid: true, issues: [], summary: 'No events scheduled' };
+  }
+  const minSeparationSec = 60;
+  const issues = [];
+  const eventsByDay = {};
+
+  events.forEach((ev) => {
+    const d = ev.day || 1;
+    if (!eventsByDay[d]) eventsByDay[d] = [];
+    eventsByDay[d].push(ev);
+  });
+
+  Object.entries(eventsByDay).forEach(([day, dayEvents]) => {
+    dayEvents.sort((a, b) => (a.trigger_second || 0) - (b.trigger_second || 0));
+    for (let i = 0; i < dayEvents.length; i++) {
+      const cur = dayEvents[i];
+      const trig = cur.trigger_second || 0;
+      const readSec = cur.reading_duration_sec || 20;
+
+      if (trig <= 0) {
+        issues.push(`Day ${day} event "${cur.event_id}" scheduled before trading starts (${trig}s).`);
+      }
+      if (trig + readSec + 25 > dayDurationSeconds) {
+        issues.push(`Day ${day} event "${cur.event_id}" expires after trading day closes (${trig + readSec + 25}s > ${dayDurationSeconds}s).`);
+      }
+      if (i > 0) {
+        const prev = dayEvents[i - 1];
+        const gap = trig - (prev.trigger_second || 0);
+        if (gap < minSeparationSec) {
+          issues.push(`Day ${day} events "${prev.event_id}" and "${cur.event_id}" overlap or have insufficient reading separation (${gap}s < ${minSeparationSec}s).`);
+        }
+      }
+    }
+  });
+
+  return {
+    valid: issues.length === 0,
+    issues,
+    summary: issues.length === 0 ? '✓ Schedule feasible: all events fit with valid reading windows and separation' : issues.join('; ')
+  };
+}
+
+// Recalculates news publication offsets dynamically using proportional ratios: t_i = round(D * p_i)
+function recalculateNewsScheduleForDuration(newDurationSeconds) {
+  if (!Array.isArray(newsEvents) || newsEvents.length === 0) return;
+  const oldDuration = gameState.dayDurationSeconds || 1800;
+  const readingSec = getReadingWindowForDuration(newDurationSeconds);
+  const minSeparationSec = 60;
+
+  const eventsByDay = {};
+  newsEvents.forEach((ev) => {
+    const d = ev.day || 1;
+    if (!eventsByDay[d]) eventsByDay[d] = [];
+    eventsByDay[d].push(ev);
+  });
+
+  Object.values(eventsByDay).forEach((dayEvents) => {
+    dayEvents.sort((a, b) => (a.trigger_second || 0) - (b.trigger_second || 0));
+    let lastTrigger = 0;
+
+    dayEvents.forEach((ev, idx) => {
+      let p_i = ev.relative_position;
+      if (p_i === undefined || p_i === null) {
+        p_i = (ev.trigger_second || (idx + 1) * 300) / oldDuration;
+        p_i = Math.max(0.10, Math.min(0.90, p_i));
+      }
+      ev.relative_position = p_i;
+
+      // Proportional ratio formula: t_i = round(D * p_i)
+      let targetSec = Math.round(newDurationSeconds * p_i);
+
+      // Enforce minimum separation constraint (>= 60s from prior news)
+      if (idx > 0 && targetSec < lastTrigger + minSeparationSec) {
+        targetSec = lastTrigger + minSeparationSec;
+      }
+
+      // Bound within session end
+      const maxAllowed = Math.max(minSeparationSec, newDurationSeconds - readingSec - 25);
+      if (targetSec > maxAllowed) {
+        targetSec = maxAllowed;
+      }
+
+      ev.trigger_second = targetSec;
+      ev.reading_duration_sec = readingSec;
+      lastTrigger = targetSec;
+    });
+  });
+
+  recordAuditEvent('NEWS_SCHEDULE_SCALED', {
+    oldDuration,
+    newDuration: newDurationSeconds,
+    recalculatedEventsCount: newsEvents.length
+  });
 }
 
 function extendNewsPlanForDay(dayNumber) {
@@ -888,6 +1053,7 @@ function extendNewsPlanForDay(dayNumber) {
     newsEvents.push({
       event_id: `EVT_D${dayNumber}_0${fIdx + 1}`,
       day: dayNumber,
+      relative_position: frac,
       trigger_second: triggerSec,
       reading_duration_sec: readingWindowSec,
       type: tpl.type,
@@ -913,7 +1079,8 @@ function applyNewsImpactsToStocks(eventObj) {
 
     companies.forEach((stock) => {
       if (!stock.isEnabled || stock.isHalted) return;
-      const shockPct = basePct * (stock.beta || 1.0);
+      const betaSensitivity = 1 + ((stock.beta || 1.0) - 1) * 0.5;
+      const shockPct = +(basePct * betaSensitivity).toFixed(2);
       applyStockTransition(stock, shockPct, durationSec, headline);
     });
   } else {
@@ -923,7 +1090,8 @@ function applyNewsImpactsToStocks(eventObj) {
       const stock = companies.find((s) => s.ticker === ticker);
       if (!stock || !stock.isEnabled) return;
       const { delta_pct, duration_sec } = impacts[ticker];
-      const shockPct = delta_pct * oppMult;
+      const betaSensitivity = (eventObj.type === 'SECTOR' || eventObj.type === 'MACRO') ? (1 + ((stock.beta || 1.0) - 1) * 0.5) : 1.0;
+      const shockPct = +(delta_pct * betaSensitivity * oppMult).toFixed(2);
       if (stock.isHalted) {
         if (stock.haltDirection === 'UPPER' && shockPct < 0) releaseCircuitBreaker(stock);
         else if (stock.haltDirection === 'LOWER' && shockPct > 0) releaseCircuitBreaker(stock);
@@ -940,7 +1108,8 @@ function applyNewsImpactsToStocks(eventObj) {
       companies.forEach((stock) => {
         if (!stock.isEnabled || stock.isHalted) return;
         if (stock.sector && stock.sector.toLowerCase().includes(targetSector)) {
-          const sectorShock = delta_pct * (stock.beta || 1.0) * oppMult;
+          const betaSensitivity = 1 + ((stock.beta || 1.0) - 1) * 0.5;
+          const sectorShock = +(delta_pct * betaSensitivity * oppMult).toFixed(2);
           applyStockTransition(stock, sectorShock, duration_sec, headline);
         }
       });
@@ -1002,6 +1171,7 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   }
 
   const newsRecord = {
+    id: eventObj.event_id,
     event_id: eventObj.event_id,
     day: gameState.currentDay,
     second: gameState.elapsedSeconds,
@@ -1112,42 +1282,61 @@ function concludeCurrentDay(isAutoClose = false) {
 
   const prevSnapshot = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${day - 1}`];
 
-  const dailyRankings = standings.map((item, idx) => {
+  const dailyRankings = standings.map((item) => {
     const t = teams[item.id] || {};
     const startingCash = t.startingCash || gameState.startingCash || 500000;
     const currentPortfolioValue = item.netWorth;
     const prevClosingValue = prevSnapshot
-      ? (prevSnapshot.rankings.find((r) => r.teamId === item.id)?.closingPortfolioValue || startingCash)
-      : startingCash;
+      ? (prevSnapshot.rankings.find((r) => r.teamId === item.id)?.closingPortfolioValue || t.dayOpeningPortfolioValue || startingCash)
+      : (t.dayOpeningPortfolioValue || startingCash);
 
     const dailyPnl = +(currentPortfolioValue - prevClosingValue).toFixed(2);
     const dailyReturnPct = prevClosingValue > 0 ? +(((currentPortfolioValue - prevClosingValue) / prevClosingValue) * 100).toFixed(2) : 0;
     const cumulativePnl = +(currentPortfolioValue - startingCash).toFixed(2);
     const cumulativeReturnPct = startingCash > 0 ? +(((currentPortfolioValue - startingCash) / startingCash) * 100).toFixed(2) : 0;
 
-    let prevRank = idx + 1;
+    let prevRank = 1;
     if (prevSnapshot && prevSnapshot.rankings) {
       const pIdx = prevSnapshot.rankings.findIndex((r) => r.teamId === item.id);
       if (pIdx !== -1) prevRank = pIdx + 1;
     }
-    const rankDelta = prevRank - (idx + 1);
 
     return {
+      id: item.id,
+      name: item.name,
       teamId: item.id,
       teamName: item.name,
-      rank: idx + 1,
+      members: item.members || t.members || '',
       prevRank,
-      rankDelta,
       openingPortfolioValue: prevClosingValue,
+      dayOpeningValuation: prevClosingValue,
       closingPortfolioValue: currentPortfolioValue,
       dailyPnl,
+      dayPnl: dailyPnl,
       dailyReturnPct,
+      dayReturnPercent: dailyReturnPct,
       cumulativePnl,
       cumulativeReturnPct,
       cash: item.cash,
       holdingsValue: item.holdingsValue,
+      netWorth: currentPortfolioValue,
       tradeCount: item.tradeCount
     };
+  });
+
+  // Sort dailyRankings strictly by that specific day's profit/loss only!
+  dailyRankings.sort((a, b) => {
+    if (b.dailyPnl !== a.dailyPnl) return b.dailyPnl - a.dailyPnl;
+    if (b.dailyReturnPct !== a.dailyReturnPct) return b.dailyReturnPct - a.dailyReturnPct;
+    if (b.cash !== a.cash) return b.cash - a.cash;
+    return a.tradeCount - b.tradeCount;
+  });
+
+  // Assign authoritative Day rank and compute daily rank deltas
+  dailyRankings.forEach((item, idx) => {
+    item.rank = idx + 1;
+    item.dayRank = idx + 1;
+    item.rankDelta = item.prevRank - (idx + 1);
   });
 
   const daySnapshot = {
@@ -1155,6 +1344,8 @@ function concludeCurrentDay(isAutoClose = false) {
     finalizedAt: new Date().toISOString(),
     closingPrices,
     rankings: dailyRankings,
+    dailyRankings,
+    cumulativeRankings: standings,
     isAutomaticEnd: isAutoClose
   };
 
@@ -1183,6 +1374,8 @@ function concludeCurrentDay(isAutoClose = false) {
     day,
     status: gameState.status,
     daySnapshot,
+    dailyRankings,
+    dailyLeaderboards: gameState.dailyLeaderboards,
     isAutomaticEnd: isAutoClose,
     reason: conclusionReason
   });
@@ -1348,6 +1541,16 @@ function restartEngineInterval() {
             reaction: spotlightPayload
           });
         }
+
+        // Bounded trajectory tracking: update high/lows and history, bypassing random drift
+        if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
+        if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+        if (!stock.week52High || isNaN(stock.week52High)) stock.week52High = +(stock.base_price * 1.25).toFixed(2);
+        if (!stock.week52Low || isNaN(stock.week52Low)) stock.week52Low = +(stock.base_price * 0.75).toFixed(2);
+        if (stock.currentPrice > stock.week52High) stock.week52High = stock.currentPrice;
+        if (stock.currentPrice < stock.week52Low) stock.week52Low = stock.currentPrice;
+        stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
+        return;
       }
 
       // 2. Realistic Gaussian + micro-drift + cyclical waves + mean-reversion
@@ -1429,7 +1632,6 @@ function calculateLeaderboard() {
     let holdingsValue = 0;
     let unrealizedPnl = 0;
     companies.forEach((c) => {
-      if (!c.isEnabled) return;
       const qty = t.holdings[c.ticker] || 0;
       const cost = t.avgBuyPrice[c.ticker] || 0;
       holdingsValue += qty * c.currentPrice;
@@ -1457,7 +1659,9 @@ function calculateLeaderboard() {
     };
   }).sort((a, b) => {
     if (b.netWorth !== a.netWorth) return b.netWorth - a.netWorth;
-    return b.tradeCount - a.tradeCount;
+    if (b.pnlPct !== a.pnlPct) return b.pnlPct - a.pnlPct;
+    if (b.cash !== a.cash) return b.cash - a.cash;
+    return a.tradeCount - b.tradeCount;
   });
 }
 
@@ -1611,7 +1815,6 @@ function calculateTeamSectorAllocations() {
     const sectorValues = {};
 
     companies.forEach((c) => {
-      if (!c.isEnabled) return;
       const qty = t.holdings[c.ticker] || 0;
       const val = qty * c.currentPrice;
       if (val > 0) {
@@ -1733,17 +1936,23 @@ function getSanitizedPublicState(role, teamId) {
 
   const payload = {
     type: 'TICK_UPDATE',
+    eventId: gameState.eventId,
+    stateVersion: gameState.stateVersion,
     scenarioMode: activeScenarioMode,
     serverTimeMs: Date.now(),
     soundConsoleConnected: soundClients.size > 0,
     marketIndices,
     teamSectorAllocations,
     gameState: {
+      eventId: gameState.eventId,
+      stateVersion: gameState.stateVersion,
+      isReset: !!gameState.isReset,
+      resetMessage: gameState.resetMessage || null,
       title: gameState.title,
       subtitle: gameState.subtitle || '',
       institution: gameState.institution || '',
       status: gameState.status || (gameState.isPaused ? 'PAUSED' : 'LIVE'),
-      configLocked: !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN'),
+      configLocked: !!gameState.configLocked,
       startMode: gameState.startMode || 'IMMEDIATE',
       scheduledStartTime: gameState.scheduledStartTime,
       pausePolicy: gameState.pausePolicy || 'TRADING_TIME',
@@ -1784,7 +1993,7 @@ function getSanitizedPublicState(role, teamId) {
       isNew52WHigh: !!(c.isNew52WHigh || c.currentPrice >= (c.week52High || 999999)),
       isNew52WLow: !!(c.isNew52WLow || c.currentPrice <= (c.week52Low || 0)),
       lot_presets: c.lot_presets,
-      beta: c.beta,
+      ...(isHost ? { beta: c.beta, volatility_factor: c.volatility_factor } : {}),
       isHalted: c.isHalted,
       haltDirection: c.haltDirection,
       fundamentals: c.fundamentals,
@@ -1797,7 +2006,6 @@ function getSanitizedPublicState(role, teamId) {
     let holdingsValue = 0;
     let unrealizedPnl = 0;
     companies.forEach((c) => {
-      if (!c.isEnabled) return;
       const qty = t.holdings[c.ticker] || 0;
       const cost = t.avgBuyPrice[c.ticker] || 0;
       holdingsValue += qty * c.currentPrice;
@@ -1899,6 +2107,10 @@ function getSanitizedPublicState(role, teamId) {
 
   if (role === 'PROJECTOR') {
     payload.leaderboard = calculateLeaderboard(); // Full leaderboard for Projector sceneLeaderboard
+    payload.cumulativeLeaderboard = calculateLeaderboard();
+    const curDaySnap = gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${gameState.currentDay}`];
+    payload.dailyLeaderboard = curDaySnap ? (curDaySnap.dailyRankings || curDaySnap.rankings) : null;
+    payload.dailySnapshots = gameState.dailyLeaderboards;
     payload.marketIndices = marketIndices;
     payload.teamSectorAllocations = teamSectorAllocations;
     payload.projectorState = gameState.projectorState;
@@ -1944,17 +2156,28 @@ function broadcastAudioCue(cueName, category = 'lifecycle', metadata = {}) {
     metadata
   };
 
-  soundClients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(payload));
+  if (soundClients.size > 0) {
+    soundClients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(payload));
+      }
+    });
+    // Explicit Host self-test cues also dispatch to HOST sockets for immediate feedback
+    if (metadata && metadata.isTest) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN && client.session && client.session.role === 'HOST') {
+          client.send(JSON.stringify(payload));
+        }
+      });
     }
-  });
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN && !soundClients.has(client)) {
-      client.send(JSON.stringify(payload));
-    }
-  });
+  } else {
+    // Fallback: If no dedicated sound console is attached, dispatch only to HOST terminals
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN && client.session && client.session.role === 'HOST') {
+        client.send(JSON.stringify(payload));
+      }
+    });
+  }
 
   recordAuditEvent('AUDIO_CUE_DISPATCHED', { cueId, cueName, category });
   return cueId;
@@ -1988,6 +2211,7 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     totalDurationMs: durationMs
   };
   gameState.status = 'COUNTDOWN';
+  syncDerivedStateFlags(gameState);
 
   const pausedDurationSec = gameState.pauseStartedAt
     ? Math.round((now - gameState.pauseStartedAt) / 1000)
@@ -2017,10 +2241,10 @@ function startResumeCountdown(triggeredBy = 'HOST') {
       return;
     }
     gameState.activeCountdown = null;
-    gameState.isPaused = false;
-    gameState.pauseMode = 'NONE';
     gameState.status = 'LIVE';
+    gameState.pauseMode = 'NONE';
     gameState.pauseStartedAt = null;
+    syncDerivedStateFlags(gameState);
 
     recordAuditEvent('MARKET_RESUMED', {
       triggered_by: triggeredBy,
@@ -2172,10 +2396,14 @@ function broadcastAll(obj) {
 // ==========================================
 wss.on('connection', (ws) => {
   // Push authoritative public event access status immediately upon socket connection
-  const publicLocked = !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN' || gameState.status === 'STANDBY' || gameState.status === 'DAY_COMPLETED');
+  const publicLocked = !!gameState.configLocked;
   try {
     ws.send(JSON.stringify({
       type: 'PUBLIC_EVENT_STATUS',
+      eventId: gameState.eventId,
+      stateVersion: gameState.stateVersion,
+      isReset: !!gameState.isReset,
+      resetMessage: gameState.resetMessage || null,
       status: gameState.status,
       configLocked: publicLocked,
       title: gameState.title,
@@ -2303,8 +2531,14 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    if (data.action === 'GET_STATE' || data.action === 'REQUEST_STATE' || data.action === 'HOST_GET_STATE') {
+      const state = getSanitizedPublicState(session.role, session.id);
+      ws.send(JSON.stringify(state));
+      return;
+    }
+
     if (data.action === 'ORDER' && session.role === 'TRADER') {
-      if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') {
+      if (!canExecuteTrades(gameState)) {
         const reason = gameState.status === 'DAY_COMPLETED'
           ? `🔔 Day ${gameState.currentDay} trading has concluded. All portfolios are locked until the Host opens Day ${gameState.currentDay + 1}.`
           : gameState.isConcluded
@@ -2318,13 +2552,17 @@ wss.on('connection', (ws) => {
       }
 
       const nowMs = Date.now();
-      if (nowMs - session.lastOrderAt < 200) {
+      session.lastOrderAtByTicker = session.lastOrderAtByTicker || {};
+      const tickerKey = data.ticker || 'GLOBAL';
+      const lastTickerOrder = session.lastOrderAtByTicker[tickerKey] || 0;
+      if (nowMs - lastTickerOrder < 200) {
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
           reason: '⏳ Order rate limit exceeded: Please wait a moment between placing trades. A 200ms anti-spam protection delay protects against accidental double orders.'
         }));
         return;
       }
+      session.lastOrderAtByTicker[tickerKey] = nowMs;
       session.lastOrderAt = nowMs;
 
       const team = teams[session.id];
@@ -2360,18 +2598,19 @@ wss.on('connection', (ws) => {
         return;
       }
 
+      const orderSide = (data.type || data.orderType || data.side || (data.action === 'ORDER_BUY' ? 'BUY' : data.action === 'ORDER_SELL' ? 'SELL' : '')).toUpperCase();
       const upperLimit = +(stock.dayOpenPrice * (1 + gameState.circuitBreakerPercent / 100)).toFixed(2);
       const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
 
       if (stock.isHalted) {
-        if (stock.haltDirection === 'UPPER' && data.type === 'BUY') {
+        if (stock.haltDirection === 'UPPER' && orderSide === 'BUY') {
           ws.send(JSON.stringify({
             type: 'ORDER_REJECTED',
             reason: `Upper circuit ceiling reached (₹${stock.currentPrice.toFixed(2)}). Buying is restricted under market rules. Selling is permitted.`
           }));
           return;
         }
-        if (stock.haltDirection === 'LOWER' && data.type === 'SELL') {
+        if (stock.haltDirection === 'LOWER' && orderSide === 'SELL') {
           ws.send(JSON.stringify({
             type: 'ORDER_REJECTED',
             reason: `Lower circuit floor reached (₹${stock.currentPrice.toFixed(2)}). Selling is restricted under market rules. Buying is permitted.`
@@ -2393,7 +2632,7 @@ wss.on('connection', (ws) => {
       const feeAmount = +((grossValue * feeBps) / 10000).toFixed(2);
       const cashBefore = +team.cash.toFixed(2);
 
-      if (data.type === 'BUY') {
+      if (orderSide === 'BUY') {
         const totalDeduction = +(grossValue + feeAmount).toFixed(2);
         if (team.cash < totalDeduction) {
           const shortfall = +(totalDeduction - team.cash).toFixed(2);
@@ -2415,7 +2654,15 @@ wss.on('connection', (ws) => {
 
         // Dynamic market impact (order flow buying pressure)
         const buyImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
-        stock.currentPrice = Math.min(stock.max_price || 500000, +(stock.currentPrice + buyImpact).toFixed(2));
+        const candidatePrice = +(stock.currentPrice + buyImpact).toFixed(2);
+        if (candidatePrice >= upperLimit) {
+          stock.currentPrice = upperLimit;
+          if (!stock.isHalted) {
+            triggerCircuitBreaker(stock, 'UPPER');
+          }
+        } else {
+          stock.currentPrice = Math.min(stock.max_price || 500000, candidatePrice);
+        }
         if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
         if (stock.currentPrice > stock.week52High) {
           stock.week52High = stock.currentPrice;
@@ -2469,7 +2716,7 @@ wss.on('connection', (ws) => {
 
         broadcastTick();
         return;
-      } else if (data.type === 'SELL') {
+      } else if (orderSide === 'SELL') {
         const currentHolding = team.holdings[stock.ticker] || 0;
         if (currentHolding < qty) {
           const shortfallShares = qty - currentHolding;
@@ -2492,7 +2739,15 @@ wss.on('connection', (ws) => {
 
         // Dynamic market impact (order flow selling pressure)
         const sellImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
-        stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
+        const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
+        if (candidatePrice <= lowerLimit) {
+          stock.currentPrice = lowerLimit;
+          if (!stock.isHalted) {
+            triggerCircuitBreaker(stock, 'LOWER');
+          }
+        } else {
+          stock.currentPrice = Math.max(stock.min_price || 1, candidatePrice);
+        }
         if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
         if (stock.currentPrice < stock.week52Low) {
           stock.week52Low = stock.currentPrice;
@@ -2552,10 +2807,15 @@ wss.on('connection', (ws) => {
 
     // --- 4.1 TRADER LIQUIDATE ENTIRE PORTFOLIO (SELL ALL HELD SHARES) ---
     if (data.action === 'LIQUIDATE_ALL' && session.role === 'TRADER') {
-      if (gameState.isPaused || gameState.isConcluded) {
+      if (!canExecuteTrades(gameState)) {
+        const reason = gameState.status === 'DAY_COMPLETED'
+          ? `🔔 Day ${gameState.currentDay} trading has concluded. All portfolios are locked until the Host opens Day ${gameState.currentDay + 1}.`
+          : gameState.isConcluded
+          ? '🏆 Championship trading has concluded. All portfolios and standings are finalized.'
+          : '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.';
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
-          reason: '⏸️ Market is currently paused or championship concluded. Trading is paused right now by the host. Please wait for the floor to resume.'
+          reason
         }));
         return;
       }
@@ -2596,13 +2856,13 @@ wss.on('connection', (ws) => {
         const stock = companies.find((c) => c.ticker === ticker);
         if (!stock) continue;
 
-        // Respect circuit breakers: halted stocks cannot be traded
-        if (stock.isHalted) {
+        // Respect directional circuit breakers: Upper circuit (+20%) permits SELL; Lower circuit (-20%) blocks SELL!
+        if (stock.isHalted && stock.haltDirection !== 'UPPER') {
           skippedHalted.push({
             ticker: stock.ticker,
             name: stock.name,
             qty,
-            reason: `Circuit Breaker Halted (${stock.haltDirection})`
+            reason: `Circuit Breaker Halted (${stock.haltDirection || 'LOWER'}) - Selling restricted under circuit floor`
           });
           continue;
         }
@@ -2685,7 +2945,7 @@ wss.on('connection', (ws) => {
 
     // --- 5. HOST MATRIX & ADVANCED SHARE MANAGEMENT ---
     if (session.role === 'HOST') {
-      const isConfigLocked = !!(gameState.configLocked || gameState.status === 'LIVE' || gameState.status === 'SCHEDULED' || gameState.status === 'COUNTDOWN');
+      const isConfigLocked = !!gameState.configLocked;
 
       // Enforce configuration lock: prevent modifying shares while tournament is active
       if (gameState.configLocked) {
@@ -3043,22 +3303,36 @@ wss.on('connection', (ws) => {
       }
 
       // 5.2c Start Event Now (Immediate Launch)
-      if (data.action === 'HOST_START_EVENT_NOW') {
+      if (data.action === 'HOST_START_EVENT_NOW' || data.action === 'HOST_START_MARKET') {
+        if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: gameState.isConcluded
+              ? 'Championship is already concluded.'
+              : `Day ${gameState.currentDay} is already concluded. Advance to Day ${gameState.currentDay + 1} first.`
+          }));
+          return;
+        }
+
+        const wasPreOpen = ['SETUP', 'STANDBY', 'SCHEDULED'].includes(gameState.status);
+        if (wasPreOpen) {
+          gameState.elapsedSeconds = 0;
+        }
         gameState.startMode = 'IMMEDIATE';
         gameState.status = 'LIVE';
-        gameState.configLocked = true;
-        gameState.isPaused = false;
-        gameState.isConcluded = false;
-        gameState.winnerData = null;
+        gameState.scheduledStartTime = null;
         gameState.pauseMode = 'NONE';
         gameState.pauseStartedAt = null;
-        gameState.elapsedSeconds = 0;
         if (data.durationSec || data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.durationSec || data.dayDurationSeconds, 10);
         if (data.eventTitle) gameState.title = data.eventTitle;
         if (data.institution) gameState.institution = data.institution;
+        syncDerivedStateFlags(gameState);
+
         recordAuditEvent('EVENT_STARTED_NOW', { triggered_by: 'HOST', title: gameState.title });
-        broadcastAudioCue('bell_open', 'lifecycle', { day: gameState.currentDay });
-        broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
+        if (wasPreOpen) {
+          broadcastAudioCue('bell_open', 'lifecycle', { day: gameState.currentDay });
+          broadcastAll({ type: 'BELL_EVENT', bell: 'OPEN', day: gameState.currentDay });
+        }
         broadcastAll({ type: 'MARKET_RESUMED' });
         broadcastTick();
       }
@@ -3067,12 +3341,26 @@ wss.on('connection', (ws) => {
       if (data.action === 'HOST_PUBLISH_NEWS_NOW') {
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
+          if (ev.triggered) {
+            ws.send(JSON.stringify({
+              type: 'ORDER_REJECTED',
+              reason: `"${ev.headline}" has already been published for today. Each news event can only be published once.`
+            }));
+            return;
+          }
           triggerNewsEvent(ev, 'HOST_MANUAL');
           broadcastTick();
         }
       }
 
       if (data.action === 'HOST_CANCEL_NEWS') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Schedule is locked. News items cannot be cancelled during active competition.'
+          }));
+          return;
+        }
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
           ev.cancelled = true;
@@ -3082,6 +3370,13 @@ wss.on('connection', (ws) => {
       }
 
       if (data.action === 'HOST_EDIT_NEWS') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Schedule is locked. News items cannot be edited during active competition.'
+          }));
+          return;
+        }
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
           if (data.headline) ev.headline = data.headline.trim();
@@ -3094,6 +3389,13 @@ wss.on('connection', (ws) => {
       }
 
       if (data.action === 'HOST_DUPLICATE_NEWS') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'ORDER_REJECTED',
+            reason: 'Schedule is locked. New events cannot be added to a locked schedule.'
+          }));
+          return;
+        }
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
           const clone = {
@@ -3102,12 +3404,36 @@ wss.on('connection', (ws) => {
             headline: `${ev.headline} (Follow-Up)`,
             triggered: false,
             cancelled: false,
-            trigger_second: gameState.elapsedSeconds + 60
+            trigger_second: Math.min((gameState.dayDurationSeconds || 1800) - 60, gameState.elapsedSeconds + 60)
           };
           newsEvents.push(clone);
           recordAuditEvent('NEWS_DUPLICATED', { original: ev.event_id, clone: clone.event_id });
           broadcastTick();
         }
+      }
+
+      // 5.2d2 Recalculate News Schedule when duration changes before lock
+      if (data.action === 'HOST_RECALCULATE_SCHEDULE') {
+        if (gameState.configLocked) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Configuration is permanently locked. Schedule cannot be modified.'
+          }));
+          return;
+        }
+        const newDur = parseInt(data.dayDurationSeconds, 10) || gameState.dayDurationSeconds || 1800;
+        gameState.dayDurationSeconds = newDur;
+        recalculateNewsScheduleForDuration(newDur);
+        const feasibility = validateScheduleFeasibility(newsEvents, newDur);
+        ws.send(JSON.stringify({
+          type: 'SCHEDULE_RECALCULATED_ACK',
+          ok: true,
+          dayDurationSeconds: newDur,
+          feasibility,
+          allScheduledNews: newsEvents
+        }));
+        broadcastTick();
+        return;
       }
 
       // 5.2e Host Audio Controls (Remote Event Hall Audio Console)
@@ -3133,6 +3459,13 @@ wss.on('connection', (ws) => {
 
       // 5.2f Host Winner Presentation Stage Controls (Embedded Directly in Projector)
       if (data.action === 'HOST_START_WINNER_PRESENTATION') {
+        if (!gameState.isConcluded && (gameState.status !== 'DAY_COMPLETED' || gameState.currentDay < gameState.totalDays)) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Stage Presentation requires all tournament days (Day ${gameState.totalDays}/${gameState.totalDays}) to be concluded first.`
+          }));
+          return;
+        }
         const snapshot = generateOfficialResultsSnapshot();
         gameState.isPaused = true;
         gameState.isConcluded = true;
@@ -3309,6 +3642,17 @@ wss.on('connection', (ws) => {
             stock.history = [{ time: 0, price: stock.currentPrice }];
           });
 
+          // Establish authoritative baseline opening portfolio value for the new day
+          Object.values(teams).forEach((t) => {
+            let holdingsVal = 0;
+            companies.forEach((c) => {
+              if (c.isEnabled !== false) {
+                holdingsVal += (t.holdings[c.ticker] || 0) * c.currentPrice;
+              }
+            });
+            t.dayOpeningPortfolioValue = +(t.cash + holdingsVal).toFixed(2);
+          });
+
           recordAuditEvent('ADVANCE_DAY', { old_day: oldDay, new_day: gameState.currentDay, total_days: gameState.totalDays });
           broadcastAll({
             type: 'DAY_TRANSITION',
@@ -3335,6 +3679,20 @@ wss.on('connection', (ws) => {
 
       // 5.2j Add Extra Day to Championship
       if (data.action === 'HOST_ADD_DAY') {
+        if (gameState.isConcluded) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot add a day: The championship is already finalized.'
+          }));
+          return;
+        }
+        if (gameState.totalDays >= 10) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot add a day: Maximum tournament limit is 10 days.'
+          }));
+          return;
+        }
         const oldTotal = gameState.totalDays;
         gameState.totalDays++;
         extendNewsPlanForDay(gameState.totalDays);
@@ -3353,6 +3711,13 @@ wss.on('connection', (ws) => {
 
       // 5.2k Finish Event (Enter Final Results Review)
       if (data.action === 'HOST_FINISH_EVENT') {
+        if (!gameState.isConcluded && (gameState.status !== 'DAY_COMPLETED' || gameState.currentDay < gameState.totalDays)) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Finishing the event requires final Day ${gameState.totalDays} to be completed. Current: Day ${gameState.currentDay}/${gameState.totalDays}, Status: ${gameState.status}`
+          }));
+          return;
+        }
         const winnerData = getConcludedLeaderboard();
         const snapshot = generateOfficialResultsSnapshot();
         gameState.isPaused = true;
@@ -3373,17 +3738,26 @@ wss.on('connection', (ws) => {
 
       // 5.2l Emergency Stop (Full Event Emergency Freeze)
       if (data.action === 'HOST_EMERGENCY_STOP') {
-        gameState.isPaused = true;
-        gameState.status = 'EMERGENCY_STOP';
+        const hadCountdown = !!activeCountdownTimer || !!gameState.activeCountdown;
+        const cancelledCountdownId = gameState.activeCountdown ? gameState.activeCountdown.id : null;
+        if (activeCountdownTimer) {
+          clearTimeout(activeCountdownTimer);
+          activeCountdownTimer = null;
+        }
+        gameState.activeCountdown = null;
+        gameState.status = 'PAUSED';
         gameState.pauseMode = 'EMERGENCY_HALT';
         gameState.pauseStartedAt = Date.now();
-        gameState.activeCountdown = null;
+        syncDerivedStateFlags(gameState);
 
         companies.forEach((c) => {
           c.activeTransition = null;
         });
 
         recordAuditEvent('EMERGENCY_STOP', { reason: data.reason || 'Host initiated emergency market freeze.' });
+        if (hadCountdown) {
+          broadcastAll({ type: 'COUNTDOWN_CANCELLED', countdownId: cancelledCountdownId, reason: 'Emergency Stop' });
+        }
         broadcastAudioCue('circuit_alarm', 'alerts', { type: 'EMERGENCY_STOP' });
         broadcastAll({
           type: 'EMERGENCY_STOP',
@@ -3399,10 +3773,20 @@ wss.on('connection', (ws) => {
       // 5.4 Trigger Existing Scheduled News
       if (data.action === 'HOST_TRIGGER_NEWS') {
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
-        if (ev) {
-          triggerNewsEvent(ev, 'HOST_MANUAL');
-          broadcastTick();
+        if (!ev) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: 'News event not found' }));
+          return;
         }
+        if (ev.triggered) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: `News event "${ev.headline}" has already been triggered.` }));
+          return;
+        }
+        const ok = triggerNewsEvent(ev, 'HOST_MANUAL');
+        if (!ok) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: `News event "${ev.headline}" has already been triggered today.` }));
+          return;
+        }
+        broadcastTick();
       }
 
       // 5.5 Create Custom Breaking News
@@ -3442,14 +3826,11 @@ wss.on('connection', (ws) => {
         }
       }
 
-      // 5.6 Unhalt Stock
-      if (data.action === 'HOST_UNHALT_STOCK') {
+      // 5.6 Unhalt Stock / Release Circuit Breaker
+      if (data.action === 'HOST_UNHALT_STOCK' || data.action === 'HOST_RELEASE_CIRCUIT_BREAKER') {
         const stock = companies.find((c) => c.ticker === data.ticker);
         if (stock) {
-          stock.isHalted = false;
-          stock.haltDirection = null;
-          // CRITICAL: Do NOT reset dayOpenPrice during unhalt - it must remain the day's opening reference
-          recordAuditEvent('CIRCUIT_BREAKER_RELEASED', { ticker: stock.ticker, current_price: stock.currentPrice, day_open_ref: stock.dayOpenPrice });
+          releaseCircuitBreaker(stock);
           broadcastTick();
         }
       }
@@ -3514,6 +3895,9 @@ wss.on('connection', (ws) => {
             week52Low: +(base_price * 0.75).toFixed(2),
             isNew52WHigh: false,
             isNew52WLow: false,
+            trendPhase: (companies.length * 1.73) % (Math.PI * 2),
+            trendFreq: 0.012 + ((companies.length % 7) * 0.005),
+            sentimentBias: 0,
             history: [{ time: gameState.elapsedSeconds, price: base_price }],
             fundamentals: {
               summary,
@@ -3585,6 +3969,9 @@ wss.on('connection', (ws) => {
             ...source,
             ticker: newTicker,
             name: `${source.name} (Series ${copyNum})`,
+            trendPhase: ((companies.length + copyNum) * 1.73) % (Math.PI * 2),
+            trendFreq: 0.012 + (((companies.length + copyNum) % 7) * 0.005),
+            sentimentBias: 0,
             history: [{ time: gameState.elapsedSeconds, price: source.currentPrice }]
           };
 
@@ -3699,7 +4086,15 @@ wss.on('connection', (ws) => {
       // 5.17 Update Event Title & Global Tournament Settings
       if (data.action === 'HOST_UPDATE_EVENT_CONFIG') {
         if (data.title && typeof data.title === 'string') gameState.title = data.title.trim();
-        if (data.dayDurationSeconds && !isNaN(data.dayDurationSeconds)) gameState.dayDurationSeconds = parseInt(data.dayDurationSeconds, 10);
+        if (data.dayDurationSeconds && !isNaN(data.dayDurationSeconds)) {
+          const newDur = parseInt(data.dayDurationSeconds, 10);
+          if (newDur >= 60 && newDur !== gameState.dayDurationSeconds) {
+            gameState.dayDurationSeconds = newDur;
+            if (!gameState.configLocked) {
+              recalculateNewsScheduleForDuration(newDur);
+            }
+          }
+        }
         if (data.totalDays && !isNaN(data.totalDays)) gameState.totalDays = parseInt(data.totalDays, 10);
         if (data.circuitBreakerPercent && !isNaN(data.circuitBreakerPercent)) gameState.circuitBreakerPercent = parseFloat(data.circuitBreakerPercent);
         if (data.startingCash && !isNaN(data.startingCash)) gameState.startingCash = parseFloat(data.startingCash);
@@ -3814,8 +4209,13 @@ wss.on('connection', (ws) => {
 
       // 5.20 Dismiss Podium
       if (data.action === 'HOST_DISMISS_PODIUM') {
-        gameState.isConcluded = false;
-        gameState.winnerData = null;
+        if (!gameState.projectorState) gameState.projectorState = {};
+        gameState.projectorState.isWinnerActive = false;
+        if (gameState.presentationState) gameState.presentationState.active = false;
+        if (gameState.status === 'WINNER_ANNOUNCEMENT') {
+          gameState.status = 'CHAMPIONSHIP_CONCLUDED';
+        }
+        syncDerivedStateFlags(gameState);
         recordAuditEvent('PODIUM_DISMISSED', {});
         broadcastAll({ type: 'PODIUM_DISMISSED' });
         broadcastTick();
@@ -3825,19 +4225,35 @@ wss.on('connection', (ws) => {
       if (data.action === 'HOST_RESET_ENTIRE_CHAMPIONSHIP') {
         // High-friction verification phrase check
         const confirmVal = (data.confirmation || '').trim().toUpperCase();
-        if (confirmVal !== 'RESET' && confirmVal !== 'RESET CHAMPIONSHIP') {
-          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Confirmation phrase "RESET CHAMPIONSHIP" required.' }));
+        if (confirmVal !== 'RESET' && confirmVal !== 'RESET CHAMPIONSHIP' && confirmVal !== 'RESET THE ENTIRE CHAMPIONSHIP') {
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: 'Confirmation phrase "RESET" or "RESET CHAMPIONSHIP" required.' }));
           return;
         }
 
-        // 1. Delete persistent live game state so a reboot won't resurrect old game
+        // 1. Cancel any active countdown timers or scheduled timers
+        if (activeCountdownTimer) {
+          clearTimeout(activeCountdownTimer);
+          activeCountdownTimer = null;
+        }
+
+        // 2. Delete persistent live game state so a reboot won't resurrect old game
         if (fs.existsSync(LIVE_STATE_FILE)) {
           try { fs.unlinkSync(LIVE_STATE_FILE); } catch (e) {}
         }
 
-        // 2. Broadcast mandatory full-screen logout message to all connected clients
+        // 3. Generate a brand-new Authoritative Event Identity and increment stateVersion
+        const oldEventId = gameState.eventId;
+        gameState.eventId = 'EVT_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        gameState.stateVersion = (gameState.stateVersion || 1) + 1;
+        gameState.isReset = true;
+        gameState.resetMessage = 'The host has reset the competition. The previous event has ended. Please wait for the host to set up a new event.';
+
+        // 4. Broadcast authoritative reset message with fresh eventId to all connected clients
         broadcastAll({
           type: 'CHAMPIONSHIP_RESET',
+          eventId: gameState.eventId,
+          oldEventId,
+          stateVersion: gameState.stateVersion,
           message: 'The host has reset the competition. You have been logged out. Please wait for the host to set up a new event.'
         });
 
@@ -3853,14 +4269,15 @@ wss.on('connection', (ws) => {
             try {
               client.send(JSON.stringify({
                 type: 'SESSION_EXPIRED',
+                eventId: gameState.eventId,
                 message: 'The championship has been reset by the host. Please wait for the host to complete event setup.'
               }));
             } catch (e) {}
           }
         });
 
-        // 3. Reset Game State to pristine Day 1 Setup
-        gameState.status = 'SETUP';
+        // 5. Reset Game State to pristine Day 1 Setup
+        gameState.status = 'RESET';
         gameState.isPaused = true;
         gameState.pauseMode = 'VISIBLE_FROZEN';
         gameState.haltReason = null;
@@ -3875,13 +4292,35 @@ wss.on('connection', (ws) => {
         gameState.configLocked = false;
         gameState.totalShiftOffsetSeconds = 0;
         gameState.pauseStartedAt = null;
+        gameState.dailyLeaderboards = {};
+        gameState.dailyClosingPrices = {};
+        gameState.finalResultsSnapshot = null;
+        gameState.projectorState = {
+          mode: 'AUTO_CYCLE',
+          currentScene: 'SCENE_RESET',
+          sceneDurationSeconds: 12,
+          isWinnerActive: false,
+          winnerScene: 'SCENE_INTRO',
+          boardPage: 1,
+          isBoardPaused: false,
+          updatedAt: new Date().toISOString()
+        };
+        gameState.presentationState = {
+          active: false,
+          scene: 'SCENE_INTRO',
+          currentTeamIndex: 0,
+          revealedRanks: [],
+          updatedAt: new Date().toISOString()
+        };
         executedTrades.length = 0;
         tradeSeqCounter = 0;
 
-        // 4. Reset all teams back to starting cash and zero holdings
+        // 6. Reset all teams back to starting cash and zero holdings
         const startingCash = gameState.startingCash || 500000;
         Object.values(teams).forEach((t) => {
           t.cash = startingCash;
+          t.startingCash = startingCash;
+          t.dayOpeningPortfolioValue = startingCash;
           t.holdings = {};
           t.avgBuyPrice = {};
           t.realizedPnl = 0;
@@ -3892,7 +4331,7 @@ wss.on('connection', (ws) => {
           });
         });
 
-        // 5. Reset all companies back to starting base prices
+        // 7. Reset all companies back to starting base prices
         companies.forEach((c) => {
           const base = c.base_price || c.currentPrice || 1000;
           c.currentPrice = base;
@@ -3900,13 +4339,17 @@ wss.on('connection', (ws) => {
           c.previousClosePrice = base;
           c.dayHigh = base;
           c.dayLow = base;
+          c.week52High = c.fundamentals && c.fundamentals.high_52w ? parseFloat(c.fundamentals.high_52w) : +(base * 1.25).toFixed(2);
+          c.week52Low = c.fundamentals && c.fundamentals.low_52w ? parseFloat(c.fundamentals.low_52w) : +(base * 0.75).toFixed(2);
+          c.isNew52WHigh = false;
+          c.isNew52WLow = false;
           c.isHalted = false;
           c.haltDirection = null;
           c.activeTransition = null;
           c.history = [{ time: 0, price: base }];
         });
 
-        // 6. Reset all news events and clear per-day fired registry
+        // 8. Reset all news events and clear per-day fired registry
         newsEvents.forEach((ev) => {
           ev.triggered = false;
           ev.cancelled = false;
@@ -3915,11 +4358,12 @@ wss.on('connection', (ws) => {
         });
         firedNewsEventsPerDay.clear();
 
-        recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST' });
+        recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST', newEventId: gameState.eventId });
 
-        // 7. Confirm to Host and broadcast clean state tick
+        // 9. Confirm to Host and broadcast clean state tick
         ws.send(JSON.stringify({
           type: 'CHAMPIONSHIP_RESET_ACK',
+          eventId: gameState.eventId,
           message: 'Championship reset successfully. Returned to Day 1 Standby.'
         }));
         broadcastTick();
@@ -4000,6 +4444,8 @@ wss.on('connection', (ws) => {
 
         // 1. Configure Game State
         gameState.title = title;
+        gameState.status = 'STANDBY';
+        gameState.configLocked = true;
         gameState.totalDays = totalDays;
         gameState.dayDurationSeconds = dayDurationSeconds;
         gameState.startingCash = startingCash;
@@ -4014,6 +4460,28 @@ wss.on('connection', (ws) => {
         gameState.winnerData = null;
         gameState.activeNewsFlash = null;
         gameState.newsHistory = [];
+        gameState.isReset = false;
+        gameState.resetMessage = null;
+        gameState.dailyLeaderboards = {};
+        gameState.dailyClosingPrices = {};
+        gameState.finalResultsSnapshot = null;
+        gameState.projectorState = {
+          mode: 'AUTO_CYCLE',
+          currentScene: 'SCENE_READY',
+          sceneDurationSeconds: 12,
+          isWinnerActive: false,
+          winnerScene: 'SCENE_INTRO',
+          boardPage: 1,
+          isBoardPaused: false,
+          updatedAt: new Date().toISOString()
+        };
+        gameState.presentationState = {
+          active: false,
+          scene: 'SCENE_INTRO',
+          currentTeamIndex: 0,
+          revealedRanks: [],
+          updatedAt: new Date().toISOString()
+        };
 
         // 2. Clear Executed Trades & Audit
         executedTrades.length = 0;
@@ -4033,6 +4501,10 @@ wss.on('connection', (ws) => {
           c.previousClosePrice = c.base_price;
           c.dayHigh = c.base_price;
           c.dayLow = c.base_price;
+          c.week52High = c.fundamentals && c.fundamentals.high_52w ? parseFloat(c.fundamentals.high_52w) : +(c.base_price * 1.25).toFixed(2);
+          c.week52Low = c.fundamentals && c.fundamentals.low_52w ? parseFloat(c.fundamentals.low_52w) : +(c.base_price * 0.75).toFixed(2);
+          c.isNew52WHigh = false;
+          c.isNew52WLow = false;
           c.isHalted = false;
           c.haltDirection = null;
           c.activeTransition = null;
@@ -4071,6 +4543,7 @@ wss.on('connection', (ws) => {
               members,
               cash: teamCash,
               startingCash: teamCash,
+              dayOpeningPortfolioValue: teamCash,
               holdings,
               avgBuyPrice,
               realizedPnl: 0,
@@ -4082,8 +4555,11 @@ wss.on('connection', (ws) => {
           setupDefaultTeams(12, startingCash);
         }
 
-        // 5. Reset news events triggered status
-        newsEvents.forEach((ev) => { ev.triggered = false; });
+        // 5. Regenerate fresh news plan for selected stocks and duration
+        const enabledTickers = companies.filter((c) => c.isEnabled !== false).map((c) => c.ticker);
+        newsEvents = generateAutoNewsPlan(enabledTickers, totalDays, dayDurationSeconds);
+        firedNewsEventsPerDay.clear();
+        syncDerivedStateFlags(gameState);
 
         // 6. Persist to disk
         saveUniverseToDisk();
@@ -4147,6 +4623,9 @@ app.get('/api/health', (req, res) => {
 // 8.1b Public Event Status (for login screen & external monitors)
 app.get('/api/event-status', (req, res) => {
   res.json({
+    eventId: gameState.eventId,
+    stateVersion: gameState.stateVersion,
+    serverTimeMs: Date.now(),
     title: gameState.title,
     subtitle: gameState.subtitle,
     institution: gameState.institution,

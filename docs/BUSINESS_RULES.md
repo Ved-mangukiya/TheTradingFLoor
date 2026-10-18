@@ -186,3 +186,54 @@ To support college students with zero professional trading background:
 - **Broadcast**:
   - Emits `DAY_TRANSITION` and `DAY_ADVANCED` with `oldDay`, `newDay`, and `totalDays`.
   - Trader terminals clear the day-completed overlay and display: `"Day {N} Standby: Waiting for Host to open the floor"`.
+
+---
+
+## 7. Master Quantitative Engine & Mathematical Simulation Model
+
+### 7.1 Asset Price Formulation (Log-Return & Centered Micro-Drift)
+On each 1,000ms tick, asset prices update via an unbiased institutional simulation model:
+$$P_{t+1} = \max\left(P_{\text{min}}, \min\left(P_{\text{max}}, P_t + \Delta P_{\text{total}}\right)\right)$$
+$$\Delta P_{\text{total}} = \text{Gaussian} + \text{MicroDrift} + \text{CyclicalWave} + \text{TrendDrift} + \text{MeanReversion}$$
+
+Where:
+1. **Effective Volatility**:
+   $$\sigma_{\text{eff}} = \max\left(0.0035, \sigma_i \times \beta_i \times 1.5\right)$$
+2. **Zero-Mean Gaussian Shock**:
+   $$\text{Gaussian} = Z_t \times \sigma_{\text{eff}} \times P_t \times 0.45 \quad \text{where } Z_t \sim \mathcal{N}(0, 1)$$
+3. **Unbiased Micro-Drift (Mean = 0)**:
+   $$\text{MicroDrift} = (U_t - 0.50) \times \sigma_{\text{eff}} \times P_t \times 0.35 \quad \text{where } U_t \sim \mathcal{U}(0, 1)$$
+   *Mathematical Invariant*: Mean is exactly 0, preventing artificial upward profit drift or systematic positive returns.
+4. **Intraday Cyclical Sine Wave**:
+   $$\text{CyclicalWave} = \cos\left(t \times \omega_i + \phi_i\right) \times \sigma_{\text{eff}} \times P_t \times 0.35$$
+5. **Mean-Reversion Anchor**:
+   $$\text{MeanReversion} = -0.00015 \times \left(P_t - P_{\text{day\_open}}\right)$$
+
+### 7.2 Semantics of Beta vs. Volatility
+- **Beta ($\beta_i$)**: Measures sensitivity to broad-market movements and sector news shocks ($S_i = \text{base\_pct} \times \beta_i$). Beta is **NOT** a general profit multiplier and does not inflate base trade sizes or fees.
+- **Volatility ($\sigma_i$)**: Calibrates the dispersion (variance) of simulated returns around the mean. A higher volatility setting increases return fluctuations in both directions equally; it does **NOT** create a systematic upward drift.
+
+### 7.3 Bounded News Smoothstep Transition
+When news reacts, prices transition smoothly over $T$ seconds (default 45s) using a cubic Hermite smoothstep profile:
+$$u = \operatorname{clamp}\left(\frac{t - t_0}{T}, 0, 1\right)$$
+$$s(u) = 3u^2 - 2u^3$$
+$$P(t) = P_0 + (P_{\text{target}} - P_0) \times s(u)$$
+
+---
+
+## 8. Role-Based Parameter Security & Time Formatting
+
+### 8.1 Sensitive Parameter Isolation Invariant
+Internal quantitative parameters must **NEVER** leak to trading teams, auditorium spectators, projectors, or unauthenticated clients:
+- **Restricted Server Parameters**:
+  - `beta`
+  - `volatility_factor`
+  - Internal multiplier formulas & scenario seeds
+  - Unpublished news events and future price impact vectors (`impacts`)
+- **Backend Sanitization**: `getSanitizedPublicState(role, teamId)` strictly deletes or omits `beta` and `volatility_factor` whenever `role !== 'HOST'`. Sockets authenticated as TRADER or PROJECTOR receive only market prices, percentage changes, corporate fundamentals, and published wire text.
+- **Host Dashboard Protection**: Ordinary host cards and stock boards do not display technical coefficients. Editing controls are confined to a collapsible, permission-controlled **Advanced Simulation Settings** area.
+
+### 8.2 Consistent 12-Hour AM/PM Time Formatting
+- All user-facing clock times display in 12-hour format with AM/PM (e.g. `9:30 AM`, `12:05 PM`, `4:15 PM`).
+- Elapsed time and countdown timers remain in duration format (e.g. `12 min remaining`, `00:45:00`).
+- Internal protocol timestamps remain standardized ISO 8601 strings.

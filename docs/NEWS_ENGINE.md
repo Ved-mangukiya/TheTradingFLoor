@@ -50,7 +50,36 @@ The news engine executes multi-day market shocks with fixed, auditable percentag
   - Sector: Broad Market Benchmark
   - Impacts: `RELIANCE` (+5%), `TCS` (+4%), `HDFCBANK` (+4%), `TITAN` (+6%)
 
-## 3. Idempotent Deterministic Execution
-- Every news shock is uniquely stamped (`triggered = true`).
-- Client reconnections and browser refreshes can never re-trigger or duplicate price movements.
-- Audit ledger records exact before-and-after prices for every stock affected.
+## 3. Dynamic Time Management & Proportional Scaling Engine
+
+### Canonical Relative Position Formula
+Let $D$ = configured session duration in seconds, $p_i$ = relative fractional position of news event $i$ ($0.05 \le p_i \le 0.95$). The scheduled offset $t_i$ from session start is:
+$$t_i = \operatorname{round}(D \times p_i)$$
+
+For example, when an event is positioned at $p_i = 0.40$ (40% of the session):
+- In a 30-minute day ($D = 1,800\text{s}$), $t_i = 720\text{s}$ (12 minutes).
+- In a 45-minute day ($D = 2,700\text{s}$), $t_i = 1,080\text{s}$ (18 minutes).
+- In a 10-minute day ($D = 600\text{s}$), $t_i = 240\text{s}$ (4 minutes).
+
+### Relative vs. Absolute Constrained Timing
+1. **Proportional Relative Timing**: Publication offsets $t_i$ dynamically scale when session duration changes.
+2. **Absolute Constrained Timing**:
+   - **Minimum Reading Window**: Participants require sufficient time to read and analyze news before price impacts take effect:
+     - $D \le 300\text{s}$: 12 seconds reading window.
+     - $D \le 600\text{s}$: 18 seconds reading window.
+     - $D \le 1,200\text{s}$: 22 seconds reading window.
+     - $D > 1,200\text{s}$: 25 seconds reading window.
+   - **Minimum Reading Separation**: A minimum separation of $\Delta t \ge 60\text{s}$ is strictly enforced between consecutive news items on the same day to prevent overlapping decision fatigue.
+   - **Session End Buffer**: $t_i \le D - W_{\text{read}} - 25\text{s}$ ensures the price reaction concludes before the closing bell.
+
+### Feasibility Validation
+Before event configuration is locked, `validateScheduleFeasibility` checks:
+1. Every event offset is positive ($t_i > 0$).
+2. Every event finishes its reading and reaction window before the day concludes.
+3. Every pair of consecutive events has $\ge 60\text{s}$ spacing.
+
+## 4. Locked News Schedule & Exactly-Once Publication Idempotency
+- **Locked Immutability**: Once the Host locks event configuration (`configLocked = true`), scheduled news events cannot be edited, rewritten, cancelled, or duplicated via ordinary controls.
+- **Idempotent Triggering**: Each news event has a stable UUID (`event_id`) and is tracked in a per-day registry `firedNewsEventsPerDay`.
+- **Zero Double-Shocks**: In-flight network retries, duplicate clicks, or socket reconnects never re-apply price transitions (`eventObj.impactsApplied = true`).
+- **Sanitized Non-Host Payloads**: Sockets authenticated as TRADER, PROJECTOR, or unauthenticated visitors receive news only after publication (`triggered = true`), with private impact percentages (`impacts`) stripped from payloads.
