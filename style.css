@@ -3802,4 +3802,259 @@ th.th-wrap {
   100% { background-position: 200% 0%; }
 }
 
+/* ==========================================================================
+   DYNAMIC PROFIT / LOSS MOVEMENT INTENSITY DESIGN TOKENS
+   Calibrated by Magnitude of Percentage Change Over Session Baseline
+   ========================================================================== */
+.pct-neutral {
+  color: #475569 !important;
+}
+.bg-neutral {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Positive Movement Scales (Green Spectrum) */
+.pct-pos-sm {
+  color: #16804A !important;
+}
+.bg-pos-sm {
+  background-color: #F0FDF4 !important;
+  border-color: #BBF7D0 !important;
+}
+
+.pct-pos-md {
+  color: #15803D !important;
+  font-weight: 700 !important;
+}
+.bg-pos-md {
+  background-color: #DCFCE7 !important;
+  border-color: #86EFAC !important;
+}
+
+.pct-pos-lg {
+  color: #14532D !important;
+  font-weight: 800 !important;
+}
+.bg-pos-lg {
+  background-color: #BBF7D0 !important;
+  border-color: #4ADE80 !important;
+}
+
+.pct-pos-xl {
+  color: #052E16 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(5, 46, 22, 0.15);
+}
+.bg-pos-xl {
+  background: linear-gradient(135deg, #BBF7D0 0%, #86EFAC 100%) !important;
+  border-color: #22C55E !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.25) !important;
+}
+
+/* Negative Movement Scales (Red Spectrum) */
+.pct-neg-sm {
+  color: #B91C1C !important;
+}
+.bg-neg-sm {
+  background-color: #FEF2F2 !important;
+  border-color: #FECACA !important;
+}
+
+.pct-neg-md {
+  color: #991B1B !important;
+  font-weight: 700 !important;
+}
+.bg-neg-md {
+  background-color: #FEE2E2 !important;
+  border-color: #FCA5A5 !important;
+}
+
+.pct-neg-lg {
+  color: #7F1D1D !important;
+  font-weight: 800 !important;
+}
+.bg-neg-lg {
+  background-color: #FECACA !important;
+  border-color: #F87171 !important;
+}
+
+.pct-neg-xl {
+  color: #450A0A !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(69, 10, 10, 0.15);
+}
+.bg-neg-xl {
+  background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%) !important;
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+/* ==========================================================================
+   CIRCUIT BREAKER DIRECTIONAL PRESSURE & HALT STYLING
+   ========================================================================== */
+.stock-card.halted-upper {
+  border: 2px solid #D97706 !important;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 100%) !important;
+  box-shadow: 0 0 18px rgba(217, 119, 6, 0.22) !important;
+  position: relative;
+}
+
+.stock-card.halted-upper::after {
+  content: '⚡ UPPER CIRCUIT HALT';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #B45309;
+  background: #FEF3C7;
+  border: 1px solid #F59E0B;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.stock-card.halted-lower {
+  border: 2px solid #DC2626 !important;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FEF2F2 100%) !important;
+  box-shadow: 0 0 18px rgba(220, 38, 38, 0.22) !important;
+  position: relative;
+}
+
+.stock-card.halted-lower::after {
+  content: '⚡ LOWER CIRCUIT HALT';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #991B1B;
+  background: #FEE2E2;
+  border: 1px solid #F87171;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+.cb-halt-banner-upper {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1.5px solid #F59E0B;
+  color: #92400E;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cb-halt-banner-lower {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border: 1.5px solid #EF4444;
+  color: #991B1B;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-btn-cb-disabled {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(0.8) !important;
+}
+
+/* ==========================================================================
+   STATE-AWARE PROJECTOR PRESENTATION SCENES (SCENES A, B, C, F, G, H)
+   ========================================================================== */
+.proj-scene-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 36px 32px;
+  border-radius: var(--radius-lg);
+  min-height: 480px;
+  animation: projSceneFade 0.4s ease-out;
+}
+
+@keyframes projSceneFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.proj-scene-reset-panel {
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  color: #F8FAFC;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.proj-scene-ready-panel {
+  background: linear-gradient(135deg, #FAF8F5 0%, #F1EADF 100%);
+  border: 2px solid var(--champagne-accent);
+  color: var(--text-forest);
+  box-shadow: var(--shadow-md);
+}
+
+.proj-ready-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 24px 0;
+}
+
+.proj-ready-card {
+  background: #FFFFFF;
+  border: 1px solid var(--subtle-border);
+  border-radius: 12px;
+  padding: 20px 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.proj-ready-value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-forest);
+  margin: 6px 0 2px 0;
+}
+
+.proj-ready-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--champagne-accent);
+  letter-spacing: 0.08em;
+}
+
+.proj-ready-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.proj-admin-safe-exit {
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+.proj-admin-safe-exit:hover {
+  opacity: 1;
+}
+
 
