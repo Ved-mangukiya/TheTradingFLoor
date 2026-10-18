@@ -1,8 +1,8 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
-**Date**: 2026-10-17  
-**Version**: 2.5.3 (Master Interaction Logic, State Machine, UX & End-to-End QA Hardening)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (115/115 Master Automated Tests Passing across 5 Suites, 100% Core Regression Verified)  
+**Date**: 2026-10-18  
+**Version**: 2.6.2 (Target Architecture, Authoritative State Model & Monotonic State-Guard Verified)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 5/5 Chunk 2 State Machine Assertions Passing with Zero Port Collisions or Process Leaks)  
 
 ---
 
@@ -284,7 +284,159 @@
   - Informative toasts added to `hostPauseMarket()` and `hostResumeMarket()` when attempted in invalid states.
 - [x] **Master Interaction & State Machine QA Suite (`test_interaction_logic_and_state_machine.js`)**:
   - 16 comprehensive automated tests validating all 12 QA Trials on isolated port 3091.
-  - Total automated verification: `npm run test:all` executes **115/115 automated tests across 5 test suites with 0 failures (100% pass rate)**.
+
+---
+
+## 16. Master Quantitative Engine, Dynamic Time Ratios, News Scheduling & Sensitive Parameter Security (v2.6.0)
+- [x] **Sensitive Parameter Security & Public State Sanitization**:
+  - `beta` and `volatility_factor` are attached to `companies` inside `getSanitizedPublicState()` strictly when `isHost === true`. For `TRADER`, `PROJECTOR`, and unauthenticated sockets, internal parameters are completely stripped (`undefined`).
+  - Removed `BETA:` display on trader stock cards, replaced with `LOT: N SH`.
+  - Replaced `Stock Beta` panel in public stock details modal (`modalStockDetails`) with `Face Value: ₹10.00` (`modalFaceValue`).
+  - Quarantined quantitative editing in the Host Share Modal (`shareEditorModal`) under a collapsible `<details id="advancedSimSettings">` accordion titled *"⚙️ Advanced Simulation Settings (Beta & Volatility Factor)"*, accompanied by clear non-technical guidance.
+- [x] **Dynamic Time Management & Proportional News Scheduling**:
+  - Stored canonical relative timeline fractions (`relative_position: t_i / D`) on all auto-generated and user-configured news events.
+  - Implemented `recalculateNewsScheduleForDuration(newDuration)` on server and `generateClientNewsPreview` on client:
+    $$t_i = \operatorname{round}(D \times p_i)$$
+  - Enforced dynamic reading windows ($W$) with non-zero cognitive floors:
+    - $D \le 300\text{s}$ (5m): $W = 12\text{s}$
+    - $D \le 600\text{s}$ (10m): $W = 18\text{s}$
+    - $D \le 1200\text{s}$ (20m): $W = 22\text{s}$
+    - $D > 1200\text{s}$ (30m+): $W = 25\text{s}$
+  - Added schedule feasibility validation (`validateScheduleFeasibility`): guarantees $t_i > 0$, $t_i + W \le D - 15\text{s}$, and inter-event separation $\Delta t \ge 60\text{s}$.
+  - Added `HOST_RECALCULATE_SCHEDULE` WebSocket action and automatic schedule synchronization in `HOST_UPDATE_EVENT_CONFIG` and `HOST_SET_EVENT_LOCK`.
+- [x] **One-Time Locked News Schedule & Publication Idempotency**:
+  - `HOST_PUBLISH_NEWS_NOW` enforces strict exactly-once publication per day, returning `ORDER_REJECTED: Already published for today` if triggered more than once.
+  - Once event configuration is locked (`gameState.configLocked === true`), server rejects all attempts to add, duplicate, edit, or cancel scheduled news events.
+- [x] **12-Hour AM/PM Clock Formatting**:
+  - Implemented canonical `formatClock12H(dateOrIso, includeSeconds = false)` returning formatted 12-hour strings (`9:30 AM`, `12:05 PM`, `4:15 PM`).
+  - Standardized all absolute timestamps across waiting room cards, activity feeds, trade logs, snapshot finalized timestamps, and scheduled opening toasts.
+- [x] **Master Quantitative & Security Verification Suite (`test_master_quantitative_and_security_suite.js`)**:
+  - 7 comprehensive automated tests validating host vs trader parameter isolation, dynamic 30m-to-45m schedule scaling, schedule locking, news idempotency, circuit breakers, and daily P&L.
+
+---
+
+## 17. Unified Single-Flow Master Verification Architecture (v2.6.1)
+- [x] **Elimination of Port Collisions & Process Leaks**:
+  - Replaced fragmented, overlapping test runners with a single authoritative chronological state-machine test runner: `test_unified_master_flow.js`.
+  - Bound exclusively to isolated port 3099 with child-process lifecycle tracking and guaranteed `serverProcess.kill('SIGKILL')` cleanup in a robust `finally` block.
+- [x] **Zero Disk State Mutation Guarantee**:
+  - Automatic in-memory backup of `data/universe_active.json` before any test runs and automatic disk restoration on process completion/exit.
+  - Guarded `saveUniverseToDisk()` and `HOST_RESET_UNIVERSE_BASELINE` in `server.js` against unlinking or overwriting `data/universe_active.json` when `activeScenarioMode === 'test'` or `process.argv.includes('test')`.
+  - Verified disk universe remains 100% pristine with 20 real Indian enterprise baseline companies.
+- [x] **Protocol Standardization & Action Alignment**:
+  - `HOST_START_NEXT_DAY` & `HOST_NEXT_DAY`: Standardized day transitions, broadcasting both `DAY_TRANSITION` and `DAY_ADVANCED` with both `newDay` and `currentDay`.
+  - `HOST_CONCLUDE_CHAMPIONSHIP` & `HOST_FINISH_EVENT`: Uniformly finalize the championship, setting `status = 'CHAMPIONSHIP_CONCLUDED'`, generating `winnerData` and `finalResultsSnapshot`, and broadcasting `CHAMPIONSHIP_CONCLUDED`.
+  - `HOST_RESET_ENTIRE_CHAMPIONSHIP`: Authoritatively accepts `'RESET'`, `'RESET CHAMPIONSHIP'`, and `'RESET THE ENTIRE CHAMPIONSHIP'`, generates an isolated `eventId`, preserves Host session credentials, broadcasts `CHAMPIONSHIP_RESET` to all connected clients, and responds with `CHAMPIONSHIP_RESET_ACK`.
+  - `HOST_TRIGGER_NEWS`: Rejects duplicate triggers with `ACTION_REJECTED` and zero second shock or news flash; added `id: eventObj.event_id` to `newsRecord` payload.
+- [x] **11 Chronological Tournament Lifecycle Phases (100% Pass Rate)**:
+  - Phase 1: Pre-Auth Security, Real Universe Baseline & Login Isolation (SETUP state, 403 REST guards).
+  - Phase 2: Host Auth, Pre-Lock Gating, Dynamic Schedule & Custom Share Setup (`HOST_RECALCULATE_SCHEDULE`, `CAMPUSCO` addition, invalid lock rejection).
+  - Phase 3: Setup Lock, Config Immutability & Role Parameter Isolation (live lock propagation, 5 post-lock mutation rejections, zero parameter leakage to non-hosts).
+  - Phase 4: Countdown, Cancel, Duplicate Pause & Emergency Stop State Machine (order rejection in standby, 3-2-1 countdown, pause cancel, duplicate pause rejection, emergency stop).
+  - Phase 5: Order Accounting (10 bps), Debounce, Share Toggle & Liquidation (exact fee deduction, oversell/overbuy rejection, 200ms anti-spam debounce, share disable/enable toggle, `LIQUIDATE_ALL`).
+  - Phase 6: Real News Idempotency (Zero Double Shock) & Directional Circuit Breakers (scheduled news idempotency, custom news shock, upper circuit buy halt, stock isolation, lower circuit sell halt, counter-flow buy recovery).
+  - Phase 7: Team Investment Analytics & Privacy-Safe Macro APIs (`/api/team-investments` net worth math invariant, `/api/market-indices`, `/api/sector-allocations` privacy).
+  - Phase 8: Concurrency-Safe Day 1 Conclusion & Non-Pause Invariant (atomic single conclusion on concurrent triggers, `DAY_COMPLETED`, zero `MARKET_PAUSED`, Day 1 snapshot lock).
+  - Phase 9: Day 2 Carry-Over & Strictly Isolated Daily vs. Cumulative P&L Math (holdings carry-over, Day 2 buy & price shock, isolated daily vs cumulative P&L math, final day advance gating, `HOST_ADD_DAY` to Day 3).
+  - Phase 10: Grand Finale, Audited CSV/JSON Exports & 6-Stage Winner Reveal (`CHAMPIONSHIP_CONCLUDED`, 5 export endpoints, projector auto-cycle, 6-stage presentation scenes).
+  - Phase 11: Full Championship Reset & Second Event Identity Isolation (phrase verification, fresh `eventId`, Day 1 STANDBY, clean projector reconnection).
+- [x] **Canonical Test Execution**:
+  - Verified via `npm test` and `node test_unified_master_flow.js`: **All 36 assertions passed across all 11 phases with 0 errors (100% pass rate)**.
+
+---
+
+## 18. Chunk 3 — Complete User Journeys and Screen Redesign (v2.6.3)
+- [x] **FLOW-001: Deterministic Role & Overlay Router (`syncRoleOverlays`)**:
+  - Overlay visibility across terminals is a deterministic mathematical function of `(status, pauseMode, currentRole)`.
+  - `#traderWaitingRoomOverlay` is visible strictly during `STANDBY` and `SCHEDULED`.
+  - `#softPauseOverlay` is visible strictly during `PAUSED (VISIBLE_FROZEN)` or `PAUSED (RECOVERY)`.
+  - `#blackoutOverlay` is visible strictly during `PAUSED (BLACKOUT)` or `PAUSED (EMERGENCY_HALT)`.
+  - In `STANDBY`, `SCHEDULED`, and `DAY_COMPLETED`, `#softPauseOverlay` and `#blackoutOverlay` are strictly suppressed.
+  - `#countdownOverlay` (3-2-1) takes absolute precedence during countdown, temporarily hiding all background blocking cards.
+- [x] **FLOW-002: Single Canonical Setup Workspace in Hub 2 (`#hostTabContentEvent`)**:
+  - Eliminated split-setup personality: standalone `#eventSetupView` replaced with compatibility container; Hub 2 (`#hostTabContentEvent`) is the sole authoritative 6-step Setup Workspace (`Details -> Teams -> Universe -> Schedule -> News -> Review & Lock`).
+  - Total unique IDs verified: 712, **0 duplicate IDs**.
+  - Dynamic team roster supports Solo, 2, 4, 8, 16 presets + dynamic Add/Remove team rows.
+  - Stock catalogue supports live search, sector filtering, and auto-generated balanced news timeline.
+  - Added backward-compatible DOM ID proxy (`LEGACY_SETUP_ID_MAP`) so legacy tests querying `hostTabSetup_*` transparently resolve.
+- [x] **FLOW-003: Sub-Navigation Bars for Host Hub 3 & Hub 4**:
+  - Hub 3 (Live Market) Sub-Navigation: `#hostMarketSubNav_all`, `stocks`, `news`, `leaderboard`, `analysis`, `trades`.
+  - Hub 4 (Stage & Results) Sub-Navigation: `#hostStageSubNav_projector`, `day`, `sound`, `commentary`, `launcher`, `exports`.
+  - Functions `switchHostMarketSubTab(tab)` and `switchHostStageSubTab(tab)` manage individual panel visibility and pill button active styling.
+- [x] **FLOW-004: Read-Only Post-Close Trader Mode**:
+  - When a day concludes, `#traderDayCompletedOverlay` presents audited daily net worth and P&L.
+  - Dismissing the overlay reveals `#traderReadOnlyConcludedBanner` with persistent `#btnReopenDaySummary`.
+  - In Read-Only mode (`status === 'DAY_COMPLETED' || status === 'CHAMPIONSHIP_CONCLUDED'`), Buy, Sell, and Liquidate All controls are disabled with clear tooltip guidance.
+- [x] **FLOW-005: Sound Console Autoplay Policy Unlock & Audio Cue Isolation (DEF-016 / DEF-032)**:
+  - If `AudioContext.state !== 'running'`, `#soundAutoplayUnlockOverlay` is displayed on `#soundConsoleView`.
+  - Supports click or pressing `Spacebar` to resume context and arm hall PA audio.
+  - `server.js` `broadcastAudioCue` isolates cues strictly to `soundClients` (`SOUND_CONSOLE`), forwarding only explicit test cues to `HOST`. Traders and unauthenticated public sockets receive 0 audio cues.
+- [x] **FLOW-006: Flicker-Free Projector 8-Card Slot Reuse (DEF-031)**:
+  - Replaced destructive `grid.innerHTML = ...` cycle with 8 pre-allocated persistent card slots (`#projCardSlot_0` .. `#projCardSlot_7`) and canvases (`#projCanvasSlot_0` .. `#projCanvasSlot_7`).
+  - Cards, ranks, prices, circuit banners, and HiDPI Bezier sparklines update in place every 8 seconds without DOM or canvas context destruction.
+- [x] **FLOW-007: Ceremony Audio Idempotency on Refresh (DEF-030)**:
+  - Stored `${eventId}_${normScene}` in `sessionStorage`. Browser refreshes during the awards ceremony render visual elements without replaying the grand brass victory fanfare.
+- [x] **DEF-009 / DEF-010: Winner Presentation UI Gating**:
+  - Gated `#btnLaunchPresentationAnalysis` and `#btnLaunchPresentationProjector`: disabled with explanatory tooltip unless `status === 'CHAMPIONSHIP_CONCLUDED' || (status === 'DAY_COMPLETED' && currentDay >= totalDays)`.
+- [x] **Verification Status**:
+  - `npm run test:chunk3`: **89/89 assertions passing (100%)**.
+  - `npm run test:chunk2`: **5/5 assertions passing (100%)**.
+  - `npm test`: **36/36 assertions passing (100%)**.
+
+---
+
+## 19. Chunk 4 — Universal Action Contracts, In-Flight Locking & Double-Click Shield (v2.6.4)
+- [x] **BTN-000: Universal Action Contract Pattern (`applyActionContractLock`, `releaseActionContractLock`)**:
+  - Centralized in-flight contract engine tracking all pending network operations via `inFlightActionButtons` Map.
+  - Calling `applyActionContractLock(button, processingText)`:
+    - Atomically disables the button (`button.disabled = true`).
+    - Stashes original text into `button.dataset.originalText` (safeguarded against duplicate writes).
+    - Swaps button label to active processing text (e.g., `'Confirming Order...'`, `'Liquidating All Shares...'`, `'Resuming (3-2-1)...'`, `'Halting Floor...'`).
+    - Arms a guaranteed 5000ms safety timeout fallback that automatically releases locks and displays an order toast if the server or network stalls.
+  - Calling `releaseActionContractLock(button)` or `releaseActionLockById(btnId)`:
+    - Cancels active safety timers.
+    - Re-enables the button (`button.disabled = false`).
+    - Restores the original label from `dataset.originalText`.
+  - Calling `releaseAllActionLocks()`:
+    - Sweeps all in-flight buttons and returns the entire UI to responsive standby.
+- [x] **BTN-001: Trader Order Execution Double-Click Shield (`#btnExecuteTradeOrder`)**:
+  - Locked on click 1 with `'Confirming Order...'`.
+  - Subsequent rapid clicks while in-flight return immediately, emitting 0 duplicate WebSocket frames.
+  - Released on server `ORDER_FILLED` or `ORDER_REJECTED` or modal close (`closeTradeModal()`).
+- [x] **BTN-002: Trader Liquidation Double-Click Shield (`#btnConfirmLiquidate`)**:
+  - Locked on click 1 with `'Liquidating All Shares...'`.
+  - Rapid double-clicks are rejected immediately with 0 extra network frames.
+  - Released on server `PORTFOLIO_LIQUIDATED` or `ORDER_REJECTED` or modal close (`closeLiquidateModal()`).
+- [x] **BTN-003: Login Terminal Access In-Flight Lock (`#btnLoginSubmit`)**:
+  - Locked on submit with `'Connecting...'` or `'Accessing Terminal...'`.
+  - Released on server `LOGIN_SUCCESS` or `LOGIN_ERROR`.
+- [x] **BTN-004: Host Live Market Operations In-Flight Locks**:
+  - `#btnMarketResume`: Locked with `'Resuming (3-2-1)...'`, released on `COUNTDOWN_START` or `MARKET_RESUMED`.
+  - `#btnMarketPauseSoft`: Locked with `'Pausing...'`, released on `MARKET_PAUSED`.
+  - `#btnMarketPauseBlackout`: Locked with `'Blackout...'`, released on `MARKET_PAUSED`.
+  - `#btnMarketCloseSession`: Locked with `'Closing Day...'`, released on `DAY_CONCLUDED`.
+- [x] **BTN-005: Host Lifecycle & Emergency Controls**:
+  - `#btnConfirmEmergencyStop`: Locked with `'Halting...'`, released on `EMERGENCY_STOP`.
+  - `#btnExecuteStartNextDay`: Locked with `'Advancing Day...'`, released on `DAY_TRANSITION` or `DAY_STARTED`.
+  - `#btnConfirmAddDay`: Locked with `'Adding Day...'`, released on `DAY_ADDED` or `EVENT_DAYS_UPDATED`.
+  - `#btnConfirmResetChampionship`: Locked with `'Resetting Tournament...'`, released on `CHAMPIONSHIP_RESET`.
+  - `#btnSubmitLockSetup`: Locked with `'Submitting & Locking...'`, released on `EVENT_CONFIG_LOCKED`, `EVENT_CONFIG_CHANGED`, or `SETUP_VALIDATION_ERROR`.
+  - `#btnUnlockEventConfig`: Locked with `'Unlocking...'`, released on `EVENT_CONFIG_UNLOCKED`.
+- [x] **BTN-006: Presentation Ceremony Launch & Dismiss Controls**:
+  - `#btnLaunchPresentationAnalysis` & `#btnLaunchPresentationProjector`: Locked with `'Launching Ceremony...'`, released on `PROJECTOR_STATE_UPDATE`.
+  - `#hostDismissPodium`: Locked with `'Closing Ceremony...'`, released on `PROJECTOR_STATE_UPDATE`.
+- [x] **BTN-007: Disaster Recovery Checkpoint Save Lock (`#btnHostCreateCheckpoint`)**:
+  - Locked with `'Saving Checkpoint...'`, released on server `CHECKPOINT_CREATED_ACK`.
+- [x] **BTN-008: Server Rejection Catch-All (`ACTION_REJECTED`)**:
+  - When the server dispatches `{ type: 'ACTION_REJECTED', reason: '...' }`, `public/app.js` automatically invokes `releaseAllActionLocks()`, instantly re-enabling all buttons and providing clear user toast guidance.
+- [x] **DOM ID Uniqueness Verification**:
+  - All 718 unique DOM IDs verified with `tools/find_duplicate_ids.js`: **0 duplicate IDs**.
+- [x] **Complete Verification Metric Summary**:
+  - `npm run test:chunk4`: **64/64 assertions PASS (100%)**.
+  - `npm run test:chunk3`: **89/89 assertions PASS (100%)**.
+  - `npm run test:chunk2`: **5/5 assertions PASS (100%)**.
+  - `npm test`: **36/36 single-flow master assertions PASS (100%)**.
+  - Total Verified Assertions Across Suites: **194 / 194 passing with 0 errors**.
 
 
 

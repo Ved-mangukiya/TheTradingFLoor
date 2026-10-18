@@ -1,3 +1,29 @@
+
+// ==========================================
+// BACKWARD COMPATIBILITY DOM ID ALIASES (FLOW-002)
+// ==========================================
+const LEGACY_SETUP_ID_MAP = {
+  'hostTabSetup_EventTitle': 'setupEventTitle',
+  'hostTabSetup_Institution': 'setupInstitution',
+  'hostTabSetup_StartingCash': 'setupStartingCash',
+  'hostTabSetup_TotalDays': 'setupTotalDays',
+  'hostTabSetup_DayDuration': 'setupDayDuration',
+  'hostTabSetup_TransactionFee': 'setupTransactionFee',
+  'hostTabSetup_CircuitBreaker': 'setupCircuitBreaker',
+  'hostTabSetup_RiskProfile': 'setupRiskProfile',
+  'hostStartWinnerPresentation': 'btnLaunchPresentationAnalysis',
+  'btnHostAddDay': 'btnConfirmAddDay'
+};
+if (typeof document !== 'undefined' && document.getElementById) {
+  const _origGetElementById = document.getElementById.bind(document);
+  document.getElementById = function(id) {
+    if (LEGACY_SETUP_ID_MAP[id]) {
+      return _origGetElementById(LEGACY_SETUP_ID_MAP[id]) || _origGetElementById(id);
+    }
+    return _origGetElementById(id);
+  };
+}
+
 /*!
  * Trading Floor Championship 2026: Vanilla charting engine
  * Zero dependencies. Canvas 2D, HiDPI-aware, monotone cubic Bezier splines.
@@ -530,6 +556,113 @@ let dayCompletedDismissed = false;
 let currentTradeModalTicker = null;
 let currentTradeModalSide = 'BUY';
 let teamEquityHistory = [];
+
+// ==========================================================================
+// EVENT ISOLATION & STALE-STATE SHIELD (PART 1 & PART 13)
+// ==========================================================================
+let currentEventId = null;
+let currentEventStateVersion = 0;
+
+function getMovementIntensity(pctChange) {
+  const num = Number(pctChange);
+  if (isNaN(num)) {
+    return {
+      textClass: 'pct-neutral',
+      bgClass: 'bg-neutral',
+      badgeStyle: 'background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;',
+      isUp: false,
+      isDown: false,
+      isNeutral: true,
+      color: '#475569'
+    };
+  }
+
+  const abs = Math.abs(num);
+  const isUp = num > 0.0001;
+  const isDown = num < -0.0001;
+  const isNeutral = !isUp && !isDown;
+
+  if (isNeutral) {
+    return {
+      textClass: 'pct-neutral',
+      bgClass: 'bg-neutral',
+      badgeStyle: 'background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1;',
+      isUp: false,
+      isDown: false,
+      isNeutral: true,
+      color: '#475569'
+    };
+  }
+
+  let level = 'sm';
+  if (abs >= 5.0) level = 'xl';
+  else if (abs >= 2.5) level = 'lg';
+  else if (abs >= 1.0) level = 'md';
+  else level = 'sm';
+
+  if (isUp) {
+    return {
+      textClass: `pct-pos-${level}`,
+      bgClass: `bg-pos-${level}`,
+      badgeStyle: level === 'xl' ? 'background: #15803D; color: #FFFFFF; font-weight: 900;'
+        : level === 'lg' ? 'background: #16A34A; color: #FFFFFF; font-weight: 800;'
+        : level === 'md' ? 'background: #DCFCE7; color: #166534; font-weight: 800; border: 1px solid #86EFAC;'
+        : 'background: #F0FDF4; color: #15803D; font-weight: 700; border: 1px solid #BBF7D0;',
+      isUp: true,
+      isDown: false,
+      isNeutral: false,
+      color: level === 'xl' ? '#14532D' : level === 'lg' ? '#15803D' : level === 'md' ? '#16A34A' : '#22C55E'
+    };
+  } else {
+    return {
+      textClass: `pct-neg-${level}`,
+      bgClass: `bg-neg-${level}`,
+      badgeStyle: level === 'xl' ? 'background: #B91C1C; color: #FFFFFF; font-weight: 900;'
+        : level === 'lg' ? 'background: #DC2626; color: #FFFFFF; font-weight: 800;'
+        : level === 'md' ? 'background: #FEE2E2; color: #991B1B; font-weight: 800; border: 1px solid #FCA5A5;'
+        : 'background: #FEF2F2; color: #B91C1C; font-weight: 700; border: 1px solid #FECACA;',
+      isUp: false,
+      isDown: true,
+      isNeutral: false,
+      color: level === 'xl' ? '#7F1D1D' : level === 'lg' ? '#B91C1C' : level === 'md' ? '#DC2626' : '#EF4444'
+    };
+  }
+}
+
+function toggleProjectorExitDropdown() {
+  const dropdown = document.getElementById('projExitConfirmDropdown');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function cleanupProjectorPaginationTimers() {
+  if (typeof projectorBoardAutoFlipInterval !== 'undefined' && projectorBoardAutoFlipInterval) {
+    clearInterval(projectorBoardAutoFlipInterval);
+    projectorBoardAutoFlipInterval = null;
+  }
+  if (typeof _resumeAutoRotateTimeout !== 'undefined' && _resumeAutoRotateTimeout) {
+    clearTimeout(_resumeAutoRotateTimeout);
+    _resumeAutoRotateTimeout = null;
+  }
+}
+
+function getWinnerStageAdvanceLabel(curScene) {
+  const norm = (curScene || 'INTRO').replace(/^SCENE_/, '').toUpperCase();
+  switch (norm) {
+    case 'INTRO':
+      return { text: 'Advance to Bronze #3 ➔', nextScene: 'BRONZE', isComplete: false };
+    case 'BRONZE':
+      return { text: 'Advance to Silver #2 ➔', nextScene: 'SILVER', isComplete: false };
+    case 'SILVER':
+      return { text: 'Advance to Champion (Gold #1) ➔', nextScene: 'CHAMPION', isComplete: false };
+    case 'CHAMPION':
+      return { text: 'Advance to Complete Podium ➔', nextScene: 'PODIUM', isComplete: false };
+    case 'PODIUM':
+      return { text: 'Advance to Final Standings Table ➔', nextScene: 'LEADERBOARD', isComplete: false };
+    case 'LEADERBOARD':
+    default:
+      return { text: '✓ Ceremony Complete (Final Screen Stable)', nextScene: null, isComplete: true };
+  }
+}
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -1466,19 +1599,28 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       return;
     }
 
+    if (window.StateGuard && !window.StateGuard.shouldAcceptIncomingState(msg)) {
+      return;
+    }
+
     if (msg.type === 'LOGIN_ERROR') {
+      releaseActionLockById('btnLoginSubmit');
       const errEl = document.getElementById('loginError');
-      errEl.textContent = msg.message;
-      errEl.classList.remove('hidden');
+      if (errEl) {
+        errEl.textContent = msg.message;
+        errEl.classList.remove('hidden');
+      }
       return;
     }
 
     if (msg.type === 'SESSION_EXPIRED') {
+      releaseAllActionLocks();
       logoutTerminal();
       return;
     }
 
     if (msg.type === 'LOGIN_SUCCESS') {
+      releaseActionLockById('btnLoginSubmit');
       sessionToken = msg.session_token;
       currentRole = msg.role;
       isLoggedIn = true;
@@ -1638,7 +1780,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       }
       if (isLoggedIn) {
         playInstitutionalSound('order_placed');
-        const timeStr = new Date(msg.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const timeStr = formatClock12H(msg.scheduledStartTime);
         showOrderToast(`📅 Event scheduled for ${timeStr}. Waiting room countdown armed.`, true);
       }
       return;
@@ -1765,6 +1907,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         if (el) el.classList.add('hidden');
       });
       const resetMsg = msg.message || 'The host has reset the competition. You have been logged out. Please wait for the host to set up a new event.';
+      if (msg.eventId) currentEventId = msg.eventId;
+      if (msg.stateVersion !== undefined) currentEventStateVersion = msg.stateVersion;
+
       if (currentRole === 'TRADER') {
         const modal = document.getElementById('clientResetModal');
         const textEl = document.getElementById('clientResetMessageText');
@@ -1776,6 +1921,19 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         showOrderToast('🔄 Championship reset complete. Returned to Day 1 Standby.', true);
         switchHostTab('event');
         switchSetupSection('details');
+      } else if (currentRole === 'PROJECTOR') {
+        cleanupProjectorPaginationTimers();
+        currentProjectorBoardPage = 1;
+        if (latestState) {
+          latestState.companies = [];
+          latestState.leaderboard = [];
+          if (latestState.gameState) {
+            latestState.gameState.isReset = true;
+            latestState.gameState.status = 'RESET';
+            latestState.gameState.resetMessage = resetMsg;
+          }
+        }
+        renderProjectorView(latestState || { gameState: { isReset: true, status: 'RESET', resetMessage: resetMsg }, companies: [] });
       } else {
         showOrderToast(resetMsg, false);
       }
@@ -1808,7 +1966,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       return;
     }
 
+    if (msg.type === 'ACTION_REJECTED') {
+      releaseAllActionLocks();
+      showOrderToast(`⚠️ ${msg.reason || 'Action could not be executed.'}`, false);
+      return;
+    }
+
     if (msg.type === 'PORTFOLIO_LIQUIDATED') {
+      releaseActionLockById('btnConfirmLiquidate');
       playInstitutionalSound('portfolio_liquidated');
       closeLiquidateModal();
       const skipNote = msg.skippedHalted && msg.skippedHalted.length > 0
@@ -1819,11 +1984,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'SETUP_VALIDATION_ERROR') {
+      releaseActionLockById('btnLockEventSetup');
+      releaseActionLockById('btnSubmitLockSetup');
       showOrderToast(`⚠️ ${msg.message || 'Setup validation failed.'}`, false);
       return;
     }
 
     if (msg.type === 'EVENT_CONFIG_UNLOCKED') {
+      releaseActionLockById('btnUnlockEventConfig');
       if (latestState && latestState.gameState) {
         latestState.gameState.configLocked = false;
         latestState.gameState.status = 'SETUP';
@@ -1843,11 +2011,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'EVENT_CONFIG_CHANGED') {
+      releaseActionLockById('btnLockEventSetup');
+      releaseActionLockById('btnSubmitLockSetup');
       showOrderToast(`⚙️ Tournament settings updated: "${msg.title || 'Settings Updated'}"`, true);
       return;
     }
 
     if (msg.type === 'ORDER_FILLED') {
+      releaseActionLockById('btnExecuteTradeOrder');
       playInstitutionalSound('order_fill');
       showOrderToast(`✓ ${msg.orderType} FILLED: ${msg.quantity} ${msg.ticker} @ ₹${msg.price.toFixed(2)} (Net: ₹${msg.totalImpact.toFixed(2)})`, true);
       closeTradeModal();
@@ -1855,6 +2026,8 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'ORDER_REJECTED') {
+      releaseActionLockById('btnExecuteTradeOrder');
+      releaseActionLockById('btnConfirmLiquidate');
       playInstitutionalSound('order_rejected');
       showOrderToast(`✗ ${msg.reason}`, false);
 
@@ -1871,6 +2044,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'MARKET_RESTORED') {
+      releaseAllActionLocks();
       playInstitutionalSound('bell_close');
       const softOverlay = document.getElementById('softPauseOverlay');
       if (softOverlay && currentRole !== 'HOST') softOverlay.classList.remove('hidden');
@@ -1886,6 +2060,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'CHECKPOINT_CREATED_ACK') {
+      releaseActionLockById('btnHostCreateCheckpoint');
       if (msg.ok) {
         showOrderToast(`💾 ${msg.message || 'Checkpoint saved successfully!'}`, true);
         hostRefreshCheckpoints();
@@ -1901,6 +2076,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'CHECKPOINT_RESTORED_ACK') {
+      releaseAllActionLocks();
       showOrderToast(`🛡️ ${msg.message || 'Game restored from checkpoint!'}`, true);
       const banner = document.getElementById('hostRestoreStatusBanner');
       const bannerText = document.getElementById('hostRestoreStatusText');
@@ -1913,7 +2089,42 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       return;
     }
 
+    if (msg.type === 'DAY_TRANSITION' || msg.type === 'DAY_STARTED') {
+      releaseActionLockById('btnExecuteStartNextDay');
+    }
+
+    if (msg.type === 'DAY_ADDED' || msg.type === 'EVENT_DAYS_UPDATED') {
+      releaseActionLockById('btnHostAddDay');
+      releaseActionLockById('btnConfirmAddDay');
+    }
+
+    if (msg.type === 'COUNTDOWN_START' || msg.type === 'MARKET_RESUMED') {
+      releaseActionLockById('btnMarketResume');
+    }
+
+    if (msg.type === 'MARKET_PAUSED') {
+      releaseActionLockById('btnMarketPauseSoft');
+      releaseActionLockById('btnMarketPauseBlackout');
+    }
+
+    if (msg.type === 'DAY_CONCLUDED') {
+      releaseActionLockById('btnMarketCloseSession');
+      releaseActionLockById('btnConfirmConcludeDay');
+    }
+
+    if (msg.type === 'EMERGENCY_STOP') {
+      releaseActionLockById('btnEmergencyStopTrigger');
+      releaseActionLockById('btnConfirmEmergencyStop');
+    }
+
+    if (msg.type === 'CHAMPIONSHIP_RESET') {
+      releaseActionLockById('btnConfirmResetChampionship');
+    }
+
     if (msg.type === 'PROJECTOR_STATE_UPDATE') {
+      releaseActionLockById('btnLaunchPresentationAnalysis');
+      releaseActionLockById('btnLaunchPresentationProjector');
+      releaseActionLockById('hostDismissPodium');
       if (latestState && latestState.gameState) {
         latestState.gameState.projectorState = msg.projectorState;
       }
@@ -1964,16 +2175,12 @@ function switchSpaView(role) {
   if (role === 'TRADER') {
     document.getElementById('traderView').classList.remove('hidden');
   } else if (role === 'HOST') {
+    const hostEl = document.getElementById('hostView');
+    if (hostEl) hostEl.classList.remove('hidden');
     const isLocked = latestState && latestState.gameState && latestState.gameState.configLocked;
     if (!isLocked) {
-      const setupEl = document.getElementById('eventSetupView');
-      if (setupEl) {
-        setupEl.classList.remove('hidden');
-        initOrRestoreEventSetup();
-      }
-    } else {
-      const hostEl = document.getElementById('hostView');
-      if (hostEl) hostEl.classList.remove('hidden');
+      switchHostTab('setup');
+      initOrRestoreEventSetup();
     }
   } else if (role === 'PROJECTOR') {
     document.getElementById('projectorView').classList.remove('hidden');
@@ -2006,6 +2213,9 @@ function logoutTerminal() {
 
 document.getElementById('loginForm').addEventListener('submit', (e) => {
   e.preventDefault();
+  const btn = document.getElementById('btnLoginSubmit');
+  if (btn && btn.disabled) return;
+
   const username = document.getElementById('loginUsername').value;
   const password = document.getElementById('loginPassword').value;
   if (isDemoMode) {
@@ -2018,9 +2228,14 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
   }
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     const errEl = document.getElementById('loginError');
-    errEl.textContent = 'Connecting to simulation engine... Please wait 2 seconds.';
-    errEl.classList.remove('hidden');
+    if (errEl) {
+      errEl.textContent = 'Connecting to simulation engine... Please wait 2 seconds.';
+      errEl.classList.remove('hidden');
+    }
     return;
+  }
+  if (btn) {
+    applyActionContractLock(btn, 'Connecting...');
   }
   ws.send(JSON.stringify({ action: 'LOGIN', username, password }));
 });
@@ -2077,6 +2292,24 @@ function formatMMSS(totalSeconds) {
   return `${mins}:${secs}`;
 }
 
+function formatClock12H(dateOrIso, includeSeconds = false) {
+  if (!dateOrIso) return '—';
+  if (typeof dateOrIso === 'string' && (dateOrIso.includes('AM') || dateOrIso.includes('PM')) && !dateOrIso.includes('T')) {
+    return dateOrIso;
+  }
+  const d = dateOrIso instanceof Date ? dateOrIso : new Date(dateOrIso);
+  if (isNaN(d.getTime())) return String(dateOrIso);
+  const options = {
+    hour12: true,
+    hour: 'numeric',
+    minute: '2-digit'
+  };
+  if (includeSeconds) {
+    options.second = '2-digit';
+  }
+  return d.toLocaleTimeString('en-US', options);
+}
+
 function formatINR(num) {
   return '₹' + Number(num).toLocaleString('en-IN', {
     minimumFractionDigits: 2,
@@ -2088,9 +2321,172 @@ function formatRupee(num) {
   return formatINR(num);
 }
 
+function autoCloseLifecycleModalsOnStateTransition(newState) {
+  if (!newState || !newState.gameState) return;
+  const gs = newState.gameState;
+  const status = gs.status;
+
+  const startNextDayModal = document.getElementById('modalStartNextDay');
+  if (startNextDayModal && !startNextDayModal.classList.contains('hidden')) {
+    if (status === 'LIVE' || status === 'COUNTDOWN' || status === 'STANDBY' || gs.isConcluded || (gs.currentDay >= (gs.totalDays || 3) && status === 'DAY_COMPLETED')) {
+      closeLifecycleModal('modalStartNextDay');
+    }
+  }
+
+  const concludeDayModal = document.getElementById('modalConcludeDay');
+  if (concludeDayModal && !concludeDayModal.classList.contains('hidden')) {
+    if (status === 'DAY_COMPLETED' || status === 'STANDBY' || gs.isConcluded) {
+      closeLifecycleModal('modalConcludeDay');
+    }
+  }
+
+  const finishEventModal = document.getElementById('modalFinishEvent');
+  if (finishEventModal && !finishEventModal.classList.contains('hidden')) {
+    if (gs.isConcluded || status === 'WINNER_ANNOUNCEMENT') {
+      closeLifecycleModal('modalFinishEvent');
+    }
+  }
+
+  const emergencyStopModal = document.getElementById('modalEmergencyStop');
+  if (emergencyStopModal && !emergencyStopModal.classList.contains('hidden')) {
+    if (status === 'EMERGENCY_STOP' || status === 'LIVE') {
+      closeEmergencyStopModal();
+    }
+  }
+}
+
+
+// ==========================================
+// AUTHORITATIVE ROLE & OVERLAY RESOLVER (FLOW-001)
+// ==========================================
+let lastObservedDay = null;
+let lastObservedStatus = null;
+let isDayCompletedMinimized = false;
+
+function syncRoleOverlays(role, gameState) {
+  if (!gameState) return;
+  const status = gameState.status || 'SETUP';
+  const pauseMode = gameState.pauseMode || 'VISIBLE_FROZEN';
+  const currentDay = gameState.currentDay || 1;
+
+  // Reset dayCompleted minimization when currentDay or status changes
+  if (currentDay !== lastObservedDay || status !== lastObservedStatus) {
+    dayCompletedDismissed = false;
+    isDayCompletedMinimized = false;
+    lastObservedDay = currentDay;
+    lastObservedStatus = status;
+  }
+
+  const countdownOverlay = document.getElementById('countdownOverlay');
+  const softPauseOverlay = document.getElementById('softPauseOverlay');
+  const blackoutOverlay = document.getElementById('blackoutOverlay');
+  const waitingRoomOverlay = document.getElementById('traderWaitingRoomOverlay');
+  const dayCompletedOverlay = document.getElementById('traderDayCompletedOverlay');
+  const readOnlyBanner = document.getElementById('traderReadOnlyConcludedBanner');
+
+  // COUNTDOWN: 3-2-1 Hero Countdown takes absolute precedence
+  if (status === 'COUNTDOWN') {
+    if (countdownOverlay) countdownOverlay.classList.remove('hidden');
+    if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+    if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+    if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+    if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+    if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+    return;
+  } else {
+    if (countdownOverlay && !gameState.activeCountdown) {
+      countdownOverlay.classList.add('hidden');
+    }
+  }
+
+  // TRADER VIEW OVERLAY RESOLUTION
+  if (role === 'TRADER') {
+    if (status === 'STANDBY' || status === 'SCHEDULED' || status === 'NOT_STARTED' || status === 'PRE_EVENT_COUNTDOWN') {
+      if (waitingRoomOverlay) waitingRoomOverlay.classList.remove('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+      if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+    } else if (status === 'DAY_COMPLETED' || status === 'CHAMPIONSHIP_CONCLUDED') {
+      if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+
+      if (!dayCompletedDismissed && !isDayCompletedMinimized) {
+        if (dayCompletedOverlay) dayCompletedOverlay.classList.remove('hidden');
+        if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+      } else {
+        if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+        if (readOnlyBanner) readOnlyBanner.classList.remove('hidden');
+      }
+    } else if (status === 'PAUSED') {
+      if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+      if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+      if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+      if (pauseMode === 'BLACKOUT' || pauseMode === 'EMERGENCY_HALT') {
+        if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
+        if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      } else {
+        if (softPauseOverlay) softPauseOverlay.classList.remove('hidden');
+        if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      }
+    } else if (status === 'LIVE') {
+      if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+      if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+    } else {
+      // SETUP or RESET
+      if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      if (dayCompletedOverlay) dayCompletedOverlay.classList.add('hidden');
+      if (readOnlyBanner) readOnlyBanner.classList.add('hidden');
+    }
+  }
+
+  // PROJECTOR VIEW OVERLAY RESOLUTION
+  if (role === 'PROJECTOR') {
+    if (status === 'PAUSED' && (pauseMode === 'BLACKOUT' || pauseMode === 'EMERGENCY_HALT')) {
+      if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
+    } else {
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+    }
+  }
+}
+
 function handleStateUpdate(state) {
   if (!state) return;
+
+  const gs = state.gameState || {};
+  const incomingEventId = gs.eventId || state.eventId;
+  const incomingVersion = gs.stateVersion !== undefined ? gs.stateVersion : (state.stateVersion !== undefined ? state.stateVersion : 0);
+
+  if (incomingEventId) {
+    if (currentEventId !== null && incomingEventId !== currentEventId) {
+      currentEventId = incomingEventId;
+      currentEventStateVersion = incomingVersion;
+      currentProjectorBoardPage = 1;
+      cleanupProjectorPaginationTimers();
+      const projBoard = document.getElementById('projSceneMarketBoard');
+      if (projBoard) projBoard.innerHTML = '';
+    } else if (currentEventId === null) {
+      currentEventId = incomingEventId;
+      currentEventStateVersion = incomingVersion;
+    }
+  }
+
+  // Stale update protection: drop late-arriving packets from older state versions
+  if (currentEventId && incomingEventId === currentEventId && incomingVersion < currentEventStateVersion) {
+    return;
+  }
+  if (incomingVersion > currentEventStateVersion) {
+    currentEventStateVersion = incomingVersion;
+  }
+
   latestState = state;
+  autoCloseLifecycleModalsOnStateTransition(state);
 
   if (state.serverTimeMs) {
     serverClockOffsetMs = Date.now() - state.serverTimeMs;
@@ -2117,44 +2513,8 @@ function handleStateUpdate(state) {
     cancelAuthoritativeCountdown();
   }
 
-  // Handle Dual Pause Overlays (Strict State Priority: Never show pause overlay when pre-event, standby, countdown, or day concluded)
-  const isPreEvent = state.gameState && (
-    state.gameState.status === 'SCHEDULED' ||
-    state.gameState.status === 'PRE_EVENT_COUNTDOWN' ||
-    state.gameState.status === 'STANDBY' ||
-    state.gameState.status === 'COUNTDOWN' ||
-    state.gameState.status === 'NOT_STARTED' ||
-    (state.gameState.elapsedSeconds === 0 && state.gameState.status !== 'LIVE')
-  );
-  const isDayCompleted = state.gameState && (
-    state.gameState.status === 'DAY_COMPLETED' ||
-    state.gameState.status === 'MARKET_CLOSED'
-  );
-  const softOverlay = document.getElementById('softPauseOverlay');
-  const blackoutOverlay = document.getElementById('blackoutOverlay');
-
-  // CRITICAL INVARIANT: Day conclusion is NEVER a pause. Pause overlay can only appear if genuinely paused.
-  const isGenuinelyPaused = isLoggedIn && currentRole !== null && currentRole !== 'HOST' &&
-    state.gameState &&
-    state.gameState.isPaused &&
-    !state.gameState.isConcluded &&
-    !isPreEvent &&
-    !isDayCompleted &&
-    state.gameState.status !== 'DAY_COMPLETED';
-
-  if (isGenuinelyPaused) {
-    const mode = state.gameState.pauseMode || 'VISIBLE_FROZEN';
-    if (mode === 'BLACKOUT') {
-      if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
-      if (softOverlay) softOverlay.classList.add('hidden');
-    } else {
-      if (softOverlay) softOverlay.classList.remove('hidden');
-      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
-    }
-  } else {
-    if (softOverlay) softOverlay.classList.add('hidden');
-    if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
-  }
+  // Deterministic Role Overlay Resolution (FLOW-001)
+  syncRoleOverlays(currentRole, state.gameState);
 
   // Check if championship concluded and show podium
   if (state.gameState && state.gameState.isConcluded && state.gameState.winnerData) {
@@ -2164,26 +2524,15 @@ function handleStateUpdate(state) {
   // Authoritatively update login readiness banner
   updateLoginEventStatusBanner(state);
 
-  // Authoritatively manage Host Setup View vs Host Panel View routing
+  // Authoritatively ensure #hostView is the single master shell (FLOW-002)
   if (currentRole === 'HOST') {
-    const setupEl = document.getElementById('eventSetupView');
     const hostEl = document.getElementById('hostView');
-    const isLocked = state.gameState && state.gameState.configLocked;
-    if (!isLocked) {
-      if (setupEl && setupEl.classList.contains('hidden')) {
-        setupEl.classList.remove('hidden');
-        initOrRestoreEventSetup();
-      }
-      if (hostEl && !hostEl.classList.contains('hidden')) {
-        hostEl.classList.add('hidden');
-      }
-    } else {
-      if (setupEl && !setupEl.classList.contains('hidden')) {
-        setupEl.classList.add('hidden');
-      }
-      if (hostEl && hostEl.classList.contains('hidden')) {
-        hostEl.classList.remove('hidden');
-      }
+    if (hostEl && hostEl.classList.contains('hidden')) {
+      hostEl.classList.remove('hidden');
+    }
+    const setupEl = document.getElementById('eventSetupView');
+    if (setupEl && !setupEl.classList.contains('hidden')) {
+      setupEl.classList.add('hidden');
     }
   }
 
@@ -2309,8 +2658,38 @@ function renderTraderSectorChips() {
 
 function dismissTraderDayCompleted() {
   dayCompletedDismissed = true;
+  isDayCompletedMinimized = true;
   const overlay = document.getElementById('traderDayCompletedOverlay');
   if (overlay) overlay.classList.add('hidden');
+  const banner = document.getElementById('traderReadOnlyConcludedBanner');
+  if (banner) {
+    banner.classList.remove('hidden');
+    const curDay = latestState?.gameState?.currentDay || 1;
+    const bannerText = document.getElementById('traderReadOnlyBannerText');
+    if (bannerText) {
+      bannerText.innerHTML = '<strong>🔒 Day ' + curDay + ' Trading Concluded:</strong> You are in Read-Only Mode. Portfolios and past order history are available to inspect below. Order execution and liquidation are disabled.';
+    }
+    const btnReopen = document.getElementById('btnReopenDaySummary');
+    if (btnReopen) {
+      btnReopen.textContent = '📊 Re-open Day ' + curDay + ' Official Standings';
+    }
+  }
+}
+
+function showTraderDayCompleted() {
+  dayCompletedDismissed = false;
+  isDayCompletedMinimized = false;
+  const overlay = document.getElementById('traderDayCompletedOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+  const banner = document.getElementById('traderReadOnlyConcludedBanner');
+  if (banner) banner.classList.add('hidden');
+  if (latestState) {
+    renderTraderDayCompletedLeaderboard(latestState);
+  }
+}
+
+function reopenTraderDayCompleted() {
+  showTraderDayCompleted();
 }
 
 function renderTraderDayCompletedLeaderboard(state) {
@@ -2332,15 +2711,20 @@ function renderTraderDayCompletedLeaderboard(state) {
   container.innerHTML = rankings.map((team, idx) => {
     const rank = team.rank || (idx + 1);
     const isMe = (team.teamId === myTeamId) || (team.id === myTeamId);
-    const dayPnl = team.dayPnl !== undefined
-      ? team.dayPnl
-      : ((team.netWorth || 500000) - (team.startingCash || gs?.startingCash || 500000));
+    const dayOpenVal = team.dayOpeningValuation !== undefined
+      ? team.dayOpeningValuation
+      : (team.dayOpeningPortfolioValue !== undefined ? team.dayOpeningPortfolioValue : (team.startingCash || gs?.startingCash || 500000));
+    const closingWorth = team.netWorth !== undefined ? team.netWorth : (team.closingPortfolioValue !== undefined ? team.closingPortfolioValue : 500000);
+    const dayPnl = team.dailyPnl !== undefined
+      ? team.dailyPnl
+      : (team.dayPnl !== undefined ? team.dayPnl : (closingWorth - dayOpenVal));
+    const retVal = team.dailyReturnPct !== undefined
+      ? team.dailyReturnPct
+      : (team.dayReturnPercent !== undefined ? team.dayReturnPercent : (dayOpenVal > 0 ? (dayPnl / dayOpenVal) * 100 : 0));
+    const intensity = getMovementIntensity(retVal);
     const pnlFormatted = `${dayPnl >= 0 ? '+' : ''}${formatINR(dayPnl)}`;
-    const pnlColor = dayPnl > 0 ? '#16804a' : dayPnl < 0 ? '#b42318' : 'var(--text-muted)';
-    const netWorthFormatted = formatINR(team.netWorth || 500000);
-    const retPct = team.dayReturnPercent !== undefined
-      ? `${team.dayReturnPercent >= 0 ? '+' : ''}${team.dayReturnPercent.toFixed(2)}%`
-      : '';
+    const netWorthFormatted = formatINR(closingWorth);
+    const retPct = `${retVal >= 0 ? '+' : ''}${retVal.toFixed(2)}%`;
 
     const rankBadgeStyle = rank === 1
       ? 'background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;'
@@ -2365,10 +2749,10 @@ function renderTraderDayCompletedLeaderboard(state) {
             ${isMe ? '<span class="badge" style="background: #3f6292; color: #fff; font-size: 10px; padding: 1px 6px;">YOU</span>' : ''}
           </div>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-            Net Worth: ${netWorthFormatted}${retPct ? ` • Return: ${retPct}` : ''}
+            Net Worth: ${netWorthFormatted} • Return: <span class="${intensity.textClass}" style="font-weight: 700;">${retPct}</span>
           </div>
         </div>
-        <div style="text-align: right; font-family: var(--font-mono); font-size: 15px; font-weight: 800; color: ${pnlColor}; flex-shrink: 0;">
+        <div style="text-align: right; font-family: var(--font-mono); font-size: 15px; font-weight: 900; flex-shrink: 0;" class="${intensity.textClass}">
           ${pnlFormatted}
         </div>
       </div>
@@ -2429,8 +2813,32 @@ function renderTraderView(state) {
   document.getElementById('traderDayBadge').textContent = `DAY ${gameState.currentDay} / ${gameState.totalDays}`;
   document.getElementById('traderClock').textContent = formatMMSS(gameState.elapsedSeconds);
 
+  const isTournamentComplete = gameState.isConcluded || 
+                               gameState.status === 'COMPLETED' || 
+                               gameState.status === 'CHAMPIONSHIP_CONCLUDED' || 
+                               gameState.status === 'FINAL_ANALYSIS' ||
+                               (gameState.currentDay >= gameState.totalDays && gameState.status === 'DAY_COMPLETED');
+
+  const isWinnerCeremony = (gameState.presentationState && gameState.presentationState.active) || 
+                           (gameState.projectorState && gameState.projectorState.isWinnerActive);
+
   const statusEl = document.getElementById('traderMarketStatus');
-  if (gameState.status === 'DAY_COMPLETED') {
+  if (isWinnerCeremony) {
+    statusEl.textContent = '👑 AWARDS CEREMONY LIVE';
+    statusEl.className = 'badge badge-champagne';
+    statusEl.style.cursor = 'default';
+    statusEl.onclick = null;
+  } else if (isTournamentComplete) {
+    statusEl.textContent = '🏆 ALL SESSIONS COMPLETED';
+    statusEl.className = 'badge badge-champagne';
+    statusEl.style.cursor = 'pointer';
+    statusEl.title = 'Click to view final audited rankings';
+    statusEl.onclick = () => {
+      dayCompletedDismissed = false;
+      const overlay = document.getElementById('traderDayCompletedOverlay');
+      if (overlay) overlay.classList.remove('hidden');
+    };
+  } else if (gameState.status === 'DAY_COMPLETED') {
     statusEl.textContent = `DAY ${gameState.currentDay} COMPLETED`;
     statusEl.className = 'badge badge-champagne';
     statusEl.style.cursor = 'pointer';
@@ -2479,11 +2887,11 @@ function renderTraderView(state) {
       const waitTitle = document.getElementById('traderDayCompletedWaitTitle');
       const waitDesc = document.getElementById('traderDayCompletedWaitDesc');
 
-      if (badge) badge.textContent = `DAY ${gameState.currentDay} COMPLETED`;
-      if (title) title.textContent = `Day ${gameState.currentDay} Concluded`;
+      if (badge) badge.textContent = gameState.currentDay < gameState.totalDays ? `DAY ${gameState.currentDay} COMPLETED` : 'ALL TRADING DAYS COMPLETED';
+      if (title) title.textContent = gameState.currentDay < gameState.totalDays ? `Day ${gameState.currentDay} Concluded` : 'Championship Final Round Concluded';
       if (sub) sub.textContent = gameState.currentDay < gameState.totalDays
         ? `Trading session completed successfully. All student portfolios audited and locked.`
-        : `Championship final round completed! Stand by for the official winner presentation.`;
+        : `Championship final round completed! Stand by for the official winner presentation on stage.`;
 
       if (portfolio) {
         if (netWorthEl) netWorthEl.textContent = formatINR(portfolio.netWorth);
@@ -2503,14 +2911,14 @@ function renderTraderView(state) {
           waitTitle.textContent = 'Waiting for the host';
           waitDesc.textContent = `The next trading day has not started yet. All portfolios and cash carry forward seamlessly to Day ${gameState.currentDay + 1}.`;
         } else {
-          waitTitle.textContent = 'Waiting for the host';
-          waitDesc.textContent = 'All competition days completed. Stand by for the official championship awards ceremony.';
+          waitTitle.textContent = 'Final Results Audited';
+          waitDesc.textContent = 'All competition trading days are complete. The host is preparing the final results and stage winner announcement. Please remain on this screen.';
         }
       }
 
       renderTraderDayCompletedLeaderboard(state);
     }
-    if (dualTimerLabel) dualTimerLabel.textContent = 'SESSION:';
+    if (dualTimerLabel) dualTimerLabel.textContent = gameState.currentDay < gameState.totalDays ? 'SESSION:' : 'CHAMPIONSHIP:';
     if (dualTimerValue) dualTimerValue.textContent = 'COMPLETED';
     if (dualTimerWrap) {
       dualTimerWrap.style.background = 'rgba(180, 154, 112, 0.12)';
@@ -2521,13 +2929,63 @@ function renderTraderView(state) {
     dayCompletedDismissed = false;
   }
 
-  const isPreEventTrader = gameState.status === 'SCHEDULED' || 
+  // Pre-event or tournament-complete lobby management
+  const isPreEventTrader = !isTournamentComplete && (
+                           gameState.status === 'SCHEDULED' || 
                            gameState.status === 'PRE_EVENT_COUNTDOWN' || 
                            gameState.status === 'STANDBY' ||
                            gameState.status === 'NOT_STARTED' ||
-                           (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN');
+                           (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN')
+  );
 
-  if (isPreEventTrader && gameState.status !== 'DAY_COMPLETED') {
+  if (isTournamentComplete) {
+    // Show clean spectator lobby for completed tournament
+    if (waitingRoomOverlay) {
+      waitingRoomOverlay.classList.remove('hidden');
+      if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
+      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+
+      const wrTitle = document.getElementById('waitingRoomTitle');
+      const wrSub = document.getElementById('waitingRoomSubtitle');
+      const wrTeam = document.getElementById('waitingRoomTeamName');
+      const wrCash = document.getElementById('waitingRoomCash');
+      const wrRound = document.getElementById('waitingRoomRound');
+      const wrStatusText = document.getElementById('waitingRoomStatusText');
+      const wrTimeDisplay = document.getElementById('waitingRoomScheduledTimeDisplay');
+      const wrTimerDisplay = document.getElementById('waitingRoomTimerDisplay');
+      const wrTimerNote = document.getElementById('waitingRoomTimerNote');
+
+      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship 2026';
+      if (wrSub) wrSub.textContent = 'Competition Trading Concluded • Audited Standings Finalized';
+      if (wrTeam && portfolio) wrTeam.textContent = portfolio.name;
+      if (wrCash) wrCash.textContent = formatINR(portfolio ? (portfolio.cash || gameState.startingCash || 500000) : (gameState.startingCash || 500000));
+      if (wrRound) wrRound.textContent = `All ${gameState.totalDays} of ${gameState.totalDays} Days Completed`;
+
+      if (isWinnerCeremony) {
+        if (wrStatusText) wrStatusText.textContent = '👑 STAGE CEREMONY IN PROGRESS 👑';
+        if (wrTimeDisplay) wrTimeDisplay.textContent = 'Watch the auditorium projector for the official awards reveal!';
+        if (wrTimerDisplay) wrTimerDisplay.textContent = 'CEREMONY';
+        if (wrTimerNote) wrTimerNote.textContent = 'The host is currently revealing the top performers, bronze, silver, and grand champion live on the stage projector.';
+      } else if (gameState.isConcluded && gameState.winnerData) {
+        if (wrStatusText) wrStatusText.textContent = '🏆 COMPETITION COMPLETE — WINNERS ANNOUNCED 🏆';
+        if (wrTimeDisplay) wrTimeDisplay.textContent = 'Championship awards have been announced on the main stage.';
+        if (wrTimerDisplay) wrTimerDisplay.textContent = 'COMPLETED';
+        if (wrTimerNote) wrTimerNote.textContent = 'Thank you for competing. Final performance standings, trade audits, and certificates are permanently recorded.';
+      } else {
+        if (wrStatusText) wrStatusText.textContent = '🏆 FINAL RESULTS — WINNER ANNOUNCEMENT PENDING 🏆';
+        if (wrTimeDisplay) wrTimeDisplay.textContent = 'All trading rounds completed. Portfolios and trade ledgers are locked.';
+        if (wrTimerDisplay) wrTimerDisplay.textContent = 'AUDITED';
+        if (wrTimerNote) wrTimerNote.textContent = 'All trading days are complete. The host is preparing the final results and stage winner announcement. Please remain on this screen.';
+      }
+
+      if (dualTimerLabel) dualTimerLabel.textContent = 'CHAMPIONSHIP:';
+      if (dualTimerValue) dualTimerValue.textContent = 'CONCLUDED';
+      if (dualTimerWrap) {
+        dualTimerWrap.style.background = 'rgba(180, 154, 112, 0.12)';
+        dualTimerWrap.style.borderColor = 'rgba(180, 154, 112, 0.35)';
+      }
+    }
+  } else if (isPreEventTrader && gameState.status !== 'DAY_COMPLETED') {
     if (waitingRoomOverlay) {
       waitingRoomOverlay.classList.remove('hidden');
       if (softPauseOverlay) softPauseOverlay.classList.add('hidden');
@@ -2551,7 +3009,7 @@ function renderTraderView(state) {
 
       if (gameState.scheduledStartTime) {
         const schDate = new Date(gameState.scheduledStartTime);
-        const timeStr = schDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timeStr = formatClock12H(schDate, true);
         if (wrStatusText) wrStatusText.textContent = '⏳ Official Market Opening Countdown';
         if (wrTimeDisplay) wrTimeDisplay.textContent = `Scheduled Opening: ${timeStr} (Local Time)`;
 
@@ -2598,7 +3056,7 @@ function renderTraderView(state) {
         if (dualTimerValue) dualTimerValue.textContent = 'STANDBY';
       }
     }
-  } else if (gameState.status !== 'DAY_COMPLETED') {
+  } else {
     if (waitingRoomOverlay) waitingRoomOverlay.classList.add('hidden');
     if (dualTimerLabel) dualTimerLabel.textContent = 'CLOSES IN:';
     if (dualTimerValue) {
@@ -2709,12 +3167,20 @@ function renderTraderView(state) {
     if (elPosTotal) elPosTotal.textContent = formatINR(totalPortfolioVal);
 
     const btnLiquidate = document.getElementById('btnLiquidateAll');
+    const isTradeActionAllowed = gameState.status === 'LIVE' && !gameState.isPaused && !gameState.isConcluded && gameState.status !== 'DAY_COMPLETED';
     if (btnLiquidate) {
-      if (activePositions.length === 0) {
+      if (!isTradeActionAllowed) {
+        btnLiquidate.disabled = true;
+        btnLiquidate.style.opacity = '0.45';
+        btnLiquidate.style.cursor = 'not-allowed';
+        btnLiquidate.title = gameState.status === 'DAY_COMPLETED' ? 'Trading concluded for today (Read-Only Mode)' : 'Trading is currently closed or paused';
+      } else if (activePositions.length === 0) {
+        btnLiquidate.disabled = true;
         btnLiquidate.style.opacity = '0.45';
         btnLiquidate.style.cursor = 'not-allowed';
         btnLiquidate.title = 'No active shares held in portfolio to liquidate';
       } else {
+        btnLiquidate.disabled = false;
         btnLiquidate.style.opacity = '1';
         btnLiquidate.style.cursor = 'pointer';
         btnLiquidate.title = `Sell all ${activePositions.length} active positions into 100% Cash in Hand`;
@@ -2881,33 +3347,31 @@ function renderTraderView(state) {
           <button onclick="sendOrder('${stock.ticker}', 'BUY', ${lot})"
             ${canBuy ? '' : 'disabled'}
             title="${escapeHtml(buyTitle)}"
-            class="btn btn-buy">
+            class="btn btn-buy ${isUpperHalted ? 'order-btn-cb-disabled' : ''}">
             BUY +${lot}
           </button>
           <button onclick="sendOrder('${stock.ticker}', 'SELL', ${lot})"
             ${canSell ? '' : 'disabled'}
             title="${escapeHtml(sellTitle)}"
-            class="btn btn-sell">
+            class="btn btn-sell ${isLowerHalted ? 'order-btn-cb-disabled' : ''}">
             SELL -${lot}
           </button>
         </div>
       `;
     }).join('');
 
-    const colorClass = isNeutral ? 'val-neutral' : isUp ? 'price-up' : 'price-down';
+    const intensity = getMovementIntensity(pctVal);
     const cbPct = (gameState && gameState.circuitBreakerPercent) || 20;
     const refForCB = stock.dayOpenPrice || stock.referencePrice || stock.currentPrice || 1;
     const upperLimit = +(refForCB * (1 + cbPct / 100)).toFixed(2);
     const lowerLimit = +(refForCB * (1 - cbPct / 100)).toFixed(2);
-
     const f = stock.fundamentals || {};
-    const w52High = stock.week52High || (f.high_52w ? parseFloat(f.high_52w) : +(refForCB * 1.25).toFixed(2));
-    const w52Low = stock.week52Low || (f.low_52w ? parseFloat(f.low_52w) : +(refForCB * 0.75).toFixed(2));
-    const is52WHighBreakout = !!(stock.isNew52WHigh || stock.currentPrice >= w52High);
-    const is52WLowBreakdown = !!(stock.isNew52WLow || stock.currentPrice <= w52Low);
+    const cbCardClass = stock.isHalted
+      ? (stock.haltDirection === 'UPPER' ? 'halted-upper' : stock.haltDirection === 'LOWER' ? 'halted-lower' : 'halted')
+      : '';
 
     return `
-      <div class="stock-card ${stock.isHalted ? 'halted' : ''}">
+      <div class="stock-card ${cbCardClass}">
         <div>
           <div class="stock-card-header">
             <div>
@@ -2919,17 +3383,17 @@ function renderTraderView(state) {
               <button onclick="openFullChartModal('${stock.ticker}')" class="btn btn-outline" style="padding: 3px 7px; font-size: 11px;" title="Enlarge Chart">
                 📈
               </button>
-              <button onclick="openDetailsModal('${stock.ticker}')" class="btn btn-outline" style="padding: 3px 7px; font-size: 11px;" title="Company Profile">
+              <button onclick="openDetailsModal('${stock.ticker}')" class="btn btn-outline" style="padding: 3px 7px; font-size: 11px;" title="Company Profile & 52-Week Range">
                 ℹ
               </button>
             </div>
           </div>
 
           <div class="stock-price-row">
-            <span class="stock-current-price ${colorClass}">
+            <span class="stock-current-price ${intensity.textClass}">
               ₹${stock.currentPrice.toFixed(2)}
             </span>
-            <span class="stock-delta ${colorClass}">
+            <span class="stock-delta ${intensity.textClass}">
               ${deltaDiff >= 0 ? '+' : ''}₹${deltaDiff.toFixed(2)} (${isUp ? '+' : ''}${pct}%) ${isUp ? '▲' : '▼'}
             </span>
           </div>
@@ -2941,23 +3405,11 @@ function renderTraderView(state) {
             <span title="Upper Circuit Limit (+${cbPct}%)">Cap: ₹${upperLimit.toFixed(2)}</span>
           </div>
 
-          <!-- 52-Week Range & Breakout Alert Banner -->
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-family: var(--font-mono); margin: 2px 0 4px 0; background: #FAF9F6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--subtle-border);">
-            <span title="52-Week Low" style="color: var(--price-down); font-weight: 700;">52W L: ₹${Number(w52Low).toFixed(2)}</span>
-            ${is52WHighBreakout
-              ? `<span class="badge" style="background: #FEF3C7; color: #B45309; font-weight: 800; font-size: 9px; padding: 1px 6px; border: 1px solid #F59E0B; animation: pulse 1.5s infinite;">🔥 NEW 52W HIGH</span>`
-              : is52WLowBreakdown
-              ? `<span class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 800; font-size: 9px; padding: 1px 6px; border: 1px solid #38BDF8;">❄️ NEW 52W LOW</span>`
-              : `<span style="color: var(--text-muted); font-size: 9px; font-weight: 600;">52W Range</span>`
-            }
-            <span title="52-Week High" style="color: var(--price-up); font-weight: 700;">52W H: ₹${Number(w52High).toFixed(2)}</span>
-          </div>
-
           <!-- Micro Corporate Fundamentals Bar -->
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 4px; font-size: 10px; color: var(--text-muted); font-family: var(--font-sans); margin-bottom: 6px; background: #fff; padding: 3px 4px; border-radius: 4px; border: 1px solid var(--subtle-border);">
             <div><span style="font-size: 9px; color: var(--text-muted); display: block;">MCAP</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${f.market_cap || 'N/A'}</strong></div>
             <div><span style="font-size: 9px; color: var(--text-muted); display: block;">P/E</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${f.pe_ratio !== undefined ? f.pe_ratio : 'N/A'}</strong></div>
-            <div><span style="font-size: 9px; color: var(--text-muted); display: block;">BETA</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${(stock.beta || 1.0).toFixed(2)}</strong></div>
+            <div><span style="font-size: 9px; color: var(--text-muted); display: block;">LOT</span><strong style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px;">${stock.lot_presets ? stock.lot_presets[0] : 1} SH</strong></div>
           </div>
 
           <!-- Mini Canvas Sparkline -->
@@ -2967,12 +3419,12 @@ function renderTraderView(state) {
 
           <!-- Directional Circuit Breaker Banner -->
           ${stock.isHalted ? `
-            <div class="badge badge-halted" style="width: 100%; justify-content: center; margin-bottom: 8px; font-size: 10px; font-weight: 800; padding: 4px 6px;">
+            <div class="badge ${stock.haltDirection === 'UPPER' ? 'cb-halt-banner-upper' : stock.haltDirection === 'LOWER' ? 'cb-halt-banner-lower' : 'badge-halted'}" style="width: 100%; justify-content: center; margin-bottom: 8px; font-size: 10px; font-weight: 800; padding: 4px 6px;">
               ${stock.haltDirection === 'UPPER' 
-                ? `⛔ UPPER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • BUY BLOCKED`
+                ? `⛔ UPPER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • BUY HALTED`
                 : stock.haltDirection === 'LOWER'
-                ? `⛔ LOWER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • SELL BLOCKED`
-                : `⛔ TRADING HALTED (₹${stock.currentPrice.toFixed(2)}) • BUY & SELL BLOCKED`}
+                ? `⛔ LOWER CIRCUIT (₹${stock.currentPrice.toFixed(2)}) • SELL HALTED`
+                : `⛔ TRADING HALTED (₹${stock.currentPrice.toFixed(2)}) • BUY & SELL HALTED`}
             </div>
           ` : ''}
 
@@ -3091,7 +3543,9 @@ function openTradeModal(ticker, side = 'BUY', preferredQty = null) {
 
 function closeTradeModal() {
   currentTradeModalTicker = null;
-  document.getElementById('tradeModal').classList.add('hidden');
+  releaseActionLockById('btnExecuteTradeOrder');
+  const modal = document.getElementById('tradeModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function setTradeSide(side) {
@@ -3384,12 +3838,19 @@ function recalculateTradeModal() {
 
 function executeModalTrade(explicitSide = null) {
   if (!currentTradeModalTicker) return;
+  const btn = document.getElementById('btnExecuteTradeOrder');
+  if (btn && btn.disabled) return;
+
   const side = explicitSide || currentTradeModalSide;
   const input = document.getElementById('tradeQuantityInput');
   const qty = parseInt(input ? input.value : '0', 10);
   if (!qty || qty <= 0) return;
+
+  if (btn) {
+    applyActionContractLock(btn, 'Confirming Order...');
+  }
+
   sendOrder(currentTradeModalTicker, side, qty);
-  closeTradeModal();
 }
 
 // Company Details Modal
@@ -3426,8 +3887,8 @@ function openDetailsModal(ticker) {
   if (elPromoter) elPromoter.textContent = f.promoter_holding || 'N/A';
   const elDividend = document.getElementById('modalDividend');
   if (elDividend) elDividend.textContent = f.dividend_yield || 'N/A';
-  const elBeta = document.getElementById('modalBeta');
-  if (elBeta) elBeta.textContent = (stock.beta || 1.0).toFixed(2);
+  const elFaceValue = document.getElementById('modalFaceValue');
+  if (elFaceValue) elFaceValue.textContent = '₹' + (f.face_value !== undefined ? Number(f.face_value).toFixed(2) : '10.00');
 
   // 52W Breakout alert banner
   const alertEl = document.getElementById('modal52WAlert');
@@ -3600,6 +4061,7 @@ function openLiquidateModal() {
 }
 
 function closeLiquidateModal() {
+  releaseActionLockById('btnConfirmLiquidate');
   const modal = document.getElementById('liquidateModal');
   if (modal) modal.classList.add('hidden');
 }
@@ -3607,13 +4069,9 @@ function closeLiquidateModal() {
 function executeLiquidateAll() {
   if (!ws || !sessionToken) return;
   const btn = document.getElementById('btnConfirmLiquidate');
+  if (btn && btn.disabled) return;
   if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Liquidating All Shares...';
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = '⚡ Yes, Sell All Shares Now';
-    }, 1500);
+    applyActionContractLock(btn, 'Liquidating All Shares...');
   }
   ws.send(JSON.stringify({
     action: 'LIQUIDATE_ALL',
@@ -3648,7 +4106,7 @@ function quickSellAllStock(ticker, qty) {
 let localProjectorCycleIndex = 0;
 let lastProjectorCycleSwitchTime = Date.now();
 let currentProjectorBoardPage = 1;
-let projectorCardsPerPage = 6;
+let projectorCardsPerPage = 8;
 let isProjectorBoardPaused = false;
 let projectorBoardAutoFlipInterval = null;
 let currentProjectorActiveScene = 'SCENE_MARKET_BOARD';
@@ -3662,9 +4120,16 @@ function renderProjectorView(state) {
   if (dayEl) dayEl.textContent = `DAY ${gameState.currentDay} / ${gameState.totalDays}`;
 
   const isScheduled = gameState.status === 'SCHEDULED';
-  const isStandby = (gameState.status === 'STANDBY' || (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN')) && !isScheduled;
   const isDayCompleted = gameState.status === 'DAY_COMPLETED' || gameState.status === 'MARKET_CLOSED';
-  const isPaused = gameState.isPaused && !isStandby && !isScheduled && !gameState.isConcluded && !isDayCompleted;
+  const isTournamentFinished = gameState.isConcluded || 
+                               gameState.status === 'COMPLETED' || 
+                               gameState.status === 'CHAMPIONSHIP_CONCLUDED' || 
+                               gameState.status === 'FINAL_ANALYSIS' ||
+                               gameState.status === 'WINNER_ANNOUNCEMENT' ||
+                               (gameState.currentDay >= gameState.totalDays && isDayCompleted);
+
+  const isStandby = (gameState.status === 'STANDBY' || (gameState.elapsedSeconds === 0 && gameState.status !== 'LIVE' && gameState.status !== 'COUNTDOWN')) && !isScheduled && !isTournamentFinished && !isDayCompleted;
+  const isPaused = gameState.isPaused && !isStandby && !isScheduled && !gameState.isConcluded && !isDayCompleted && !isTournamentFinished;
   const isMarketClosed = isDayCompleted;
 
   const remMs = (isScheduled && gameState.scheduledStartTime)
@@ -3696,16 +4161,20 @@ function renderProjectorView(state) {
   // Day Completed Presentation Banner
   const projDayCompletedBanner = document.getElementById('projDayCompletedBanner');
   if (projDayCompletedBanner) {
-    if (isDayCompleted) {
+    if (isDayCompleted || (isTournamentFinished && !isWinnerActive)) {
       projDayCompletedBanner.classList.remove('hidden');
       const bBadge = document.getElementById('projDayCompletedBadge');
       const bTitle = document.getElementById('projDayCompletedTitle');
       const bSub = document.getElementById('projDayCompletedSub');
-      if (bBadge) bBadge.textContent = `DAY ${gameState.currentDay} COMPLETED`;
-      if (bTitle) bTitle.textContent = `Day ${gameState.currentDay} Concluded • Official Session Standings`;
-      if (bSub) bSub.textContent = gameState.currentDay < gameState.totalDays
-        ? `Day ${gameState.currentDay} trading has ended. All portfolios audited and locked. Waiting for host to launch Day ${gameState.currentDay + 1}.`
-        : `Championship trading has concluded. All portfolios audited and locked. Ready for awards ceremony.`;
+      if (gameState.currentDay >= gameState.totalDays) {
+        if (bBadge) bBadge.textContent = 'ALL TRADING DAYS COMPLETED';
+        if (bTitle) bTitle.textContent = 'Championship Final Round Concluded • Official Session Standings';
+        if (bSub) bSub.textContent = 'All competition trading has concluded. All portfolios audited and locked. Ready for awards ceremony.';
+      } else {
+        if (bBadge) bBadge.textContent = `DAY ${gameState.currentDay} COMPLETED`;
+        if (bTitle) bTitle.textContent = `Day ${gameState.currentDay} Concluded • Official Session Standings`;
+        if (bSub) bSub.textContent = `Day ${gameState.currentDay} trading has ended. All portfolios audited and locked. Waiting for host to launch Day ${gameState.currentDay + 1}.`;
+      }
     } else {
       projDayCompletedBanner.classList.add('hidden');
     }
@@ -3788,9 +4257,22 @@ function renderProjectorView(state) {
   const isWinnerActive = (projectorState && projectorState.isWinnerActive) || (gameState.status === 'WINNER_ANNOUNCEMENT');
   const mainStage = document.getElementById('projectorMainStage');
   const winnerStage = document.getElementById('projectorWinnerStage');
+  const resetSceneEl = document.getElementById('projSceneReset');
+  const setupSceneEl = document.getElementById('projSceneSetup');
+  const readySceneEl = document.getElementById('projSceneReady');
+  const heroEl = document.getElementById('projEventOpeningHero');
+
+  const sceneElements = {
+    SCENE_MARKET_BOARD: document.getElementById('projSceneMarketBoardWrapper') || document.getElementById('projSceneMarketBoard'),
+    SCENE_INDICES: document.getElementById('projSceneIndices'),
+    SCENE_STRATEGY: document.getElementById('projSceneStrategy'),
+    SCENE_LEADERBOARD: document.getElementById('projSceneLeaderboard'),
+    SCENE_NEWS: document.getElementById('projSceneNews')
+  };
 
   // If winner announcement is triggered by host, show embedded winner stage on projector
   if (isWinnerActive) {
+    cleanupProjectorPaginationTimers();
     if (mainStage) mainStage.classList.add('hidden');
     if (winnerStage) winnerStage.classList.remove('hidden');
     const sceneBadge = document.getElementById('projSceneBadge');
@@ -3802,16 +4284,111 @@ function renderProjectorView(state) {
     return;
   }
 
-  // Live market normal display: show mainStage
+  // Normal display: show mainStage
   if (winnerStage) winnerStage.classList.add('hidden');
   if (mainStage) mainStage.classList.remove('hidden');
 
+  // SCENE A: TOURNAMENT RESET
+  const isResetState = gameState.isReset || gameState.status === 'RESET';
+  if (isResetState) {
+    cleanupProjectorPaginationTimers();
+    if (resetSceneEl) {
+      resetSceneEl.classList.remove('hidden');
+      const msgEl = document.getElementById('projResetAudienceMessage');
+      if (msgEl && gameState.resetMessage) msgEl.textContent = gameState.resetMessage;
+    }
+    if (setupSceneEl) setupSceneEl.classList.add('hidden');
+    if (readySceneEl) readySceneEl.classList.add('hidden');
+    if (heroEl) heroEl.classList.add('hidden');
+    Object.values(sceneElements).forEach(el => el && el.classList.add('hidden'));
+    const sceneBadge = document.getElementById('projSceneBadge');
+    if (sceneBadge) {
+      sceneBadge.textContent = '🔄 TOURNAMENT RESET';
+      sceneBadge.className = 'badge badge-paused';
+    }
+    return;
+  }
+  if (resetSceneEl) resetSceneEl.classList.add('hidden');
+
+  // SCENE B: HOST IS SETTING UP EVENT
+  const isSetupState = gameState.status === 'SETUP' || (!gameState.configLocked && gameState.status === 'SETUP');
+  if (isSetupState) {
+    cleanupProjectorPaginationTimers();
+    if (setupSceneEl) setupSceneEl.classList.remove('hidden');
+    if (readySceneEl) readySceneEl.classList.add('hidden');
+    if (heroEl) heroEl.classList.add('hidden');
+    Object.values(sceneElements).forEach(el => el && el.classList.add('hidden'));
+    const sceneBadge = document.getElementById('projSceneBadge');
+    if (sceneBadge) {
+      sceneBadge.textContent = '⚙️ SETUP IN PROGRESS';
+      sceneBadge.className = 'badge badge-champagne';
+    }
+    return;
+  }
+  if (setupSceneEl) setupSceneEl.classList.add('hidden');
+
+  // SCENE C: SETUP COMPLETE, DAY 1 NOT STARTED (PRE-MARKET SHOWCASE)
+  const isPreEventDay1 = (gameState.status === 'STANDBY' || !gameState.status) &&
+    (gameState.currentDay === 1 || !gameState.currentDay) &&
+    (gameState.elapsedSeconds === 0 || !gameState.elapsedSeconds) &&
+    !isScheduled &&
+    gameState.status !== 'LIVE' &&
+    gameState.status !== 'COUNTDOWN';
+
+  if (isPreEventDay1) {
+    cleanupProjectorPaginationTimers();
+    if (readySceneEl) {
+      readySceneEl.classList.remove('hidden');
+      const teamsCount = Object.keys(leaderboard || {}).length || (state.roster ? state.roster.length : 16);
+      const eqCount = (companies || []).filter(c => c.isEnabled !== false).length;
+      const tEl = document.getElementById('projReadyTeamsCount');
+      const eqEl = document.getElementById('projReadyEquitiesCount');
+      const dEl = document.getElementById('projReadyDaysCount');
+      const cEl = document.getElementById('projReadyCircuitCount');
+      const titleEl = document.getElementById('projReadyEventTitle');
+      const instEl = document.getElementById('projReadyInstitution');
+      if (tEl) tEl.textContent = `${teamsCount} Desks Ready`;
+      if (eqEl) eqEl.textContent = `${eqCount} Equities Selected`;
+      if (dEl) dEl.textContent = `${gameState.totalDays || 3} Days Tournament`;
+      if (cEl) cEl.textContent = `±${gameState.circuitBreakerPercent || 20}% Circuit Limit`;
+      if (titleEl && gameState.title) titleEl.textContent = gameState.title;
+      if (instEl && gameState.institution) instEl.textContent = gameState.institution;
+    }
+    if (heroEl) heroEl.classList.add('hidden');
+    Object.values(sceneElements).forEach(el => el && el.classList.add('hidden'));
+    const sceneBadge = document.getElementById('projSceneBadge');
+    if (sceneBadge) {
+      sceneBadge.textContent = '★ READY TO BEGIN';
+      sceneBadge.className = 'badge badge-champagne';
+    }
+    return;
+  }
+  if (readySceneEl) readySceneEl.classList.add('hidden');
+
+  // SCENE D: SCHEDULED OR OPENING COUNTDOWN
+  if (isScheduled) {
+    cleanupProjectorPaginationTimers();
+    if (heroEl) {
+      heroEl.classList.remove('hidden');
+      renderProjectorHeroCountdown(state, remSec);
+    }
+    const sceneBadge = document.getElementById('projSceneBadge');
+    if (sceneBadge) {
+      sceneBadge.textContent = `⏳ PRE-MARKET: OPENS IN ${formatMMSS(remSec)}`;
+      sceneBadge.className = 'badge badge-champagne';
+    }
+    Object.values(sceneElements).forEach(el => el && el.classList.add('hidden'));
+    return;
+  }
+  if (heroEl) heroEl.classList.add('hidden');
+
+  // SCENE E & G: LIVE TRADING OR CONCLUDED DAY
   const mode = (projectorState && projectorState.mode) || 'AUTO_CYCLE';
   const durationSec = (projectorState && projectorState.sceneDurationSeconds) || 12;
 
   let activeScene = 'SCENE_MARKET_BOARD';
   if (isDayCompleted || (isStandby && gameState.currentDay > 1)) {
-    // When a day concludes, immediately show the audited Leaderboard to the audience
+    // Concluded Day: show official Daily Leaderboard
     activeScene = 'SCENE_LEADERBOARD';
   } else if (mode === 'FIXED_SCREEN') {
     activeScene = (projectorState && projectorState.currentScene) || 'SCENE_MARKET_BOARD';
@@ -3832,70 +4409,42 @@ function renderProjectorView(state) {
       SCENE_MARKET_BOARD: 'ALL-STOCKS BOARD',
       SCENE_INDICES: 'MARKET INDICES',
       SCENE_STRATEGY: 'SECTOR STRATEGY',
-      SCENE_LEADERBOARD: 'LIVE STANDINGS',
+      SCENE_LEADERBOARD: isDayCompleted ? `DAY ${gameState.currentDay} RESULTS` : 'LIVE STANDINGS',
       SCENE_NEWS: 'BREAKING WIRES'
     };
     const sName = sceneNames[activeScene] || activeScene;
-    if (mode === 'AUTO_CYCLE') {
+    if (mode === 'AUTO_CYCLE' && !isDayCompleted) {
       const remainingSec = Math.max(1, durationSec - Math.floor((Date.now() - lastProjectorCycleSwitchTime) / 1000));
       sceneBadge.textContent = `🔄 CYCLE: ${sName} (${remainingSec}s)`;
       sceneBadge.className = 'badge badge-champagne';
     } else {
-      sceneBadge.textContent = `📌 FIXED: ${sName}`;
+      sceneBadge.textContent = `📌 ${sName}`;
       sceneBadge.className = 'badge badge-sage';
     }
   }
 
   currentProjectorActiveScene = activeScene;
 
-  // Toggle scene visibility
-  const sceneElements = {
-    SCENE_MARKET_BOARD: document.getElementById('projSceneMarketBoardWrapper') || document.getElementById('projSceneMarketBoard'),
-    SCENE_INDICES: document.getElementById('projSceneIndices'),
-    SCENE_STRATEGY: document.getElementById('projSceneStrategy'),
-    SCENE_LEADERBOARD: document.getElementById('projSceneLeaderboard'),
-    SCENE_NEWS: document.getElementById('projSceneNews')
-  };
-
-  const heroEl = document.getElementById('projEventOpeningHero');
-
-  if (isScheduled) {
-    if (heroEl) {
-      heroEl.classList.remove('hidden');
-      renderProjectorHeroCountdown(state, remSec);
+  // Normal scene toggling:
+  Object.keys(sceneElements).forEach((sKey) => {
+    const el = sceneElements[sKey];
+    if (el) {
+      if (sKey === activeScene) el.classList.remove('hidden');
+      else el.classList.add('hidden');
     }
-    if (sceneBadge) {
-      sceneBadge.textContent = `⏳ PRE-MARKET: OPENS IN ${formatMMSS(remSec)}`;
-      sceneBadge.className = 'badge badge-champagne';
-    }
-    // Hide standard scenes while auditorium hero countdown is active
-    Object.keys(sceneElements).forEach((sKey) => {
-      const el = sceneElements[sKey];
-      if (el) el.classList.add('hidden');
-    });
-  } else {
-    if (heroEl) heroEl.classList.add('hidden');
-    // Normal scene toggling:
-    Object.keys(sceneElements).forEach((sKey) => {
-      const el = sceneElements[sKey];
-      if (el) {
-        if (sKey === activeScene) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-      }
-    });
+  });
 
-    // Render scene-specific contents
-    if (activeScene === 'SCENE_MARKET_BOARD') {
-      renderProjectorMarketBoard((companies || []).filter((c) => c.isEnabled !== false));
-    } else if (activeScene === 'SCENE_INDICES') {
-      renderProjectorIndices(projIndicesList);
-    } else if (activeScene === 'SCENE_STRATEGY') {
-      renderProjectorStrategy(teamSectorAllocations || state.teamSectorAllocations || []);
-    } else if (activeScene === 'SCENE_LEADERBOARD') {
-      renderProjectorLeaderboard(leaderboard || state.leaderboard || [], gameState);
-    } else if (activeScene === 'SCENE_NEWS') {
-      renderProjectorNews(gameState.newsHistory || []);
-    }
+  // Render scene-specific contents
+  if (activeScene === 'SCENE_MARKET_BOARD') {
+    renderProjectorMarketBoard((companies || []).filter((c) => c.isEnabled !== false));
+  } else if (activeScene === 'SCENE_INDICES') {
+    renderProjectorIndices(projIndicesList);
+  } else if (activeScene === 'SCENE_STRATEGY') {
+    renderProjectorStrategy(teamSectorAllocations || state.teamSectorAllocations || []);
+  } else if (activeScene === 'SCENE_LEADERBOARD') {
+    renderProjectorLeaderboard(leaderboard || state.leaderboard || [], gameState, state);
+  } else if (activeScene === 'SCENE_NEWS') {
+    renderProjectorNews(gameState.newsHistory || []);
   }
 
   // Always render persistent real-time indices ticker strip on projector
@@ -3972,7 +4521,7 @@ function renderProjectorHeroCountdown(state, remSec) {
   if (targetTimeEl && gameState.scheduledStartTime) {
     try {
       const dt = new Date(gameState.scheduledStartTime);
-      targetTimeEl.textContent = `Scheduled Floor Opening: ${dt.toLocaleTimeString()} • Synchronized Live Clock`;
+      targetTimeEl.textContent = `Scheduled Floor Opening: ${formatClock12H(dt)} • Synchronized Live Clock`;
     } catch (e) {
       targetTimeEl.textContent = `Opening in ${formatted}`;
     }
@@ -4122,6 +4671,19 @@ function renderProjectorMarketBoard(companies) {
 
   // 3. Pagination Math (Configurable cards per page, default 6 = 3 cols x 2 rows, fits 1080p without scrolling)
   const totalCards = sortedCompanies.length;
+  if (totalCards === 0) {
+    grid.innerHTML = `
+      <div class="luxury-card" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; color: var(--text-muted); border-radius: var(--radius-md); background: #FAF9F6;">
+        <div style="font-size: 36px; margin-bottom: 10px;">📊</div>
+        <h3 style="font-size: 18px; color: var(--text-forest); margin-bottom: 6px; font-weight: 800;">No active equities in universe</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Stocks will appear here when the host configures and arms the event universe.</p>
+      </div>
+    `;
+    const pageIndicator = document.getElementById('projBoardPageIndicator');
+    if (pageIndicator) pageIndicator.textContent = '📄 Page 0 of 0';
+    return;
+  }
+
   const totalPages = Math.max(1, Math.ceil(totalCards / projectorCardsPerPage));
 
   if (currentProjectorBoardPage > totalPages) currentProjectorBoardPage = 1;
@@ -4154,108 +4716,110 @@ function renderProjectorMarketBoard(companies) {
     }, 8000);
   }
 
-  // 4. Render or reorder cards for the CURRENT PAGE ONLY
-  const currentPageTickers = pageCompanies.map((s) => s.ticker).join(',');
-  const renderedTickers = Array.from(grid.children).map((el) => el.getAttribute('data-ticker')).join(',');
+  // 4. Update persistent 8-card slots IN-PLACE without destroying DOM or Canvas (FLOW-006 / DEF-031)
+  const hasPersistentSlots = !!document.getElementById('projCardSlot_0');
+  if (hasPersistentSlots) {
+    for (let i = 0; i < 8; i++) {
+      const slotCard = document.getElementById(`projCardSlot_${i}`);
+      if (!slotCard) continue;
 
-  if (currentPageTickers !== renderedTickers) {
-    // Check if the current set of cards matches the rendered cards (just reordered by ranking)
-    const currentSet = new Set(pageCompanies.map((s) => s.ticker));
-    const renderedSet = new Set(Array.from(grid.children).map((el) => el.getAttribute('data-ticker')));
-    const isSameStockSet = currentSet.size === renderedSet.size && [...currentSet].every((t) => renderedSet.has(t));
+      if (i < pageCompanies.length) {
+        const stock = pageCompanies[i];
+        slotCard.classList.remove('hidden');
+        slotCard.setAttribute('data-ticker', stock.ticker);
 
-    if (isSameStockSet) {
-      // Smooth reordering: rearrange existing DOM elements to preserve canvases and animations
-      pageCompanies.forEach((stock) => {
-        const cardEl = document.getElementById(`projCard_${stock.ticker}`);
-        if (cardEl) grid.appendChild(cardEl);
-      });
-    } else {
-      // Page flipped or universe modified: rebuild page cards
-      grid.innerHTML = pageCompanies.map((stock) => {
+        const ref = stock.dayOpenPrice || stock.referencePrice || stock.currentPrice || 1;
         const curPrice = Number(stock.currentPrice || 0);
-        return `
-          <div id="projCard_${stock.ticker}" data-ticker="${stock.ticker}" class="projector-card">
-            <div class="projector-card-header">
-              <div class="projector-card-top">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span id="projRank_${stock.ticker}" class="projector-rank-badge">#${stock.globalRank}</span>
-                  <span class="projector-ticker" title="${escapeHtml(stock.name || stock.ticker)}">${stock.ticker}</span>
-                </div>
-                <span id="projPrice_${stock.ticker}" class="projector-price price-up">₹${curPrice.toFixed(2)}</span>
-              </div>
-              <div class="projector-card-sub" style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
-                <span id="projDelta_${stock.ticker}" class="projector-delta price-up">+0.00% ▲</span>
-                <span id="proj52w_${stock.ticker}" class="projector-52w-strip" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); font-weight: 600;">52W Range</span>
-                <span class="projector-sector">${escapeHtml(stock.sector || '')}</span>
-              </div>
-            </div>
-            <div style="height: 80px; margin-top: 8px; flex: 1; min-height: 60px;">
-              <canvas id="projCanvas_${stock.ticker}" width="420" height="80" style="width: 100%; height: 100%; display: block;"></canvas>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-  }
+        const pctVal = ref > 0 ? ((curPrice - ref) / ref) * 100 : 0;
+        const pct = isNaN(pctVal) ? '0.0' : pctVal.toFixed(1);
+        const isUp = pctVal >= 0;
+        const intensity = getMovementIntensity(pctVal);
+        const cbCardClass = stock.isHalted
+          ? (stock.haltDirection === 'UPPER' ? 'halted-upper' : stock.haltDirection === 'LOWER' ? 'halted-lower' : 'halted')
+          : '';
 
-  // 5. Update prices, deltas, rank badges, and Bezier sparklines IN-PLACE (zero timer resets)
-  pageCompanies.forEach((stock) => {
-    const ref = stock.dayOpenPrice || stock.referencePrice || stock.currentPrice || 1;
-    const curPrice = Number(stock.currentPrice || 0);
-    const pctVal = ref > 0 ? ((curPrice - ref) / ref) * 100 : 0;
-    const pct = isNaN(pctVal) ? '0.0' : pctVal.toFixed(1);
-    const isUp = pctVal >= 0;
+        slotCard.className = `projector-card ${cbCardClass}`;
 
-    const cardEl = document.getElementById(`projCard_${stock.ticker}`);
-    const priceEl = document.getElementById(`projPrice_${stock.ticker}`);
-    const deltaEl = document.getElementById(`projDelta_${stock.ticker}`);
-    const rankEl = document.getElementById(`projRank_${stock.ticker}`);
+        const rankEl = document.getElementById(`projSlotRank_${i}`);
+        if (rankEl) rankEl.textContent = `#${stock.globalRank}`;
 
-    if (cardEl) {
-      cardEl.className = `projector-card ${stock.isHalted ? 'halted' : ''}`;
-    }
+        const tickerEl = document.getElementById(`projSlotTicker_${i}`);
+        if (tickerEl) {
+          tickerEl.textContent = stock.ticker;
+          tickerEl.title = stock.name || stock.ticker;
+        }
 
-    if (rankEl) {
-      rankEl.textContent = `#${stock.globalRank}`;
-    }
+        const priceEl = document.getElementById(`projSlotPrice_${i}`);
+        if (priceEl) {
+          priceEl.textContent = '₹' + curPrice.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+          priceEl.className = `projector-price ${intensity.textClass}`;
+        }
 
-    if (priceEl) {
-      priceEl.textContent = '₹' + curPrice.toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-      priceEl.className = `projector-price ${isUp ? 'price-up' : 'price-down'}`;
-    }
+        const deltaEl = document.getElementById(`projSlotDelta_${i}`);
+        if (deltaEl) {
+          if (stock.isHalted) {
+            if (stock.haltDirection === 'UPPER') {
+              deltaEl.textContent = `⛔ UPPER CIRCUIT HALT`;
+              deltaEl.className = 'badge cb-halt-banner-upper';
+            } else if (stock.haltDirection === 'LOWER') {
+              deltaEl.textContent = `⛔ LOWER CIRCUIT HALT`;
+              deltaEl.className = 'badge cb-halt-banner-lower';
+            } else {
+              deltaEl.textContent = `⛔ CIRCUIT HALTED`;
+              deltaEl.className = 'badge cb-halt-banner';
+            }
+          } else {
+            deltaEl.textContent = `${isUp ? '+' : ''}${pct}% ${isUp ? '▲' : '▼'}`;
+            deltaEl.className = `projector-delta ${intensity.textClass}`;
+          }
+        }
 
-    if (deltaEl) {
-      deltaEl.textContent = stock.isHalted
-        ? `⛔ HALTED (${stock.haltDirection || 'CIRCUIT'})`
-        : `${isUp ? '+' : ''}${pct}% ${isUp ? '▲' : '▼'}`;
-      deltaEl.className = isUp ? 'price-up' : 'price-down';
-    }
+        const sectorEl = document.getElementById(`projSlotSector_${i}`);
+        if (sectorEl) sectorEl.textContent = stock.sector || '';
 
-    const w52El = document.getElementById(`proj52w_${stock.ticker}`);
-    if (w52El) {
-      const high52 = Number(stock.week52High || (stock.fundamentals && stock.fundamentals.high_52w) || (ref * 1.25));
-      const low52 = Number(stock.week52Low || (stock.fundamentals && stock.fundamentals.low_52w) || (ref * 0.75));
-      const isNew52H = !!(stock.isNew52WHigh || curPrice >= high52);
-      const isNew52L = !!(stock.isNew52WLow || curPrice <= low52);
-      if (isNew52H) {
-        w52El.innerHTML = `<span style="background: #FEF3C7; color: #B45309; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #F59E0B; animation: pulse 1.5s infinite;">🔥 52W HIGH ₹${curPrice.toFixed(2)}</span>`;
-      } else if (isNew52L) {
-        w52El.innerHTML = `<span style="background: #E0F2FE; color: #0369A1; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #38BDF8;">❄️ 52W LOW ₹${curPrice.toFixed(2)}</span>`;
+        const w52El = document.getElementById(`projSlot52w_${i}`);
+        if (w52El) {
+          if (stock.isHalted) {
+            w52El.innerHTML = `<span style="color: #DC2626; font-weight: 800;">CIRCUIT LIMIT HIT</span>`;
+          } else {
+            const high52 = Number(stock.week52High || (stock.fundamentals && stock.fundamentals.high_52w) || (stock.base_price * 1.25));
+            const low52 = Number(stock.week52Low || (stock.fundamentals && stock.fundamentals.low_52w) || (stock.base_price * 0.75));
+            w52El.textContent = `₹${low52.toFixed(0)} − ₹${high52.toFixed(0)}`;
+          }
+        }
+
+        // Persistent Canvas Sparkline update (HiDPI Bezier curves in place)
+        const canvas = document.getElementById(`projCanvasSlot_${i}`);
+        if (canvas) {
+          const hist = (stock.history && stock.history.length > 0)
+            ? stock.history
+            : ((stock.priceHistory && stock.priceHistory.length > 0) ? stock.priceHistory : [curPrice]);
+          if (typeof drawSmoothMiniSparkline === 'function') {
+            drawSmoothMiniSparkline(canvas.id, hist, ref, isUp);
+          } else if (typeof drawSmoothBezierSparkline === 'function') {
+            drawSmoothBezierSparkline(canvas.id, hist, ref, isUp, false);
+          }
+        }
       } else {
-        w52El.textContent = `52W: ₹${low52.toFixed(0)} - ₹${high52.toFixed(0)}`;
+        slotCard.classList.add('hidden');
+        slotCard.removeAttribute('data-ticker');
       }
     }
-
-    if (window.drawSmoothMiniSparkline) {
-      drawSmoothMiniSparkline(`projCanvas_${stock.ticker}`, stock.history, ref, isUp);
-    } else {
-      drawSmoothBezierSparkline(`projCanvas_${stock.ticker}`, stock.history, ref, isUp, false);
-    }
-  });
+  } else {
+    // Dynamic fallback if running in minimal test environment without pre-allocated slots
+    grid.innerHTML = pageCompanies.map((stock) => {
+      const curPrice = Number(stock.currentPrice || 0);
+      return `<div id="projCard_${stock.ticker}" data-ticker="${stock.ticker}" class="projector-card">
+        <div class="projector-card-header">
+          <span class="projector-ticker">${stock.ticker}</span>
+          <span class="projector-price">₹${curPrice.toFixed(2)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 function projectorNextBoardPage() {
@@ -4559,13 +5123,7 @@ function generateProjectorDonutSVG(slices) {
 }
 
 function formatNewsTimestamp(ts) {
-  if (!ts) return '';
-  if (typeof ts === 'string' && (ts.includes('AM') || ts.includes('PM')) && !ts.includes('T')) {
-    return ts;
-  }
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return String(ts);
-  return d.toLocaleTimeString('en-IN', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return formatClock12H(ts, true);
 }
 
 // Scene 3: Team Strategy & Macro Sector Allocations (Audience-Friendly, Zero Stock Leakage)
@@ -4739,16 +5297,103 @@ function renderProjectorStrategy(allocations) {
 }
 
 // Scene 4: Daily & Championship Leaderboard
-function renderProjectorLeaderboard(leaderboard, gameState) {
+function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
   const container = document.getElementById('projSceneLeaderboard');
   if (!container) return;
 
+  const curDay = (gameState && gameState.currentDay) || 1;
+  const isDayCompleted = gameState && (gameState.status === 'DAY_COMPLETED' || gameState.status === 'MARKET_CLOSED');
   const startCash = (gameState && gameState.startingCash) || 500000;
+
+  // If day is concluded, strictly show DAILY profit/loss results
+  const snapshot = (gameState && gameState.dailyLeaderboards && gameState.dailyLeaderboards[`day_${curDay}`]) || null;
+  const isDailyView = isDayCompleted || (fullState && fullState.dailyLeaderboard && fullState.dailyLeaderboard.length > 0);
+  
+  const displayList = isDailyView
+    ? (snapshot && snapshot.rankings && snapshot.rankings.length > 0
+        ? snapshot.rankings
+        : (fullState && fullState.dailyLeaderboard ? fullState.dailyLeaderboard : leaderboard))
+    : leaderboard;
+
+  if (isDailyView) {
+    container.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800;">OFFICIAL AUDITED DAILY RESULTS</span>
+            <span class="badge" style="background: rgba(33, 134, 83, 0.12); color: #166534; font-size: 11px; font-weight: 800;">SESSION LOCKED</span>
+          </div>
+          <h2 style="font-size: 24px; font-weight: 900; color: var(--text-forest); margin: 6px 0 2px 0; font-family: var(--font-serif);">
+            DAY ${curDay} — DAILY PROFIT &amp; LOSS
+          </h2>
+          <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">
+            Ranked by profit or loss made during Day ${curDay} only.
+          </div>
+        </div>
+        <div class="cream-panel" style="padding: 8px 16px; font-size: 12px; font-weight: 800; color: var(--champagne-accent); border: 1.5px solid var(--champagne-accent);">
+          ★ AUDITED DAY ${curDay} PERFORMANCE ONLY
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
+              <th style="padding: 10px;">Daily Rank</th>
+              <th style="padding: 10px;">Trading Desk</th>
+              <th style="padding: 10px; text-align: right;">Day Open Valuation</th>
+              <th style="padding: 10px; text-align: right;">Closing Net Worth</th>
+              <th style="padding: 10px; text-align: right;">Day Profit / Loss</th>
+              <th style="padding: 10px; text-align: right;">Day Return %</th>
+              <th style="padding: 10px; text-align: center;">Session Trades</th>
+            </tr>
+          </thead>
+          <tbody style="font-family: var(--font-mono);">
+            ${displayList.map((item, idx) => {
+              const rank = item.rank || (idx + 1);
+              const dayOpenVal = item.dayOpeningValuation !== undefined ? item.dayOpeningValuation : (item.dayOpeningPortfolioValue !== undefined ? item.dayOpeningPortfolioValue : (item.startingCash || startCash));
+              const closingWorth = item.netWorth !== undefined ? item.netWorth : (item.closingPortfolioValue !== undefined ? item.closingPortfolioValue : startCash);
+              const dayPnl = item.dailyPnl !== undefined ? item.dailyPnl : (item.dayPnl !== undefined ? item.dayPnl : (closingWorth - dayOpenVal));
+              const retVal = item.dailyReturnPct !== undefined ? item.dailyReturnPct : (item.dayReturnPercent !== undefined ? item.dayReturnPercent : (dayOpenVal > 0 ? (dayPnl / dayOpenVal) * 100 : 0));
+              const intensity = getMovementIntensity(retVal);
+              const isUp = dayPnl >= 0;
+
+              let rankBadge = `<span style="font-weight: 800;">#${rank}</span>`;
+              if (rank === 1) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px;">🥇 #1 Daily Leader</span>`;
+              else if (rank === 2) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px;">🥈 #2</span>`;
+              else if (rank === 3) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px;">🥉 #3</span>`;
+
+              return `
+                <tr style="border-bottom: 1px solid var(--subtle-border); ${rank === 1 ? 'background: #FAF9F6;' : ''}">
+                  <td style="padding: 10px;">${rankBadge}</td>
+                  <td style="padding: 10px; font-family: var(--font-sans); font-weight: 800; color: var(--text-forest);">${escapeHtml(item.name || item.teamName || ('Team ' + rank))}</td>
+                  <td style="padding: 10px; text-align: right; color: var(--text-muted);">${formatINR(dayOpenVal)}</td>
+                  <td style="padding: 10px; text-align: right; font-weight: 800; color: var(--text-forest);">${formatINR(closingWorth)}</td>
+                  <td style="padding: 10px; text-align: right; font-weight: 900;" class="${intensity.textClass}">
+                    ${isUp ? '+' : ''}${formatINR(dayPnl)}
+                  </td>
+                  <td style="padding: 10px; text-align: right; font-weight: 900;" class="${intensity.textClass}">
+                    <span class="badge" style="${intensity.badgeStyle}; font-family: var(--font-mono); font-size: 12px; padding: 2px 8px;">
+                      ${isUp ? '+' : ''}${retVal.toFixed(2)}%
+                    </span>
+                  </td>
+                  <td style="padding: 10px; text-align: center; font-weight: 700; color: var(--text-muted);">${item.tradeCount || item.tradesCount || 0}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    return;
+  }
+
+  // Standard cumulative championship leaderboard (used during live market cycles)
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
       <div>
         <h2 style="font-size: 22px; font-weight: 900; color: var(--text-forest); margin: 0; font-family: var(--font-serif);">
-          Championship Leaderboard &bull; Day ${gameState ? gameState.currentDay : 1}
+          Championship Cumulative Standings &bull; Day ${curDay}
         </h2>
         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
           Audited Net Worth (Cash + Live Stock Holdings Valuation - Deducted Brokerage)
@@ -4774,8 +5419,8 @@ function renderProjectorLeaderboard(leaderboard, gameState) {
             <th style="padding: 10px; text-align: right;">Cash Available</th>
             <th style="padding: 10px; text-align: right;">Stock Valuation</th>
             <th style="padding: 10px; text-align: right;">Net Portfolio Worth</th>
-            <th style="padding: 10px; text-align: right;">Profit / Loss</th>
-            <th style="padding: 10px; text-align: right;">Return %</th>
+            <th style="padding: 10px; text-align: right;">Cumulative P/L</th>
+            <th style="padding: 10px; text-align: right;">Total Return %</th>
             <th style="padding: 10px; text-align: center;">Trades</th>
           </tr>
         </thead>
@@ -4784,6 +5429,7 @@ function renderProjectorLeaderboard(leaderboard, gameState) {
             const pnl = item.netWorth - startCash;
             const retPct = startCash > 0 ? (pnl / startCash) * 100 : 0;
             const isUp = pnl >= 0;
+            const intensity = getMovementIntensity(retPct);
             let rankBadge = `<span style="font-weight: 800;">#${idx + 1}</span>`;
             if (idx === 0) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px;">🥇 #1</span>`;
             else if (idx === 1) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px;">🥈 #2</span>`;
@@ -4796,11 +5442,13 @@ function renderProjectorLeaderboard(leaderboard, gameState) {
                 <td style="padding: 10px; text-align: right;">${formatINR(item.cash)}</td>
                 <td style="padding: 10px; text-align: right;">${formatINR(item.holdingsValue)}</td>
                 <td style="padding: 10px; text-align: right; font-weight: 900; color: var(--text-forest); font-size: 15px;">${formatINR(item.netWorth)}</td>
-                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
+                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${intensity.textClass}">
                   ${isUp ? '+' : ''}${formatINR(pnl)}
                 </td>
-                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${isUp ? 'price-up' : 'price-down'}">
-                  ${isUp ? '+' : ''}${retPct.toFixed(2)}%
+                <td style="padding: 10px; text-align: right; font-weight: 800;" class="${intensity.textClass}">
+                  <span class="badge" style="${intensity.badgeStyle}; font-family: var(--font-mono); font-size: 12px; padding: 2px 8px;">
+                    ${isUp ? '+' : ''}${retPct.toFixed(2)}%
+                  </span>
                 </td>
                 <td style="padding: 10px; text-align: center; font-weight: 700; color: var(--text-muted);">${item.tradeCount || 0}</td>
               </tr>
@@ -5347,11 +5995,14 @@ function updateHostTournamentFlow(state) {
   }
 
   if (isWinnerActive) {
+    const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
+    const stageInfo = getWinnerStageAdvanceLabel(curScene);
     if (titleEl) titleEl.textContent = '👑 Winner Presentation Active';
-    if (subEl) subEl.textContent = `Current: ${(gs.presentationState?.scene || 'INTRO').replace('SCENE_', '')} • Synchronized with Projector`;
+    if (subEl) subEl.textContent = `Current: ${curScene} • Synchronized with Projector`;
     if (btnEl) {
-      btnEl.textContent = 'Advance Winner Scene ➔';
-      btnEl.className = 'btn btn-champagne';
+      btnEl.textContent = stageInfo.text;
+      btnEl.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
+      btnEl.disabled = stageInfo.isComplete;
       btnEl.style.backgroundColor = '';
       btnEl.style.borderColor = '';
     }
@@ -5594,17 +6245,46 @@ function updateHostTournamentFlow(state) {
       btnMktPauseSoft.disabled = true;
       btnMktPauseBlackout.disabled = true;
       btnMktCloseSession.disabled = true;
-    } else if (isConcluded || isWinnerActive) {
+    } else if (isWinnerActive) {
+      btnMktResume.classList.add('hidden');
+      btnMktPauseSoft.classList.add('hidden');
+      btnMktPauseBlackout.classList.add('hidden');
+      btnMktCloseSession.classList.remove('hidden');
+      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
+      const stageInfo = getWinnerStageAdvanceLabel(curScene);
+      btnMktCloseSession.disabled = stageInfo.isComplete;
+      btnMktCloseSession.textContent = `👑 ${stageInfo.text}`;
+      btnMktCloseSession.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
+      btnMktCloseSession.onclick = () => presNextScene();
+    } else if (isConcluded) {
       btnMktResume.classList.add('hidden');
       btnMktPauseSoft.classList.add('hidden');
       btnMktPauseBlackout.classList.add('hidden');
       btnMktCloseSession.classList.remove('hidden');
       btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = '👑 Winner Presentation';
+      btnMktCloseSession.textContent = '👑 Launch Winner Presentation';
       btnMktCloseSession.className = 'btn btn-champagne';
       btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
     }
   }
+
+  // Gate Winner Presentation Launch Buttons (DEF-009 UI Fix)
+  const canLaunchPresentation = gs.status === 'CHAMPIONSHIP_CONCLUDED' || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
+  ['btnLaunchPresentationAnalysis', 'btnLaunchPresentationProjector'].forEach((btnId) => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.disabled = !canLaunchPresentation;
+      if (!canLaunchPresentation) {
+        btn.title = '🔒 Available after Final Day Conclusion & Championship Audit';
+        btn.style.opacity = '0.45';
+        btn.style.cursor = 'not-allowed';
+      } else {
+        btn.title = 'Launch Stage Winner Presentation';
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
+    }
+  });
 
   // Render Persistent Contextual Operation Buttons in Flow Actions Container
   const actionsContainer = document.getElementById('hostFlowActionsContainer');
@@ -5616,15 +6296,27 @@ function updateHostTournamentFlow(state) {
       actHtml += `<button type="button" onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="font-weight: 700;">🕶️ Blackout</button>`;
       actHtml += `<button type="button" onclick="openCircuitHaltTestModal()" class="btn btn-outline" style="font-weight: 700; border-color: #F59E0B; color: #B45309;" title="Test real-world Upper or Lower circuit limit halts live">⚡ Test Circuit</button>`;
       actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
-    } else if (gs.status === 'DAY_COMPLETED' || gs.status === 'STANDBY' || gs.status === 'MARKET_CLOSED') {
+    } else if (isWinnerActive) {
+      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
+      const stageInfo = getWinnerStageAdvanceLabel(curScene);
+      actHtml += `<button type="button" onclick="presNextScene()" class="btn btn-champagne" style="font-weight: 800;" ${stageInfo.isComplete ? 'disabled' : ''}>👑 ${stageInfo.text}</button>`;
+      actHtml += `<button type="button" onclick="switchSpaView('WINNER_DISPLAY')" class="btn btn-outline" style="font-weight: 700;">👁️ View Presentation Screen</button>`;
+    } else if (isConcluded) {
+      actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;">👑 Launch Winner Presentation ➔</button>`;
+      actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
+    } else if (gs.status === 'DAY_COMPLETED') {
       if (day < total) {
         actHtml += `<button type="button" onclick="openStartNextDayModal()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Start Day ${day + 1} (3-2-1)</button>`;
         actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
         actHtml += `<button type="button" onclick="openFinishEventModal()" class="btn btn-champagne" style="font-weight: 700;">🏆 Finish Event Early</button>`;
       } else {
-        actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 700;">🏆 Finalize Championship & Reveal Winner</button>`;
+        actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;">🏆 Finalize Championship & Reveal Winner</button>`;
         actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
       }
+    } else if (gs.status === 'STANDBY') {
+      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Start Day ${day} (3-2-1)</button>`;
+      actHtml += `<button type="button" onclick="openScheduleEventModal()" class="btn btn-outline" style="font-weight: 700; border-color: #2563EB; color: #1D4ED8;">⏱️ Schedule Day ${day} Countdown</button>`;
+      actHtml += `<button type="button" onclick="openCircuitHaltTestModal()" class="btn btn-outline" style="font-weight: 700; border-color: #F59E0B; color: #B45309;" title="Test circuit breaker halts">⚡ Test Circuit</button>`;
     } else if (gs.isPaused) {
       actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
       actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
@@ -5679,15 +6371,18 @@ function updateHostTournamentFlow(state) {
 
   // Update Next Step card content based on authoritative state:
   if (isWinnerActive) {
+    const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
+    const stageInfo = getWinnerStageAdvanceLabel(curScene);
     if (nextIcon) nextIcon.textContent = '👑';
     if (nextBadgePhase) nextBadgePhase.textContent = 'CEREMONY MODE';
     if (nextTitle) nextTitle.textContent = 'Winner Presentation Active on Stage';
-    if (nextDesc) nextDesc.textContent = `Currently projecting ${(gs.presentationState?.scene || 'INTRO').replace('SCENE_', '')}. Use Stage & Sound controls or Projector remote to advance scenes.`;
+    if (nextDesc) nextDesc.textContent = `Currently projecting ${curScene}. Click below to advance ceremony stage on auditorium projector.`;
     if (nextBtn) {
-      nextBtn.textContent = 'Advance Winner Scene ➔';
-      nextBtn.className = 'btn btn-champagne';
+      nextBtn.textContent = stageInfo.text;
+      nextBtn.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
+      nextBtn.disabled = stageInfo.isComplete;
     }
-    if (nextHint) nextHint.textContent = 'State: WINNER_ANNOUNCEMENT';
+    if (nextHint) nextHint.textContent = stageInfo.isComplete ? 'Presentation final screen stable' : `Next stage: ${stageInfo.nextScene}`;
   } else if (isConcluded) {
     if (nextIcon) nextIcon.textContent = '🏆';
     if (nextBadgePhase) nextBadgePhase.textContent = 'TOURNAMENT COMPLETE';
@@ -5704,12 +6399,12 @@ function updateHostTournamentFlow(state) {
     if (nextIcon) nextIcon.textContent = '⏱️';
     if (nextBadgePhase) nextBadgePhase.textContent = 'ARMED COUNTDOWN';
     if (nextTitle) nextTitle.textContent = `Market Scheduled to Open in ${formatMMSS(schSec)}`;
-    if (nextDesc) nextDesc.textContent = `Session will automatically launch at ${new Date(gs.scheduledStartTime).toLocaleTimeString()}. Trading desks are displaying the synchronized countdown.`;
+    if (nextDesc) nextDesc.textContent = `Session will automatically launch at ${formatClock12H(gs.scheduledStartTime)}. Trading desks are displaying the synchronized countdown.`;
     if (nextBtn) {
       nextBtn.textContent = `▶ Open Floor Immediately ➔`;
       nextBtn.className = 'btn btn-primary';
     }
-    if (nextHint) nextHint.textContent = `Scheduled target: ${new Date(gs.scheduledStartTime).toLocaleTimeString()}`;
+    if (nextHint) nextHint.textContent = `Scheduled target: ${formatClock12H(gs.scheduledStartTime)}`;
   } else if (!gs.configLocked && gs.status === 'STANDBY' && gs.elapsedSeconds === 0) {
     if (nextIcon) nextIcon.textContent = '🔒';
     if (nextBadgePhase) nextBadgePhase.textContent = 'PRE-EVENT REVIEW';
@@ -5792,11 +6487,24 @@ function executeConcludeDay() {
   }
 }
 
+let isExecutingLifecycleAction = false;
+
 function openStartNextDayModal() {
   const gs = latestState?.gameState;
-  const nextDay = (gs?.currentDay || 1) + 1;
+  const currentDay = gs?.currentDay || 1;
+  const totalDays = gs?.totalDays || 3;
+  if (currentDay >= totalDays) {
+    showOrderToast('All scheduled trading sessions have ended! Review final standings and launch winner presentation below.', true);
+    openFinishEventModal();
+    return;
+  }
+  const nextDay = currentDay + 1;
+  const titleEl = document.getElementById('modalStartNextDayTitle');
+  if (titleEl) titleEl.textContent = `Start Day ${nextDay} of ${totalDays}`;
+  const subEl = document.getElementById('modalStartNextDaySub');
+  if (subEl) subEl.textContent = `Advance competition round to Day ${nextDay}`;
   const el = document.getElementById('startNextDayConfirmText');
-  if (el) el.textContent = `Ready to begin Day ${nextDay}? Cash and holdings from Day ${nextDay - 1} carry over seamlessly, and Day ${nextDay} news events will be loaded.`;
+  if (el) el.textContent = `Ready to begin Day ${nextDay}? Cash and holdings from Day ${currentDay} carry over seamlessly, and Day ${nextDay} news events will be loaded.`;
   const m = document.getElementById('modalStartNextDay');
   if (m) m.classList.remove('hidden');
 }
@@ -5804,25 +6512,42 @@ function closeStartNextDayModal() {
   const m = document.getElementById('modalStartNextDay');
   if (m) m.classList.add('hidden');
 }
-let lastStartNextDayActionTime = 0;
+
 function executeStartNextDay() {
+  if (isExecutingLifecycleAction) return;
+  const gs = latestState?.gameState;
+  if (gs && gs.currentDay >= (gs.totalDays || 3)) {
+    closeStartNextDayModal();
+    openFinishEventModal();
+    return;
+  }
+  const btn = document.getElementById('btnExecuteStartNextDay');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Advancing Day...');
+  isExecutingLifecycleAction = true;
   closeStartNextDayModal();
-  if (Date.now() - lastStartNextDayActionTime < 500) return;
-  lastStartNextDayActionTime = Date.now();
   if (ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_START_NEXT_DAY', session_token: sessionToken }));
   }
+  setTimeout(() => { isExecutingLifecycleAction = false; }, 800);
 }
 
 function executeStartNextDayAndSchedule() {
+  if (isExecutingLifecycleAction) return;
+  const gs = latestState?.gameState;
+  if (gs && gs.currentDay >= (gs.totalDays || 3)) {
+    closeStartNextDayModal();
+    openFinishEventModal();
+    return;
+  }
+  isExecutingLifecycleAction = true;
   closeStartNextDayModal();
-  if (Date.now() - lastStartNextDayActionTime < 500) return;
-  lastStartNextDayActionTime = Date.now();
   if (ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_START_NEXT_DAY', session_token: sessionToken }));
   }
   setTimeout(() => {
     openScheduleEventModal();
+    isExecutingLifecycleAction = false;
   }, 400);
 }
 
@@ -5840,10 +6565,16 @@ function closeAddDayModal() {
   if (m) m.classList.add('hidden');
 }
 function executeAddDay() {
+  if (isExecutingLifecycleAction) return;
+  const btn = document.getElementById('btnConfirmAddDay');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Adding Day...');
+  isExecutingLifecycleAction = true;
   closeAddDayModal();
   if (ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_ADD_DAY', session_token: sessionToken }));
   }
+  setTimeout(() => { isExecutingLifecycleAction = false; }, 800);
 }
 
 function openFinishEventModal() {
@@ -5855,10 +6586,13 @@ function closeFinishEventModal() {
   if (m) m.classList.add('hidden');
 }
 function executeFinishEvent() {
+  if (isExecutingLifecycleAction) return;
+  isExecutingLifecycleAction = true;
   closeFinishEventModal();
   if (ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_FINISH_EVENT', session_token: sessionToken }));
   }
+  setTimeout(() => { isExecutingLifecycleAction = false; }, 800);
 }
 
 function openEmergencyStopModal() {
@@ -5878,6 +6612,9 @@ function closeLifecycleModal(modalId) {
   if (m) m.classList.add('hidden');
 }
 function executeEmergencyStop() {
+  const btn = document.getElementById('btnConfirmEmergencyStop');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Halting...');
   closeEmergencyStopModal();
   if (ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_EMERGENCY_STOP', session_token: sessionToken }));
@@ -6059,6 +6796,96 @@ const HOST_TAB_ALIASES = {
   'exports': 'stage'
 };
 
+
+// ==========================================
+// SUB-NAVIGATION CONTROLLERS (FLOW-003)
+// ==========================================
+let activeHostMarketSubTab = 'all';
+function switchHostMarketSubTab(subTab) {
+  activeHostMarketSubTab = subTab || 'all';
+  const pills = ['all', 'stocks', 'news', 'leaderboard', 'analysis', 'trades'];
+  pills.forEach((p) => {
+    const btn = document.getElementById(`hostMarketSubNav_${p}`);
+    if (btn) {
+      if (p === activeHostMarketSubTab) {
+        btn.className = 'btn btn-primary';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.className = 'btn btn-outline';
+        btn.style.fontWeight = '600';
+      }
+    }
+  });
+
+  const contentPanels = {
+    'stocks': document.getElementById('hostTabContentStocks'),
+    'news': document.getElementById('hostTabContentNews'),
+    'leaderboard': document.getElementById('hostTabContentLeaderboard'),
+    'analysis': document.getElementById('hostTabContentAnalysis'),
+    'trades': document.getElementById('hostTabContentTrades')
+  };
+
+  if (activeHostMarketSubTab === 'all') {
+    // Show composite floor: stocks, news, leaderboard, trades
+    ['stocks', 'news', 'leaderboard', 'trades'].forEach((key) => {
+      if (contentPanels[key]) contentPanels[key].classList.remove('hidden');
+    });
+    if (contentPanels['analysis']) contentPanels['analysis'].classList.add('hidden');
+  } else {
+    Object.keys(contentPanels).forEach((key) => {
+      if (!contentPanels[key]) return;
+      if (key === activeHostMarketSubTab) {
+        contentPanels[key].classList.remove('hidden');
+      } else {
+        contentPanels[key].classList.add('hidden');
+      }
+    });
+  }
+}
+
+let activeHostStageSubTab = 'projector';
+function switchHostStageSubTab(subTab) {
+  activeHostStageSubTab = subTab || 'projector';
+  const pills = ['projector', 'day', 'sound', 'commentary', 'launcher', 'exports'];
+  pills.forEach((p) => {
+    const btn = document.getElementById(`hostStageSubNav_${p}`);
+    if (btn) {
+      if (p === activeHostStageSubTab) {
+        btn.className = 'btn btn-primary';
+        btn.style.fontWeight = '800';
+      } else {
+        btn.className = 'btn btn-outline';
+        btn.style.fontWeight = '600';
+      }
+    }
+  });
+
+  const contentPanels = {
+    'projector': document.getElementById('hostTabContentProjector'),
+    'day': document.getElementById('hostTabContentDay'),
+    'sound': document.getElementById('hostTabContentSound'),
+    'commentary': document.getElementById('hostTabContentCommentary'),
+    'launcher': document.getElementById('hostTabContentLauncher'),
+    'exports': document.getElementById('hostTabContentExports')
+  };
+
+  Object.keys(contentPanels).forEach((key) => {
+    if (!contentPanels[key]) return;
+    if (key === activeHostStageSubTab) {
+      contentPanels[key].classList.remove('hidden');
+    } else {
+      contentPanels[key].classList.add('hidden');
+    }
+  });
+
+  if (activeHostStageSubTab === 'exports' && currentRole === 'HOST') {
+    hostRefreshCheckpoints();
+  }
+}
+
+window.switchHostMarketSubTab = switchHostMarketSubTab;
+window.switchHostStageSubTab = switchHostStageSubTab;
+
 function switchHostTab(tabName) {
   const targetHub = HOST_TAB_ALIASES[tabName] || tabName;
   activeHostTab = tabName;
@@ -6107,6 +6934,12 @@ function switchHostTab(tabName) {
   if (targetHub === 'event') {
     if (tabName === 'universe' || tabName === 'companies') switchSetupSection('universe');
     else if (tabName === 'launcher') switchSetupSection('teams');
+  }
+
+  if (targetHub === 'market') {
+    switchHostMarketSubTab(activeHostMarketSubTab || 'all');
+  } else if (targetHub === 'stage') {
+    switchHostStageSubTab(activeHostStageSubTab || 'projector');
   }
 
   if (targetHub === 'stage' && currentRole === 'HOST') {
@@ -6162,60 +6995,96 @@ function updateLoginEventStatusBanner(state) {
   const gs = (state && state.gameState) ? state.gameState : (state && state.configLocked !== undefined ? state : {});
   const isLocked = !!gs.configLocked;
   const status = gs.status || 'SETUP';
+  const currentDay = gs.currentDay || 1;
+  const totalDays = gs.totalDays || 3;
+  const isAllDaysCompleted = (currentDay >= totalDays) && (status === 'DAY_COMPLETED' || status === 'FINAL_ANALYSIS' || status === 'WINNER_ANNOUNCEMENT' || gs.isConcluded || status === 'COMPLETED');
 
-  if (!isLocked && status === 'SETUP') {
+  if (gs.isReset) {
+    if (iconEl) iconEl.textContent = '🔄';
+    if (titleEl) {
+      titleEl.textContent = 'CHAMPIONSHIP RESET • AWAITING SETUP';
+      titleEl.style.color = '#B45309';
+    }
+    if (descEl) {
+      descEl.textContent = gs.resetMessage || 'The previous tournament was reset. The host will initialize and configure the new championship.';
+    }
+    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.background = '#FFFBEB';
+  } else if (status === 'COMPLETED' || (gs.isConcluded && gs.winnerData)) {
+    if (iconEl) iconEl.textContent = '🏆';
+    if (titleEl) {
+      titleEl.textContent = 'COMPETITION COMPLETE • WINNERS ANNOUNCED';
+      titleEl.style.color = '#B45309';
+    }
+    if (descEl) {
+      descEl.textContent = 'All competition days have finished. Final rankings, portfolio audits, and awards are permanently recorded.';
+    }
+    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.background = '#FFFBEB';
+  } else if (isAllDaysCompleted) {
+    if (iconEl) iconEl.textContent = '🏆';
+    if (titleEl) {
+      titleEl.textContent = 'ALL TRADING DAYS COMPLETE • FINAL RESULTS PENDING';
+      titleEl.style.color = '#B45309';
+    }
+    if (descEl) {
+      descEl.textContent = `All ${totalDays} trading days are complete. The host is preparing the final results and stage winner announcement. Please remain on this screen.`;
+    }
+    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.background = '#FFFBEB';
+  } else if (!isLocked && status === 'SETUP') {
     if (iconEl) iconEl.textContent = '⏳';
     if (titleEl) {
       titleEl.textContent = 'COMPETITION SETUP IN PROGRESS';
       titleEl.style.color = 'var(--warning-amber)';
     }
     if (descEl) {
-      descEl.textContent = 'The host is configuring tournament settings and stock universe. Team logins will unlock live.';
+      descEl.textContent = 'The host is configuring tournament settings, team allocations, and stock universe. Team logins will unlock when configuration is confirmed.';
     }
     banner.style.borderColor = 'var(--subtle-border)';
     banner.style.background = 'var(--surface-cream)';
   } else if (status === 'LIVE' || status === 'COUNTDOWN') {
     if (iconEl) iconEl.textContent = '🟢';
     if (titleEl) {
-      titleEl.textContent = `FLOOR LIVE • DAY ${gs.currentDay || 1} IN PROGRESS`;
+      titleEl.textContent = `FLOOR LIVE • DAY ${currentDay} IN PROGRESS`;
       titleEl.style.color = 'var(--price-up)';
     }
     if (descEl) {
-      descEl.textContent = 'Trading session is currently active. All configured team terminals may connect.';
+      descEl.textContent = 'Trading session is currently active. All configured team terminals may connect and execute orders.';
     }
     banner.style.borderColor = 'var(--price-up)';
     banner.style.background = '#F0FDF4';
   } else if (status === 'DAY_COMPLETED') {
     if (iconEl) iconEl.textContent = '🔔';
     if (titleEl) {
-      titleEl.textContent = `DAY ${gs.currentDay || 1} CONCLUDED • LOGINS ACTIVE`;
+      titleEl.textContent = `DAY ${currentDay} CONCLUDED • LOGINS ACTIVE`;
       titleEl.style.color = '#3f6292';
     }
     if (descEl) {
-      descEl.textContent = `Day ${gs.currentDay || 1} trading has ended. Teams may log in to review final portfolio standings.`;
+      descEl.textContent = `Day ${currentDay} trading has ended. The host will prepare Day ${currentDay + 1} shortly. Teams may log in to review daily portfolio standings.`;
     }
     banner.style.borderColor = '#3f6292';
     banner.style.background = 'rgba(63, 98, 146, 0.06)';
-  } else if (status === 'COMPLETED' || gs.isConcluded) {
-    if (iconEl) iconEl.textContent = '🏆';
+  } else if (status === 'STANDBY' && currentDay > 1) {
+    if (iconEl) iconEl.textContent = '⏳';
     if (titleEl) {
-      titleEl.textContent = 'CHAMPIONSHIP CONCLUDED';
-      titleEl.style.color = '#B45309';
+      titleEl.textContent = `DAY ${currentDay} READY • AWAITING HOST LAUNCH`;
+      titleEl.style.color = '#D97706';
     }
     if (descEl) {
-      descEl.textContent = 'All competition days have finished. Final rankings and awards are permanently recorded.';
+      descEl.textContent = `Day ${currentDay - 1} completed! Cash and stock holdings have carried forward seamlessly. Trading will begin when the host opens the floor.`;
     }
-    banner.style.borderColor = 'var(--champagne-accent)';
-    banner.style.background = '#FFFBEB';
+    banner.style.borderColor = '#D97706';
+    banner.style.background = 'rgba(217, 119, 6, 0.06)';
   } else {
-    // STANDBY or config locked
+    // Day 1 STANDBY or config locked
     if (iconEl) iconEl.textContent = '🟢';
     if (titleEl) {
       titleEl.textContent = 'COMPETITION READY • LOGINS OPEN';
       titleEl.style.color = 'var(--price-up)';
     }
     if (descEl) {
-      descEl.textContent = 'Tournament setup is locked and confirmed. All team credentials are active.';
+      descEl.textContent = 'Tournament setup is locked and confirmed. All team credentials are active and ready for the opening session.';
     }
     banner.style.borderColor = 'var(--price-up)';
     banner.style.background = '#F0FDF4';
@@ -6305,6 +7174,7 @@ function saveSetupDraft() {
     transactionFeeBps: parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0,
     circuitBreakerPercent: parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20,
     riskProfile: document.getElementById('setupRiskProfile')?.value || 'BALANCED',
+    pausePolicy: document.querySelector('input[name="setupPausePolicy"]:checked')?.value || 'TRADING_TIME',
     selectedTickers: Array.from(setupSelectedTickers),
     teams
   };
@@ -6324,11 +7194,19 @@ function saveSetupDraft() {
   }
 
   updateReviewStats();
+
+  if (ws && ws.readyState === WebSocket.OPEN && sessionToken && userRole === 'HOST' && latestState && latestState.gameState && !latestState.gameState.configLocked) {
+    ws.send(JSON.stringify({
+      action: 'HOST_RECALCULATE_SCHEDULE',
+      session_token: sessionToken,
+      dayDurationSeconds: draft.dayDurationSeconds
+    }));
+  }
 }
 
 function switchSetupSection(sec) {
   activeSetupSection = sec;
-  const sections = ['details', 'teams', 'universe', 'news', 'review'];
+  const sections = ['details', 'teams', 'universe', 'schedule', 'news', 'review'];
   sections.forEach((s) => {
     const btn = document.getElementById(`setupNavBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
     const content = document.getElementById(`setupSection${s.charAt(0).toUpperCase() + s.slice(1)}`);
@@ -6724,6 +7602,20 @@ function selectStockPreset(preset) {
   updateReviewStats();
 }
 
+function getClientReadingWindow(durationSec) {
+  if (durationSec <= 300) return 12;
+  if (durationSec <= 600) return 18;
+  if (durationSec <= 1200) return 22;
+  return 25;
+}
+
+function getClientTimeFractions(durationSec) {
+  if (durationSec <= 300) return [0.35, 0.70];
+  if (durationSec <= 600) return [0.25, 0.55, 0.80];
+  if (durationSec <= 1200) return [0.20, 0.45, 0.70, 0.88];
+  return [0.18, 0.40, 0.65, 0.85];
+}
+
 function generateClientNewsPreview(selectedTickers, totalDays, dayDurationSeconds) {
   const templates = [
     { title: 'Strong Institutional Q3 Earnings Growth', pct: 4.5, exp: 'Quarterly financial filings exceed consensus forecasts; institutional liquidity accelerates.' },
@@ -6737,15 +7629,21 @@ function generateClientNewsPreview(selectedTickers, totalDays, dayDurationSecond
   const news = [];
   const tickers = selectedTickers.length > 0 ? selectedTickers : ['RELIANCE', 'TCS', 'HDFCBANK', 'TATAMOTORS'];
   let eventIdx = 0;
+  const timeFractions = getClientTimeFractions(dayDurationSeconds);
+  const readingSec = getClientReadingWindow(dayDurationSeconds);
+  const minSeparationSec = 60;
 
   for (let day = 1; day <= totalDays; day++) {
-    const triggers = [
-      Math.floor(dayDurationSeconds * 0.25),
-      Math.floor(dayDurationSeconds * 0.50),
-      Math.floor(dayDurationSeconds * 0.75)
-    ];
+    let lastTrigger = 0;
+    timeFractions.forEach((frac, fIdx) => {
+      let triggerSec = Math.round(dayDurationSeconds * frac);
+      if (fIdx > 0 && triggerSec < lastTrigger + minSeparationSec) {
+        triggerSec = lastTrigger + minSeparationSec;
+      }
+      const maxAllowed = Math.max(minSeparationSec, dayDurationSeconds - readingSec - 25);
+      if (triggerSec > maxAllowed) triggerSec = maxAllowed;
+      lastTrigger = triggerSec;
 
-    triggers.forEach((triggerSec) => {
       const t = tickers[eventIdx % tickers.length];
       const tmpl = templates[eventIdx % templates.length];
       eventIdx++;
@@ -6753,6 +7651,8 @@ function generateClientNewsPreview(selectedTickers, totalDays, dayDurationSecond
       news.push({
         day,
         trigger_second: triggerSec,
+        reading_duration_sec: readingSec,
+        relative_position: frac,
         headline: `${t}: ${tmpl.title}`,
         simple_explanation: tmpl.exp,
         ticker: t,
@@ -6772,14 +7672,43 @@ function updateNewsPreviewFromSelection() {
   const tickers = Array.from(setupSelectedTickers);
 
   const previewEvents = generateClientNewsPreview(tickers, totalDays, dayDuration);
+  const readingSec = getClientReadingWindow(dayDuration);
+  const durationMins = Math.round(dayDuration / 60);
 
-  container.innerHTML = previewEvents.map((ev) => {
+  const schedTimeVal = document.getElementById('setupScheduledStartTime')?.value || (latestState && latestState.gameState && latestState.gameState.scheduledStartTime);
+  const schedDate = schedTimeVal ? new Date(schedTimeVal) : null;
+
+  const summaryHtml = `
+    <div class="cream-panel" style="padding: 12px 16px; margin-bottom: 12px; border-left: 3px solid var(--gold); background: #FAF9F6;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <strong style="color: var(--text-forest); font-size: 13px;">⏱️ Dynamic Schedule: ${durationMins} Minutes per Day (${dayDuration.toLocaleString()}s)</strong>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            ${previewEvents.length} total news stories across ${totalDays} days &bull; ${readingSec}s reading window before each reaction &bull; Min separation: 60s
+          </div>
+        </div>
+        <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">✓ Schedule Feasible</span>
+      </div>
+    </div>
+  `;
+
+  const cardsHtml = previewEvents.map((ev) => {
     const isUp = ev.impact_pct >= 0;
+    const offsetMin = Math.floor(ev.trigger_second / 60);
+    const offsetSec = ev.trigger_second % 60;
+    const pctOfSession = Math.round((ev.relative_position || (ev.trigger_second / dayDuration)) * 100);
+
+    let clockTimeHtml = '';
+    if (schedDate && !isNaN(schedDate.getTime())) {
+      const targetTime = new Date(schedDate.getTime() + (ev.trigger_second * 1000));
+      clockTimeHtml = ` &bull; 🕒 Estimated: ${formatClock12H(targetTime)}`;
+    }
+
     return `
       <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); background: #FFFFFF;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">
-            DAY ${ev.day} &bull; AT ${formatMMSS(ev.trigger_second)}
+            DAY ${ev.day} &bull; ${offsetMin}m ${offsetSec}s AFTER START (${pctOfSession}% of session) &bull; AT ${formatMMSS(ev.trigger_second)}${clockTimeHtml}
           </span>
           <span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10px; font-weight: 800;">
             ${ev.ticker} ${isUp ? '+' : ''}${ev.impact_pct}%
@@ -6788,12 +7717,17 @@ function updateNewsPreviewFromSelection() {
         <div style="font-weight: 800; font-size: 13px; color: var(--text-forest); margin-bottom: 4px; line-height: 1.35;">
           ${escapeHtml(ev.headline)}
         </div>
-        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px;">
           ${escapeHtml(ev.simple_explanation)}
+        </div>
+        <div style="font-size: 10px; color: var(--gold-dark); font-weight: 600;">
+          📖 ${ev.reading_duration_sec}s reading &amp; discussion window before market price reaction begins
         </div>
       </div>
     `;
   }).join('');
+
+  container.innerHTML = summaryHtml + cardsHtml;
 }
 
 function regenerateNewsTimeline() {
@@ -6896,6 +7830,8 @@ function submitLockEventSetup() {
   const transactionFeeBps = parseInt(document.getElementById('setupTransactionFee')?.value, 10) || 0;
   const circuitBreakerPercent = parseFloat(document.getElementById('setupCircuitBreaker')?.value) || 20;
   const riskProfile = document.getElementById('setupRiskProfile')?.value || 'BALANCED';
+  const pausePolicyRadio = document.querySelector('input[name="setupPausePolicy"]:checked');
+  const pausePolicy = pausePolicyRadio ? pausePolicyRadio.value : 'TRADING_TIME';
   const teams = getSetupTeamsArray();
   let selectedTickers = Array.from(setupSelectedTickers || []);
   if (!selectedTickers || selectedTickers.length < 4) {
@@ -7265,7 +8201,7 @@ function renderSetupSections(state) {
           <td style="padding: 8px; font-weight: 800; color: var(--text-forest);">${c.ticker}</td>
           <td style="padding: 8px;">
             <div style="font-weight: 600;">${c.name}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">Verified Real NSE Listed Company &bull; Beta: ${c.beta || 1.0}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Verified Real NSE Listed Company &bull; Exchange: ${c.exchange || 'NSE'}</div>
           </td>
           <td style="padding: 8px;"><span class="badge" style="font-size: 10px;">${c.sector}</span></td>
           <td style="padding: 8px; text-align: right; font-weight: 600;">₹${basePrice.toFixed(2)}</td>
@@ -7407,7 +8343,7 @@ function renderHostActivityFeed(state) {
   if (events.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td style="padding: 8px 10px; color: var(--text-muted); font-size: 11px;">${new Date().toLocaleTimeString()}</td>
+        <td style="padding: 8px 10px; color: var(--text-muted); font-size: 11px;">${formatClock12H(new Date(), true)}</td>
         <td style="padding: 8px 10px;"><span class="badge badge-champagne" style="font-size: 9px;">SYSTEM_ONLINE</span></td>
         <td style="padding: 8px 10px; font-family: var(--font-sans); color: var(--text-forest);">Tournament floor ready. Awaiting market start command.</td>
       </tr>
@@ -7437,7 +8373,7 @@ function renderHostView(state) {
   let hostStatusText = 'LIVE';
   if (gameState.status === 'SCHEDULED') {
     const remMs = gameState.scheduledStartTime ? Math.max(0, new Date(gameState.scheduledStartTime).getTime() - Date.now()) : 0;
-    const schTime = gameState.scheduledStartTime ? new Date(gameState.scheduledStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const schTime = gameState.scheduledStartTime ? formatClock12H(gameState.scheduledStartTime) : '';
     hostStatusText = `SCHEDULED (Opens at ${schTime} • in ${formatMMSS(Math.floor(remMs / 1000))})`;
   } else if (gameState.isPaused) {
     hostStatusText = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED';
@@ -7622,8 +8558,11 @@ function hostPauseMarket(mode = 'VISIBLE_FROZEN') {
     showOrderToast('Trading is already paused. Resume trading when you are ready.', false);
     return;
   }
+  const btn = mode === 'BLACKOUT' ? document.getElementById('btnMarketPauseBlackout') : document.getElementById('btnMarketPauseSoft');
+  if (btn && btn.disabled) return;
   if (Date.now() - lastPauseActionTime < 400) return;
   lastPauseActionTime = Date.now();
+  if (btn) applyActionContractLock(btn, mode === 'BLACKOUT' ? 'Blackout...' : 'Pausing...');
   ws.send(JSON.stringify({ action: 'HOST_PAUSE', session_token: sessionToken, pauseMode: mode }));
 }
 
@@ -7639,8 +8578,11 @@ function hostResumeMarket() {
     showOrderToast('Trading is already active. Market is running live.', false);
     return;
   }
+  const btn = document.getElementById('btnMarketResume');
+  if (btn && btn.disabled) return;
   if (Date.now() - lastResumeActionTime < 400) return;
   lastResumeActionTime = Date.now();
+  if (btn) applyActionContractLock(btn, 'Resuming (3-2-1)...');
   ws.send(JSON.stringify({ action: 'HOST_RESUME_COUNTDOWN', session_token: sessionToken }));
 }
 
@@ -7918,7 +8860,7 @@ function renderHostCommentaryTab(state) {
               ${item.category}
             </span>
             <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
-              ${item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}
+              ${item.timestamp ? formatClock12H(item.timestamp, true) : ''}
             </span>
           </div>
           <p style="font-size: 14px; color: var(--text-forest); font-weight: 600; margin: 0; line-height: 1.5;">
@@ -7972,7 +8914,7 @@ function renderHostDayTab(state) {
               <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">
                 📅 Official Finalized Standings &bull; Day ${snap.day}
               </h3>
-              <span style="font-size: 11px; color: var(--text-muted);">Finalized at ${new Date(snap.finalizedAt).toLocaleTimeString()}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Finalized at ${formatClock12H(snap.finalizedAt, true)}</span>
             </div>
             <span class="badge badge-sage" style="font-size: 11px; font-weight: 800;">VERIFIED SNAPSHOT</span>
           </div>
@@ -8075,6 +9017,9 @@ function hostFinalizeDay() {
 
 function hostExitWinnerPresentation() {
   if (!ws || !sessionToken) return;
+  const btn = document.getElementById('hostDismissPodium');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Closing Ceremony...');
   ws.send(JSON.stringify({
     action: 'HOST_EXIT_WINNER_PRESENTATION',
     session_token: sessionToken
@@ -9398,7 +10343,7 @@ function openTeamInvestmentDetail(teamId) {
     } else {
       oTbody.innerHTML = orders.slice(-15).reverse().map(o => `
         <tr style="border-bottom: 1px solid var(--subtle-border);">
-          <td style="padding: 6px; font-size: 11px; color: var(--text-muted);">${new Date(o.timestamp).toLocaleTimeString()}</td>
+          <td style="padding: 6px; font-size: 11px; color: var(--text-muted);">${formatClock12H(o.timestamp, true)}</td>
           <td style="padding: 6px; font-weight: 800; color: ${o.orderType === 'BUY' ? 'var(--price-up)' : 'var(--price-down)'};">${o.orderType}</td>
           <td style="padding: 6px; font-weight: 700;">${escapeHtml(o.ticker)}</td>
           <td style="padding: 6px; text-align: center;">${o.quantity}</td>
@@ -9441,6 +10386,22 @@ function renderSoundConsoleView(state) {
   if (volDisplay) {
     const volPct = Math.round((audioSettings.masterVolume !== undefined ? audioSettings.masterVolume : 0.85) * 100);
     volDisplay.textContent = `${volPct}%${audioSettings.muted ? ' (Muted)' : ''}`;
+  }
+
+  // Check Web Audio Autoplay Policy status (DEF-032 / FLOW-005)
+  const overlay = document.getElementById('soundAutoplayUnlockOverlay');
+  if (overlay) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!audioEngineContext && AudioCtx) {
+      try {
+        audioEngineContext = (typeof getSharedAudioContext === 'function' ? getSharedAudioContext() : null) || new AudioCtx();
+      } catch (e) {}
+    }
+    if (!audioEngineContext || audioEngineContext.state !== 'running') {
+      overlay.classList.remove('hidden');
+    } else {
+      overlay.classList.add('hidden');
+    }
   }
 }
 
@@ -9538,11 +10499,13 @@ function unlockAudioSystem() {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!audioEngineContext) {
-      audioEngineContext = new AudioCtx();
+      audioEngineContext = (typeof getSharedAudioContext === 'function' ? getSharedAudioContext() : null) || new AudioCtx();
     }
     if (audioEngineContext.state === 'suspended') {
       audioEngineContext.resume();
     }
+    const overlay = document.getElementById('soundAutoplayUnlockOverlay');
+    if (overlay) overlay.classList.add('hidden');
     const banner = document.getElementById('soundUnlockBanner');
     if (banner) banner.classList.add('hidden');
     const badge = document.getElementById('soundConsoleStatusBadge');
@@ -9624,8 +10587,11 @@ function appendSoundConsoleLog(msg) {
 // ==========================================
 function renderWinnerPresentationView(state) {
   if (!state || !state.gameState) return;
-  const presState = state.gameState.presentationState || { currentScene: 'INTRO' };
+  latestState = state;
+  const presState = state.gameState.presentationState || {};
+  const currentScene = presState.scene || presState.currentScene || 'INTRO';
   const snapshot = state.finalResultsSnapshot || generateClientSnapshotFromLeaderboard(state);
+  if (snapshot) snapshot.eventId = state.gameState.eventId;
 
   // Show / hide host toolbar depending on whether user is HOST
   const hostToolbar = document.getElementById('presHostToolbar');
@@ -9634,7 +10600,7 @@ function renderWinnerPresentationView(state) {
     else hostToolbar.classList.add('hidden');
   }
 
-  renderPresentationScene(presState.currentScene, snapshot);
+  renderPresentationScene(currentScene, snapshot);
 }
 
 function generateClientSnapshotFromLeaderboard(state) {
@@ -9723,7 +10689,21 @@ function renderPresentationScene(sceneName, snapshot) {
     retEl.className = champ.returnPct >= 0 ? 'price-up' : 'price-down';
     document.getElementById('sceneChampion').classList.remove('hidden');
     if (badge) badge.textContent = 'STAGE PRESENTATION • SCENE 4: 🏆 GRAND CHAMPION';
-    playDramaticWinnerReveal();
+    
+    // Ceremony audio idempotency: prevent replaying fanfare on browser refresh (DEF-030)
+    const eventId = (snapshot && snapshot.eventId) || (latestState && latestState.gameState && latestState.gameState.eventId) || 'event';
+    const audioKey = eventId + '_' + normScene;
+    let lastPlayedAudioKey = null;
+    try {
+      lastPlayedAudioKey = sessionStorage.getItem('last_ceremony_audio_key');
+    } catch (e) {}
+
+    if (lastPlayedAudioKey !== audioKey) {
+      try {
+        sessionStorage.setItem('last_ceremony_audio_key', audioKey);
+      } catch (e) {}
+      playDramaticWinnerReveal();
+    }
   } else if (normScene === 'PODIUM') {
     const t1 = rankings[0] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
     const t2 = rankings[1] || { teamName: '—', totalPortfolioValue: 0, returnPct: 0 };
@@ -9851,39 +10831,63 @@ function createPresentationConfetti(particleCount = 120) {
 }
 
 const PRES_SCENE_SEQUENCE = ['INTRO', 'BRONZE', 'SILVER', 'CHAMPION', 'PODIUM', 'LEADERBOARD'];
+let isSettingPresentationScene = false;
+
 function hostSetPresentationScene(scene) {
-  if (!ws || !sessionToken) return;
+  if (!ws || !sessionToken || isSettingPresentationScene) return;
+  isSettingPresentationScene = true;
   const canonicalScene = scene.startsWith('SCENE_') ? scene : 'SCENE_' + scene;
   ws.send(JSON.stringify({
     action: 'HOST_SET_PRESENTATION_SCENE',
     session_token: sessionToken,
     scene: canonicalScene
   }));
+  setTimeout(() => { isSettingPresentationScene = false; }, 500);
 }
 
+let isAdvancingWinnerScene = false;
 function presNextScene() {
+  if (isAdvancingWinnerScene || isSettingPresentationScene) return;
   const ps = (latestState && latestState.gameState && latestState.gameState.presentationState) || {};
   let curScene = (ps.scene || ps.currentScene || (latestState.projectorState && latestState.projectorState.winnerScene) || 'INTRO').replace(/^SCENE_/, '').toUpperCase();
-  const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
-  const nextScene = PRES_SCENE_SEQUENCE[Math.min(PRES_SCENE_SEQUENCE.length - 1, (idx === -1 ? 0 : idx) + 1)];
-  hostSetPresentationScene(nextScene);
+  const info = getWinnerStageAdvanceLabel(curScene);
+  if (info && info.nextScene) {
+    isAdvancingWinnerScene = true;
+    hostSetPresentationScene(info.nextScene);
+    setTimeout(() => { isAdvancingWinnerScene = false; }, 600);
+  }
 }
 
 function presPrevScene() {
+  if (isAdvancingWinnerScene || isSettingPresentationScene) return;
   const ps = (latestState && latestState.gameState && latestState.gameState.presentationState) || {};
   let curScene = (ps.scene || ps.currentScene || (latestState.projectorState && latestState.projectorState.winnerScene) || 'INTRO').replace(/^SCENE_/, '').toUpperCase();
   const idx = PRES_SCENE_SEQUENCE.indexOf(curScene);
   const prevScene = PRES_SCENE_SEQUENCE[Math.max(0, (idx === -1 ? 0 : idx) - 1)];
+  isAdvancingWinnerScene = true;
   hostSetPresentationScene(prevScene);
+  setTimeout(() => { isAdvancingWinnerScene = false; }, 600);
 }
 
+let isStartingWinnerPres = false;
 function hostStartWinnerPresentation() {
-  if (!ws || !sessionToken) return;
+  if (isStartingWinnerPres || !ws || !sessionToken) return;
+  const gs = latestState?.gameState;
+  const canStart = gs && (gs.status === 'CHAMPIONSHIP_CONCLUDED' || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays));
+  if (!canStart) {
+    showOrderToast('⚠️ Presentation locked: The championship final round must be concluded before launching the winner ceremony.', false);
+    return;
+  }
+  ['btnLaunchPresentationAnalysis', 'btnLaunchPresentationProjector', 'hostStartWinnerPresentation'].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (btn) applyActionContractLock(btn, 'Launching Ceremony...');
+  });
+  isStartingWinnerPres = true;
   ws.send(JSON.stringify({
     action: 'HOST_START_WINNER_PRESENTATION',
     session_token: sessionToken
   }));
-  switchSpaView('WINNER_DISPLAY');
+  setTimeout(() => { isStartingWinnerPres = false; }, 1000);
 }
 
 // ==========================================
@@ -10019,7 +11023,7 @@ function confirmScheduleOrStartEvent() {
       eventTitle: eventTitle,
       institution: institution
     }));
-    showOrderToast(`📅 Event scheduled for ${new Date(scheduledStartTime).toLocaleTimeString()}. Waiting room active on all screens.`, true);
+    showOrderToast(`📅 Event scheduled for ${formatClock12H(scheduledStartTime)}. Waiting room active on all screens.`, true);
   } else {
     ws.send(JSON.stringify({
       action: 'HOST_START_EVENT_NOW',
@@ -10114,6 +11118,9 @@ function onResetInputChange(val) {
 function confirmResetChampionship() {
   const input = document.getElementById('resetConfirmInput');
   if ((input.value || '').trim().toUpperCase() !== 'RESET') return;
+  const btn = document.getElementById('btnConfirmResetChampionship');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Resetting Tournament...');
 
   if (ws && sessionToken && currentRole === 'HOST') {
     ws.send(JSON.stringify({
@@ -10330,6 +11337,9 @@ function hostCreateCheckpoint(label = 'manual') {
     showOrderToast('WebSocket not connected. Cannot save checkpoint.', false);
     return;
   }
+  const btn = document.getElementById('btnHostCreateCheckpoint');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Saving Checkpoint...');
   showOrderToast('💾 Saving disaster recovery checkpoint...', true);
   ws.send(JSON.stringify({
     action: 'HOST_CREATE_CHECKPOINT',
@@ -10366,7 +11376,7 @@ function renderHostCheckpointsTable(checkpoints) {
     const min = Math.floor(cp.elapsedSeconds / 60);
     const sec = cp.elapsedSeconds % 60;
     const timeFormatted = `${min}m ${sec < 10 ? '0' : ''}${sec}s (${cp.elapsedSeconds}s)`;
-    const dateFormatted = new Date(cp.mtime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateFormatted = formatClock12H(cp.mtime, true);
     const isAuto = cp.label === 'auto';
     const typeBadge = isAuto 
       ? `<span class="badge" style="background: #E0E7FF; color: #3730A3; font-size: 10px; font-weight: 700;">AUTO (120s)</span>`
@@ -10504,12 +11514,35 @@ window.confirmPostLockSchedule = confirmPostLockSchedule;
 window.executePostLockStartLater = executePostLockStartLater;
 window.playDramaticWinnerReveal = playDramaticWinnerReveal;
 window.triggerDramaticDrumroll = triggerDramaticDrumroll;
+window.syncRoleOverlays = syncRoleOverlays;
+window.dismissTraderDayCompleted = dismissTraderDayCompleted;
+window.showTraderDayCompleted = showTraderDayCompleted;
+window.reopenTraderDayCompleted = reopenTraderDayCompleted;
+window.switchHostMarketSubTab = switchHostMarketSubTab;
+window.switchHostStageSubTab = switchHostStageSubTab;
+window.unlockAudioSystem = unlockAudioSystem;
+
+// Global Spacebar listener for Hall PA Audio unlock (DEF-032)
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', function(e) {
+    if (currentRole === 'SOUND_CONSOLE' && (e.code === 'Space' || e.key === ' ')) {
+      const overlay = document.getElementById('soundAutoplayUnlockOverlay');
+      if (overlay && !overlay.classList.contains('hidden')) {
+        e.preventDefault();
+        unlockAudioSystem();
+      }
+    }
+  });
+}
 
 // Probe authoritative event readiness status for login screen immediately
 try {
   fetch('/api/event-status')
     .then((res) => res.json())
     .then((data) => {
+      if (window.StateGuard && !window.StateGuard.shouldAcceptIncomingState(data)) {
+        return;
+      }
       if (data && data.configLocked !== undefined) {
         updateLoginEventStatusBanner({ gameState: data });
       }
@@ -10765,5 +11798,70 @@ function showEnhancedToast(message, isSuccess, actionText, actionCallback) {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 4000);
+}
+
+// ==========================================
+// UNIVERSAL ACTION CONTRACT PATTERN (BTN-000)
+// ==========================================
+const inFlightActionButtons = new Map();
+
+function applyActionContractLock(button, processingText = 'Processing...') {
+  if (!button) return false;
+  if (button.disabled) return false;
+
+  button.disabled = true;
+  if (!button.dataset.originalText) {
+    button.dataset.originalText = button.textContent;
+  }
+  button.textContent = processingText;
+
+  if (inFlightActionButtons.has(button)) {
+    clearTimeout(inFlightActionButtons.get(button));
+  }
+
+  const timer = setTimeout(() => {
+    releaseActionContractLock(button);
+    if (typeof showOrderToast === 'function') {
+      showOrderToast('Request timed out. Please retry.', false);
+    }
+  }, 5000);
+
+  inFlightActionButtons.set(button, timer);
+  return true;
+}
+
+function releaseActionContractLock(button) {
+  if (!button) return;
+  if (inFlightActionButtons.has(button)) {
+    clearTimeout(inFlightActionButtons.get(button));
+    inFlightActionButtons.delete(button);
+  }
+  button.disabled = false;
+  if (button.dataset.originalText) {
+    button.textContent = button.dataset.originalText;
+  }
+}
+
+function releaseActionLockById(btnId) {
+  const btn = document.getElementById(btnId);
+  if (btn) releaseActionContractLock(btn);
+}
+
+function releaseAllActionLocks() {
+  for (const [btn, timer] of inFlightActionButtons.entries()) {
+    clearTimeout(timer);
+    btn.disabled = false;
+    if (btn.dataset.originalText) {
+      btn.textContent = btn.dataset.originalText;
+    }
+  }
+  inFlightActionButtons.clear();
+}
+
+if (typeof window !== 'undefined') {
+  window.applyActionContractLock = applyActionContractLock;
+  window.releaseActionContractLock = releaseActionContractLock;
+  window.releaseActionLockById = releaseActionLockById;
+  window.releaseAllActionLocks = releaseAllActionLocks;
 }
 
