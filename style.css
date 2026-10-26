@@ -683,11 +683,6 @@ h4, h5, h6 {
     transform: translateY(0) scale(1);
   }
 }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
 .modal-header {
   display: flex;
@@ -707,7 +702,7 @@ h4, h5, h6 {
   cursor: pointer;
   padding: 6px 10px;
   border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
   min-width: 36px;
   min-height: 36px;
