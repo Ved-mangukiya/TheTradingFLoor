@@ -17,7 +17,8 @@ const { spawn } = require('child_process');
 const TEST_PORT = 3099;
 const HTTP_URL = `http://127.0.0.1:${TEST_PORT}`;
 const WS_URL = `ws://127.0.0.1:${TEST_PORT}`;
-const UNIVERSE_FILE = path.join(__dirname, 'data', 'universe_active.json');
+const PROJECT_ROOT = path.join(__dirname, '..');
+const UNIVERSE_FILE = path.join(PROJECT_ROOT, 'data', 'universe_active.json');
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -112,8 +113,8 @@ async function runUnifiedMasterFlow() {
 
   try {
     // Always spawn a brand-new isolated server instance
-    serverProcess = spawn(process.execPath, ['server.js', 'test'], {
-      cwd: __dirname,
+    serverProcess = spawn(process.execPath, [path.join(PROJECT_ROOT, 'server.js'), 'test'], {
+      cwd: PROJECT_ROOT,
       env: { ...process.env, PORT: String(TEST_PORT) },
       stdio: ['ignore', 'pipe', 'pipe']
     });

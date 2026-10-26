@@ -11,6 +11,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const assert = require('assert');
 const { spawn } = require('child_process');
+const path = require('path');
 
 const TEST_PORT = process.env.PORT || 3090;
 const HTTP_URL = `http://127.0.0.1:${TEST_PORT}`;
@@ -44,8 +45,8 @@ async function ensureServerRunning() {
   } catch (e) {}
 
   let serverReady = false;
-  serverProcess = spawn(process.execPath, ['server.js', 'test'], {
-    cwd: __dirname,
+  serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+    cwd: path.join(__dirname, '..'),
     env: { ...process.env, PORT: String(TEST_PORT) },
     stdio: 'pipe'
   });

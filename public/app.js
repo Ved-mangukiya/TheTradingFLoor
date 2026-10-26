@@ -1060,7 +1060,10 @@ class MockEngine {
       history.push(base);
       return Object.assign({}, c, {
         price: base,
+        currentPrice: base,
         basePrice: base,
+        base_price: base,
+        dayOpenPrice: base,
         change: 0,
         changePercent: 0,
         high: Math.max.apply(null, history),
@@ -1104,17 +1107,27 @@ class MockEngine {
     this.recalcTeam(this.teams[0]);
 
     this.gameState = {
+      eventId: 'EVT_DEMO_SHOWCASE',
+      stateVersion: 1,
       title: 'The Trading Floor Championship 2026',
       subtitle: 'BBA Department • Annual Stock Simulation',
       institution: 'Gujarat Technological University',
       status: 'LIVE',
       isPaused: false,
+      configLocked: true,
+      isEventLocked: true,
       currentDay: 1,
+      totalDays: 2,
       day: 1,
       round: 1,
       elapsedSeconds: 340,
       roundDurationSeconds: 1800,
       currentEventIndex: 0,
+      startingCash: 1000000,
+      transactionFeeBps: 10,
+      circuitBreakerPercent: 20,
+      riskProfile: 'BALANCED',
+      pausePolicy: 'TRADING_TIME',
       newsHistory: [
         {
           id: 'news_demo_1',
@@ -1157,6 +1170,69 @@ class MockEngine {
     var allocations = {};
     allocations[targetTeam.id] = { "Automobile": 2.9, "IT": 4.1, "CASH": 93.0 };
 
+    var leaderboard = this.teams.map(function(t, idx) {
+      return {
+        id: t.id,
+        name: t.name,
+        members: 'Student ' + (idx * 2 + 1) + ', Student ' + (idx * 2 + 2),
+        cash: t.cash,
+        holdingsValue: t.portfolioValue - t.cash,
+        netWorth: t.netWorth,
+        pnl: t.netWorth - 1000000,
+        pnlPct: Number((((t.netWorth - 1000000) / 1000000) * 100).toFixed(2)),
+        tradeCount: t.tradesCount || 0,
+        rank: idx + 1
+      };
+    });
+
+    var newsEvents = [
+      {
+        id: 'news_demo_1',
+        event_id: 'news_demo_1',
+        headline: 'RBI Monetary Policy: Repo Rates Retained at 6.5%, Liquidity Infusion Approved',
+        simple_explanation: 'Accommodative banking stance drives immediate institutional demand across blue-chip financials and manufacturing.',
+        article: 'Accommodative banking stance drives immediate institutional demand across blue-chip financials and manufacturing.',
+        status: 'PUBLISHED',
+        triggered: true,
+        trigger_second: 180,
+        day: 1,
+        type: 'MACRO PULSE',
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'news_demo_2',
+        event_id: 'news_demo_2',
+        headline: 'Automotive Production PLI Incentives Extended for Commercial Vehicle Exporters',
+        simple_explanation: 'Heavy commercial vehicle manufacturers gain margin headroom with accelerated fiscal benefits.',
+        article: 'Heavy commercial vehicle manufacturers gain margin headroom with accelerated fiscal benefits.',
+        status: 'SCHEDULED',
+        triggered: false,
+        trigger_second: 600,
+        day: 1,
+        type: 'SECTOR SHOCK',
+        timestamp: new Date().toISOString()
+      }
+    ];
+
+    var recentTrades = [
+      {
+        teamName: 'Dalal Street Titans',
+        ticker: 'TATAMOTORS',
+        type: 'BUY',
+        quantity: 30,
+        price: 980,
+        time: '05:22'
+      },
+      {
+        teamName: 'Bullish Bears',
+        ticker: 'HDFCBANK',
+        type: 'BUY',
+        quantity: 20,
+        price: 1680,
+        time: '04:50'
+      }
+    ];
+
     return {
       type: 'TICK_UPDATE',
       scenarioMode: 'demo',
@@ -1168,6 +1244,10 @@ class MockEngine {
       }),
       companies: enabled,
       allCompaniesUniverse: this.companies,
+      leaderboard: leaderboard,
+      newsEvents: newsEvents,
+      allScheduledNews: newsEvents,
+      recentTrades: recentTrades,
       team: role === 'TRADER' ? targetTeam : undefined,
       marketIndices: {
         NIFTY_TF20: { value: 24350.25, change: 112.50, changePercent: 0.46 },
@@ -1189,8 +1269,9 @@ class MockEngine {
       if (c && !c.isHalted) {
         var delta = (Math.random() - 0.49) * 0.006 * c.price;
         c.price = Number(Math.max(1, c.price + delta).toFixed(2));
-        c.change = Number((c.price - c.basePrice).toFixed(2));
-        c.changePercent = Number(((c.change / c.basePrice) * 100).toFixed(2));
+        c.currentPrice = c.price;
+        c.change = Number((c.price - (c.dayOpenPrice || c.basePrice)).toFixed(2));
+        c.changePercent = Number(((c.change / (c.dayOpenPrice || c.basePrice)) * 100).toFixed(2));
         c.high = Math.max(c.high, c.price);
         c.low = Math.min(c.low, c.price);
         c.priceHistory.push(c.price);
@@ -1558,6 +1639,10 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
   ws.onopen = () => {
     if (onOpenHook) onOpenHook();
     if (!isDemoMode) hideDemoOverlays();
+    const connDot = document.getElementById('loginServerConnectionDot');
+    const connText = document.getElementById('loginServerConnectionText');
+    if (connDot) connDot.style.background = '#10B981';
+    if (connText) connText.textContent = 'Arena Engine Connected';
     const params = new URLSearchParams(window.location.search);
     const targetQuery = params.get('role') || params.get('team') || params.get('autologin') || params.get('user');
 
@@ -1643,6 +1728,11 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       latestState.gameState.institution = msg.institution;
       latestState.gameState.currentDay = msg.currentDay;
       latestState.gameState.totalDays = msg.totalDays;
+      latestState.gameState.isReset = !!msg.isReset;
+      latestState.gameState.resetMessage = msg.resetMessage || null;
+      latestState.gameState.elapsedSeconds = msg.elapsedSeconds || 0;
+      latestState.gameState.isPaused = msg.isPaused !== undefined ? msg.isPaused : true;
+      latestState.gameState.isConcluded = !!msg.isConcluded;
       updateLoginEventStatusBanner(latestState);
       return;
     }
@@ -1687,7 +1777,22 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
 
     if (msg.type === 'PRESENTATION_SCENE_UPDATE') {
       if (!isLoggedIn || currentRole === null) return;
+      if (latestState && latestState.gameState) {
+        if (!latestState.gameState.presentationState) latestState.gameState.presentationState = {};
+        latestState.gameState.presentationState = {
+          ...latestState.gameState.presentationState,
+          ...(msg.presentationState || {}),
+          scene: msg.normalizedScene || msg.scene,
+          currentScene: msg.normalizedScene || msg.scene
+        };
+        latestState.gameState.status = 'WINNER_ANNOUNCEMENT';
+        latestState.gameState.isConcluded = true;
+        if (msg.snapshot) latestState.gameState.finalResultsSnapshot = msg.snapshot;
+      }
       renderPresentationScene(msg.scene, msg.snapshot);
+      if (currentRole === 'HOST' && latestState) {
+        renderHostView(latestState);
+      }
       return;
     }
 
@@ -1713,27 +1818,39 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('emergency_klaxon');
       const pauseMode = msg.pauseMode || 'VISIBLE_FROZEN';
+      const isBlackout = pauseMode === 'BLACKOUT' || pauseMode === 'EMERGENCY_HALT';
       const softOverlay = document.getElementById('softPauseOverlay');
-      const blackoutOverlay = document.getElementById('blackoutOverlay');
+      const blackoutEl = document.getElementById('blackoutOverlay');
       if (currentRole !== 'HOST') {
-        if (pauseMode === 'BLACKOUT') {
-          if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
+        if (isBlackout) {
+          if (blackoutEl) blackoutEl.classList.remove('hidden');
           if (softOverlay) softOverlay.classList.add('hidden');
         } else {
           if (softOverlay) softOverlay.classList.remove('hidden');
-          if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+          if (blackoutEl) blackoutEl.classList.add('hidden');
         }
       }
-      showOrderToast(pauseMode === 'BLACKOUT' ? '🕶️ BLACKOUT PAUSE: Host has paused trading and blinded screens.' : '⏸️ MARKET PAUSED: Orders temporarily frozen.', false);
+      // Update local gameState so syncRoleOverlays stays consistent
+      if (latestState && latestState.gameState) {
+        latestState.gameState.isPaused = true;
+        latestState.gameState.pauseMode = pauseMode;
+        latestState.gameState.status = 'PAUSED';
+      }
+      showOrderToast(
+        isBlackout
+          ? '🕶️ BLACKOUT PAUSE: Host has paused trading and hidden all prices.'
+          : '⏸️ MARKET PAUSED: Orders temporarily frozen. Prices still visible.',
+        false
+      );
       return;
     }
 
     if (msg.type === 'MARKET_RESUMED') {
       if (!isLoggedIn || currentRole === null) return;
       const softOverlay = document.getElementById('softPauseOverlay');
-      const blackoutOverlay = document.getElementById('blackoutOverlay');
+      const blackoutEl = document.getElementById('blackoutOverlay');
       if (softOverlay) softOverlay.classList.add('hidden');
-      if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
+      if (blackoutEl) blackoutEl.classList.add('hidden');
       const projPauseBanner = document.getElementById('projPauseBanner');
       if (projPauseBanner) projPauseBanner.classList.add('hidden');
 
@@ -1747,7 +1864,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       if (!currentCountdownId && (Date.now() - lastCountdownFinishedTime > 1500)) {
         playInstitutionalSound('bell_open');
       }
-      showOrderToast('Trading Resumed: Floor is active!', true);
+      showOrderToast('✅ Trading Resumed: Floor is live and active!', true);
       return;
     }
 
@@ -1889,10 +2006,19 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       playInstitutionalSound('emergency_klaxon');
       document.body.classList.add('circuit-strobe-active');
       setTimeout(() => { document.body.classList.remove('circuit-strobe-active'); }, 5000);
-      showOrderToast(`🚨 EMERGENCY STOP: All market trading halted by Host across all desks.`, false);
+      showOrderToast(`🚨 EMERGENCY HALT: All market trading suspended by Host. Await resume signal.`, false);
+      // Show blackout overlay for non-host clients — Emergency halt blinds all screens
+      if (currentRole !== 'HOST') {
+        const blackoutEl = document.getElementById('blackoutOverlay');
+        const softOverlay = document.getElementById('softPauseOverlay');
+        if (blackoutEl) blackoutEl.classList.remove('hidden');
+        if (softOverlay) softOverlay.classList.add('hidden');
+      }
       if (latestState && latestState.gameState) {
-        latestState.gameState.status = 'EMERGENCY_STOP';
+        // Use canonical status='PAUSED' with pauseMode='EMERGENCY_HALT' — matches server model
+        latestState.gameState.status = 'PAUSED';
         latestState.gameState.isPaused = true;
+        latestState.gameState.pauseMode = 'EMERGENCY_HALT';
         handleStateUpdate(latestState);
       }
       return;
@@ -1910,6 +2036,21 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       if (msg.eventId) currentEventId = msg.eventId;
       if (msg.stateVersion !== undefined) currentEventStateVersion = msg.stateVersion;
 
+      if (!latestState) latestState = {};
+      if (!latestState.gameState) latestState.gameState = {};
+      latestState.gameState.configLocked = false;
+      latestState.gameState.status = 'RESET';
+      latestState.gameState.isReset = true;
+      latestState.gameState.resetMessage = resetMsg;
+      latestState.gameState.currentDay = 1;
+      latestState.gameState.elapsedSeconds = 0;
+      latestState.gameState.isPaused = true;
+      latestState.gameState.isConcluded = false;
+      latestState.gameState.winnerData = null;
+      setupInitialized = false;
+      try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
+      updateLoginEventStatusBanner(latestState);
+
       if (currentRole === 'TRADER') {
         const modal = document.getElementById('clientResetModal');
         const textEl = document.getElementById('clientResetMessageText');
@@ -1921,19 +2062,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         showOrderToast('🔄 Championship reset complete. Returned to Day 1 Standby.', true);
         switchHostTab('event');
         switchSetupSection('details');
+        renderSetupSections(latestState);
+        renderHostView(latestState);
       } else if (currentRole === 'PROJECTOR') {
         cleanupProjectorPaginationTimers();
         currentProjectorBoardPage = 1;
-        if (latestState) {
-          latestState.companies = [];
-          latestState.leaderboard = [];
-          if (latestState.gameState) {
-            latestState.gameState.isReset = true;
-            latestState.gameState.status = 'RESET';
-            latestState.gameState.resetMessage = resetMsg;
-          }
-        }
-        renderProjectorView(latestState || { gameState: { isReset: true, status: 'RESET', resetMessage: resetMsg }, companies: [] });
+        latestState.companies = [];
+        latestState.leaderboard = [];
+        renderProjectorView(latestState);
       } else {
         showOrderToast(resetMsg, false);
       }
@@ -1941,8 +2077,22 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'CHAMPIONSHIP_RESET_ACK') {
+      if (!latestState) latestState = {};
+      if (!latestState.gameState) latestState.gameState = {};
+      latestState.gameState.configLocked = false;
+      latestState.gameState.status = 'RESET';
+      latestState.gameState.isReset = true;
+      latestState.gameState.currentDay = 1;
+      latestState.gameState.elapsedSeconds = 0;
+      setupInitialized = false;
+      try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
+      updateLoginEventStatusBanner(latestState);
       if (currentRole === 'HOST') {
-        showOrderToast('Championship successfully reset to Day 1 Standby.', true);
+        showOrderToast('Championship successfully reset. Setup is unlocked and ready for new configuration.', true);
+        switchHostTab('event');
+        switchSetupSection('details');
+        renderSetupSections(latestState);
+        renderHostView(latestState);
       }
       return;
     }
@@ -2144,12 +2294,20 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
   };
 
   ws.onerror = (err) => {
+    const connDot = document.getElementById('loginServerConnectionDot');
+    const connText = document.getElementById('loginServerConnectionText');
+    if (connDot) connDot.style.background = '#EF4444';
+    if (connText) connText.textContent = 'Server Offline • Reconnecting...';
     if (!isLocalHost && !isDemoMode) {
       activateDemoShowcaseMode();
     }
   };
 
   ws.onclose = () => {
+    const connDot = document.getElementById('loginServerConnectionDot');
+    const connText = document.getElementById('loginServerConnectionText');
+    if (connDot) connDot.style.background = '#EF4444';
+    if (connText) connText.textContent = 'Server Offline • Reconnecting...';
     if (isDemoMode) return;
     if (!isLocalHost) {
       activateDemoShowcaseMode();
@@ -2349,7 +2507,8 @@ function autoCloseLifecycleModalsOnStateTransition(newState) {
 
   const emergencyStopModal = document.getElementById('modalEmergencyStop');
   if (emergencyStopModal && !emergencyStopModal.classList.contains('hidden')) {
-    if (status === 'EMERGENCY_STOP' || status === 'LIVE') {
+    // Close if emergency halt is now active (was just triggered) or if market is live (not needed)
+    if (status === 'LIVE' || (gs.isPaused && gs.pauseMode === 'EMERGENCY_HALT')) {
       closeEmergencyStopModal();
     }
   }
@@ -2448,7 +2607,10 @@ function syncRoleOverlays(role, gameState) {
 
   // PROJECTOR VIEW OVERLAY RESOLUTION
   if (role === 'PROJECTOR') {
-    if (status === 'PAUSED' && (pauseMode === 'BLACKOUT' || pauseMode === 'EMERGENCY_HALT')) {
+    // Show blackout overlay for BLACKOUT or EMERGENCY_HALT pauseModes (includes legacy status='BLACKOUT')
+    const isBlackoutMode = (status === 'PAUSED' || status === 'BLACKOUT') &&
+      (pauseMode === 'BLACKOUT' || pauseMode === 'EMERGENCY_HALT');
+    if (isBlackoutMode) {
       if (blackoutOverlay) blackoutOverlay.classList.remove('hidden');
     } else {
       if (blackoutOverlay) blackoutOverlay.classList.add('hidden');
@@ -4187,10 +4349,16 @@ function renderProjectorView(state) {
       projPauseBanner.classList.remove('hidden');
       const pTitle = document.getElementById('projPauseTitle');
       const pSub = document.getElementById('projPauseSub');
-      if (pTitle) pTitle.textContent = gameState.pauseMode === 'BLACKOUT' ? 'Market Under Blind Blackout' : 'Market Paused by Host Control';
-      if (pSub) pSub.textContent = gameState.pauseMode === 'BLACKOUT' 
-        ? 'Desks are in blind mode. Prices and orders are paused until host resumes with 3-second countdown.'
-        : 'All share prices and portfolio balances are frozen safely. Trading will resume with a 3-second live countdown.';
+      if (gameState.pauseMode === 'EMERGENCY_HALT') {
+        if (pTitle) pTitle.textContent = 'Emergency Halt — Market Frozen by Host';
+        if (pSub) pSub.textContent = 'All trading is suspended. Please wait for the host to resume or conclude the day.';
+      } else if (gameState.pauseMode === 'BLACKOUT') {
+        if (pTitle) pTitle.textContent = 'Market Under Blind Blackout';
+        if (pSub) pSub.textContent = 'Desks are in blind mode. Prices and orders are paused until host resumes with 3-second countdown.';
+      } else {
+        if (pTitle) pTitle.textContent = 'Market Paused by Host Control';
+        if (pSub) pSub.textContent = 'All share prices and portfolio balances are frozen safely. Trading will resume with a 3-second live countdown.';
+      }
     } else {
       projPauseBanner.classList.add('hidden');
     }
@@ -6021,6 +6189,20 @@ function updateHostTournamentFlow(state) {
     if (btnSchedule) btnSchedule.classList.add('hidden');
     if (btnCancelSchedule) btnCancelSchedule.classList.add('hidden');
     disablePauseButtons('Championship is completed');
+  } else if (isSetupIncomplete) {
+    if (titleEl) titleEl.textContent = '⚙️ Event Setup In Progress';
+    if (subEl) subEl.textContent = 'Configure tournament settings, starting capital, and stock universe in Hub 2 to open team terminals';
+    if (btnEl) {
+      btnEl.textContent = '⚙️ Configure Event (Hub 2) ➔';
+      btnEl.className = 'btn btn-primary';
+      btnEl.style.backgroundColor = '#3f6292';
+      btnEl.style.borderColor = '#3f6292';
+      btnEl.disabled = false;
+      btnEl.onclick = () => switchHostTab('event');
+    }
+    if (btnSchedule) btnSchedule.classList.add('hidden');
+    if (btnCancelSchedule) btnCancelSchedule.classList.add('hidden');
+    disablePauseButtons('Configuration must be locked before market operations can begin');
   } else if (isScheduled) {
     const remMs = gs.scheduledStartTime ? Math.max(0, new Date(gs.scheduledStartTime).getTime() - Date.now()) : 0;
     const schSec = Math.floor(remMs / 1000);
@@ -6094,10 +6276,17 @@ function updateHostTournamentFlow(state) {
     if (btnCancelSchedule) btnCancelSchedule.classList.add('hidden');
     disablePauseButtons('Day has concluded');
   } else if (gs.isPaused) {
-    if (titleEl) titleEl.textContent = `⏸️ Day ${day} Paused (${gs.pauseMode === 'BLACKOUT' ? 'Blackout' : 'Soft Freeze'})`;
-    if (subEl) subEl.textContent = `${formatMMSS(gs.elapsedSeconds)} elapsed • Press Resume to continue trading`;
+    const isEmergencyHalt = gs.pauseMode === 'EMERGENCY_HALT';
+    const isBlackout = gs.pauseMode === 'BLACKOUT';
+    if (isEmergencyHalt) {
+      if (titleEl) titleEl.textContent = `🚨 Day ${day} — EMERGENCY HALT`;
+      if (subEl) subEl.textContent = `All trading frozen at ${formatMMSS(gs.elapsedSeconds)} • Resolve situation, then Resume to continue`;
+    } else {
+      if (titleEl) titleEl.textContent = `⏸️ Day ${day} Paused (${isBlackout ? 'Blind Blackout' : 'Soft Freeze'})`;
+      if (subEl) subEl.textContent = `${formatMMSS(gs.elapsedSeconds)} elapsed • Press Resume to continue trading`;
+    }
     if (btnEl) {
-      btnEl.textContent = '▶ Resume Trading (3-2-1)';
+      btnEl.textContent = isEmergencyHalt ? '▶ Resume from Emergency Halt (3-2-1)' : '▶ Resume Trading (3-2-1)';
       btnEl.className = 'btn btn-primary';
       btnEl.style.backgroundColor = 'var(--price-up)';
       btnEl.style.borderColor = 'var(--price-up)';
@@ -6133,23 +6322,31 @@ function updateHostTournamentFlow(state) {
   const btnMktPauseBlackout = document.getElementById('btnMarketPauseBlackout');
   const btnMktCloseSession = document.getElementById('btnMarketCloseSession');
   const mktOpsBadge = document.getElementById('marketOpsLiveBadge');
+  const isSetupIncomplete = !gs.configLocked || gs.status === 'SETUP' || gs.status === 'RESET';
 
   if (mktOpsBadge) {
-    if (gs.status === 'LIVE') {
+    if (isSetupIncomplete) {
+      mktOpsBadge.textContent = '⚙️ SETUP IN PROGRESS • TRADING NOT CONFIGURED';
+      mktOpsBadge.className = 'badge badge-paused';
+    } else if (gs.status === 'LIVE') {
       mktOpsBadge.textContent = `🟢 LIVE TRADING • DAY ${day}/${total}`;
       mktOpsBadge.className = 'badge badge-active';
     } else if (gs.status === 'DAY_COMPLETED') {
       mktOpsBadge.textContent = `🔔 DAY ${day} CONCLUDED`;
       mktOpsBadge.className = 'badge badge-champagne';
-    } else if (gs.isPaused) {
-      mktOpsBadge.textContent = `⏸️ PAUSED (${gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'SOFT FREEZE'})`;
+    } else if (isWinnerActive) {
+      mktOpsBadge.textContent = `👑 CEREMONY IN PROGRESS`;
+      mktOpsBadge.className = 'badge badge-champagne';
+    } else if (isConcluded) {
+      mktOpsBadge.textContent = `🏆 CHAMPIONSHIP COMPLETE`;
+      mktOpsBadge.className = 'badge badge-champagne';
+    } else if (gs.isPaused && gs.elapsedSeconds > 0) {
+      const pmLabel = gs.pauseMode === 'EMERGENCY_HALT' ? 'EMERGENCY HALT' : gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'SOFT FREEZE';
+      mktOpsBadge.textContent = `⏸️ PAUSED (${pmLabel})`;
       mktOpsBadge.className = 'badge badge-paused';
     } else if (gs.status === 'COUNTDOWN') {
       mktOpsBadge.textContent = `⏱️ COUNTDOWN IN PROGRESS (3-2-1)`;
       mktOpsBadge.className = 'badge badge-active';
-    } else if (isConcluded || isWinnerActive) {
-      mktOpsBadge.textContent = `🏆 CHAMPIONSHIP COMPLETE`;
-      mktOpsBadge.className = 'badge badge-champagne';
     } else {
       mktOpsBadge.textContent = `⏳ DAY ${day} STANDBY`;
       mktOpsBadge.className = 'badge badge-champagne';
@@ -6157,7 +6354,23 @@ function updateHostTournamentFlow(state) {
   }
 
   if (btnMktResume && btnMktPauseSoft && btnMktPauseBlackout && btnMktCloseSession) {
-    if (gs.status === 'LIVE') {
+    if (isSetupIncomplete) {
+      btnMktResume.classList.remove('hidden');
+      btnMktResume.disabled = false;
+      btnMktResume.textContent = '⚙️ Configure Event (Hub 2)';
+      btnMktResume.className = 'btn btn-outline';
+      btnMktResume.title = 'Complete and lock tournament setup in Hub 2 to arm the trading floor';
+      btnMktResume.onclick = () => switchHostTab('event');
+
+      btnMktPauseSoft.classList.add('hidden');
+      btnMktPauseSoft.disabled = true;
+
+      btnMktPauseBlackout.classList.add('hidden');
+      btnMktPauseBlackout.disabled = true;
+
+      btnMktCloseSession.classList.add('hidden');
+      btnMktCloseSession.disabled = true;
+    } else if (gs.status === 'LIVE') {
       btnMktResume.classList.add('hidden');
       btnMktResume.disabled = true;
 
@@ -6177,27 +6390,26 @@ function updateHostTournamentFlow(state) {
       btnMktCloseSession.style.color = '#1D4ED8';
       btnMktCloseSession.style.background = '';
       btnMktCloseSession.onclick = () => openConcludeDayModal();
-    } else if (gs.isPaused) {
-      btnMktResume.classList.remove('hidden');
-      btnMktResume.disabled = false;
-      btnMktResume.textContent = '▶ Resume 3-2-1';
-      btnMktResume.title = 'Resume live trading with 3-2-1 voice countdown';
-      btnMktResume.onclick = () => hostResumeMarket();
-
+    } else if (isWinnerActive) {
+      btnMktResume.classList.add('hidden');
       btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseSoft.disabled = true;
-
       btnMktPauseBlackout.classList.add('hidden');
-      btnMktPauseBlackout.disabled = true;
-
+      btnMktCloseSession.classList.remove('hidden');
+      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
+      const stageInfo = getWinnerStageAdvanceLabel(curScene);
+      btnMktCloseSession.disabled = stageInfo.isComplete;
+      btnMktCloseSession.textContent = `👑 ${stageInfo.text}`;
+      btnMktCloseSession.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
+      btnMktCloseSession.onclick = () => presNextScene();
+    } else if (isConcluded) {
+      btnMktResume.classList.add('hidden');
+      btnMktPauseSoft.classList.add('hidden');
+      btnMktPauseBlackout.classList.add('hidden');
       btnMktCloseSession.classList.remove('hidden');
       btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = `🔔 Conclude Day ${day}`;
-      btnMktCloseSession.className = 'btn btn-outline';
-      btnMktCloseSession.style.borderColor = '#2563EB';
-      btnMktCloseSession.style.color = '#1D4ED8';
-      btnMktCloseSession.style.background = '';
-      btnMktCloseSession.onclick = () => openConcludeDayModal();
+      btnMktCloseSession.textContent = '👑 Launch Winner Presentation';
+      btnMktCloseSession.className = 'btn btn-champagne';
+      btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
     } else if (gs.status === 'DAY_COMPLETED') {
       btnMktResume.classList.add('hidden');
       btnMktResume.disabled = true;
@@ -6225,6 +6437,32 @@ function updateHostTournamentFlow(state) {
         btnMktCloseSession.style.color = '';
         btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
       }
+    } else if (gs.status === 'COUNTDOWN') {
+      btnMktResume.disabled = true;
+      btnMktPauseSoft.disabled = true;
+      btnMktPauseBlackout.disabled = true;
+      btnMktCloseSession.disabled = true;
+    } else if (gs.isPaused && gs.elapsedSeconds > 0) {
+      btnMktResume.classList.remove('hidden');
+      btnMktResume.disabled = false;
+      btnMktResume.textContent = '▶ Resume 3-2-1';
+      btnMktResume.title = 'Resume live trading with 3-2-1 voice countdown';
+      btnMktResume.onclick = () => hostResumeMarket();
+
+      btnMktPauseSoft.classList.add('hidden');
+      btnMktPauseSoft.disabled = true;
+
+      btnMktPauseBlackout.classList.add('hidden');
+      btnMktPauseBlackout.disabled = true;
+
+      btnMktCloseSession.classList.remove('hidden');
+      btnMktCloseSession.disabled = false;
+      btnMktCloseSession.textContent = `🔔 Conclude Day ${day}`;
+      btnMktCloseSession.className = 'btn btn-outline';
+      btnMktCloseSession.style.borderColor = '#2563EB';
+      btnMktCloseSession.style.color = '#1D4ED8';
+      btnMktCloseSession.style.background = '';
+      btnMktCloseSession.onclick = () => openConcludeDayModal();
     } else if (gs.status === 'STANDBY' || isPre) {
       btnMktResume.classList.remove('hidden');
       btnMktResume.disabled = false;
@@ -6240,36 +6478,11 @@ function updateHostTournamentFlow(state) {
 
       btnMktCloseSession.classList.add('hidden');
       btnMktCloseSession.disabled = true;
-    } else if (gs.status === 'COUNTDOWN') {
-      btnMktResume.disabled = true;
-      btnMktPauseSoft.disabled = true;
-      btnMktPauseBlackout.disabled = true;
-      btnMktCloseSession.disabled = true;
-    } else if (isWinnerActive) {
-      btnMktResume.classList.add('hidden');
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktCloseSession.classList.remove('hidden');
-      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
-      const stageInfo = getWinnerStageAdvanceLabel(curScene);
-      btnMktCloseSession.disabled = stageInfo.isComplete;
-      btnMktCloseSession.textContent = `👑 ${stageInfo.text}`;
-      btnMktCloseSession.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
-      btnMktCloseSession.onclick = () => presNextScene();
-    } else if (isConcluded) {
-      btnMktResume.classList.add('hidden');
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktCloseSession.classList.remove('hidden');
-      btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = '👑 Launch Winner Presentation';
-      btnMktCloseSession.className = 'btn btn-champagne';
-      btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
     }
   }
 
   // Gate Winner Presentation Launch Buttons (DEF-009 UI Fix)
-  const canLaunchPresentation = gs.status === 'CHAMPIONSHIP_CONCLUDED' || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
+  const canLaunchPresentation = gs.status === 'CHAMPIONSHIP_CONCLUDED' || gs.isConcluded || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
   ['btnLaunchPresentationAnalysis', 'btnLaunchPresentationProjector'].forEach((btnId) => {
     const btn = document.getElementById(btnId);
     if (btn) {
@@ -6290,7 +6503,9 @@ function updateHostTournamentFlow(state) {
   const actionsContainer = document.getElementById('hostFlowActionsContainer');
   if (actionsContainer) {
     let actHtml = '';
-    if (gs.status === 'LIVE') {
+    if (isSetupIncomplete) {
+      actHtml += `<button type="button" onclick="switchHostTab('event')" class="btn btn-primary" style="font-weight: 800; background: #3f6292; border-color: #3f6292; color: #FFF;">⚙️ Configure &amp; Lock Setup (Hub 2) ➔</button>`;
+    } else if (gs.status === 'LIVE') {
       actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
       actHtml += `<button type="button" onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="font-weight: 700;">⏸ Pause</button>`;
       actHtml += `<button type="button" onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="font-weight: 700;">🕶️ Blackout</button>`;
@@ -6318,11 +6533,16 @@ function updateHostTournamentFlow(state) {
       actHtml += `<button type="button" onclick="openScheduleEventModal()" class="btn btn-outline" style="font-weight: 700; border-color: #2563EB; color: #1D4ED8;">⏱️ Schedule Day ${day} Countdown</button>`;
       actHtml += `<button type="button" onclick="openCircuitHaltTestModal()" class="btn btn-outline" style="font-weight: 700; border-color: #F59E0B; color: #B45309;" title="Test circuit breaker halts">⚡ Test Circuit</button>`;
     } else if (gs.isPaused) {
-      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
-      actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
-    } else if (gs.status === 'EMERGENCY_STOP') {
-      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume from Emergency Halt</button>`;
-      actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
+      const isEmergencyHalt = gs.pauseMode === 'EMERGENCY_HALT';
+      if (isEmergencyHalt) {
+        actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume from Emergency Halt (3-2-1)</button>`;
+        actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day} (Skip Resume)</button>`;
+        actHtml += `<span style="font-size: 11px; color: #B45309; align-self: center; font-weight: 600;">🛑 Emergency halt active — all desks blinded and frozen.</span>`;
+      } else {
+        actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
+        actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
+        actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
+      }
     }
     actionsContainer.innerHTML = actHtml;
   }
@@ -6405,13 +6625,13 @@ function updateHostTournamentFlow(state) {
       nextBtn.className = 'btn btn-primary';
     }
     if (nextHint) nextHint.textContent = `Scheduled target: ${formatClock12H(gs.scheduledStartTime)}`;
-  } else if (!gs.configLocked && gs.status === 'STANDBY' && gs.elapsedSeconds === 0) {
-    if (nextIcon) nextIcon.textContent = '🔒';
-    if (nextBadgePhase) nextBadgePhase.textContent = 'PRE-EVENT REVIEW';
-    if (nextTitle) nextTitle.textContent = 'Review Setup & Lock Tournament';
-    if (nextDesc) nextDesc.textContent = 'Tournament parameters, starting capital, and stock universe are in draft mode. Review the configuration and confirm the lock before market launch.';
+  } else if (isSetupIncomplete) {
+    if (nextIcon) nextIcon.textContent = '⚙️';
+    if (nextBadgePhase) nextBadgePhase.textContent = 'SETUP REQUIRED';
+    if (nextTitle) nextTitle.textContent = 'Configure & Lock Tournament Setup';
+    if (nextDesc) nextDesc.textContent = 'Tournament parameters, starting capital, and stock universe are awaiting host configuration. Set up and lock the championship in Hub 2 to open team terminals.';
     if (nextBtn) {
-      nextBtn.textContent = '🔒 Review & Lock Event ➔';
+      nextBtn.textContent = '⚙️ Configure Event (Hub 2) ➔';
       nextBtn.className = 'btn btn-primary';
     }
     if (nextHint) nextHint.textContent = 'Configuration is currently editable';
@@ -6428,15 +6648,19 @@ function updateHostTournamentFlow(state) {
     }
     if (nextHint) nextHint.textContent = day < total ? `Awaiting Host command to start Day ${day + 1}` : 'Championship ready for ceremonial reveal';
   } else if (gs.isPaused) {
-    if (nextIcon) nextIcon.textContent = '⏸️';
-    if (nextBadgePhase) nextBadgePhase.textContent = gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSE' : 'SOFT FREEZE';
-    if (nextTitle) nextTitle.textContent = `Market is Paused (${gs.pauseMode === 'BLACKOUT' ? 'Blind Blackout' : 'Prices Visible'})`;
-    if (nextDesc) nextDesc.textContent = 'Trading orders are frozen on all student desks. When ready to resume, click below to trigger a synchronized 3-2-1 countdown across all screens.';
+    const pmHalt = gs.pauseMode === 'EMERGENCY_HALT';
+    const pmBlackout = gs.pauseMode === 'BLACKOUT';
+    if (nextIcon) nextIcon.textContent = pmHalt ? '🚨' : '⏸️';
+    if (nextBadgePhase) nextBadgePhase.textContent = pmHalt ? 'EMERGENCY HALT' : pmBlackout ? 'BLACKOUT PAUSE' : 'SOFT FREEZE';
+    if (nextTitle) nextTitle.textContent = pmHalt ? 'Emergency Halt Active' : `Market Paused (${pmBlackout ? 'Blind Blackout' : 'Prices Visible'})`  ;
+    if (nextDesc) nextDesc.textContent = pmHalt
+      ? 'Emergency halt is active. All screens are blinded. Resolve the situation, then Resume to restart with a 3-2-1 countdown across all desks.'
+      : 'Trading orders are frozen on all student desks. When ready to resume, click below to trigger a synchronized 3-2-1 countdown across all screens.';
     if (nextBtn) {
-      nextBtn.textContent = '▶ Resume Market (3-2-1 Countdown) ➔';
+      nextBtn.textContent = pmHalt ? '▶ Resume from Emergency Halt (3-2-1) ➔' : '▶ Resume Market (3-2-1 Countdown) ➔';
       nextBtn.className = 'btn btn-primary';
     }
-    if (nextHint) nextHint.textContent = `Paused at ${formatMMSS(gs.elapsedSeconds)}`;
+    if (nextHint) nextHint.textContent = `${pmHalt ? 'Emergency halt' : 'Paused'} at ${formatMMSS(gs.elapsedSeconds)}`;
   } else if (gs.status === 'LIVE') {
     if (nextIcon) nextIcon.textContent = '🟢';
     if (nextBadgePhase) nextBadgePhase.textContent = 'LIVE FLOOR';
@@ -6596,8 +6820,10 @@ function executeFinishEvent() {
 }
 
 function openEmergencyStopModal() {
-  if (latestState && latestState.gameState && latestState.gameState.isPaused) {
-    showOrderToast('⏸️ Market is already paused / halted. Use "Resume" to restart trading.', false);
+  const gs = latestState && latestState.gameState;
+  // Already in emergency halt — no need to re-trigger
+  if (gs && gs.isPaused && gs.pauseMode === 'EMERGENCY_HALT') {
+    showOrderToast('🛑 Emergency halt already active. Use "Resume" to restart or "Conclude Day" to end the session.', false);
     return;
   }
   const m = document.getElementById('modalEmergencyStop');
@@ -6690,6 +6916,13 @@ function handleFlowPrimaryAction() {
 
   if (isConcluded) {
     hostStartWinnerPresentation();
+    return;
+  }
+
+  const isSetupIncomplete = !gs.configLocked || gs.status === 'SETUP' || gs.status === 'RESET' || gs.isReset;
+  if (isSetupIncomplete) {
+    switchHostTab('event');
+    showOrderToast('Please configure event parameters and lock setup before starting trading.', false);
     return;
   }
 
@@ -6992,6 +7225,22 @@ function updateLoginEventStatusBanner(state) {
   const titleEl = document.getElementById('loginEventStatusTitle');
   const descEl = document.getElementById('loginEventStatusDesc');
 
+  // Update server connection badge
+  const connDot = document.getElementById('loginServerConnectionDot');
+  const connText = document.getElementById('loginServerConnectionText');
+  if (connDot && connText) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      connDot.style.background = '#10B981';
+      connText.textContent = 'Arena Engine Connected';
+    } else if (ws && ws.readyState === WebSocket.CONNECTING) {
+      connDot.style.background = '#F59E0B';
+      connText.textContent = 'Connecting to Engine...';
+    } else {
+      connDot.style.background = '#EF4444';
+      connText.textContent = 'Server Offline • Reconnecting...';
+    }
+  }
+
   const gs = (state && state.gameState) ? state.gameState : (state && state.configLocked !== undefined ? state : {});
   const isLocked = !!gs.configLocked;
   const status = gs.status || 'SETUP';
@@ -6999,16 +7248,28 @@ function updateLoginEventStatusBanner(state) {
   const totalDays = gs.totalDays || 3;
   const isAllDaysCompleted = (currentDay >= totalDays) && (status === 'DAY_COMPLETED' || status === 'FINAL_ANALYSIS' || status === 'WINNER_ANNOUNCEMENT' || gs.isConcluded || status === 'COMPLETED');
 
-  if (gs.isReset) {
-    if (iconEl) iconEl.textContent = '🔄';
+  // Hierarchy of authoritative competition states:
+  if (gs.isReset || status === 'RESET') {
+    if (iconEl) iconEl.textContent = '⏳';
     if (titleEl) {
-      titleEl.textContent = 'CHAMPIONSHIP RESET • AWAITING SETUP';
+      titleEl.textContent = 'WAITING FOR HOST TO CONFIGURE EVENT';
       titleEl.style.color = '#B45309';
     }
     if (descEl) {
-      descEl.textContent = gs.resetMessage || 'The previous tournament was reset. The host will initialize and configure the new championship.';
+      descEl.textContent = gs.resetMessage || 'The championship has been reset. Host must initialize event parameters before student desks can connect.';
     }
-    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.borderColor = '#FDE68A';
+    banner.style.background = '#FFFBEB';
+  } else if (!isLocked || status === 'SETUP') {
+    if (iconEl) iconEl.textContent = '⏳';
+    if (titleEl) {
+      titleEl.textContent = 'WAITING FOR HOST TO CONFIGURE EVENT';
+      titleEl.style.color = '#B45309';
+    }
+    if (descEl) {
+      descEl.textContent = 'The host is configuring tournament parameters and team rosters in Hub 2. Desk logins will unlock once configuration is locked.';
+    }
+    banner.style.borderColor = '#FDE68A';
     banner.style.background = '#FFFBEB';
   } else if (status === 'COMPLETED' || (gs.isConcluded && gs.winnerData)) {
     if (iconEl) iconEl.textContent = '🏆';
@@ -7019,7 +7280,7 @@ function updateLoginEventStatusBanner(state) {
     if (descEl) {
       descEl.textContent = 'All competition days have finished. Final rankings, portfolio audits, and awards are permanently recorded.';
     }
-    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.borderColor = '#FDE68A';
     banner.style.background = '#FFFBEB';
   } else if (isAllDaysCompleted) {
     if (iconEl) iconEl.textContent = '🏆';
@@ -7030,64 +7291,79 @@ function updateLoginEventStatusBanner(state) {
     if (descEl) {
       descEl.textContent = `All ${totalDays} trading days are complete. The host is preparing the final results and stage winner announcement. Please remain on this screen.`;
     }
-    banner.style.borderColor = 'var(--champagne-accent)';
+    banner.style.borderColor = '#FDE68A';
     banner.style.background = '#FFFBEB';
-  } else if (!isLocked && status === 'SETUP') {
-    if (iconEl) iconEl.textContent = '⏳';
+  } else if (status === 'SCHEDULED') {
+    const remMs = gs.scheduledStartTime ? Math.max(0, new Date(gs.scheduledStartTime).getTime() - Date.now()) : 0;
+    const schSec = Math.floor(remMs / 1000);
+    if (iconEl) iconEl.textContent = '⏱️';
     if (titleEl) {
-      titleEl.textContent = 'COMPETITION SETUP IN PROGRESS';
-      titleEl.style.color = 'var(--warning-amber)';
+      titleEl.textContent = `DAY ${currentDay} SCHEDULED • OPENS IN ${formatMMSS(schSec)}`;
+      titleEl.style.color = '#1D4ED8';
     }
     if (descEl) {
-      descEl.textContent = 'The host is configuring tournament settings, team allocations, and stock universe. Team logins will unlock when configuration is confirmed.';
+      descEl.textContent = `Trading session opens automatically at ${formatClock12H(gs.scheduledStartTime)}. Desks may log in to enter waiting room.`;
     }
-    banner.style.borderColor = 'var(--subtle-border)';
-    banner.style.background = 'var(--surface-cream)';
-  } else if (status === 'LIVE' || status === 'COUNTDOWN') {
+    banner.style.borderColor = '#BFDBFE';
+    banner.style.background = '#EFF6FF';
+  } else if (status === 'LIVE' && !gs.isPaused) {
     if (iconEl) iconEl.textContent = '🟢';
     if (titleEl) {
       titleEl.textContent = `FLOOR LIVE • DAY ${currentDay} IN PROGRESS`;
       titleEl.style.color = 'var(--price-up)';
     }
     if (descEl) {
-      descEl.textContent = 'Trading session is currently active. All configured team terminals may connect and execute orders.';
+      descEl.textContent = 'Trading session is currently active. Configured team terminals may connect and execute orders.';
     }
     banner.style.borderColor = 'var(--price-up)';
     banner.style.background = '#F0FDF4';
+  } else if (status === 'LIVE' && gs.isPaused) {
+    if (iconEl) iconEl.textContent = '⏸️';
+    if (titleEl) {
+      titleEl.textContent = `MARKET PAUSED • DAY ${currentDay}`;
+      titleEl.style.color = '#B45309';
+    }
+    if (descEl) {
+      descEl.textContent = 'Trading orders are temporarily frozen by the host. Desks remain connected awaiting resume.';
+    }
+    banner.style.borderColor = '#FDE68A';
+    banner.style.background = '#FFFBEB';
   } else if (status === 'DAY_COMPLETED') {
     if (iconEl) iconEl.textContent = '🔔';
     if (titleEl) {
       titleEl.textContent = `DAY ${currentDay} CONCLUDED • LOGINS ACTIVE`;
-      titleEl.style.color = '#3f6292';
+      titleEl.style.color = '#1D4ED8';
     }
     if (descEl) {
       descEl.textContent = `Day ${currentDay} trading has ended. The host will prepare Day ${currentDay + 1} shortly. Teams may log in to review daily portfolio standings.`;
     }
-    banner.style.borderColor = '#3f6292';
-    banner.style.background = 'rgba(63, 98, 146, 0.06)';
-  } else if (status === 'STANDBY' && currentDay > 1) {
+    banner.style.borderColor = '#BFDBFE';
+    banner.style.background = '#EFF6FF';
+  } else if (status === 'STANDBY' && isLocked) {
+    if (iconEl) iconEl.textContent = '🔵';
+    if (titleEl) {
+      titleEl.textContent = currentDay > 1 ? `DAY ${currentDay} READY • AWAITING HOST LAUNCH` : 'EVENT CONFIGURED • WAITING FOR DAY 1 LAUNCH';
+      titleEl.style.color = '#1D4ED8';
+    }
+    if (descEl) {
+      descEl.textContent = currentDay > 1 
+        ? `Day ${currentDay - 1} completed! Cash and stock holdings have carried forward. Trading will begin when host opens floor.`
+        : 'Tournament setup is locked and confirmed. Team terminals may log in. Floor opens when host starts session.';
+    }
+    banner.style.borderColor = '#BFDBFE';
+    banner.style.background = '#EFF6FF';
+  } else {
+    // Safe fallback: ALWAYS Amber, NEVER false green
     if (iconEl) iconEl.textContent = '⏳';
     if (titleEl) {
-      titleEl.textContent = `DAY ${currentDay} READY • AWAITING HOST LAUNCH`;
-      titleEl.style.color = '#D97706';
+      titleEl.textContent = 'EVENT ON STANDBY • AWAITING HOST';
+      titleEl.style.color = '#B45309';
     }
     if (descEl) {
-      descEl.textContent = `Day ${currentDay - 1} completed! Cash and stock holdings have carried forward seamlessly. Trading will begin when the host opens the floor.`;
+      descEl.textContent = 'Awaiting championship configuration from host. Team logins will unlock once configuration is locked.';
     }
-    banner.style.borderColor = '#D97706';
-    banner.style.background = 'rgba(217, 119, 6, 0.06)';
-  } else {
-    // Day 1 STANDBY or config locked
-    if (iconEl) iconEl.textContent = '🟢';
-    if (titleEl) {
-      titleEl.textContent = 'COMPETITION READY • LOGINS OPEN';
-      titleEl.style.color = 'var(--price-up)';
-    }
-    if (descEl) {
-      descEl.textContent = 'Tournament setup is locked and confirmed. All team credentials are active and ready for the opening session.';
-    }
-    banner.style.borderColor = 'var(--price-up)';
-    banner.style.background = '#F0FDF4';
+    banner.style.borderColor = '#FDE68A';
+    banner.style.background = '#FFFBEB';
   }
 }
 
@@ -7225,6 +7501,10 @@ function switchSetupSection(sec) {
   } else if (sec === 'universe') {
     renderStockCatalogueGrid();
     if (latestState) renderHostUniverseView(latestState.allCompaniesUniverse || latestState.companies || []);
+  } else if (sec === 'schedule') {
+    const durSec = parseInt(document.getElementById('setupDayDuration')?.value, 10) || 1800;
+    const durEl = document.getElementById('setupScheduleDurationSummary');
+    if (durEl) durEl.textContent = `${Math.round(durSec / 60)} Minutes per Day`;
   } else if (sec === 'news') {
     updateNewsPreviewFromSelection();
   } else if (sec === 'review') {
@@ -7795,8 +8075,8 @@ function openLockSetupConfirmModal() {
     names.add(lowerName);
   }
 
-  const modal = document.getElementById('lockSetupConfirmModal');
-  if (modal) modal.classList.remove('hidden');
+  // Authoritative direct lock submission (no redundant double-confirmation modal stack)
+  submitLockEventSetup();
 }
 
 function closeLockSetupConfirmModal() {
@@ -7807,6 +8087,11 @@ function closeLockSetupConfirmModal() {
     btn.disabled = false;
     btn.textContent = 'Yes, Lock Event & Open Logins';
   }
+  const btnReview = document.getElementById('btnReviewSubmitLock');
+  if (btnReview) {
+    btnReview.disabled = false;
+    btnReview.textContent = '🔒 Confirm & Lock Event Setup (Open Team Logins)';
+  }
 }
 
 function submitLockEventSetup() {
@@ -7814,6 +8099,12 @@ function submitLockEventSetup() {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     showOrderToast('⚠️ Server connection not open. Please reconnect.', false);
     return;
+  }
+
+  const btnReview = document.getElementById('btnReviewSubmitLock');
+  if (btnReview) {
+    btnReview.disabled = true;
+    btnReview.textContent = '🔒 Locking Setup & Activating Logins...';
   }
 
   const btn = document.getElementById('btnSubmitLockSetup');
@@ -7881,6 +8172,8 @@ function executePostLockStartNow() {
     session_token: sessionToken
   }));
   switchSpaView('HOST');
+  switchHostTab('market');
+  if (latestState) renderHostView(latestState);
   showOrderToast('🚀 Launching Day 1! 3-2-1 Synchronized Countdown initiated.', true);
 }
 
@@ -7912,12 +8205,16 @@ function confirmPostLockSchedule() {
     scheduledStartTime: scheduledTime
   }));
   switchSpaView('HOST');
+  switchHostTab('market');
+  if (latestState) renderHostView(latestState);
   showOrderToast('📅 Event scheduled! Participant waiting rooms armed with synchronized countdown.', true);
 }
 
 function executePostLockStartLater() {
   closePostLockDay1Modal();
   switchSpaView('HOST');
+  switchHostTab('market');
+  if (latestState) renderHostView(latestState);
   showOrderToast('🏛️ Event ready on Standby. You can launch Day 1 anytime from the Host Operations bar.', true);
 }
 
@@ -8060,9 +8357,9 @@ function handleNextStepAction() {
     hostStartWinnerPresentation();
   } else if (gs.status === 'SCHEDULED') {
     confirmScheduleOrStartEvent();
-  } else if (!gs.configLocked && gs.status === 'STANDBY' && gs.elapsedSeconds === 0) {
-    switchHostTab('setup');
-    switchSetupSection('review');
+  } else if (!gs.configLocked || gs.status === 'SETUP' || gs.status === 'RESET' || gs.isReset) {
+    switchHostTab('event');
+    switchSetupSection('details');
   } else if (gs.isPaused) {
     hostResumeMarket();
   } else if (gs.status === 'LIVE') {
@@ -8332,11 +8629,19 @@ function renderHostActivityFeed(state) {
     });
   }
 
-  if (state.gameState && state.gameState.isPaused) {
+  // Only add a pause entry if the market is currently paused (not after resume)
+  if (state.gameState && state.gameState.isPaused && state.gameState.status === 'PAUSED') {
+    const pm = state.gameState.pauseMode || 'VISIBLE_FROZEN';
+    const pauseLabel = pm === 'EMERGENCY_HALT' ? 'EMERGENCY_HALT' : pm === 'BLACKOUT' ? 'BLACKOUT' : 'SOFT_FREEZE';
+    const pauseDesc = pm === 'EMERGENCY_HALT'
+      ? `🚨 Emergency halt active — all terminals frozen. Resume when ready.`
+      : pm === 'BLACKOUT'
+      ? `🕶️ Blackout mode — prices hidden on all desks. Resume with 3-2-1 countdown.`
+      : `⏸️ Soft freeze — prices visible, orders blocked. Resume with 3-2-1 countdown.`;
     events.unshift({
       time: formatMMSS(state.gameState.elapsedSeconds || 0),
-      type: 'MARKET_PAUSE',
-      desc: `Market paused by Host in ${state.gameState.pauseMode || 'VISIBLE_FROZEN'} mode.`
+      type: pauseLabel,
+      desc: pauseDesc
     });
   }
 
@@ -8376,7 +8681,13 @@ function renderHostView(state) {
     const schTime = gameState.scheduledStartTime ? formatClock12H(gameState.scheduledStartTime) : '';
     hostStatusText = `SCHEDULED (Opens at ${schTime} • in ${formatMMSS(Math.floor(remMs / 1000))})`;
   } else if (gameState.isPaused) {
-    hostStatusText = gameState.pauseMode === 'BLACKOUT' ? 'BLACKOUT PAUSED' : 'PAUSED';
+    if (gameState.pauseMode === 'EMERGENCY_HALT') {
+      hostStatusText = 'EMERGENCY HALT';
+    } else if (gameState.pauseMode === 'BLACKOUT') {
+      hostStatusText = 'BLACKOUT PAUSED';
+    } else {
+      hostStatusText = 'PAUSED';
+    }
   }
 
   const modeBadge = document.getElementById('hostScenarioModeBadge');
@@ -10873,7 +11184,7 @@ let isStartingWinnerPres = false;
 function hostStartWinnerPresentation() {
   if (isStartingWinnerPres || !ws || !sessionToken) return;
   const gs = latestState?.gameState;
-  const canStart = gs && (gs.status === 'CHAMPIONSHIP_CONCLUDED' || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays));
+  const canStart = gs && (gs.isConcluded || gs.status === 'COMPLETED' || gs.status === 'WINNER_ANNOUNCEMENT' || gs.status === 'CHAMPIONSHIP_CONCLUDED' || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays));
   if (!canStart) {
     showOrderToast('⚠️ Presentation locked: The championship final round must be concluded before launching the winner ceremony.', false);
     return;
@@ -10899,20 +11210,28 @@ function openScheduleEventModal() {
 
   const gs = latestState?.gameState;
   const currentDay = gs?.currentDay || 1;
+  const durationSec = gs?.dayDurationSeconds || 1800;
+  const pausePolicy = gs?.pausePolicy || 'TRADING_TIME';
+  const policyLabel = pausePolicy === 'ELAPSED_TIME' ? 'Wall-Clock' : 'Trading Time (Recommended)';
+  const durationMin = Math.round(durationSec / 60);
 
   if (gs) {
     const titleInput = document.getElementById('scheduleEventTitleInput');
     const instInput = document.getElementById('scheduleInstitutionInput');
     const durInput = document.getElementById('scheduleDurationSecInput');
     const policySelect = document.getElementById('schedulePausePolicySelect');
+    const durMinDisp = document.getElementById('scheduleDurationMinDisplay');
 
     if (titleInput) titleInput.value = gs.title || 'The Trading Floor Championship 2026';
     if (instInput) instInput.value = gs.institution || 'Gujarat Technological University';
-    if (durInput) {
-      durInput.value = gs.dayDurationSeconds || 1800;
-      updateScheduleDurationDisplay();
-    }
-    if (policySelect) policySelect.value = gs.pausePolicy || 'TRADING_TIME';
+    if (durInput) durInput.value = durationSec;
+    if (durMinDisp) durMinDisp.textContent = `${durationMin} minutes`;
+    if (policySelect) policySelect.value = pausePolicy;
+  }
+
+  const summaryEl = document.getElementById('scheduleModalSummaryText');
+  if (summaryEl) {
+    summaryEl.textContent = `Duration: ${durationMin}m • Pause Policy: ${policyLabel}`;
   }
 
   // Update modal header for Day X
@@ -10963,7 +11282,7 @@ function selectStartMode(mode) {
     if (cardImm) cardImm.style.border = '2px solid var(--champagne-accent)';
     if (cardSch) cardSch.style.border = '1px solid var(--subtle-border)';
     if (timeGroup) timeGroup.classList.add('hidden');
-    if (btnSubmit) btnSubmit.textContent = '🚀 Start Event Now';
+    if (btnSubmit) btnSubmit.textContent = '🚀 Start Day Now';
   }
 }
 
@@ -10976,6 +11295,16 @@ function setQuickScheduleMinutes(mins) {
     dtInput.value = new Date(target.getTime() - offsetMs).toISOString().slice(0, 16);
   }
 }
+
+function setPostLockQuickScheduleMinutes(mins) {
+  const dtInput = document.getElementById('postLockScheduledTimeInput');
+  if (dtInput) {
+    const target = new Date(Date.now() + mins * 60 * 1000);
+    const offsetMs = target.getTimezoneOffset() * 60000;
+    dtInput.value = new Date(target.getTime() - offsetMs).toISOString().slice(0, 16);
+  }
+}
+window.setPostLockQuickScheduleMinutes = setPostLockQuickScheduleMinutes;
 
 function setScheduleDuration(sec) {
   const durInput = document.getElementById('scheduleDurationSecInput');
@@ -10997,14 +11326,16 @@ function updateScheduleDurationDisplay() {
 function confirmScheduleOrStartEvent() {
   if (!ws || !sessionToken || currentRole !== 'HOST') return;
 
+  const gs = latestState?.gameState;
+  const currentDay = gs?.currentDay || 1;
   const durInput = document.getElementById('scheduleDurationSecInput');
-  const durationSec = durInput ? Number(durInput.value) : 1800;
+  const durationSec = durInput ? Number(durInput.value) : (gs?.dayDurationSeconds || 1800);
   const policySelect = document.getElementById('schedulePausePolicySelect');
-  const pausePolicy = policySelect ? policySelect.value : 'TRADING_TIME';
+  const pausePolicy = policySelect ? policySelect.value : (gs?.pausePolicy || 'TRADING_TIME');
   const titleInput = document.getElementById('scheduleEventTitleInput');
-  const eventTitle = titleInput ? titleInput.value.trim() : 'The Trading Floor Championship 2026';
+  const eventTitle = (titleInput ? titleInput.value.trim() : '') || gs?.title || 'The Trading Floor Championship 2026';
   const instInput = document.getElementById('scheduleInstitutionInput');
-  const institution = instInput ? instInput.value.trim() : 'Gujarat Technological University';
+  const institution = (instInput ? instInput.value.trim() : '') || gs?.institution || 'Gujarat Technological University';
 
   if (currentScheduleMode === 'SCHEDULED') {
     const dtInput = document.getElementById('scheduledStartTimeInput');
@@ -11023,7 +11354,7 @@ function confirmScheduleOrStartEvent() {
       eventTitle: eventTitle,
       institution: institution
     }));
-    showOrderToast(`📅 Event scheduled for ${formatClock12H(scheduledStartTime)}. Waiting room active on all screens.`, true);
+    showOrderToast(`📅 Day ${currentDay} scheduled for ${formatClock12H(scheduledStartTime)}. Waiting room active on all screens.`, true);
   } else {
     ws.send(JSON.stringify({
       action: 'HOST_START_EVENT_NOW',
@@ -11033,9 +11364,11 @@ function confirmScheduleOrStartEvent() {
       eventTitle: eventTitle,
       institution: institution
     }));
-    showOrderToast('🚀 Event launched immediately! Synchronized market opening broadcast.', true);
+    showOrderToast(`🚀 Day ${currentDay} launched immediately! Synchronized market opening broadcast.`, true);
   }
   closeScheduleEventModal();
+  switchHostTab('market');
+  if (latestState) renderHostView(latestState);
 }
 
 let circuitBannerTimeoutHandle = null;

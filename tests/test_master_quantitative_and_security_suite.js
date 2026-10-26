@@ -19,8 +19,8 @@ process.env.PORT = TEST_PORT;
 process.argv[2] = 'test';
 
 // Boot test server instance
-delete require.cache[require.resolve('./server.js')];
-const serverApp = require('./server.js');
+delete require.cache[require.resolve('../server.js')];
+const serverApp = require('../server.js');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

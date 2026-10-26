@@ -27,3 +27,4 @@ tools/*.exe
 
 .vscode/
 .idea/
+.kiro/

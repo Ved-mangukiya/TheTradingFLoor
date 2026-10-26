@@ -433,6 +433,12 @@
         <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Championship 2026</p>
       </div>
 
+      <!-- Live Server Connection Health Badge -->
+      <div id="loginServerConnectionBadge" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #F1F5F9; color: #475569; margin: 0 auto 16px auto; width: fit-content;">
+        <span id="loginServerConnectionDot" style="width: 7px; height: 7px; border-radius: 50%; background: #94A3B8;"></span>
+        <span id="loginServerConnectionText">Connecting to Engine...</span>
+      </div>
+
       <!-- Live Event Readiness / Team Login Gate Banner -->
       <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border); background: var(--surface-cream); display: flex; align-items: center; gap: 12px; text-align: left;">
         <span id="loginEventStatusIcon" style="font-size: 22px; line-height: 1;">⏳</span>
@@ -574,6 +580,12 @@
 
           <div id="postLockScheduleSection" class="hidden" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--subtle-border);">
             <label style="font-size: 11px; font-weight: 700; color: var(--text-forest); display: block; margin-bottom: 6px;">Opening Bell Date &amp; Time (Local):</label>
+            <div style="display: flex; gap: 6px; margin: 4px 0 10px 0; flex-wrap: wrap;">
+              <button type="button" onclick="setPostLockQuickScheduleMinutes(1)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">⏱️ +1 Min</button>
+              <button type="button" onclick="setPostLockQuickScheduleMinutes(2)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">⏱️ +2 Mins</button>
+              <button type="button" onclick="setPostLockQuickScheduleMinutes(5)" class="btn btn-sage" style="padding: 4px 10px; font-size: 11px; font-weight: 800;">⏱️ +5 Mins (Recommended)</button>
+              <button type="button" onclick="setPostLockQuickScheduleMinutes(10)" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">⏱️ +10 Mins</button>
+            </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="datetime-local" id="postLockScheduledTimeInput" class="form-input" style="flex: 1; padding: 8px 12px; font-family: var(--font-mono); font-size: 13px;" />
               <button type="button" onclick="confirmPostLockSchedule()" class="btn btn-sage" style="padding: 8px 16px; font-size: 12px; font-weight: 800; white-space: nowrap;">
@@ -1741,17 +1753,17 @@
             </div>
           </div>
 
-          <!-- Sector Filter Pills -->
+          <!-- Sector Filter Pills (High-Contrast WCAG 2.2 AA Compliant) -->
           <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;" id="catalogueSectorPills">
-            <button type="button" onclick="filterCatalogueBySector('ALL')" class="btn-demo-pill active" data-sector="ALL">All Sectors (20)</button>
-            <button type="button" onclick="filterCatalogueBySector('Banking')" class="btn-demo-pill" data-sector="Banking">Banking &amp; Finance (4)</button>
-            <button type="button" onclick="filterCatalogueBySector('Information Technology')" class="btn-demo-pill" data-sector="Information Technology">Information Tech (2)</button>
-            <button type="button" onclick="filterCatalogueBySector('Automobile')" class="btn-demo-pill" data-sector="Automobile">Automobile (2)</button>
-            <button type="button" onclick="filterCatalogueBySector('Energy')" class="btn-demo-pill" data-sector="Energy">Energy &amp; Power (3)</button>
-            <button type="button" onclick="filterCatalogueBySector('Metals')" class="btn-demo-pill" data-sector="Metals">Metals &amp; Mining (2)</button>
-            <button type="button" onclick="filterCatalogueBySector('Consumer')" class="btn-demo-pill" data-sector="Consumer">FMCG &amp; Retail (2)</button>
-            <button type="button" onclick="filterCatalogueBySector('Pharma')" class="btn-demo-pill" data-sector="Pharma">Pharmaceuticals (1)</button>
-            <button type="button" onclick="filterCatalogueBySector('Conglomerate')" class="btn-demo-pill" data-sector="Conglomerate">Conglomerate &amp; Infra (4)</button>
+            <button type="button" onclick="filterCatalogueBySector('ALL')" class="sector-filter-pill active" data-sector="ALL">All Sectors (20)</button>
+            <button type="button" onclick="filterCatalogueBySector('Banking')" class="sector-filter-pill" data-sector="Banking">Banking &amp; Finance (4)</button>
+            <button type="button" onclick="filterCatalogueBySector('Information Technology')" class="sector-filter-pill" data-sector="Information Technology">Information Tech (2)</button>
+            <button type="button" onclick="filterCatalogueBySector('Automobile')" class="sector-filter-pill" data-sector="Automobile">Automobile (2)</button>
+            <button type="button" onclick="filterCatalogueBySector('Energy')" class="sector-filter-pill" data-sector="Energy">Energy &amp; Power (3)</button>
+            <button type="button" onclick="filterCatalogueBySector('Metals')" class="sector-filter-pill" data-sector="Metals">Metals &amp; Mining (2)</button>
+            <button type="button" onclick="filterCatalogueBySector('Consumer')" class="sector-filter-pill" data-sector="Consumer">FMCG &amp; Retail (2)</button>
+            <button type="button" onclick="filterCatalogueBySector('Pharma')" class="sector-filter-pill" data-sector="Pharma">Pharmaceuticals (1)</button>
+            <button type="button" onclick="filterCatalogueBySector('Conglomerate')" class="sector-filter-pill" data-sector="Conglomerate">Conglomerate &amp; Infra (4)</button>
           </div>
 
           <!-- Stock Catalogue Cards Grid -->
@@ -1772,26 +1784,45 @@
         <!-- Section 4: Schedule & Pause Policy -->
         <div id="setupSectionSchedule" class="hidden setup-sec-panel">
           <div style="max-width: 680px; margin-bottom: 24px;">
-            <div class="cream-panel" style="padding: 18px; margin-bottom: 16px;">
-              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin-bottom: 8px;">Market Opening Mechanism</h3>
-              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">Choose whether to launch immediately or schedule an opening countdown for a specific time.</p>
-              <div style="display: flex; gap: 14px;">
-                <button type="button" onclick="openScheduleEventModal()" class="btn btn-outline" style="flex: 1; padding: 12px; font-weight: 700; border-color: #2563EB; color: #1D4ED8;">
-                  ⏱️ Configure Opening Countdown Timer
+            <div class="cream-panel" style="padding: 20px; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 20px;">⏱️</span>
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Market Duration &amp; Launch Sequence</h3>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
+                Market duration is configured once in General Settings (Step 1). When you review and lock setup in Step 6, you will be prompted to launch Day 1 immediately or schedule an opening countdown for participants.
+              </p>
+              <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.7); border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); padding: 12px 16px; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Configured Round Duration</div>
+                  <div id="setupScheduleDurationSummary" style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin-top: 2px;">30 Minutes per Day</div>
+                </div>
+                <button type="button" onclick="switchSetupSection('details')" class="btn btn-outline" style="font-size: 11px; padding: 6px 12px;">
+                  ✏️ Edit in Step 1
                 </button>
               </div>
             </div>
-            <div class="cream-panel" style="padding: 18px;">
-              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin-bottom: 8px;">Pause Policy Contract</h3>
-              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Determines how paused time affects the session closing time:</p>
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
-                  <input type="radio" name="setupPausePolicy" value="TRADING_TIME" checked />
-                  <span><strong>Trading Time Policy (Recommended):</strong> Pausing market shifts the closing deadline forward so students receive exactly the full trading duration.</span>
+
+            <div class="cream-panel" style="padding: 20px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 20px;">⏸️</span>
+                <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Market Pause Policy Contract</h3>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">Determines how paused time affects the session closing time:</p>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; cursor: pointer; padding: 10px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.6); border: 1px solid var(--subtle-border);">
+                  <input type="radio" name="setupPausePolicy" value="TRADING_TIME" checked style="margin-top: 3px;" />
+                  <div>
+                    <strong style="color: var(--text-forest);">Trading Time Policy (Recommended):</strong>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Pausing the floor shifts the closing deadline forward so student traders receive exactly the full allocated trading minutes.</div>
+                  </div>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
-                  <input type="radio" name="setupPausePolicy" value="ELAPSED_TIME" />
-                  <span><strong>Wall-Clock Policy:</strong> Closing deadline is fixed in stone. Pauses consume session time.</span>
+                <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; cursor: pointer; padding: 10px; border-radius: var(--radius-sm); background: rgba(255,255,255,0.6); border: 1px solid var(--subtle-border);">
+                  <input type="radio" name="setupPausePolicy" value="ELAPSED_TIME" style="margin-top: 3px;" />
+                  <div>
+                    <strong style="color: var(--text-forest);">Wall-Clock Policy:</strong>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Closing deadline is strictly fixed in stone. Administrative pauses consume session time.</div>
+                  </div>
                 </label>
               </div>
             </div>
@@ -4978,53 +5009,29 @@
           </div>
         </div>
 
-        <!-- Duration Settings -->
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label">Market Round Duration</label>
-          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-            <button type="button" onclick="setScheduleDuration(900)" class="btn btn-outline"
-              style="padding: 5px 10px; font-size: 12px;">15 Mins</button>
-            <button type="button" onclick="setScheduleDuration(1800)" class="btn btn-sage"
-              style="padding: 5px 10px; font-size: 12px;">30 Mins (Standard)</button>
-            <button type="button" onclick="setScheduleDuration(2700)" class="btn btn-outline"
-              style="padding: 5px 10px; font-size: 12px;">45 Mins</button>
-            <button type="button" onclick="setScheduleDuration(3600)" class="btn btn-outline"
-              style="padding: 5px 10px; font-size: 12px;">60 Mins</button>
+        <!-- Locked Parameters Summary Chip -->
+        <div class="cream-panel" style="padding: 12px 16px; background: rgba(255,255,255,0.7); border: 1px solid var(--subtle-border); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Setup Parameters</div>
+            <div id="scheduleModalSummaryText" style="font-size: 13px; font-weight: 800; color: var(--text-forest); margin-top: 2px;">
+              Duration: 30m • Pause Policy: Trading Time
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <input id="scheduleDurationSecInput" type="number" min="60" step="30" value="1800"
-              oninput="updateScheduleDurationDisplay()" class="form-input"
-              style="font-family: var(--font-mono); max-width: 140px;" />
-            <span style="font-size: 12px; color: var(--text-muted);">seconds (<span id="scheduleDurationMinDisplay">30
-                minutes</span>)</span>
-          </div>
+          <span class="badge" style="background: #ECFDF5; color: #047857; font-weight: 800; font-size: 11px; padding: 4px 10px; border: 1px solid #A7F3D0;">
+            ✓ Locked &amp; Synchronized
+          </span>
         </div>
 
-        <!-- Pause Policy Selection -->
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label class="form-label">Competition Pause Policy</label>
-          <select id="schedulePausePolicySelect" class="form-input">
-            <option value="TRADING_TIME" selected>Trading-Time Mode (Recommended: Pauses freeze round clock; total trade
-              time is preserved)</option>
-            <option value="ELAPSED_TIME">Elapsed-Time Mode (Fixed schedule: Pauses freeze trades, but clock continues
-              toward closing time)</option>
+        <!-- Backward-Compatible Inputs (Zero Prompt Redundancy) -->
+        <div style="display: none;">
+          <input id="scheduleDurationSecInput" type="number" min="60" step="30" value="1800" oninput="updateScheduleDurationDisplay()" />
+          <span id="scheduleDurationMinDisplay">30 minutes</span>
+          <select id="schedulePausePolicySelect">
+            <option value="TRADING_TIME" selected>TRADING_TIME</option>
+            <option value="ELAPSED_TIME">ELAPSED_TIME</option>
           </select>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-            Determines how the closing timer handles administrative pauses or blackout periods.
-          </div>
-        </div>
-
-        <!-- Event Metadata Details -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          <div class="form-group">
-            <label class="form-label" for="scheduleEventTitleInput">Tournament Title</label>
-            <input id="scheduleEventTitleInput" type="text" class="form-input"
-              value="The Trading Floor Championship 2026" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="scheduleInstitutionInput">Host Institution / University</label>
-            <input id="scheduleInstitutionInput" type="text" class="form-input" value="Gujarat Technological University" />
-          </div>
+          <input id="scheduleEventTitleInput" type="text" value="The Trading Floor Championship 2026" />
+          <input id="scheduleInstitutionInput" type="text" value="Gujarat Technological University" />
         </div>
       </div>
 

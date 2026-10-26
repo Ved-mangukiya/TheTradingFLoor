@@ -2,10 +2,10 @@
 
 **Current Baseline**: Version 2.6.4 (Target Architecture, Authoritative State Model, Complete User Journeys & Screen Redesign, Universal Action Contracts & In-Flight Double-Click Shield Verified)  
 **Authoritative Multi-Suite Verification**:
-- `npm run test:chunk4` / `node test_chunk4_action_contracts.js`: **64/64 passing (100%)** across Universal Action Contract locks, double-click network shields, 5000ms safety timeout fallbacks, server acknowledgments, and `ACTION_REJECTED` catch-all.
-- `npm run test:chunk3` / `node test_chunk3_ui_and_overlays.js`: **89/89 passing (100%)** across all 5 user flow and screen redesign verification specs on isolated port 3103.
-- `npm run test:chunk2` / `node test_chunk2_state_machine.js`: **5/5 passing (100%)** (TEST-STATE-001 through TEST-STATE-005 verified on isolated port 3102).
-- `npm test` / `node test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
+- `npm run test:chunk4` / `node tests/test_chunk4_action_contracts.js`: **64/64 passing (100%)** across Universal Action Contract locks, double-click network shields, 5000ms safety timeout fallbacks, server acknowledgments, and `ACTION_REJECTED` catch-all.
+- `npm run test:chunk3` / `node tests/test_chunk3_ui_and_overlays.js`: **89/89 passing (100%)** across all 5 user flow and screen redesign verification specs on isolated port 3103.
+- `npm run test:chunk2` / `node tests/test_chunk2_state_machine.js`: **5/5 passing (100%)** (TEST-STATE-001 through TEST-STATE-005 verified on isolated port 3102).
+- `npm test` / `node tests/test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
 - DOM ID Integrity: **0 duplicate IDs** across all 718 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
 - Backend Domain Modularization: `server/state_machine.js`, `server/sanitizer.js`, `server/accounting.js`, `server/persistence.js`, `server/news_scheduler.js`, `server/market_engine.js`.
 - Frontend State Guard: `public/js/state_guard.js` wired into `public/index.html` and `public/app.js` (`shouldAcceptIncomingState` monotonic versioning guard).

@@ -154,8 +154,8 @@ async function runChunk3TestSuite() {
   console.log('🧪 THE TRADING FLOOR CHAMPIONSHIP 2026 — CHUNK 3 VERIFICATION');
   console.log('===============================================================\n');
 
-  const indexHtml = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
-  const appJs = fs.readFileSync(path.join(__dirname, 'public', 'app.js'), 'utf8');
+  const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const appJs = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
 
   // =========================================================================
   // TEST-FLOW-002: Unified Setup DOM Parity & ID Integrity
@@ -434,7 +434,8 @@ async function runChunk3TestSuite() {
     const openSockets = [];
 
     try {
-      serverProcess = spawn(process.execPath, [path.join(__dirname, 'server.js'), 'test'], {
+      serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+        cwd: path.join(__dirname, '..'),
         env: { ...process.env, PORT: String(testPort) },
         stdio: ['ignore', 'pipe', 'pipe']
       });

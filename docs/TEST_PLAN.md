@@ -44,10 +44,12 @@ The project maintains three comprehensive automated test suites providing 100% e
 
 | Suite | File | Tests | Purpose & Coverage |
 | :--- | :--- | :---: | :--- |
-| **Master Regression Suite** | `test_master_suite.js` | **52** | Spawns isolated test server on port 3088. Tests end-to-end authentication, setup lock, order accounting, team isolation, rate limiting, share manager, news shocks, CSV sanitization, disaster recovery, market indices, and winner ceremonies. |
-| **Dynamic Upgrade & Lifecycle** | `test_dynamic_upgrade_suite.js` | **9** | Verifies team investment analytics REST endpoints, lifecycle controls (`HOST_EMERGENCY_STOP`, `HOST_CONCLUDE_DAY`, `HOST_ADD_DAY`), news idempotency, and final review state. |
-| **Trading Cards & Lifecycle Suite** | `test_trading_cards_and_lifecycle_suite.js` | **24** | Verifies universe filtering (sectors, search, gainers/losers), real-time order affordability & shortfall messages, directional circuit breakers (upper/lower gating & recovery), and Day 1 ➔ Day 2 transitions with snapshot locking. |
-| **Total Test Coverage** | **All 3 Suites** | **85** | **85 / 85 Tests Passing (100% Reliability)** |
+| **Unified Master Flow Suite** | `tests/test_unified_master_flow.js` | **36** | Complete single-flow chronological end-to-end verification covering all 11 lifecycle phases on port 3099. |
+| **Master Regression Suite** | `tests/test_master_suite.js` | **52** | Spawns isolated test server on port 3088. Tests end-to-end authentication, setup lock, order accounting, team isolation, rate limiting, share manager, news shocks, CSV sanitization, disaster recovery, market indices, and winner ceremonies. |
+| **Dynamic Upgrade & Lifecycle** | `tests/test_dynamic_upgrade_suite.js` | **10** | Verifies team investment analytics REST endpoints, lifecycle controls (`HOST_EMERGENCY_STOP`, `HOST_CONCLUDE_DAY`, `HOST_ADD_DAY`), news idempotency, and final review state. |
+| **Trading Cards & Lifecycle Suite** | `tests/test_trading_cards_and_lifecycle_suite.js` | **24** | Verifies universe filtering (sectors, search, gainers/losers), real-time order affordability & shortfall messages, directional circuit breakers (upper/lower gating & recovery), and Day 1 ➔ Day 2 transitions with snapshot locking. |
+| **UI & Overlays Suite** | `tests/test_chunk3_ui_and_overlays.js` | **89** | Verifies DOM parity, zero duplicate IDs, role overlay mutual exclusion, and projector slot reuse. |
+| **Action Contracts Suite** | `tests/test_chunk4_action_contracts.js` | **64** | Verifies double-click button locking, 5000ms timeout fallbacks, and ACTION_REJECTED unlocking. |
 
 ### 3.2 Exact Execution Commands
 

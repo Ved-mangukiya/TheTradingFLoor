@@ -17,7 +17,7 @@
     "fundamentals": {
       "market_cap": "₹19.95 Lakh Cr",
       "pe_ratio": 26.8,
-      "high_52w": 3217.9,
+      "high_52w": 3544.63,
       "low_52w": 2220.3,
       "face_value": 10,
       "debt_to_equity": 0.38,
@@ -48,7 +48,7 @@
     "fundamentals": {
       "market_cap": "₹3.62 Lakh Cr",
       "pe_ratio": 16.4,
-      "high_52w": 1179.05,
+      "high_52w": 1183.82,
       "low_52w": 620.5,
       "face_value": 2,
       "debt_to_equity": 1.15,
@@ -79,7 +79,7 @@
     "fundamentals": {
       "market_cap": "₹3.90 Lakh Cr",
       "pe_ratio": 28.2,
-      "high_52w": 13680,
+      "high_52w": 15446.95,
       "low_52w": 9700,
       "face_value": 5,
       "debt_to_equity": 0.01,
@@ -110,7 +110,7 @@
     "fundamentals": {
       "market_cap": "₹3.54 Lakh Cr",
       "pe_ratio": 29.8,
-      "high_52w": 3220,
+      "high_52w": 3221.43,
       "low_52w": 1450,
       "face_value": 5,
       "debt_to_equity": 0.12,
@@ -172,7 +172,7 @@
     "fundamentals": {
       "market_cap": "₹7.82 Lakh Cr",
       "pe_ratio": 27.9,
-      "high_52w": 1990,
+      "high_52w": 2010.31,
       "low_52w": 1358,
       "face_value": 5,
       "debt_to_equity": 0.05,
@@ -203,7 +203,7 @@
     "fundamentals": {
       "market_cap": "₹12.85 Lakh Cr",
       "pe_ratio": 19.2,
-      "high_52w": 1794,
+      "high_52w": 1810.51,
       "low_52w": 1363,
       "face_value": 1,
       "debt_to_equity": 6.8,
@@ -234,7 +234,7 @@
     "fundamentals": {
       "market_cap": "₹8.72 Lakh Cr",
       "pe_ratio": 17.5,
-      "high_52w": 1330,
+      "high_52w": 1491.46,
       "low_52w": 910,
       "face_value": 2,
       "debt_to_equity": 5.9,
@@ -292,12 +292,12 @@
     "volatility_factor": 0.0038,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": false,
+    "isEnabled": true,
     "fundamentals": {
       "market_cap": "₹4.45 Lakh Cr",
       "pe_ratio": 31.8,
       "high_52w": 8190,
-      "low_52w": 6180,
+      "low_52w": 5820.69,
       "face_value": 2,
       "debt_to_equity": 3.6,
       "dividend_yield": "0.52%",
@@ -327,7 +327,7 @@
     "fundamentals": {
       "market_cap": "₹4.95 Lakh Cr",
       "pe_ratio": 34.6,
-      "high_52w": 3950,
+      "high_52w": 4265.19,
       "low_52w": 2860,
       "face_value": 2,
       "debt_to_equity": 0.7,
@@ -354,7 +354,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": false,
+    "isEnabled": true,
     "fundamentals": {
       "market_cap": "₹9.12 Lakh Cr",
       "pe_ratio": 48,
@@ -447,11 +447,11 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": false,
+    "isEnabled": true,
     "fundamentals": {
       "market_cap": "₹4.15 Lakh Cr",
       "pe_ratio": 37.5,
-      "high_52w": 1960,
+      "high_52w": 1973.38,
       "low_52w": 1100,
       "face_value": 1,
       "debt_to_equity": 0.08,
@@ -513,7 +513,7 @@
     "fundamentals": {
       "market_cap": "₹3.18 Lakh Cr",
       "pe_ratio": 19.4,
-      "high_52w": 366,
+      "high_52w": 369.87,
       "low_52w": 198,
       "face_value": 10,
       "debt_to_equity": 1.35,
@@ -544,7 +544,7 @@
     "fundamentals": {
       "market_cap": "₹2.08 Lakh Cr",
       "pe_ratio": 38,
-      "high_52w": 184,
+      "high_52w": 198.61,
       "low_52w": 118,
       "face_value": 1,
       "debt_to_equity": 0.85,
@@ -575,7 +575,7 @@
     "fundamentals": {
       "market_cap": "₹2.42 Lakh Cr",
       "pe_ratio": 29.5,
-      "high_52w": 1050,
+      "high_52w": 1171.38,
       "low_52w": 735,
       "face_value": 1,
       "debt_to_equity": 1.1,
@@ -602,7 +602,7 @@
     "volatility_factor": 0.0022,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": false,
+    "isEnabled": true,
     "fundamentals": {
       "market_cap": "₹3.08 Lakh Cr",
       "pe_ratio": 85,

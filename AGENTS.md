@@ -31,7 +31,7 @@
 ## 2. STRICT OPERATIONAL RULES FOR AI AGENTS
 
 1. **Never Claim a Feature Works Without Testing It**:
-   - You MUST run `node test_master_suite.js` or `node -c` to verify changes.
+   - You MUST run `npm test` (or `node tests/test_unified_master_flow.js`) and `node -c` to verify changes.
    - Never report tests or features as "passing" or "complete" without executing them in the terminal.
 
 2. **No Unnecessary Rewrites or Duplications**:

@@ -18,6 +18,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const assert = require('assert');
 const { spawn } = require('child_process');
+const path = require('path');
 
 const TEST_PORT = process.env.PORT || 3089;
 const HTTP_URL = `http://127.0.0.1:${TEST_PORT}`;
@@ -51,8 +52,8 @@ async function ensureServerRunning() {
   } catch (e) {}
 
   let serverReady = false;
-  serverProcess = spawn(process.execPath, ['server.js', 'test'], {
-    cwd: __dirname,
+  serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+    cwd: path.join(__dirname, '..'),
     env: { ...process.env, PORT: String(TEST_PORT) },
     stdio: 'pipe'
   });
@@ -220,6 +221,8 @@ async function runDynamicUpgradeSuite() {
 
     // 5. Finish Event
     console.log('\n[TEST 5] Finish Event & Final Analysis');
+    wsHost.send(JSON.stringify({ action: 'HOST_CONCLUDE_DAY', session_token: sessionToken }));
+    await delay(600);
     wsHost.send(JSON.stringify({ action: 'HOST_FINISH_EVENT', session_token: sessionToken }));
     await delay(800);
     const finishMsg = receivedMessages.find(m => m.type === 'CHAMPIONSHIP_CONCLUDED');

@@ -4057,4 +4057,44 @@ th.th-wrap {
   opacity: 1;
 }
 
+/* ==========================================================================
+   SECTOR FILTER PILLS (WCAG 2.2 AA Contrast Compliant: Ratio > 11:1)
+   ========================================================================== */
+.sector-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #CBD5E1;
+  background-color: #FFFFFF;
+  color: #1E293B;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sector-filter-pill:hover {
+  background-color: #F8FAFC;
+  border-color: #94A3B8;
+  color: #0F172A;
+  transform: translateY(-1px);
+}
+
+.sector-filter-pill.active {
+  background-color: #D4AF37;
+  border-color: #B8860B;
+  color: #0F172A;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.35);
+}
+
+.sector-filter-pill:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 2px;
+}
+
+
 

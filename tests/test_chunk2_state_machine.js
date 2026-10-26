@@ -83,7 +83,7 @@ async function runChunk2Tests() {
 
   // TEST-STATE-005 (Client Monotonic stateVersion Guard Unit Test)
   console.log('[TEST-STATE-005] Client Monotonic stateVersion Guard Test');
-  const StateGuard = require('./public/js/state_guard.js').StateGuard;
+  const StateGuard = require('../public/js/state_guard.js').StateGuard;
   assert.ok(StateGuard, 'StateGuard must be exported');
   StateGuard.resetStateGuard();
 
@@ -110,7 +110,8 @@ async function runChunk2Tests() {
   const openSockets = [];
 
   try {
-    serverProcess = spawn(process.execPath, [path.join(__dirname, 'server.js'), 'test'], {
+    serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+      cwd: path.join(__dirname, '..'),
       env: { ...process.env, PORT: TEST_PORT },
       stdio: ['ignore', 'pipe', 'pipe']
     });

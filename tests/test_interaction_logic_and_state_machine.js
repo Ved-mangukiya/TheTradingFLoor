@@ -19,6 +19,7 @@
 
 const http = require('http');
 const { spawn } = require('child_process');
+const path = require('path');
 const assert = require('assert');
 const WebSocket = require('ws');
 
@@ -59,8 +60,8 @@ async function runInteractionQA() {
   let passed = 0;
 
   try {
-    serverProcess = spawn('node', ['server.js', 'test'], {
-      cwd: __dirname,
+    serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+      cwd: path.join(__dirname, '..'),
       env: { ...process.env, PORT: TEST_PORT.toString() },
       stdio: 'pipe'
     });

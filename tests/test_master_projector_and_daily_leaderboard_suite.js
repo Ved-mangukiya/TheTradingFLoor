@@ -59,8 +59,8 @@ async function runMasterProjectorAndDailyLeaderboardSuite() {
   console.log(' 🧪 RUNNING MASTER PROJECTOR, EVENT ISOLATION & DAILY LEADERBOARD SUITE');
   console.log('================================================================\n');
 
-  let serverProcess = spawn(process.execPath, ['server.js', 'test'], {
-    cwd: __dirname,
+  let serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+    cwd: path.join(__dirname, '..'),
     env: { ...process.env, PORT: String(TEST_PORT) },
     stdio: ['ignore', 'pipe', 'pipe']
   });

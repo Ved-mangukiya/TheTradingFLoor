@@ -43,7 +43,7 @@ console.log('===============================================================\n')
 // -------------------------------------------------------------
 console.log('--- TEST-BTN-001: Button Existence & DOM ID Integrity ---');
 
-const htmlPath = path.join(__dirname, 'public', 'index.html');
+const htmlPath = path.join(__dirname, '..', 'public', 'index.html');
 const htmlContent = fs.readFileSync(htmlPath, 'utf8');
 
 // Check Duplicate IDs
@@ -158,7 +158,7 @@ createMockElement('hostRestoreStatusText', 'span');
 createMockElement('tradeModalValidationNotice', 'div');
 
 // Extract and evaluate public/app.js inside VM context
-const appJsPath = path.join(__dirname, 'public', 'app.js');
+const appJsPath = path.join(__dirname, '..', 'public', 'app.js');
 let appJsContent = fs.readFileSync(appJsPath, 'utf8');
 
 // Strip browser audio context initialization for clean node execution

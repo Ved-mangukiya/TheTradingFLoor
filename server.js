@@ -1408,6 +1408,7 @@ function concludeCurrentDay(isAutoClose = false) {
   }
 
   broadcastTick();
+  broadcastPublicEventStatus();
   return daySnapshot;
 }
 
@@ -2184,6 +2185,9 @@ function broadcastAudioCue(cueName, category = 'lifecycle', metadata = {}) {
 }
 
 function startResumeCountdown(triggeredBy = 'HOST') {
+  if (!gameState.configLocked || gameState.status === 'SETUP' || gameState.status === 'RESET') {
+    return { ok: false, reason: 'Cannot start or resume trading: Event configuration is incomplete. Complete and lock event setup first.' };
+  }
   if (gameState.activeCountdown) {
     return { ok: false, reason: 'A resume countdown is already active in progress' };
   }
@@ -2232,6 +2236,7 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     serverTimeMs: now
   });
   broadcastTick();
+  broadcastPublicEventStatus();
 
   if (activeCountdownTimer) clearTimeout(activeCountdownTimer);
 
@@ -2265,6 +2270,7 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     });
     broadcastAll({ type: 'MARKET_RESUMED' });
     broadcastTick();
+    broadcastPublicEventStatus();
   }, durationMs);
 
   return { ok: true, countdownId, targetServerTimeMs };
@@ -2391,6 +2397,32 @@ function broadcastAll(obj) {
   });
 }
 
+function broadcastPublicEventStatus() {
+  const publicLocked = !!gameState.configLocked;
+  const payload = JSON.stringify({
+    type: 'PUBLIC_EVENT_STATUS',
+    eventId: gameState.eventId,
+    stateVersion: gameState.stateVersion,
+    isReset: !!gameState.isReset,
+    resetMessage: gameState.resetMessage || null,
+    status: gameState.status,
+    configLocked: publicLocked,
+    title: gameState.title,
+    subtitle: gameState.subtitle,
+    institution: gameState.institution,
+    currentDay: gameState.currentDay,
+    totalDays: gameState.totalDays,
+    elapsedSeconds: gameState.elapsedSeconds,
+    isPaused: !!gameState.isPaused,
+    isConcluded: !!gameState.isConcluded
+  });
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      try { client.send(payload); } catch (e) {}
+    }
+  });
+}
+
 // ==========================================
 // 7. WEBSOCKET MESSAGE ROUTER
 // ==========================================
@@ -2410,7 +2442,10 @@ wss.on('connection', (ws) => {
       subtitle: gameState.subtitle,
       institution: gameState.institution,
       currentDay: gameState.currentDay,
-      totalDays: gameState.totalDays
+      totalDays: gameState.totalDays,
+      elapsedSeconds: gameState.elapsedSeconds,
+      isPaused: !!gameState.isPaused,
+      isConcluded: !!gameState.isConcluded
     }));
   } catch (e) {}
 
@@ -3127,6 +3162,8 @@ wss.on('connection', (ws) => {
         gameState.configLocked = true;
         gameState.status = 'STANDBY';
         gameState.isPaused = true;
+        gameState.isReset = false;
+        gameState.resetMessage = null;
         gameState.elapsedSeconds = 0;
         gameState.currentDay = 1;
         gameState.isConcluded = false;
@@ -3159,6 +3196,7 @@ wss.on('connection', (ws) => {
         }));
 
         broadcastTick();
+        broadcastPublicEventStatus();
         return;
       }
 
@@ -3231,6 +3269,13 @@ wss.on('connection', (ws) => {
 
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
       if (data.action === 'HOST_PAUSE') {
+        if (!gameState.configLocked || gameState.status === 'SETUP' || gameState.status === 'RESET') {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot pause market: Event configuration is incomplete. Complete and lock event setup first.'
+          }));
+          return;
+        }
         if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
           ws.send(JSON.stringify({
             type: 'ACTION_REJECTED',
@@ -3254,7 +3299,7 @@ wss.on('connection', (ws) => {
         gameState.activeCountdown = null;
         gameState.isPaused = true;
         gameState.pauseMode = mode;
-        gameState.status = mode === 'BLACKOUT' ? 'BLACKOUT' : 'PAUSED';
+        gameState.status = 'PAUSED'; // Always canonical PAUSED; pauseMode distinguishes BLACKOUT vs VISIBLE_FROZEN
         gameState.pauseStartedAt = Date.now();
         recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', pauseMode: mode, shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
         if (cancelledCountdownId) {
@@ -3262,6 +3307,7 @@ wss.on('connection', (ws) => {
         }
         broadcastAll({ type: 'MARKET_PAUSED', pauseMode: mode });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       // 5.2 Market Resume with Authoritative 3-2-1 Server Countdown
@@ -3289,6 +3335,7 @@ wss.on('connection', (ws) => {
         recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, title: gameState.title });
         broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, gameState });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       // 5.2b2 Cancel Scheduled Countdown
@@ -3300,10 +3347,18 @@ wss.on('connection', (ws) => {
         recordAuditEvent('SCHEDULE_CANCELLED', { triggered_by: 'HOST' });
         broadcastAll({ type: 'SCHEDULE_CANCELLED', gameState });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       // 5.2c Start Event Now (Immediate Launch)
       if (data.action === 'HOST_START_EVENT_NOW' || data.action === 'HOST_START_MARKET') {
+        if (!gameState.configLocked || gameState.status === 'SETUP' || gameState.status === 'RESET') {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot start event: Event configuration is incomplete. Complete and lock event setup first.'
+          }));
+          return;
+        }
         if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
           ws.send(JSON.stringify({
             type: 'ACTION_REJECTED',
@@ -3335,6 +3390,7 @@ wss.on('connection', (ws) => {
         }
         broadcastAll({ type: 'MARKET_RESUMED' });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       // 5.2d News Control Center: Publish Now, Cancel, Edit, Duplicate
@@ -3484,16 +3540,17 @@ wss.on('connection', (ws) => {
         recordAuditEvent('WINNER_PRESENTATION_STARTED', { snapshotId: snapshot.snapshotId });
         broadcastAudioCue('championship_fanfare', 'presentation', { scene: 'SCENE_INTRO' });
         broadcastAll({
-          type: 'PROJECTOR_STATE_UPDATE',
-          projectorState: gameState.projectorState
-        });
-        broadcastAll({
           type: 'PRESENTATION_SCENE_UPDATE',
           scene: 'SCENE_INTRO',
           presentationState: gameState.presentationState,
           snapshot
         });
+        broadcastAll({
+          type: 'PROJECTOR_STATE_UPDATE',
+          projectorState: gameState.projectorState
+        });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       if (data.action === 'HOST_EXIT_WINNER_PRESENTATION') {
@@ -3506,6 +3563,7 @@ wss.on('connection', (ws) => {
           projectorState: gameState.projectorState
         });
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       if (data.action === 'HOST_SET_PRESENTATION_SCENE') {
@@ -3587,6 +3645,13 @@ wss.on('connection', (ws) => {
 
       // 5.2h Host Conclude / Finalize Current Day Results
       if (data.action === 'HOST_FINALIZE_DAY' || data.action === 'HOST_CONCLUDE_DAY') {
+        if (!gameState.configLocked || gameState.status === 'SETUP' || gameState.status === 'RESET') {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot conclude day: No event is currently active or configured. Complete event setup first.'
+          }));
+          return;
+        }
         if (gameState.status === 'DAY_COMPLETED') {
           ws.send(JSON.stringify({
             type: 'ACTION_REJECTED',
@@ -3669,6 +3734,7 @@ wss.on('connection', (ws) => {
             totalDays: gameState.totalDays
           });
           broadcastTick();
+          broadcastPublicEventStatus();
         } else {
           ws.send(JSON.stringify({
             type: 'ORDER_REJECTED',
@@ -4367,6 +4433,7 @@ wss.on('connection', (ws) => {
           message: 'Championship reset successfully. Returned to Day 1 Standby.'
         }));
         broadcastTick();
+        broadcastPublicEventStatus();
       }
 
       // 5.21b Host Disaster Recovery Checkpoints (Save, List, Restore)

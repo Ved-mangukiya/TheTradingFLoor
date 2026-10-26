@@ -90,8 +90,8 @@ async function runTests() {
 
   // Boot server on isolated test port
   let serverReady = false;
-  serverProcess = spawn(process.execPath, ['server.js', 'test'], {
-    cwd: __dirname,
+  serverProcess = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), 'test'], {
+    cwd: path.join(__dirname, '..'),
     env: { ...process.env, PORT: String(TEST_PORT) },
     stdio: 'pipe'
   });
@@ -702,7 +702,7 @@ async function runTests() {
       config: {
         title: 'Championship 2026 - Fresh Tournament',
         startingCash: 750000,
-        totalDays: 2,
+        totalDays: 1,
         dayDurationSeconds: 1200,
         transactionFeeBps: 5,
         circuitBreakerPercent: 15,
@@ -729,7 +729,7 @@ async function runTests() {
 
     // 9.1 Verify Real-Company Data in Live Universe File
     const fs = require('fs');
-    const universeData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'universe_active.json'), 'utf8'));
+    const universeData = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'universe_active.json'), 'utf8'));
     const realTickers = universeData.map((c) => c.ticker);
     const requiredRealTickers = ['RELIANCE', 'TATAMOTORS', 'TCS', 'HDFCBANK', 'SBIN', 'LT', 'AIRTEL', 'ITC'];
     const allRequiredPresent = requiredRealTickers.every((t) => realTickers.includes(t));
