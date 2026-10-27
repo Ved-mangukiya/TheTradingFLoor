@@ -2983,8 +2983,8 @@
 
     <!-- Main Interactive Stage (Switches between Market Multi-Scene Cycle and Embedded Winner Stage) -->
     <div id="projectorMainStage" style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin: 16px 0;">
-      <!-- Real-Time Market & Sector Indices Ticker Strip (Persistent Across Projector) -->
-      <div id="projIndicesTickerBar" class="indices-ticker-bar" style="margin-bottom: 14px;"></div>
+      <!-- Real-Time Market & Sector Indices Ticker Strip (Hidden to prevent scene squeezing; dedicated SCENE_INDICES is used) -->
+      <div id="projIndicesTickerBar" class="indices-ticker-bar hidden" style="display: none !important; margin: 0; padding: 0;"></div>
 
       <!-- Scene A: Dedicated Tournament Reset Panel (#projSceneReset) -->
       <div id="projSceneReset" class="hidden proj-scene-view">
@@ -3442,13 +3442,13 @@
         </main>
       </div>
 
-      <!-- Scene 2: Real Market Indices Overview -->
-      <div id="projSceneIndices" class="hidden"
-        style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; overflow-y: auto;"></div>
+      <!-- Scene 2: Dedicated Real Market Indices Overview & Dynamic Charts -->
+      <div id="projSceneIndices" class="hidden proj-scene-view"
+        style="flex: 1; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding: 4px;"></div>
 
-      <!-- Scene 3: Team Strategy & Sector Allocations (Audience-Friendly, Zero Ticker Leakage) -->
-      <div id="projSceneStrategy" class="hidden"
-        style="flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; overflow-y: auto;"></div>
+      <!-- Scene 3: Team Strategy & Sector Allocations (Child-Friendly, Intuitive Visuals) -->
+      <div id="projSceneStrategy" class="hidden proj-scene-view"
+        style="flex: 1; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding: 4px;"></div>
 
       <!-- Scene 4: Daily & Championship Standings Leaderboard -->
       <div id="projSceneLeaderboard" class="hidden"

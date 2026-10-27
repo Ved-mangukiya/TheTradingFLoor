@@ -1,17 +1,16 @@
 # NEXT SESSION TASKS — THE TRADING FLOOR CHAMPIONSHIP 2026
 
-**Current Baseline**: Version 2.6.4 (Target Architecture, Authoritative State Model, Complete User Journeys & Screen Redesign, Universal Action Contracts & In-Flight Double-Click Shield Verified)  
+**Current Baseline**: Version 2.6.5 (Host Live Tables Fallback, Dedicated Projector Indices Scene with Canvas Charts, Child-Friendly Strategy Deployment UI & Dynamic Indian Wall-Clock News Wires Verified)  
 **Authoritative Multi-Suite Verification**:
+- `npm test` / `node tests/test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
 - `npm run test:chunk4` / `node tests/test_chunk4_action_contracts.js`: **64/64 passing (100%)** across Universal Action Contract locks, double-click network shields, 5000ms safety timeout fallbacks, server acknowledgments, and `ACTION_REJECTED` catch-all.
 - `npm run test:chunk3` / `node tests/test_chunk3_ui_and_overlays.js`: **89/89 passing (100%)** across all 5 user flow and screen redesign verification specs on isolated port 3103.
 - `npm run test:chunk2` / `node tests/test_chunk2_state_machine.js`: **5/5 passing (100%)** (TEST-STATE-001 through TEST-STATE-005 verified on isolated port 3102).
-- `npm test` / `node tests/test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
-- DOM ID Integrity: **0 duplicate IDs** across all 718 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
-- Backend Domain Modularization: `server/state_machine.js`, `server/sanitizer.js`, `server/accounting.js`, `server/persistence.js`, `server/news_scheduler.js`, `server/market_engine.js`.
-- Frontend State Guard: `public/js/state_guard.js` wired into `public/index.html` and `public/app.js` (`shouldAcceptIncomingState` monotonic versioning guard).
-- Audio Cue Isolation: `broadcastAudioCue()` delivers exclusively to `soundClients` (`SOUND_CONSOLE`), protecting traders and unauthenticated sockets from audio cue leakage (`DEF-016`).
-- Overlay Determinism: `syncRoleOverlays()` with mutual exclusion across `STANDBY`, `COUNTDOWN`, `LIVE`, `PAUSED` (soft vs blackout), `DAY_COMPLETED` (modal vs read-only banner), and `CHAMPIONSHIP_CONCLUDED` (`FLOW-001`).
-- Projector In-Place 8-Card Slot Reuse: `#projCardSlot_0`..`#projCardSlot_7` and canvases updated in-place without DOM reconstruction or canvas 2D context thrashing (`FLOW-006` / `DEF-031`).
+- DOM ID Integrity: **0 duplicate IDs** across all 738 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
+- Host Live Market Population: Leaderboard fallback to registered teams with starting capital + trade stream fallback + subtab auto-render.
+- Projector Indices Elevation: Squeezing top ticker bar hidden (`display: none !important;`); dedicated full-screen indices scene (`SCENE_INDICES`) with Vanilla Canvas trendlines, baseline guide, and gradient fill.
+- Child-Friendly Strategy Scene: `SCENE_STRATEGY` with floor macro liquidity bar, strategy archetype badges, and "Piggy Bank vs Market" visual dual progress scales.
+- Real Windows Wall-Clock News Wires: Indian Standard Time format (e.g. `03:40:12 PM IST`) stamped server-side and rendered dynamically across Host, Trader, Projector, and Breaking News Flash modals.
 - Universal Action Contract Engine: `applyActionContractLock` and `releaseActionContractLock` prevent double-click frame spam on orders, liquidations, logins, market operations, and ceremony launches with 5000ms timeout fallback (`BTN-000` .. `BTN-009`).
 - Next Milestone: **Chunk 5 — Advanced Analytics, Reports, Multi-Section Tournament Clustering, or Production Deployment / Packaging**.
 

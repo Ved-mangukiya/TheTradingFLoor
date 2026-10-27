@@ -468,6 +468,44 @@
   - Live walkthrough recorded (`host_streamlined_setup_flow_1792328477578.webp`).
   - Successfully verified championship reset, 6-step guided setup walkthrough, clean Step 4 layout, direct Step 6 lock, post-lock modal quick presets, and Day 1 LIVE market launch.
 
+---
+
+## 22. Host Live Market Data Population, Dedicated Projector Indices & Child-Friendly Strategy UI (v2.6.5)
+- [x] **Host Live Market Tables Always Populated**:
+  - Resolved empty tables in Host "Live Market" tab (`#hostLeaderboardTbody` and `#hostRecentTradesTbody`).
+  - Added fallback `effectiveLeaderboard` derived from `state.allTeamsList` (with initial net worth = starting cash, 0 trades, 0% P&L) when tournament has not executed trades yet.
+  - Wrapped both leaderboard and recent trades rendering in robust error guards (`try...catch`) so no upstream error suppresses table output.
+  - Hooked `renderHostView(latestState)` into `switchHostMarketSubTab` ensuring tables render immediately when switching between subtabs.
+  - Verified in live browser: all registered teams, net worths, cash balances, P&L percentages, and execution stream trades render crisply.
+- [x] **Projector Layout Enhancement & Dedicated Full-Screen Indices Scene**:
+  - Permanently hidden the persistent top indices bar (`#projIndicesTickerBar` with `display: none !important;`) that previously squeezed stock cards across all scenes.
+  - Elevated indices to a dedicated rotation time slot (`SCENE_INDICES` / `#projSceneIndices`) cycling in projector rotation.
+  - Engineered zero-CDN Vanilla Canvas charting engine `drawProjectorIndexChart`:
+    - Clean reference baseline line (base value: 25,000 / 50,000 / 33,600, etc.).
+    - Dynamic gradient area fill with green (+ve) and crimson (-ve) price trajectory.
+    - End-point current value beacon dot.
+    - Displays TTF NIFTY 20 benchmark hero card + 6 sector cards (Banking, IT, Auto, Energy, Infra, FMCG) with constituent breakdowns.
+- [x] **Child-Friendly Team Strategy & Uninvested Capital Scene**:
+  - Revamped `SCENE_STRATEGY` (`#projSceneStrategy`) into an intuitive visual format accessible to any spectator or beginner:
+    - **Floor Macro Capital Bar**: Displays total tournament-wide liquidity split (`💵 CASH: X%` vs `📈 STOCKS: Y%`).
+    - **Strategy Archetype Badges**: Intuitive categorization (`💤 100% IN BANK • SITTING ON SIDELINES`, `🛡️ DEFENSIVE • CASH PRESERVATION`, `⚖️ SMART BALANCED • PRUDENT SPREAD`, `🚀 AGGRESSIVE TRADER • HEAVILY INVESTED`, `⚡ ALL-IN DAREDEVIL • FULL MARKET EXPOSURE`).
+    - **"Piggy Bank vs Market" Dual Bars**: Color-coded progress scales showing exact Rupee amounts and percentages for cash-in-hand vs invested equity.
+    - **Plain-English Explanations**: E.g., *"Has not purchased any stocks yet. Cash is 100% safe, but missing out on all stock rallies!"* and *"Putting 69% of their money to work in companies. High upside potential!"*.
+    - **Industry Exposure Pills**: Displays top sector holdings per team (e.g., `Banking 40%`, `IT & Tech 29%`).
+- [x] **Dynamic Local Windows PC Wall-Clock Time for News Wires (Indian Standard Time)**:
+  - Eliminated confusing relative session elapsed time (e.g. `at 5 mins` or `05:24`) for published news wires.
+  - Stamped `publishedWallClock` on `server.js` using real Windows host clock in Indian format: `nowTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST'`.
+  - Added `estimatedWallClock` for scheduled upcoming news wires.
+  - Implemented client helper `getNewsWireTime(item)` across all terminal surfaces:
+    - Host News Control Centre (`🟢 WIRED AT 03:40:12 PM IST`).
+    - Trader Terminal News Stream (`DAY 1 • 🕒 Wired at: 03:40:12 PM IST`).
+    - Projector Breaking News Wire (`🕒 Wired at: 03:40:12 PM IST`).
+    - Breaking News Toast Banner & Full Screen Breaking News Flash Modals (`DAY 1 • MARKET SHOCK • 🕒 03:40:12 PM IST`).
+- [x] **Full Test Suite & Browser Verification**:
+  - `npm test` (`node tests/test_unified_master_flow.js`): **36/36 single-flow master assertions passing (100%)**.
+  - `node tools/find_duplicate_ids.js`: **0 duplicate IDs** across 738 unique DOM elements.
+  - Visual verification executed via `browser_subagent` across Host and Projector views.
+
 
 
 

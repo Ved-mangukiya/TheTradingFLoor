@@ -1567,29 +1567,29 @@
     ]
   },
   "live_game_state_sample": {
-    "savedAt": "2026-10-27T09:27:49.465Z",
+    "savedAt": "2026-10-27T10:13:24.451Z",
     "activeScenarioMode": "live",
     "gameState": {
       "eventId": "EVT_1793090313673_WC92GI",
-      "stateVersion": 4,
+      "stateVersion": 9,
       "isReset": false,
       "resetMessage": null,
       "title": "The Trading Floor - Championship 2026",
       "subtitle": "Gujarat Technological University • Intra-College Trading Championship",
       "institution": "Gujarat Technological University",
-      "status": "STANDBY",
+      "status": "PAUSED",
       "configLocked": true,
       "startMode": "IMMEDIATE",
       "scheduledStartTime": null,
       "pausePolicy": "TRADING_TIME",
-      "currentDay": 2,
+      "currentDay": 3,
       "totalDays": 3,
       "dayDurationSeconds": 1800,
       "startingCash": 500000,
-      "elapsedSeconds": 0,
+      "elapsedSeconds": 4,
       "isPaused": true,
-      "pauseMode": "VISIBLE_FROZEN",
-      "pauseStartedAt": 1793093049279,
+      "pauseMode": "RECOVERY",
+      "pauseStartedAt": 1793095568046,
       "totalShiftOffsetSeconds": 0,
       "tickIntervalMs": 1500,
       "circuitBreakerPercent": 20,
@@ -1734,9 +1734,539 @@
         }
       ],
       "isConcluded": false,
-      "winnerData": null,
+      "winnerData": {
+        "first": {
+          "id": "team_1",
+          "username": "team1",
+          "name": "Dalal Street Titans",
+          "members": "Trader 1A, Trader 1B",
+          "cash": 570874.82,
+          "holdingsValue": 0,
+          "netWorth": 570874.82,
+          "totalPnl": 70874.82,
+          "pnlPct": 14.17,
+          "realizedPnl": 70874.82,
+          "unrealizedPnl": 0,
+          "tradeCount": 12,
+          "holdings": {
+            "RELIANCE": 0,
+            "TATAMOTORS": 0,
+            "MARUTI": 0,
+            "M&M": 0,
+            "TCS": 0,
+            "INFY": 0,
+            "HDFCBANK": 0,
+            "ICICIBANK": 0,
+            "SBIN": 0,
+            "BAJFINANCE": 0,
+            "LT": 0,
+            "AIRTEL": 0,
+            "ITC": 0,
+            "HINDUNILVR": 0,
+            "SUNPHARMA": 0,
+            "NTPC": 0,
+            "POWERGRID": 0,
+            "TATASTEEL": 0,
+            "JSWSTEEL": 0,
+            "TITAN": 0
+          }
+        },
+        "second": {
+          "id": "team_2",
+          "username": "team2",
+          "name": "Bullish Bears",
+          "members": "Trader 2A, Trader 2B",
+          "cash": 500000,
+          "holdingsValue": 0,
+          "netWorth": 500000,
+          "totalPnl": 0,
+          "pnlPct": 0,
+          "realizedPnl": 0,
+          "unrealizedPnl": 0,
+          "tradeCount": 0,
+          "holdings": {
+            "RELIANCE": 0,
+            "TATAMOTORS": 0,
+            "MARUTI": 0,
+            "M&M": 0,
+            "TCS": 0,
+            "INFY": 0,
+            "HDFCBANK": 0,
+            "ICICIBANK": 0,
+            "SBIN": 0,
+            "BAJFINANCE": 0,
+            "LT": 0,
+            "AIRTEL": 0,
+            "ITC": 0,
+            "HINDUNILVR": 0,
+            "SUNPHARMA": 0,
+            "NTPC": 0,
+            "POWERGRID": 0,
+            "TATASTEEL": 0,
+            "JSWSTEEL": 0,
+            "TITAN": 0
+          }
+        },
+        "third": {
+          "id": "team_3",
+          "username": "team3",
+          "name": "Alpha Hedge",
+          "members": "Trader 3A, Trader 3B",
+          "cash": 500000,
+          "holdingsValue": 0,
+          "netWorth": 500000,
+          "totalPnl": 0,
+          "pnlPct": 0,
+          "realizedPnl": 0,
+          "unrealizedPnl": 0,
+          "tradeCount": 0,
+          "holdings": {
+            "RELIANCE": 0,
+            "TATAMOTORS": 0,
+            "MARUTI": 0,
+            "M&M": 0,
+            "TCS": 0,
+            "INFY": 0,
+            "HDFCBANK": 0,
+            "ICICIBANK": 0,
+            "SBIN": 0,
+            "BAJFINANCE": 0,
+            "LT": 0,
+            "AIRTEL": 0,
+            "ITC": 0,
+            "HINDUNILVR": 0,
+            "SUNPHARMA": 0,
+            "NTPC": 0,
+            "POWERGRID": 0,
+            "TATASTEEL": 0,
+            "JSWSTEEL": 0,
+            "TITAN": 0
+          }
+        },
+        "fullRankings": [
+          {
+            "id": "team_1",
+            "username": "team1",
+            "name": "Dalal Street Titans",
+            "members": "Trader 1A, Trader 1B",
+            "cash": 570874.82,
+            "holdingsValue": 0,
+            "netWorth": 570874.82,
+            "totalPnl": 70874.82,
+            "pnlPct": 14.17,
+            "realizedPnl": 70874.82,
+            "unrealizedPnl": 0,
+            "tradeCount": 12,
+            "holdings": {
+              "RELIANCE": 0,
+              "TATAMOTORS": 0,
+              "MARUTI": 0,
+              "M&M": 0,
+              "TCS": 0,
+              "INFY": 0,
+              "HDFCBANK": 0,
+              "ICICIBANK": 0,
+              "SBIN": 0,
+              "BAJFINANCE": 0,
+              "LT": 0,
+              "AIRTEL": 0,
+              "ITC": 0,
+              "HINDUNILVR": 0,
+              "SUNPHARMA": 0,
+              "NTPC": 0,
+              "POWERGRID": 0,
+              "TATASTEEL": 0,
+              "JSWSTEEL": 0,
+              "TITAN": 0
+            }
+          },
+          {
+            "id": "team_2",
+            "username": "team2",
+            "name": "Bullish Bears",
+            "members": "Trader 2A, Trader 2B",
+            "cash": 500000,
+            "holdingsValue": 0,
+            "netWorth": 500000,
+            "totalPnl": 0,
+            "pnlPct": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "tradeCount": 0,
+            "holdings": {
+              "RELIANCE": 0,
+              "TATAMOTORS": 0,
+              "MARUTI": 0,
+              "M&M": 0,
+              "TCS": 0,
+              "INFY": 0,
+              "HDFCBANK": 0,
+              "ICICIBANK": 0,
+              "SBIN": 0,
+              "BAJFINANCE": 0,
+              "LT": 0,
+              "AIRTEL": 0,
+              "ITC": 0,
+              "HINDUNILVR": 0,
+              "SUNPHARMA": 0,
+              "NTPC": 0,
+              "POWERGRID": 0,
+              "TATASTEEL": 0,
+              "JSWSTEEL": 0,
+              "TITAN": 0
+            }
+          },
+          {
+            "id": "team_3",
+            "username": "team3",
+            "name": "Alpha Hedge",
+            "members": "Trader 3A, Trader 3B",
+            "cash": 500000,
+            "holdingsValue": 0,
+            "netWorth": 500000,
+            "totalPnl": 0,
+            "pnlPct": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "tradeCount": 0,
+            "holdings": {
+              "RELIANCE": 0,
+              "TATAMOTORS": 0,
+              "MARUTI": 0,
+              "M&M": 0,
+              "TCS": 0,
+              "INFY": 0,
+              "HDFCBANK": 0,
+              "ICICIBANK": 0,
+              "SBIN": 0,
+              "BAJFINANCE": 0,
+              "LT": 0,
+              "AIRTEL": 0,
+              "ITC": 0,
+              "HINDUNILVR": 0,
+              "SUNPHARMA": 0,
+              "NTPC": 0,
+              "POWERGRID": 0,
+              "TATASTEEL": 0,
+              "JSWSTEEL": 0,
+              "TITAN": 0
+            }
+          },
+          {
+            "id": "team_4",
+            "username": "team4",
+            "name": "Quantum Traders",
+            "members": "Trader 4A, Trader 4B",
+            "cash": 500000,
+            "holdingsValue": 0,
+            "netWorth": 500000,
+            "totalPnl": 0,
+            "pnlPct": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "tradeCount": 0,
+            "holdings": {
+              "RELIANCE": 0,
+              "TATAMOTORS": 0,
+              "MARUTI": 0,
+              "M&M": 0,
+              "TCS": 0,
+              "INFY": 0,
+              "HDFCBANK": 0,
+              "ICICIBANK": 0,
+              "SBIN": 0,
+              "BAJFINANCE": 0,
+              "LT": 0,
+              "AIRTEL": 0,
+              "ITC": 0,
+              "HINDUNILVR": 0,
+              "SUNPHARMA": 0,
+              "NTPC": 0,
+              "POWERGRID": 0,
+              "TATASTEEL": 0,
+              "JSWSTEEL": 0,
+              "TITAN": 0
+            }
+          }
+        ],
+        "concludedAt": "3:06:45 PM"
+      },
       "activeCountdown": null,
-      "finalResultsSnapshot": null,
+      "finalResultsSnapshot": {
+        "snapshotId": "SNAP_1793093815656",
+        "generatedAt": "2026-10-27T09:36:55.656Z",
+        "eventTitle": "The Trading Floor - Championship 2026",
+        "closingDay": 3,
+        "totalTeams": 4,
+        "closingPrices": {
+          "RELIANCE": 3419.32,
+          "TATAMOTORS": 1176.27,
+          "MARUTI": 12400,
+          "M&M": 2850,
+          "TCS": 4132.24,
+          "INFY": 1732.49,
+          "HDFCBANK": 1678.15,
+          "ICICIBANK": 1257.86,
+          "SBIN": 820,
+          "BAJFINANCE": 7200,
+          "LT": 3726.12,
+          "AIRTEL": 1550,
+          "ITC": 481.98,
+          "HINDUNILVR": 2750,
+          "SUNPHARMA": 1720,
+          "NTPC": 410,
+          "POWERGRID": 340,
+          "TATASTEEL": 165,
+          "JSWSTEEL": 980,
+          "TITAN": 3450
+        },
+        "champion": {
+          "rank": 1,
+          "teamId": "team_1",
+          "teamName": "Dalal Street Titans",
+          "members": "Trader 1A, Trader 1B",
+          "startingCash": 500000,
+          "finalCash": 570874.82,
+          "holdingsValue": 0,
+          "finalPortfolioValue": 570874.82,
+          "netProfitOrLoss": 70874.82,
+          "returnPct": 14.17,
+          "tradeCount": 12,
+          "buyCount": 6,
+          "sellCount": 6,
+          "totalInvested": 3299051.55,
+          "totalSalesValue": 3369926.37,
+          "totalFees": 0,
+          "realizedPnl": 70874.82,
+          "unrealizedPnl": 0,
+          "holdingsBreakdown": [],
+          "summaryText": "Disciplined profitable performance gaining +₹70,874.82 (+14.17%). Strong risk balance."
+        },
+        "runnerUp": {
+          "rank": 2,
+          "teamId": "team_2",
+          "teamName": "Bullish Bears",
+          "members": "Trader 2A, Trader 2B",
+          "startingCash": 500000,
+          "finalCash": 500000,
+          "holdingsValue": 0,
+          "finalPortfolioValue": 500000,
+          "netProfitOrLoss": 0,
+          "returnPct": 0,
+          "tradeCount": 0,
+          "buyCount": 0,
+          "sellCount": 0,
+          "totalInvested": 0,
+          "totalSalesValue": 0,
+          "totalFees": 0,
+          "realizedPnl": 0,
+          "unrealizedPnl": 0,
+          "holdingsBreakdown": [],
+          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+        },
+        "thirdPlace": {
+          "rank": 3,
+          "teamId": "team_3",
+          "teamName": "Alpha Hedge",
+          "members": "Trader 3A, Trader 3B",
+          "startingCash": 500000,
+          "finalCash": 500000,
+          "holdingsValue": 0,
+          "finalPortfolioValue": 500000,
+          "netProfitOrLoss": 0,
+          "returnPct": 0,
+          "tradeCount": 0,
+          "buyCount": 0,
+          "sellCount": 0,
+          "totalInvested": 0,
+          "totalSalesValue": 0,
+          "totalFees": 0,
+          "realizedPnl": 0,
+          "unrealizedPnl": 0,
+          "holdingsBreakdown": [],
+          "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+        },
+        "rankings": [
+          {
+            "rank": 1,
+            "teamId": "team_1",
+            "teamName": "Dalal Street Titans",
+            "members": "Trader 1A, Trader 1B",
+            "startingCash": 500000,
+            "finalCash": 570874.82,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 570874.82,
+            "netProfitOrLoss": 70874.82,
+            "returnPct": 14.17,
+            "tradeCount": 12,
+            "buyCount": 6,
+            "sellCount": 6,
+            "totalInvested": 3299051.55,
+            "totalSalesValue": 3369926.37,
+            "totalFees": 0,
+            "realizedPnl": 70874.82,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Disciplined profitable performance gaining +₹70,874.82 (+14.17%). Strong risk balance."
+          },
+          {
+            "rank": 2,
+            "teamId": "team_2",
+            "teamName": "Bullish Bears",
+            "members": "Trader 2A, Trader 2B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          },
+          {
+            "rank": 3,
+            "teamId": "team_3",
+            "teamName": "Alpha Hedge",
+            "members": "Trader 3A, Trader 3B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          },
+          {
+            "rank": 4,
+            "teamId": "team_4",
+            "teamName": "Quantum Traders",
+            "members": "Trader 4A, Trader 4B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          }
+        ],
+        "teams": [
+          {
+            "rank": 1,
+            "teamId": "team_1",
+            "teamName": "Dalal Street Titans",
+            "members": "Trader 1A, Trader 1B",
+            "startingCash": 500000,
+            "finalCash": 570874.82,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 570874.82,
+            "netProfitOrLoss": 70874.82,
+            "returnPct": 14.17,
+            "tradeCount": 12,
+            "buyCount": 6,
+            "sellCount": 6,
+            "totalInvested": 3299051.55,
+            "totalSalesValue": 3369926.37,
+            "totalFees": 0,
+            "realizedPnl": 70874.82,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Disciplined profitable performance gaining +₹70,874.82 (+14.17%). Strong risk balance."
+          },
+          {
+            "rank": 2,
+            "teamId": "team_2",
+            "teamName": "Bullish Bears",
+            "members": "Trader 2A, Trader 2B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          },
+          {
+            "rank": 3,
+            "teamId": "team_3",
+            "teamName": "Alpha Hedge",
+            "members": "Trader 3A, Trader 3B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          },
+          {
+            "rank": 4,
+            "teamId": "team_4",
+            "teamName": "Quantum Traders",
+            "members": "Trader 4A, Trader 4B",
+            "startingCash": 500000,
+            "finalCash": 500000,
+            "holdingsValue": 0,
+            "finalPortfolioValue": 500000,
+            "netProfitOrLoss": 0,
+            "returnPct": 0,
+            "tradeCount": 0,
+            "buyCount": 0,
+            "sellCount": 0,
+            "totalInvested": 0,
+            "totalSalesValue": 0,
+            "totalFees": 0,
+            "realizedPnl": 0,
+            "unrealizedPnl": 0,
+            "holdingsBreakdown": [],
+            "summaryText": "Neutral capital preservation. Retained 100% principal safe without portfolio drawdown."
+          }
+        ]
+      },
       "marketIndices": [],
       "dailyLeaderboards": {
         "day_1": {
@@ -2107,6 +2637,744 @@
             }
           ],
           "isAutomaticEnd": true
+        },
+        "day_2": {
+          "day": 2,
+          "finalizedAt": "2026-10-27T09:36:29.758Z",
+          "closingPrices": {
+            "RELIANCE": 3390.02,
+            "TATAMOTORS": 1169.43,
+            "MARUTI": 12400,
+            "M&M": 2850,
+            "TCS": 4131.72,
+            "INFY": 1741.51,
+            "HDFCBANK": 1680.55,
+            "ICICIBANK": 1256.72,
+            "SBIN": 820,
+            "BAJFINANCE": 7200,
+            "LT": 3743.25,
+            "AIRTEL": 1550,
+            "ITC": 482.75,
+            "HINDUNILVR": 2750,
+            "SUNPHARMA": 1720,
+            "NTPC": 410,
+            "POWERGRID": 340,
+            "TATASTEEL": 165,
+            "JSWSTEEL": 980,
+            "TITAN": 3450
+          },
+          "rankings": [
+            {
+              "id": "team_1",
+              "name": "Dalal Street Titans",
+              "teamId": "team_1",
+              "teamName": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "prevRank": 1,
+              "openingPortfolioValue": 570874.82,
+              "dayOpeningValuation": 570874.82,
+              "closingPortfolioValue": 570874.82,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 70874.82,
+              "cumulativeReturnPct": 14.17,
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "tradeCount": 12,
+              "rank": 1,
+              "dayRank": 1,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_2",
+              "name": "Bullish Bears",
+              "teamId": "team_2",
+              "teamName": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "prevRank": 2,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 2,
+              "dayRank": 2,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_3",
+              "name": "Alpha Hedge",
+              "teamId": "team_3",
+              "teamName": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "prevRank": 3,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 3,
+              "dayRank": 3,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_4",
+              "name": "Quantum Traders",
+              "teamId": "team_4",
+              "teamName": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "prevRank": 4,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 4,
+              "dayRank": 4,
+              "rankDelta": 0
+            }
+          ],
+          "dailyRankings": [
+            {
+              "id": "team_1",
+              "name": "Dalal Street Titans",
+              "teamId": "team_1",
+              "teamName": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "prevRank": 1,
+              "openingPortfolioValue": 570874.82,
+              "dayOpeningValuation": 570874.82,
+              "closingPortfolioValue": 570874.82,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 70874.82,
+              "cumulativeReturnPct": 14.17,
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "tradeCount": 12,
+              "rank": 1,
+              "dayRank": 1,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_2",
+              "name": "Bullish Bears",
+              "teamId": "team_2",
+              "teamName": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "prevRank": 2,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 2,
+              "dayRank": 2,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_3",
+              "name": "Alpha Hedge",
+              "teamId": "team_3",
+              "teamName": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "prevRank": 3,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 3,
+              "dayRank": 3,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_4",
+              "name": "Quantum Traders",
+              "teamId": "team_4",
+              "teamName": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "prevRank": 4,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 4,
+              "dayRank": 4,
+              "rankDelta": 0
+            }
+          ],
+          "cumulativeRankings": [
+            {
+              "id": "team_1",
+              "username": "team1",
+              "name": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "totalPnl": 70874.82,
+              "pnlPct": 14.17,
+              "realizedPnl": 70874.82,
+              "unrealizedPnl": 0,
+              "tradeCount": 12,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_2",
+              "username": "team2",
+              "name": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_3",
+              "username": "team3",
+              "name": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_4",
+              "username": "team4",
+              "name": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            }
+          ],
+          "isAutomaticEnd": false
+        },
+        "day_3": {
+          "day": 3,
+          "finalizedAt": "2026-10-27T09:36:45.982Z",
+          "closingPrices": {
+            "RELIANCE": 3419.32,
+            "TATAMOTORS": 1176.27,
+            "MARUTI": 12400,
+            "M&M": 2850,
+            "TCS": 4132.24,
+            "INFY": 1732.49,
+            "HDFCBANK": 1678.15,
+            "ICICIBANK": 1257.86,
+            "SBIN": 820,
+            "BAJFINANCE": 7200,
+            "LT": 3726.12,
+            "AIRTEL": 1550,
+            "ITC": 481.98,
+            "HINDUNILVR": 2750,
+            "SUNPHARMA": 1720,
+            "NTPC": 410,
+            "POWERGRID": 340,
+            "TATASTEEL": 165,
+            "JSWSTEEL": 980,
+            "TITAN": 3450
+          },
+          "rankings": [
+            {
+              "id": "team_1",
+              "name": "Dalal Street Titans",
+              "teamId": "team_1",
+              "teamName": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "prevRank": 1,
+              "openingPortfolioValue": 570874.82,
+              "dayOpeningValuation": 570874.82,
+              "closingPortfolioValue": 570874.82,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 70874.82,
+              "cumulativeReturnPct": 14.17,
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "tradeCount": 12,
+              "rank": 1,
+              "dayRank": 1,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_2",
+              "name": "Bullish Bears",
+              "teamId": "team_2",
+              "teamName": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "prevRank": 2,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 2,
+              "dayRank": 2,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_3",
+              "name": "Alpha Hedge",
+              "teamId": "team_3",
+              "teamName": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "prevRank": 3,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 3,
+              "dayRank": 3,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_4",
+              "name": "Quantum Traders",
+              "teamId": "team_4",
+              "teamName": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "prevRank": 4,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 4,
+              "dayRank": 4,
+              "rankDelta": 0
+            }
+          ],
+          "dailyRankings": [
+            {
+              "id": "team_1",
+              "name": "Dalal Street Titans",
+              "teamId": "team_1",
+              "teamName": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "prevRank": 1,
+              "openingPortfolioValue": 570874.82,
+              "dayOpeningValuation": 570874.82,
+              "closingPortfolioValue": 570874.82,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 70874.82,
+              "cumulativeReturnPct": 14.17,
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "tradeCount": 12,
+              "rank": 1,
+              "dayRank": 1,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_2",
+              "name": "Bullish Bears",
+              "teamId": "team_2",
+              "teamName": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "prevRank": 2,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 2,
+              "dayRank": 2,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_3",
+              "name": "Alpha Hedge",
+              "teamId": "team_3",
+              "teamName": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "prevRank": 3,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 3,
+              "dayRank": 3,
+              "rankDelta": 0
+            },
+            {
+              "id": "team_4",
+              "name": "Quantum Traders",
+              "teamId": "team_4",
+              "teamName": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "prevRank": 4,
+              "openingPortfolioValue": 500000,
+              "dayOpeningValuation": 500000,
+              "closingPortfolioValue": 500000,
+              "dailyPnl": 0,
+              "dayPnl": 0,
+              "dailyReturnPct": 0,
+              "dayReturnPercent": 0,
+              "cumulativePnl": 0,
+              "cumulativeReturnPct": 0,
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "tradeCount": 0,
+              "rank": 4,
+              "dayRank": 4,
+              "rankDelta": 0
+            }
+          ],
+          "cumulativeRankings": [
+            {
+              "id": "team_1",
+              "username": "team1",
+              "name": "Dalal Street Titans",
+              "members": "Trader 1A, Trader 1B",
+              "cash": 570874.82,
+              "holdingsValue": 0,
+              "netWorth": 570874.82,
+              "totalPnl": 70874.82,
+              "pnlPct": 14.17,
+              "realizedPnl": 70874.82,
+              "unrealizedPnl": 0,
+              "tradeCount": 12,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_2",
+              "username": "team2",
+              "name": "Bullish Bears",
+              "members": "Trader 2A, Trader 2B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_3",
+              "username": "team3",
+              "name": "Alpha Hedge",
+              "members": "Trader 3A, Trader 3B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            },
+            {
+              "id": "team_4",
+              "username": "team4",
+              "name": "Quantum Traders",
+              "members": "Trader 4A, Trader 4B",
+              "cash": 500000,
+              "holdingsValue": 0,
+              "netWorth": 500000,
+              "totalPnl": 0,
+              "pnlPct": 0,
+              "realizedPnl": 0,
+              "unrealizedPnl": 0,
+              "tradeCount": 0,
+              "holdings": {
+                "RELIANCE": 0,
+                "TATAMOTORS": 0,
+                "MARUTI": 0,
+                "M&M": 0,
+                "TCS": 0,
+                "INFY": 0,
+                "HDFCBANK": 0,
+                "ICICIBANK": 0,
+                "SBIN": 0,
+                "BAJFINANCE": 0,
+                "LT": 0,
+                "AIRTEL": 0,
+                "ITC": 0,
+                "HINDUNILVR": 0,
+                "SUNPHARMA": 0,
+                "NTPC": 0,
+                "POWERGRID": 0,
+                "TATASTEEL": 0,
+                "JSWSTEEL": 0,
+                "TITAN": 0
+              }
+            }
+          ],
+          "isAutomaticEnd": false
         }
       },
       "dailyClosingPrices": {
@@ -2131,6 +3399,50 @@
           "TATASTEEL": 165,
           "JSWSTEEL": 980,
           "TITAN": 3450
+        },
+        "day_2": {
+          "RELIANCE": 3390.02,
+          "TATAMOTORS": 1169.43,
+          "MARUTI": 12400,
+          "M&M": 2850,
+          "TCS": 4131.72,
+          "INFY": 1741.51,
+          "HDFCBANK": 1680.55,
+          "ICICIBANK": 1256.72,
+          "SBIN": 820,
+          "BAJFINANCE": 7200,
+          "LT": 3743.25,
+          "AIRTEL": 1550,
+          "ITC": 482.75,
+          "HINDUNILVR": 2750,
+          "SUNPHARMA": 1720,
+          "NTPC": 410,
+          "POWERGRID": 340,
+          "TATASTEEL": 165,
+          "JSWSTEEL": 980,
+          "TITAN": 3450
+        },
+        "day_3": {
+          "RELIANCE": 3419.32,
+          "TATAMOTORS": 1176.27,
+          "MARUTI": 12400,
+          "M&M": 2850,
+          "TCS": 4132.24,
+          "INFY": 1732.49,
+          "HDFCBANK": 1678.15,
+          "ICICIBANK": 1257.86,
+          "SBIN": 820,
+          "BAJFINANCE": 7200,
+          "LT": 3726.12,
+          "AIRTEL": 1550,
+          "ITC": 481.98,
+          "HINDUNILVR": 2750,
+          "SUNPHARMA": 1720,
+          "NTPC": 410,
+          "POWERGRID": 340,
+          "TATASTEEL": 165,
+          "JSWSTEEL": 980,
+          "TITAN": 3450
         }
       },
       "projectorState": {
@@ -2148,7 +3460,7 @@
         "scene": "SCENE_INTRO",
         "currentTeamIndex": 0,
         "revealedRanks": [],
-        "updatedAt": "2026-10-27T08:38:33.674Z"
+        "updatedAt": "2026-10-27T09:36:55.656Z"
       },
       "audioSettings": {
         "masterEnabled": true,
@@ -2164,10 +3476,10 @@
       "haltReason": null,
       "riskProfile": "BALANCED",
       "opportunityMultiplier": 1,
-      "isTradingOpen": true,
+      "isTradingOpen": false,
       "isFinalDayCompleted": false,
-      "isAutomaticEnd": true,
-      "concludedReason": "TIMER_EXPIRY"
+      "isAutomaticEnd": false,
+      "concludedReason": "MANUAL_HOST_ACTION"
     },
     "companies": [
       {
@@ -2200,11 +3512,11 @@
           "book_value": "₹1,180",
           "promoter_holding": "50.3%"
         },
-        "currentPrice": 3392.37,
-        "dayOpenPrice": 3392.37,
-        "previousClosePrice": 3392.37,
-        "dayHigh": 3392.37,
-        "dayLow": 3392.37,
+        "currentPrice": 3419.32,
+        "dayOpenPrice": 3390.02,
+        "previousClosePrice": 3390.02,
+        "dayHigh": 3419.32,
+        "dayLow": 3390.02,
         "week52High": 4341.21,
         "week52Low": 2220.3,
         "isNew52WHigh": false,
@@ -2218,41 +3530,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 3392.37
+            "day": 3,
+            "price": 3390.02
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 3409.02
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 3414.94
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 3419.32
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 3106.79
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 3103.81
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 3100.14
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 3101.37
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 3100.62
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -8709,6 +10006,43 @@
             "day": 2,
             "price": 3392.37,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 3391.02
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 3390.02
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 3390.02,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 3409.02
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 3414.94
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 3419.32
           }
         ],
         "historyByDay": {
@@ -10520,6 +11854,30 @@
                 "price": 3392.37
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 3392.37,
+            "closePrice": 3390.02,
+            "highPrice": 3392.37,
+            "lowPrice": 3390.02,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 3392.37
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 3391.02
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 3390.02
+              }
+            ]
           }
         }
       },
@@ -10553,11 +11911,11 @@
           "book_value": "₹245",
           "promoter_holding": "46.4%"
         },
-        "currentPrice": 1173.28,
-        "dayOpenPrice": 1173.28,
-        "previousClosePrice": 1173.28,
-        "dayHigh": 1173.28,
-        "dayLow": 1173.28,
+        "currentPrice": 1176.27,
+        "dayOpenPrice": 1169.43,
+        "previousClosePrice": 1169.43,
+        "dayHigh": 1176.27,
+        "dayLow": 1169.43,
         "week52High": 1328.51,
         "week52Low": 620.5,
         "isNew52WHigh": false,
@@ -10571,41 +11929,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 1173.28
+            "day": 3,
+            "price": 1169.43
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 1172.43
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 1173.27
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 1176.27
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 784
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 784.22
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 784.47
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 788.56
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 793.35
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -17062,6 +18405,43 @@
             "day": 2,
             "price": 1173.28,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 1174.42
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 1169.43
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1169.43,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 1172.43
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 1173.27
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 1176.27
           }
         ],
         "historyByDay": {
@@ -18873,6 +20253,30 @@
                 "price": 1173.28
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1173.28,
+            "closePrice": 1169.43,
+            "highPrice": 1174.42,
+            "lowPrice": 1169.43,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 1173.28
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 1174.42
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 1169.43
+              }
+            ]
           }
         }
       },
@@ -18924,7 +20328,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 12400
           }
         ],
@@ -18941,6 +20345,13 @@
             "day": 2,
             "price": 12400,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 12400,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -18953,6 +20364,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 12400
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 12400,
+            "closePrice": 12400,
+            "highPrice": 12400,
+            "lowPrice": 12400,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 12400
               }
             ]
@@ -19007,7 +20432,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 2850
           }
         ],
@@ -19024,6 +20449,13 @@
             "day": 2,
             "price": 2850,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 2850,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -19036,6 +20468,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 2850
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 2850,
+            "closePrice": 2850,
+            "highPrice": 2850,
+            "lowPrice": 2850,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 2850
               }
             ]
@@ -19072,11 +20518,11 @@
           "book_value": "₹285",
           "promoter_holding": "71.8%"
         },
-        "currentPrice": 4113.68,
-        "dayOpenPrice": 4113.68,
-        "previousClosePrice": 4113.68,
-        "dayHigh": 4113.68,
-        "dayLow": 4113.68,
+        "currentPrice": 4132.24,
+        "dayOpenPrice": 4131.72,
+        "previousClosePrice": 4131.72,
+        "dayHigh": 4136.43,
+        "dayLow": 4131.72,
         "week52High": 4585,
         "week52Low": 3310,
         "isNew52WHigh": false,
@@ -19090,41 +20536,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 4113.68
+            "day": 3,
+            "price": 4131.72
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 4133.19
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 4136.43
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 4132.24
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 4158.85
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 4172.07
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 4170.72
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 4172.35
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 4186.21
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -25581,6 +27012,43 @@
             "day": 2,
             "price": 4113.68,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 4116.02
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 4131.72
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 4131.72,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 4133.19
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 4136.43
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 4132.24
           }
         ],
         "historyByDay": {
@@ -27392,6 +28860,30 @@
                 "price": 4113.68
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 4113.68,
+            "closePrice": 4131.72,
+            "highPrice": 4131.72,
+            "lowPrice": 4113.68,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 4113.68
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 4116.02
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 4131.72
+              }
+            ]
           }
         }
       },
@@ -27425,11 +28917,11 @@
           "book_value": "₹212",
           "promoter_holding": "14.7%"
         },
-        "currentPrice": 1742.58,
-        "dayOpenPrice": 1742.58,
-        "previousClosePrice": 1742.58,
-        "dayHigh": 1742.58,
-        "dayLow": 1742.58,
+        "currentPrice": 1732.49,
+        "dayOpenPrice": 1741.51,
+        "previousClosePrice": 1741.51,
+        "dayHigh": 1741.51,
+        "dayLow": 1732.49,
         "week52High": 2212.83,
         "week52Low": 1358,
         "isNew52WHigh": false,
@@ -27443,41 +28935,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 1742.58
+            "day": 3,
+            "price": 1741.51
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 1735.63
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 1733.47
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 1732.49
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 1904.97
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 1898.46
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 1888.49
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 1882.21
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 1882.48
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -33934,6 +35411,43 @@
             "day": 2,
             "price": 1742.58,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 1743.09
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 1741.51
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1741.51,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 1735.63
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 1733.47
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 1732.49
           }
         ],
         "historyByDay": {
@@ -35745,6 +37259,30 @@
                 "price": 1742.58
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1742.58,
+            "closePrice": 1741.51,
+            "highPrice": 1743.09,
+            "lowPrice": 1741.51,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 1742.58
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 1743.09
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 1741.51
+              }
+            ]
           }
         }
       },
@@ -35778,11 +37316,11 @@
           "book_value": "₹595",
           "promoter_holding": "0.0% (Widely Held)"
         },
-        "currentPrice": 1677.06,
-        "dayOpenPrice": 1677.06,
-        "previousClosePrice": 1677.06,
-        "dayHigh": 1677.06,
-        "dayLow": 1677.06,
+        "currentPrice": 1678.15,
+        "dayOpenPrice": 1680.55,
+        "previousClosePrice": 1680.55,
+        "dayHigh": 1680.55,
+        "dayLow": 1674.97,
         "week52High": 1810.51,
         "week52Low": 1363,
         "isNew52WHigh": false,
@@ -35796,41 +37334,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 1677.06
+            "day": 3,
+            "price": 1680.55
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 1674.97
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 1676.9
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 1678.15
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 1691.44
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 1690.08
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 1693.56
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 1697.48
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 1702.59
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -42287,6 +43810,43 @@
             "day": 2,
             "price": 1677.06,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 1678.91
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 1680.55
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1680.55,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 1674.97
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 1676.9
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 1678.15
           }
         ],
         "historyByDay": {
@@ -44098,6 +45658,30 @@
                 "price": 1677.06
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1677.06,
+            "closePrice": 1680.55,
+            "highPrice": 1680.55,
+            "lowPrice": 1677.06,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 1677.06
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 1678.91
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 1680.55
+              }
+            ]
           }
         }
       },
@@ -44131,11 +45715,11 @@
           "book_value": "₹385",
           "promoter_holding": "0.0% (Widely Held)"
         },
-        "currentPrice": 1255.04,
-        "dayOpenPrice": 1255.04,
-        "previousClosePrice": 1255.04,
-        "dayHigh": 1255.04,
-        "dayLow": 1255.04,
+        "currentPrice": 1257.86,
+        "dayOpenPrice": 1256.72,
+        "previousClosePrice": 1256.72,
+        "dayHigh": 1257.86,
+        "dayLow": 1253.9,
         "week52High": 1566.78,
         "week52Low": 910,
         "isNew52WHigh": false,
@@ -44149,41 +45733,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 1255.04
+            "day": 3,
+            "price": 1256.72
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 1253.9
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 1256.43
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 1257.86
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 1356.78
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 1357.28
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 1355.99
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 1359.01
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 1363.98
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -50640,6 +52209,43 @@
             "day": 2,
             "price": 1255.04,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 1256.93
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 1256.72
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1256.72,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 1253.9
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 1256.43
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 1257.86
           }
         ],
         "historyByDay": {
@@ -52451,6 +54057,30 @@
                 "price": 1255.04
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1255.04,
+            "closePrice": 1256.72,
+            "highPrice": 1256.93,
+            "lowPrice": 1255.04,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 1255.04
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 1256.93
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 1256.72
+              }
+            ]
           }
         }
       },
@@ -52502,7 +54132,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 820
           }
         ],
@@ -52519,6 +54149,13 @@
             "day": 2,
             "price": 820,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 820,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -52531,6 +54168,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 820
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 820,
+            "closePrice": 820,
+            "highPrice": 820,
+            "lowPrice": 820,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 820
               }
             ]
@@ -52585,7 +54236,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 7200
           }
         ],
@@ -52602,6 +54253,13 @@
             "day": 2,
             "price": 7200,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 7200,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -52614,6 +54272,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 7200
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 7200,
+            "closePrice": 7200,
+            "highPrice": 7200,
+            "lowPrice": 7200,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 7200
               }
             ]
@@ -52650,11 +54322,11 @@
           "book_value": "₹680",
           "promoter_holding": "0.0% (Institutionally Held)"
         },
-        "currentPrice": 3748.69,
-        "dayOpenPrice": 3748.69,
-        "previousClosePrice": 3748.69,
-        "dayHigh": 3748.69,
-        "dayLow": 3748.69,
+        "currentPrice": 3726.12,
+        "dayOpenPrice": 3743.25,
+        "previousClosePrice": 3743.25,
+        "dayHigh": 3743.25,
+        "dayLow": 3724.99,
         "week52High": 4449.65,
         "week52Low": 2860,
         "isNew52WHigh": false,
@@ -52668,41 +54340,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 3748.69
+            "day": 3,
+            "price": 3743.25
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 3742.93
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 3724.99
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 3726.12
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 3598.12
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 3600.78
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 3589.61
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 3593.66
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 3586.76
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -59159,6 +60816,43 @@
             "day": 2,
             "price": 3748.69,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 3748.11
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 3743.25
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 3743.25,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 3742.93
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 3724.99
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 3726.12
           }
         ],
         "historyByDay": {
@@ -60970,6 +62664,30 @@
                 "price": 3748.69
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 3748.69,
+            "closePrice": 3743.25,
+            "highPrice": 3748.69,
+            "lowPrice": 3743.25,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 3748.69
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 3748.11
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 3743.25
+              }
+            ]
           }
         }
       },
@@ -61021,7 +62739,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 1550
           }
         ],
@@ -61038,6 +62756,13 @@
             "day": 2,
             "price": 1550,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1550,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -61050,6 +62775,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 1550
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1550,
+            "closePrice": 1550,
+            "highPrice": 1550,
+            "lowPrice": 1550,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 1550
               }
             ]
@@ -61086,11 +62825,11 @@
           "book_value": "₹65",
           "promoter_holding": "0.0% (Widely Held / BAT)"
         },
-        "currentPrice": 483.78,
-        "dayOpenPrice": 483.78,
-        "previousClosePrice": 483.78,
-        "dayHigh": 483.78,
-        "dayLow": 483.78,
+        "currentPrice": 481.98,
+        "dayOpenPrice": 482.75,
+        "previousClosePrice": 482.75,
+        "dayHigh": 483.13,
+        "dayLow": 481.98,
         "week52High": 528,
         "week52Low": 399,
         "isNew52WHigh": false,
@@ -61104,41 +62843,26 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
-            "price": 483.78
+            "day": 3,
+            "price": 482.75
+          },
+          {
+            "time": 1,
+            "day": 3,
+            "price": 483.13
+          },
+          {
+            "time": 2,
+            "day": 3,
+            "price": 482.31
+          },
+          {
+            "time": 4,
+            "day": 3,
+            "price": 481.98
           }
         ],
         "multiDayHistory": [
-          {
-            "time": 182,
-            "cumulativeTime": 182,
-            "day": 1,
-            "price": 493.68
-          },
-          {
-            "time": 183,
-            "cumulativeTime": 183,
-            "day": 1,
-            "price": 494.2
-          },
-          {
-            "time": 185,
-            "cumulativeTime": 185,
-            "day": 1,
-            "price": 493.24
-          },
-          {
-            "time": 186,
-            "cumulativeTime": 186,
-            "day": 1,
-            "price": 492.97
-          },
-          {
-            "time": 188,
-            "cumulativeTime": 188,
-            "day": 1,
-            "price": 493.18
-          },
           {
             "time": 189,
             "cumulativeTime": 189,
@@ -67595,6 +69319,43 @@
             "day": 2,
             "price": 483.78,
             "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 1801,
+            "day": 2,
+            "price": 482.48
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 1802,
+            "day": 2,
+            "price": 482.75
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 482.75,
+            "isDayBoundary": true
+          },
+          {
+            "time": 1,
+            "cumulativeTime": 3601,
+            "day": 3,
+            "price": 483.13
+          },
+          {
+            "time": 2,
+            "cumulativeTime": 3602,
+            "day": 3,
+            "price": 482.31
+          },
+          {
+            "time": 4,
+            "cumulativeTime": 3604,
+            "day": 3,
+            "price": 481.98
           }
         ],
         "historyByDay": {
@@ -69406,6 +71167,30 @@
                 "price": 483.78
               }
             ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 483.78,
+            "closePrice": 482.75,
+            "highPrice": 483.78,
+            "lowPrice": 482.48,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
+                "price": 483.78
+              },
+              {
+                "time": 1,
+                "day": 2,
+                "price": 482.48
+              },
+              {
+                "time": 2,
+                "day": 2,
+                "price": 482.75
+              }
+            ]
           }
         }
       },
@@ -69457,7 +71242,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 2750
           }
         ],
@@ -69474,6 +71259,13 @@
             "day": 2,
             "price": 2750,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 2750,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69486,6 +71278,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 2750
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 2750,
+            "closePrice": 2750,
+            "highPrice": 2750,
+            "lowPrice": 2750,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 2750
               }
             ]
@@ -69540,7 +71346,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 1720
           }
         ],
@@ -69557,6 +71363,13 @@
             "day": 2,
             "price": 1720,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 1720,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69569,6 +71382,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 1720
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 1720,
+            "closePrice": 1720,
+            "highPrice": 1720,
+            "lowPrice": 1720,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 1720
               }
             ]
@@ -69623,7 +71450,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 410
           }
         ],
@@ -69640,6 +71467,13 @@
             "day": 2,
             "price": 410,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 410,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69652,6 +71486,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 410
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 410,
+            "closePrice": 410,
+            "highPrice": 410,
+            "lowPrice": 410,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 410
               }
             ]
@@ -69706,7 +71554,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 340
           }
         ],
@@ -69723,6 +71571,13 @@
             "day": 2,
             "price": 340,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 340,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69735,6 +71590,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 340
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 340,
+            "closePrice": 340,
+            "highPrice": 340,
+            "lowPrice": 340,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 340
               }
             ]
@@ -69789,7 +71658,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 165
           }
         ],
@@ -69806,6 +71675,13 @@
             "day": 2,
             "price": 165,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 165,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69818,6 +71694,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 165
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 165,
+            "closePrice": 165,
+            "highPrice": 165,
+            "lowPrice": 165,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 165
               }
             ]
@@ -69872,7 +71762,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 980
           }
         ],
@@ -69889,6 +71779,13 @@
             "day": 2,
             "price": 980,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 980,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69901,6 +71798,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 980
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 980,
+            "closePrice": 980,
+            "highPrice": 980,
+            "lowPrice": 980,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 980
               }
             ]
@@ -69955,7 +71866,7 @@
         "history": [
           {
             "time": 0,
-            "day": 2,
+            "day": 3,
             "price": 3450
           }
         ],
@@ -69972,6 +71883,13 @@
             "day": 2,
             "price": 3450,
             "isDayBoundary": true
+          },
+          {
+            "time": 0,
+            "cumulativeTime": 3600,
+            "day": 3,
+            "price": 3450,
+            "isDayBoundary": true
           }
         ],
         "historyByDay": {
@@ -69984,6 +71902,20 @@
             "history": [
               {
                 "time": 0,
+                "price": 3450
+              }
+            ]
+          },
+          "day_2": {
+            "day": 2,
+            "openPrice": 3450,
+            "closePrice": 3450,
+            "highPrice": 3450,
+            "lowPrice": 3450,
+            "history": [
+              {
+                "time": 0,
+                "day": 2,
                 "price": 3450
               }
             ]
@@ -70692,7 +72624,9 @@
             "delta_pct": 4.5,
             "duration_sec": 45
           }
-        }
+        },
+        "triggered": false,
+        "impactsApplied": false
       },
       {
         "event_id": "EVT_D3_02",
@@ -70709,7 +72643,9 @@
             "base_pct": 4.5,
             "duration_sec": 50
           }
-        }
+        },
+        "triggered": false,
+        "impactsApplied": false
       },
       {
         "event_id": "EVT_D3_03",
@@ -70726,7 +72662,9 @@
             "delta_pct": 11.5,
             "duration_sec": 45
           }
-        }
+        },
+        "triggered": false,
+        "impactsApplied": false
       },
       {
         "event_id": "EVT_D3_04",
@@ -70751,7 +72689,9 @@
             "delta_pct": -4,
             "duration_sec": 45
           }
-        }
+        },
+        "triggered": false,
+        "impactsApplied": false
       }
     ],
     "traderUsers": {
@@ -70840,6 +72780,24 @@
         "id": "host",
         "name": "Master Control",
         "username": "host",
+        "members": "",
+        "lastOrderAt": 0
+      },
+      {
+        "token": "76b99d398f4336e70539b007acea0348",
+        "role": "HOST",
+        "id": "host",
+        "name": "Master Control",
+        "username": "host",
+        "members": "",
+        "lastOrderAt": 0
+      },
+      {
+        "token": "16d572ca21e3c2500a87f7d9e87cef92",
+        "role": "PROJECTOR",
+        "id": "PROJECTOR",
+        "name": "Main Stage Projector",
+        "username": "projector",
         "members": "",
         "lastOrderAt": 0
       }

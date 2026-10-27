@@ -4127,11 +4127,11 @@ function renderTraderView(state) {
     newsList.innerHTML = gameState.newsHistory.map((n) => `
       <div class="news-item">
         <div class="news-meta">
-          <span>DAY ${n.day} • ${formatMMSS(n.second)}</span>
-          <span class="badge badge-champagne" style="font-size: 9px; padding: 1px 5px;">${n.type}</span>
+          <span>DAY ${n.day} &bull; 🕒 ${getNewsWireTime(n)}</span>
+          <span class="badge badge-champagne" style="font-size: 9px; padding: 1px 5px;">${n.type || 'NEWS WIRE'}</span>
         </div>
-        <div class="news-headline">${n.headline}</div>
-        <div class="news-explanation">${n.simple_explanation}</div>
+        <div class="news-headline">${escapeHtml(n.headline || '')}</div>
+        <div class="news-explanation">${escapeHtml(n.simple_explanation || '')}</div>
       </div>
     `).join('');
   }
@@ -5223,6 +5223,9 @@ function renderProjectorView(state) {
     }
   });
 
+  // Extract real-time indices list before scene branch to prevent TDZ ReferenceError
+  const projIndicesList = marketIndices || (gameState && gameState.marketIndices) || calculateClientIndices(companies);
+
   // Render scene-specific contents
   if (activeScene === 'SCENE_MARKET_BOARD') {
     renderProjectorMarketBoard((companies || []).filter((c) => c.isEnabled !== false));
@@ -5236,8 +5239,7 @@ function renderProjectorView(state) {
     renderProjectorNews(gameState.newsHistory || []);
   }
 
-  // Always render persistent real-time indices ticker strip on projector
-  const projIndicesList = marketIndices || (gameState && gameState.marketIndices) || calculateClientIndices(companies);
+  // Update indices bars if present
   renderAllIndicesBars(projIndicesList);
 }
 
@@ -5832,7 +5834,113 @@ function drawNewsReactionTrajectory(canvasId, history, startPrice, endPrice, isU
   ctx.fillText(`₹${endPrice.toFixed(2)} (${endTimeStr || 'Finish'})`, last.x - 70, last.y - 14);
 }
 
-// Scene 2: Real Market Indices Overview
+// Scene 2: Dedicated Real Market Indices Overview & Dynamic Charts
+window.projectorIndexHistory = window.projectorIndexHistory || {};
+
+function recordProjectorIndexHistory(indexId, val) {
+  if (!window.projectorIndexHistory[indexId]) {
+    window.projectorIndexHistory[indexId] = [];
+  }
+  const hist = window.projectorIndexHistory[indexId];
+  hist.push({ time: Date.now(), val: Number(val) });
+  if (hist.length > 30) hist.shift();
+}
+
+function drawProjectorIndexChart(canvasId, historyPoints, baseVal, isUp, sectorColor) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 280;
+  const h = canvas.clientHeight || 75;
+  if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+  }
+  ctx.resetTransform();
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  let pts = historyPoints;
+  if (!pts || pts.length < 2) {
+    pts = [
+      { val: baseVal },
+      { val: isUp ? baseVal * 1.008 : baseVal * 0.992 }
+    ];
+  }
+
+  const values = pts.map((p) => (p && typeof p.val === 'number' ? p.val : Number(p || baseVal)));
+  const minVal = Math.min(...values, baseVal * 0.985);
+  const maxVal = Math.max(...values, baseVal * 1.015);
+  const range = maxVal - minVal || 1;
+
+  const paddingY = 8;
+  const chartHeight = h - paddingY * 2;
+  const stepX = (w - 16) / Math.max(1, values.length - 1);
+
+  const coords = values.map((v, i) => ({
+    x: 8 + i * stepX,
+    y: paddingY + chartHeight - ((v - minVal) / range) * chartHeight
+  }));
+
+  // Baseline dashed reference line
+  const baseY = paddingY + chartHeight - ((baseVal - minVal) / range) * chartHeight;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(8, baseY);
+  ctx.lineTo(w - 8, baseY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Gradient area fill
+  const mainColor = sectorColor || (isUp ? '#059669' : '#DC2626');
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, isUp ? 'rgba(5, 150, 105, 0.25)' : 'rgba(220, 38, 38, 0.25)');
+  grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+  ctx.beginPath();
+  ctx.moveTo(coords[0].x, h);
+  ctx.lineTo(coords[0].x, coords[0].y);
+  for (let i = 1; i < coords.length; i++) {
+    const prev = coords[i - 1];
+    const curr = coords[i];
+    const midX = (prev.x + curr.x) / 2;
+    ctx.bezierCurveTo(midX, prev.y, midX, curr.y, curr.x, curr.y);
+  }
+  ctx.lineTo(coords[coords.length - 1].x, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Stroke line
+  ctx.beginPath();
+  ctx.moveTo(coords[0].x, coords[0].y);
+  for (let i = 1; i < coords.length; i++) {
+    const prev = coords[i - 1];
+    const curr = coords[i];
+    const midX = (prev.x + curr.x) / 2;
+    ctx.bezierCurveTo(midX, prev.y, midX, curr.y, curr.x, curr.y);
+  }
+  ctx.strokeStyle = mainColor;
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  // Highlight dot on last point
+  const last = coords[coords.length - 1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = mainColor;
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
 function renderProjectorIndices(indicesObj) {
   const container = document.getElementById('projSceneIndices');
   if (!container || !indicesObj) return;
@@ -5856,56 +5964,55 @@ function renderProjectorIndices(indicesObj) {
   const bIntensity = getMovementIntensity(bPct);
   const bTickers = benchmarkIdx.tickers || benchmarkIdx.constituents || [];
   const bCount = benchmarkIdx.constituentsCount !== undefined ? benchmarkIdx.constituentsCount : bTickers.length;
+  const bBase = benchmarkIdx.baseValue || 25000;
+
+  recordProjectorIndexHistory(benchmarkIdx.id || 'NIFTY_TF20', bVal);
 
   const heroHtml = `
-    <div class="proj-benchmark-hero">
-      <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em;">★ FLAGSHIP TOURNAMENT BENCHMARK ★</span>
-          <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">LIVE MARKET ANCHOR</span>
+    <div class="luxury-card" style="padding: 20px 24px; border: 2px solid var(--champagne-accent); border-radius: 12px; background: linear-gradient(135deg, #FFFFFF 0%, #FBFBF9 100%); box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em;">★ FLAGSHIP TOURNAMENT BENCHMARK ★</span>
+            <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">LIVE MARKET ANCHOR</span>
+          </div>
+          <h2 style="font-size: 28px; font-weight: 900; color: var(--text-forest); margin: 0; font-family: var(--font-serif); display: flex; align-items: center; gap: 8px;">
+            <span>🏛️</span> ${escapeHtml(benchmarkIdx.name || 'TTF NIFTY 20 Benchmark')}
+          </h2>
+          <div style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">
+            Official broad-market reference barometer tracking all ${bCount || 20} championship equities.
+          </div>
         </div>
-        <h2 style="font-size: 26px; font-weight: 900; color: var(--text-forest); margin: 0 0 4px 0; font-family: var(--font-serif); display: flex; align-items: center; gap: 8px;">
-          <span>🏛️</span> ${escapeHtml(benchmarkIdx.name || 'TTF NIFTY 20 Benchmark')}
-        </h2>
-        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
-          Official composite index tracking all ${bCount || 20} championship equities across active sectors.
-        </div>
-        <div style="margin-top: 10px; display: flex; gap: 12px; font-size: 11px; color: var(--text-forest); font-weight: 700;">
-          <span>Basket: <strong>${bCount} Equities</strong></span>
-          <span>&bull;</span>
-          <span>Base Level: <strong>25,000.00</strong></span>
-          <span>&bull;</span>
-          <span>Weighting: <strong>Equal-Weighted</strong></span>
+
+        <div style="text-align: right;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Benchmark Level</div>
+          <div style="font-family: var(--font-mono); font-size: 42px; font-weight: 900; color: var(--text-forest); line-height: 1.1; margin: 2px 0;">
+            <span class="rolling-price-val">${bVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 8px;">
+            <span class="badge" style="${bIntensity.badgeStyle}; font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 3px 10px;">
+              ${bSign}${bPct.toFixed(2)}% ${bIsUp ? '▲' : '▼'}
+            </span>
+            <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800;" class="${bIsUp ? 'price-up' : 'price-down'}">
+              ${bSign}${bPts.toFixed(2)} pts (Base: ${bBase.toLocaleString('en-IN')})
+            </span>
+          </div>
         </div>
       </div>
 
-      <div style="text-align: center; border-left: 2px solid var(--subtle-border); border-right: 2px solid var(--subtle-border); padding: 0 20px;">
-        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Composite Benchmark Level</div>
-        <div style="font-family: var(--font-mono); font-size: 40px; font-weight: 900; color: var(--text-forest); line-height: 1.1; margin: 4px 0; font-variant-numeric: tabular-nums;">
-          <span class="rolling-price-val">${bVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      <!-- Real Dynamic Benchmark Trend Canvas -->
+      <div style="background: #FAF8F5; border: 1px solid var(--subtle-border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px;">
+          <span>📈 INTRADAY BENCHMARK TRENDLINE</span>
+          <span>Dotted Line = 25,000 Base Reference</span>
         </div>
-        <div style="display: inline-flex; align-items: center; gap: 8px; margin-top: 2px;">
-          <span class="badge" style="${bIntensity.badgeStyle}; font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 3px 10px;">
-            ${bSign}${bPct.toFixed(2)}% ${bIsUp ? '▲' : '▼'}
-          </span>
-          <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800;" class="${bIsUp ? 'price-up' : 'price-down'}">
-            ${bSign}${bPts.toFixed(2)} pts from base
-          </span>
-        </div>
+        <canvas id="projIndexCanvas_${benchmarkIdx.id || 'NIFTY_TF20'}" style="width: 100%; height: 85px; display: block;"></canvas>
       </div>
 
-      <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px; font-size: 12px;">
-        <div class="cream-panel" style="padding: 10px 14px; border-radius: 8px; background: #FFFFFF; border: 1px solid var(--subtle-border);">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Constituent Coverage</span>
-            <span style="font-weight: 800; color: var(--text-forest); font-family: var(--font-mono);">100% Floor Active</span>
-          </div>
-          <div style="color: var(--text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${bTickers.join(', ')}">
-            Symbols: <strong>${bTickers.slice(0, 8).join(', ')}${bTickers.length > 8 ? ` +${bTickers.length - 8} more` : ''}</strong>
-          </div>
-        </div>
-        <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; font-style: italic;">
-          Auditorium reference index updating dynamically every tick.
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--text-muted);">
+        <div>Basket: <strong>${bCount} Equities</strong> &bull; Weighting: <strong>Equal-Weighted</strong> &bull; Coverage: <strong>100% Floor Active</strong></div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-forest); font-weight: 700;">
+          ${bTickers.slice(0, 10).join(' • ')}${bTickers.length > 10 ? ` +${bTickers.length - 10} more` : ''}
         </div>
       </div>
     </div>
@@ -5919,38 +6026,45 @@ function renderProjectorIndices(indicesObj) {
     const tickers = idx.tickers || idx.constituents || [];
     const count = idx.constituentsCount !== undefined ? idx.constituentsCount : tickers.length;
     const sectorColor = getProjectorSectorColor(idx.sector || idx.name);
+    const baseVal = idx.baseValue || 20000;
+
+    recordProjectorIndexHistory(idx.id, val);
 
     return `
-      <div class="luxury-card" style="padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid var(--card-border); position: relative; overflow: hidden;">
+      <div class="luxury-card" style="padding: 16px 18px; border-radius: 12px; border: 2px solid var(--card-border); background: #FFFFFF; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: ${sectorColor};"></div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; margin-top: 2px;">
             <div>
-              <span class="badge badge-champagne" style="font-size: 10.5px; margin-bottom: 4px; font-weight: 800;">${escapeHtml(idx.sector || 'SECTOR INDEX')}</span>
-              <h3 style="font-size: 18px; font-weight: 900; color: var(--text-forest); margin: 0;">${escapeHtml(idx.name || idx.id || 'Sector Index')}</h3>
+              <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800; margin-bottom: 3px;">${escapeHtml(idx.sector || 'SECTOR')}</span>
+              <h3 style="font-size: 17px; font-weight: 900; color: var(--text-forest); margin: 0;">${escapeHtml(idx.name || idx.id)}</h3>
             </div>
-            <span class="badge ${isUp ? 'badge-active' : 'badge-halted'}" style="font-size: 12.5px; font-family: var(--font-mono); font-weight: 800;">
+            <span class="badge ${isUp ? 'badge-active' : 'badge-halted'}" style="font-size: 12px; font-family: var(--font-mono); font-weight: 800;">
               ${isUp ? '+' : ''}${pct.toFixed(2)}% ${isUp ? '▲' : '▼'}
             </span>
           </div>
 
-          <div style="margin: 12px 0;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Index Benchmark Level</div>
-            <div style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--text-forest); margin-top: 2px; font-variant-numeric: tabular-nums;">
-              <span class="rolling-price-val">${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 2px 0;">
+            <div style="font-family: var(--font-mono); font-size: 26px; font-weight: 900; color: var(--text-forest);">
+              ${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
-              ${isUp ? '+' : ''}${pts.toFixed(2)} points from base
+              ${isUp ? '+' : ''}${pts.toFixed(1)} pts
             </div>
+          </div>
+
+          <!-- Dynamic Sparkline Trendline -->
+          <div style="margin: 8px 0; background: #FAF9F6; border-radius: 6px; padding: 6px 8px; border: 1px solid var(--subtle-border);">
+            <canvas id="projIndexCanvas_${idx.id}" style="width: 100%; height: 70px; display: block;"></canvas>
           </div>
         </div>
 
-        <div class="cream-panel" style="padding: 10px 12px; font-size: 11px; border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; color: var(--text-muted); margin-bottom: 4px;">
-            <span>Constituents: <strong>${count} Stocks</strong></span>
-            <span>Weighting: <strong>${idx.weighting || 'Equal-Weighted'}</strong></span>
+        <div class="cream-panel" style="padding: 8px 10px; font-size: 11px; border-radius: 6px;">
+          <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 10px; margin-bottom: 2px;">
+            <span>Constituents: <strong>${count} Equities</strong></span>
+            <span>Base: <strong>${baseVal.toLocaleString('en-IN')}</strong></span>
           </div>
-          <div style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tickers.join(', ')}">
+          <div style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tickers.join(', ')}">
             ${tickers.join(' • ')}
           </div>
         </div>
@@ -5958,7 +6072,29 @@ function renderProjectorIndices(indicesObj) {
     `;
   }).join('');
 
-  container.innerHTML = heroHtml + sectorCardsHtml;
+  container.innerHTML = heroHtml + `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">${sectorCardsHtml}</div>`;
+
+  // Draw charts in next animation frame
+  requestAnimationFrame(() => {
+    drawProjectorIndexChart(
+      `projIndexCanvas_${benchmarkIdx.id || 'NIFTY_TF20'}`,
+      window.projectorIndexHistory[benchmarkIdx.id || 'NIFTY_TF20'],
+      bBase,
+      bIsUp,
+      '#059669'
+    );
+    sectorList.forEach((idx) => {
+      const isUp = (idx.changePct !== undefined ? idx.changePct : 0) >= 0;
+      const sectorColor = getProjectorSectorColor(idx.sector || idx.name);
+      drawProjectorIndexChart(
+        `projIndexCanvas_${idx.id}`,
+        window.projectorIndexHistory[idx.id],
+        idx.baseValue || 20000,
+        isUp,
+        sectorColor
+      );
+    });
+  });
 }
 
 // Projector Sector Colors & SVG Donut Chart Synthesizer
@@ -5991,56 +6127,55 @@ function getProjectorSectorColor(sectorName) {
   return '#0284C7';
 }
 
-function generateProjectorDonutSVG(slices) {
-  const r = 36;
-  const c = 2 * Math.PI * r;
-  let cumulative = 0;
-  const paths = slices.map((s) => {
-    if (s.pct <= 0.2) return '';
-    const strokeDash = `${((s.pct / 100) * c).toFixed(2)} ${c.toFixed(2)}`;
-    const offset = (-((cumulative / 100) * c)).toFixed(2);
-    cumulative += s.pct;
-    return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${s.color}" stroke-width="13" stroke-dasharray="${strokeDash}" stroke-dashoffset="${offset}" transform="rotate(-90 50 50)"></circle>`;
-  }).join('');
-
-  const cashSlice = slices.find((s) => s.isCash);
-  const investedPct = Math.max(0, 100 - (cashSlice ? cashSlice.pct : 0));
-
-  return `
-    <svg viewBox="0 0 100 100" style="width: 100px; height: 100px; flex-shrink: 0;">
-      <circle cx="50" cy="50" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="13"></circle>
-      ${paths}
-      <text x="50" y="47" text-anchor="middle" font-size="13" font-weight="900" fill="var(--text-forest)" font-family="var(--font-mono)">${investedPct.toFixed(0)}%</text>
-      <text x="50" y="59" text-anchor="middle" font-size="7" font-weight="800" fill="var(--text-muted)" text-transform="uppercase">INVESTED</text>
-    </svg>
-  `;
+function getNewsWireTime(item) {
+  if (!item) return '';
+  if (typeof item === 'string') {
+    const d = new Date(item);
+    if (!isNaN(d.getTime())) {
+      return (d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST').toUpperCase();
+    }
+    return item;
+  }
+  if (item.publishedWallClock) return item.publishedWallClock;
+  const ts = item.publishedAtTimestamp || item.publishedTimestamp || item.timestamp;
+  if (ts) {
+    try {
+      const d = new Date(ts);
+      if (!isNaN(d.getTime())) {
+        return (d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST').toUpperCase();
+      }
+    } catch (e) {}
+  }
+  return (new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST').toUpperCase();
 }
 
 function formatNewsTimestamp(ts) {
-  return formatClock12H(ts, true);
+  return getNewsWireTime(ts);
 }
 
-// Scene 3: Team Strategy & Macro Sector Allocations (Audience-Friendly, Zero Stock Leakage)
+// Scene 3: Team Strategy & Uninvested Capital Allocation (Child-Friendly & Clear Visuals)
 function renderProjectorStrategy(allocations) {
   const container = document.getElementById('projSceneStrategy');
   if (!container) return;
 
   if (!allocations || allocations.length === 0) {
     container.innerHTML = `
-      <div class="luxury-card" style="grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted);">
-        No team sector positions established yet. Teams are currently evaluating market entry opportunities.
+      <div class="luxury-card" style="padding: 36px; text-align: center; color: var(--text-muted); border-radius: 12px;">
+        <div style="font-size: 36px; margin-bottom: 8px;">📊</div>
+        <div style="font-weight: 800; font-size: 17px; color: var(--text-forest);">Awaiting Trading Desk Positions</div>
+        <div style="font-size: 13px; margin-top: 4px;">Teams are currently reviewing market sectors and planning their initial share purchases.</div>
       </div>
     `;
     return;
   }
 
-  // Calculate Market-Wide Capital Deployment & Hottest Sector on the Floor
+  // Calculate Market-Wide Capital Deployment & Hottest Sector
   let totalCash = 0;
   let totalNetWorth = 0;
   const sectorTotalValues = {};
 
   allocations.forEach((team) => {
-    const nw = Number(team.netWorth || team.portfolioValue || 0);
+    const nw = Number(team.netWorth || team.portfolioValue || 500000);
     const cVal = Number(team.cashAmount != null ? team.cashAmount : (team.cashPct ? (nw * team.cashPct / 100) : nw));
     totalCash += cVal;
     totalNetWorth += nw;
@@ -6065,129 +6200,136 @@ function renderProjectorStrategy(allocations) {
     }
   });
 
-  const marketStance = roomInvestedPct >= 65
-    ? { text: '🔥 AGGRESSIVE RISK-ON', bg: '#DCFCE7', color: '#166534' }
-    : roomInvestedPct >= 35
-    ? { text: '⚖️ BALANCED STRATEGY', bg: '#EFF6FF', color: '#1E40AF' }
-    : { text: '🛡️ DEFENSIVE CASH STANCE', bg: '#FEF3C7', color: '#92400E' };
-
-  // Overview Banner Card
+  // Overview Banner Card (Kid-Friendly plain language)
   const overviewHtml = `
-    <div class="luxury-card" style="grid-column: 1 / -1; padding: 14px 20px; background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-left: 5px solid var(--champagne-accent); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-      <div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-          <span style="font-size: 16px;">🔥</span>
-          <span style="font-size: 13px; font-weight: 900; color: var(--text-forest); text-transform: uppercase; letter-spacing: 0.05em;">Auditorium Strategy Wire • Capital Posture</span>
-          <span class="badge" style="background: ${marketStance.bg}; color: ${marketStance.color}; font-size: 10px; font-weight: 800;">${marketStance.text}</span>
+    <div class="luxury-card" style="padding: 16px 22px; background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%); border-left: 6px solid var(--champagne-accent); border-radius: 12px; margin-bottom: 4px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 22px;">💰</span>
+            <span style="font-size: 16px; font-weight: 900; color: var(--text-forest); text-transform: uppercase; letter-spacing: 0.05em;">
+              Auditorium Capital Board &bull; Cash in Hand vs Stocks Held
+            </span>
+            <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800;">EASY STRATEGY GUIDE</span>
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+            Across all ${allocations.length} teams: <strong>${roomCashPct.toFixed(0)}%</strong> is safe in cash (₹${formatINR(totalCash)}), while <strong>${roomInvestedPct.toFixed(0)}%</strong> is actively working in companies (₹${formatINR(totalInvested)}).
+          </div>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted);">
-          Total Floor Capital: <strong>${formatINR(totalNetWorth)}</strong> &bull; Total Invested: <strong style="color: var(--price-up);">${formatINR(totalInvested)} (${roomInvestedPct.toFixed(1)}%)</strong> &bull; Liquid Reserves: <strong style="color: #047857;">${formatINR(totalCash)} (${roomCashPct.toFixed(1)}%)</strong>
+        <div style="display: flex; align-items: center; gap: 12px; background: #FFFFFF; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--subtle-border);">
+          <span style="font-size: 18px;">🔥</span>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Most Popular Sector</div>
+            <div style="font-size: 13px; font-weight: 900; color: var(--text-forest);">${hotSector}</div>
+          </div>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="text-align: right;">
-          <span style="display: block; font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Most Favored Sector</span>
-          <span style="font-size: 14px; font-weight: 900; color: var(--text-forest);">${hotSector}</span>
+
+      <!-- Macro Visual Bar -->
+      <div style="background: #E2E8F0; height: 18px; border-radius: 9px; overflow: hidden; display: flex; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="width: ${roomCashPct}%; background: #10B981; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 10px; font-weight: 800; font-family: var(--font-mono); transition: width 0.5s ease;" title="Cash: ${roomCashPct.toFixed(1)}%">
+          ${roomCashPct >= 15 ? `💵 CASH ${roomCashPct.toFixed(0)}%` : ''}
         </div>
-        <div style="width: 14px; height: 14px; border-radius: 999px; background: ${getProjectorSectorColor(hotSector)};"></div>
+        <div style="width: ${roomInvestedPct}%; background: #2563EB; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 10px; font-weight: 800; font-family: var(--font-mono); transition: width 0.5s ease;" title="Invested: ${roomInvestedPct.toFixed(1)}%">
+          ${roomInvestedPct >= 15 ? `📈 STOCKS ${roomInvestedPct.toFixed(0)}%` : ''}
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 6px;">
+        <span style="color: #047857;">🟢 Cash in Hand: Safe from market falls, but earns ₹0 profit</span>
+        <span style="color: #1E40AF;">🔵 Invested in Stocks: Grows when companies rise</span>
       </div>
     </div>
   `;
 
-  const teamCardsHtml = allocations.map((team) => {
+  const teamCardsHtml = allocations.map((team, idx) => {
+    const nw = Number(team.netWorth || team.portfolioValue || 500000);
+    const cashPct = Math.min(100, Math.max(0, Number(team.cashPct != null ? team.cashPct : 100)));
+    const investedPct = Math.max(0, 100 - cashPct);
+    const cashAmt = Number(team.cashAmount != null ? team.cashAmount : (nw * cashPct / 100));
+    const investedAmt = Math.max(0, nw - cashAmt);
     const secList = Object.entries(team.sectorPcts || team.sectorAllocations || {});
-    const nw = Number(team.netWorth || team.portfolioValue || 0);
-    const cashPct = Number(team.cashPct || 0);
+    const returnVal = nw - 500000;
+    const returnPct = (returnVal / 500000) * 100;
+    const isUp = returnPct >= 0;
 
-    // Prepare slices for SVG Donut
-    const slices = [];
-    secList.forEach(([sec, pct]) => {
-      slices.push({
-        pct: Number(pct || 0),
-        color: getProjectorSectorColor(sec),
-        label: sec,
-        isCash: false
-      });
-    });
-    slices.push({
-      pct: cashPct,
-      color: '#10B981',
-      label: 'Cash Reserves',
-      isCash: true
-    });
-
-    const isConcentrated = team.isConcentrated || (secList.length > 0 && secList[0][1] >= 50);
-    const dominantSec = team.dominantSector || (secList.length > 0 ? secList[0][0] : 'None');
-    const dominantPct = team.dominantSectorPct || (secList.length > 0 ? secList[0][1].toFixed(0) : '0');
+    // Archetype badge & plain language description
+    let archetypeBadge = '';
+    let explanation = '';
+    if (cashPct >= 95) {
+      archetypeBadge = '<span class="badge" style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; font-weight:800; font-size:11px;">💤 100% IN BANK &bull; SITTING ON SIDELINES</span>';
+      explanation = 'Has not purchased any stocks yet. Cash is 100% safe, but missing out on all stock rallies!';
+    } else if (cashPct >= 70) {
+      archetypeBadge = '<span class="badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; font-weight:800; font-size:11px;">🛡️ DEFENSIVE &bull; MOSTLY CASH</span>';
+      explanation = `Keeping ${cashPct.toFixed(0)}% cash in the bank for safety and dipping toes into ${secList.length} sector(s).`;
+    } else if (cashPct >= 40) {
+      archetypeBadge = '<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; font-weight:800; font-size:11px;">⚖️ SMART BALANCED &bull; HALF & HALF</span>';
+      explanation = `Smart balanced portfolio: ${investedPct.toFixed(0)}% in equities for growth, ${cashPct.toFixed(0)}% cash ready to buy market dips.`;
+    } else if (cashPct >= 15) {
+      archetypeBadge = '<span class="badge" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC; font-weight:800; font-size:11px;">🚀 AGGRESSIVE TRADER &bull; HEAVILY INVESTED</span>';
+      explanation = `Putting ${investedPct.toFixed(0)}% of their money to work in companies. High upside potential!`;
+    } else {
+      archetypeBadge = '<span class="badge" style="background:#FAF5FF; color:#6B21A8; border:1px solid #D8B4FE; font-weight:800; font-size:11px;">⚡ ALL-IN DAREDEVIL &bull; FULL MARKET EXPOSURE</span>';
+      explanation = `Almost zero cash left (${cashPct.toFixed(0)}%). All chips on the table!`;
+    }
 
     return `
-      <div class="luxury-card" style="padding: 16px; border: 2px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="luxury-card" style="padding: 18px; border-radius: 12px; border: 2px solid var(--card-border); background: #FFFFFF; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+          <!-- Card Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="badge badge-champagne" style="font-size: 11px; font-weight: 900;">RANK #${team.rank || '—'}</span>
-              <h3 style="font-size: 16px; font-weight: 800; color: var(--text-forest); margin: 0;">${escapeHtml(team.teamName)}</h3>
+              <span class="badge badge-champagne" style="font-size: 11px; font-weight: 900; padding: 3px 8px;">RANK #${team.rank || idx + 1}</span>
+              <h3 style="font-size: 17px; font-weight: 800; color: var(--text-forest); margin: 0;">${escapeHtml(team.teamName)}</h3>
             </div>
-            <span style="font-family: var(--font-mono); font-size: 15px; font-weight: 900; color: var(--text-forest);">
-              ${formatINR(nw)}
-            </span>
+            <div style="text-align: right;">
+              <div style="font-family: var(--font-mono); font-size: 17px; font-weight: 900; color: var(--text-forest);">${formatINR(nw)}</div>
+              <div style="font-size: 11px; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">${isUp ? '+' : ''}${returnPct.toFixed(2)}%</div>
+            </div>
           </div>
 
-          <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span class="badge ${isConcentrated ? 'badge-halted' : 'badge-sage'}" style="font-size: 10px; padding: 3px 8px;">
-              ${isConcentrated ? `⚠️ CONCENTRATED (${dominantSec} ${dominantPct}%)` : `🛡️ DIVERSIFIED DESK`}
-            </span>
-            <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">
-              💵 Cash: ${cashPct.toFixed(1)}%
-            </span>
+          <!-- Personality Badge -->
+          <div style="margin-bottom: 10px;">
+            ${archetypeBadge}
+          </div>
+
+          <!-- Plain Language Explainer -->
+          <div style="font-size: 12px; color: var(--text-charcoal); line-height: 1.4; background: #F8FAFC; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #94A3B8; margin-bottom: 12px;">
+            ${explanation}
+          </div>
+
+          <!-- "Piggy Bank vs Market" Visual Scale Bar -->
+          <div style="margin-bottom: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 4px;">
+              <span style="color: #047857;">💵 Cash in Hand: ${cashPct.toFixed(0)}% (${formatINR(cashAmt)})</span>
+              <span style="color: #1E40AF;">📈 Invested in Stocks: ${investedPct.toFixed(0)}% (${formatINR(investedAmt)})</span>
+            </div>
+            <div style="height: 14px; background: #E2E8F0; border-radius: 7px; overflow: hidden; display: flex;">
+              <div style="width: ${cashPct}%; background: #10B981; transition: width 0.4s ease;" title="Cash: ${cashPct.toFixed(1)}%"></div>
+              <div style="width: ${investedPct}%; background: #2563EB; transition: width 0.4s ease;" title="Stocks: ${investedPct.toFixed(1)}%"></div>
+            </div>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 16px; margin-top: 4px;">
-          <!-- SVG Pie / Donut Chart -->
-          ${generateProjectorDonutSVG(slices)}
-
-          <!-- Sector Breakdown Progress Bars -->
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0;">
-            ${secList.slice(0, 3).map(([sec, pct]) => {
+        <!-- Sector Holdings Chips -->
+        <div style="border-top: 1px dashed var(--subtle-border); padding-top: 10px;">
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Invested Industries Breakdown:</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${secList.length > 0 ? secList.map(([sec, pct]) => {
               const secColor = getProjectorSectorColor(sec);
-              const pVal = Number(pct || 0);
               return `
-                <div>
-                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
-                    <span style="color: var(--text-muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;">
-                      <span style="display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: ${secColor}; margin-right: 4px;"></span>
-                      ${escapeHtml(sec)}
-                    </span>
-                    <span style="font-family: var(--font-mono); font-weight: 800; color: var(--text-forest);">${pVal.toFixed(1)}%</span>
-                  </div>
-                  <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: ${Math.min(100, pVal)}%; background: ${secColor}; border-radius: 3px;"></div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-
-            <!-- Cash Reserve Bar -->
-            <div>
-              <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
-                <span style="color: #047857; font-weight: 700;">
-                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: #10B981; margin-right: 4px;"></span>
-                  Uninvested Cash
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: #F1F5F9; font-size: 11px; font-weight: 700; color: var(--text-forest); border-left: 3px solid ${secColor};">
+                  <span>${escapeHtml(sec)}</span>
+                  <span style="color: ${secColor}; font-family: var(--font-mono); font-weight: 800;">${Number(pct).toFixed(0)}%</span>
                 </span>
-                <span style="font-family: var(--font-mono); font-weight: 800; color: #047857;">${cashPct.toFixed(1)}%</span>
-              </div>
-              <div style="height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden;">
-                <div style="height: 100%; width: ${Math.min(100, cashPct)}%; background: #10B981; border-radius: 3px;"></div>
-              </div>
-            </div>
+              `;
+            }).join('') : '<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">No shares bought yet (100% Cash)</span>'}
           </div>
         </div>
       </div>
     `;
   }).join('');
 
-  container.innerHTML = overviewHtml + teamCardsHtml;
+  container.innerHTML = overviewHtml + `<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">${teamCardsHtml}</div>`;
 }
 
 // Scene 4: Daily & Championship Leaderboard
@@ -6531,7 +6673,7 @@ function renderProjectorNews(newsHistory) {
               <span class="badge badge-outline" style="font-size: 11px; font-weight: 700;">${item.type || 'NEWS WIRE'}</span>
             </div>
             <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-weight: 700;">
-              🕒 ${formatNewsTimestamp(item.timestamp)}
+              🕒 Wired at: ${getNewsWireTime(item)}
             </span>
           </div>
           <h3 style="font-size: 17px; font-weight: 800; color: var(--text-forest); margin: 0 0 6px 0; line-height: 1.3;">
@@ -7820,6 +7962,10 @@ function switchHostMarketSubTab(subTab) {
         contentPanels[key].classList.add('hidden');
       }
     });
+  }
+
+  if (latestState && typeof renderHostView === 'function') {
+    renderHostView(latestState);
   }
 }
 
@@ -9572,53 +9718,95 @@ function renderHostView(state) {
     renderHostNews(state);
   }
 
-  // 3. Render Leaderboard Table
-  const lbTbody = document.getElementById('hostLeaderboardTbody');
-  if (lbTbody) {
-    if (leaderboard && leaderboard.length > 0) {
-      lbTbody.innerHTML = leaderboard.map((t, idx) => {
-        const isUp = t.pnlPct >= 0;
-        return `
-          <tr style="border-bottom: 1px solid var(--subtle-border);">
-            <td style="padding: 8px; font-weight: 800;">#${idx + 1}</td>
-            <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(t.name)}</td>
-            <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(t.members || '—')}</td>
-            <td style="padding: 8px; text-align: right;">${formatINR(t.cash)}</td>
-            <td style="padding: 8px; text-align: right;">${formatINR(t.holdingsValue)}</td>
-            <td style="padding: 8px; text-align: right; font-weight: 800;">${formatINR(t.netWorth)}</td>
-            <td style="padding: 8px; text-align: right; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
-              ${isUp ? '+' : ''}${t.pnlPct.toFixed(2)}%
+  // 3. Render Leaderboard Table (Live Championship Rankings)
+  try {
+    const lbTbody = document.getElementById('hostLeaderboardTbody');
+    if (lbTbody) {
+      let effectiveLeaderboard = (leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0) ? leaderboard : [];
+      if (effectiveLeaderboard.length === 0) {
+        const teamsRoster = state.allTeamsList || Object.values(state.teams || {}) || [];
+        if (teamsRoster.length > 0) {
+          const startCash = Number((state.gameState && state.gameState.startingCash) || 500000);
+          effectiveLeaderboard = teamsRoster.map((t, idx) => ({
+            id: t.id || `team_${idx + 1}`,
+            name: t.name || `Team ${idx + 1}`,
+            members: t.members || '—',
+            cash: Number(t.cash !== undefined ? t.cash : startCash),
+            holdingsValue: Number(t.holdingsValue || 0),
+            netWorth: Number(t.netWorth !== undefined ? t.netWorth : (t.cash !== undefined ? t.cash : startCash)),
+            pnlPct: Number(t.pnlPct || 0),
+            tradeCount: Number(t.tradeCount || 0)
+          }));
+        }
+      }
+
+      if (effectiveLeaderboard && effectiveLeaderboard.length > 0) {
+        lbTbody.innerHTML = effectiveLeaderboard.map((t, idx) => {
+          const isUp = (t.pnlPct || 0) >= 0;
+          return `
+            <tr style="border-bottom: 1px solid var(--subtle-border);">
+              <td style="padding: 10px 8px; font-weight: 800; color: var(--champagne-accent);">#${idx + 1}</td>
+              <td style="padding: 10px 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(t.name)}</td>
+              <td style="padding: 10px 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(t.members || '—')}</td>
+              <td style="padding: 10px 8px; text-align: right;">${formatINR(t.cash)}</td>
+              <td style="padding: 10px 8px; text-align: right;">${formatINR(t.holdingsValue)}</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: var(--text-forest);">${formatINR(t.netWorth)}</td>
+              <td style="padding: 10px 8px; text-align: right; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
+                ${isUp ? '+' : ''}${(t.pnlPct || 0).toFixed(2)}%
+              </td>
+              <td style="padding: 10px 8px; text-align: center; font-weight: 700;">${t.tradeCount || 0}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        lbTbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 24px; margin-bottom: 4px;">🏆</div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--text-forest);">No teams loaded on the championship roster yet.</div>
+              <div style="font-size: 11px; margin-top: 2px;">Configure teams in Event Setup to populate rankings.</div>
             </td>
-            <td style="padding: 8px; text-align: center;">${t.tradeCount}</td>
           </tr>
         `;
-      }).join('');
-    } else {
-      lbTbody.innerHTML = `<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No teams registered on the leaderboard yet.</td></tr>`;
+      }
     }
+  } catch (err) {
+    console.error('[HOST LEADERBOARD RENDER ERROR]', err);
   }
 
   // 4. Render Trade Stream Table (always render when element exists)
-  const tradesTbody = document.getElementById('hostRecentTradesTbody');
-  if (tradesTbody) {
-    if (recentTrades && recentTrades.length > 0) {
-      tradesTbody.innerHTML = recentTrades.map((tr) => `
-        <tr style="border-bottom: 1px solid var(--subtle-border);">
-          <td style="padding: 8px;">#${tr.seq}</td>
-          <td style="padding: 8px;">${tr.timestamp}</td>
-          <td style="padding: 8px; font-weight: 700;">${escapeHtml(tr.teamName)}</td>
-          <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 5px;">${tr.type}</span></td>
-          <td style="padding: 8px; font-weight: 700;">${tr.ticker}</td>
-          <td style="padding: 8px; text-align: right;">${tr.quantity}</td>
-          <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right;">₹${tr.grossValue.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.cashAfter.toFixed(2)}</td>
-        </tr>
-      `).join('');
-    } else {
-      tradesTbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No trades executed yet.</td></tr>`;
+  try {
+    const tradesTbody = document.getElementById('hostRecentTradesTbody');
+    if (tradesTbody) {
+      if (recentTrades && recentTrades.length > 0) {
+        tradesTbody.innerHTML = recentTrades.map((tr) => `
+          <tr style="border-bottom: 1px solid var(--subtle-border);">
+            <td style="padding: 8px;">#${tr.seq}</td>
+            <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${tr.timestamp}</td>
+            <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(tr.teamName)}</td>
+            <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 6px;">${tr.type}</span></td>
+            <td style="padding: 8px; font-weight: 800; color: var(--champagne-accent);">${tr.ticker}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 700;">${tr.quantity}</td>
+            <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.grossValue.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 800;">₹${tr.cashAfter.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      } else {
+        tradesTbody.innerHTML = `
+          <tr>
+            <td colspan="10" style="padding: 24px; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 24px; margin-bottom: 4px;">⚡</div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--text-forest);">Awaiting first market order execution.</div>
+              <div style="font-size: 11px; margin-top: 2px;">Orders submitted by trading desks will stream here in real-time.</div>
+            </td>
+          </tr>
+        `;
+      }
     }
+  } catch (err) {
+    console.error('[HOST RECENT TRADES RENDER ERROR]', err);
   }
 }
 
@@ -10880,7 +11068,7 @@ function showBreakingNewsToast(news) {
   const trafficBadge = document.getElementById('bannerTrafficBadge');
   const progressBar = document.getElementById('bannerProgressBar');
 
-  if (eventTypeEl) eventTypeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'}`;
+  if (eventTypeEl) eventTypeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'} • 🕒 ${getNewsWireTime(news)}`;
   if (headlineEl) headlineEl.textContent = news.headline;
   if (expEl) expEl.textContent = news.simple_explanation || news.explanation || '';
 
@@ -10966,7 +11154,7 @@ function prepareFullNewsModal(news) {
   const mandateEl = document.getElementById('flashDeskMandate');
   const barEl = document.getElementById('flashCountdownBar');
 
-  if (evtEl) evtEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'}`;
+  if (evtEl) evtEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'} • 🕒 ${getNewsWireTime(news)}`;
   if (headEl) headEl.textContent = news.headline;
   if (expEl) expEl.textContent = news.simple_explanation || news.explanation || '';
 
@@ -11051,7 +11239,7 @@ function openBigBreakingNewsModal(news) {
     badgeEl.className = 'badge badge-halted';
   }
   if (typeEl) {
-    typeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET SHOCK'}`;
+    typeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET SHOCK'} • 🕒 ${getNewsWireTime(news)}`;
   }
 
   // Extract affected sector / stocks (or show Market-Wide if macro)
@@ -11459,16 +11647,17 @@ function renderHostNews(state) {
     if (isCancelled) {
       initialBadge = '<span class="badge" style="background:#FEE2E2; color:#991B1B;">❌ CANCELLED</span>';
     } else if (isTriggered) {
-      initialBadge = '<span class="badge badge-active">🟢 PUBLISHED • ACTIVE IMPACT</span>';
+      initialBadge = `<span class="badge badge-active">🟢 WIRED AT ${getNewsWireTime(ev)}</span>`;
     } else if (evDay < currentDay) {
       initialBadge = `<span class="badge" style="background:#F3F4F6; color:#6B7280;">⚪ DAY ${evDay} CONCLUDED</span>`;
     } else if (evDay > currentDay) {
       initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(triggerSec)}</span>`;
     } else {
+      const estTimeStr = ev.estimatedWallClock || (remSec > 0 ? new Date(Date.now() + remSec * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');
       if (remSec <= 60 && remSec > 0 && (state.gameState.status === 'LIVE' || state.gameState.status === 'RUNNING')) {
-        initialBadge = `<span class="badge news-imminent-pulse" style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-weight:800;">⚠️ IMMINENT: IN ${remSec}s</span>`;
+        initialBadge = `<span class="badge news-imminent-pulse" style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-weight:800;">⚠️ IMMINENT: IN ${remSec}s (~${estTimeStr})</span>`;
       } else {
-        initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ Triggers in ${formatMMSS(remSec)}</span>`;
+        initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ ~${estTimeStr} (in ${formatMMSS(remSec)})</span>`;
       }
     }
 
@@ -11479,7 +11668,7 @@ function renderHostNews(state) {
             <div style="display: flex; align-items: center; gap: 6px;">
               <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">DAY ${evDay}</span>
               <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); font-weight: 700;">${ev.event_id || ev.id}</span>
-              <span style="font-size: 10px; color: var(--text-muted);">@ ${formatMMSS(triggerSec)}</span>
+              <span style="font-size: 10px; color: var(--text-muted);">${isTriggered ? `🕒 ${getNewsWireTime(ev)}` : `@ ${formatMMSS(triggerSec)}`}</span>
             </div>
             <div id="newsTimerBadge_${ev.event_id || ev.id}">${initialBadge}</div>
           </div>

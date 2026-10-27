@@ -1181,6 +1181,12 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     trafficLightBadge = '📰 EXCHANGE FILING • OFFICIAL CORPORATE DISCLOSURE';
   }
 
+  const nowTime = new Date();
+  const publishedWallClock = (nowTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST').toUpperCase();
+  eventObj.publishedWallClock = publishedWallClock;
+  eventObj.publishedTimestamp = nowTime.toISOString();
+  eventObj.publishedEpochMs = nowTime.getTime();
+
   const newsRecord = {
     id: eventObj.event_id,
     event_id: eventObj.event_id,
@@ -1195,7 +1201,10 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
     readingDurationSec: eventObj.readingDurationSec,
     reactionStartSecond: eventObj.reactionStartSecond,
     impacts: eventObj.impacts,
-    timestamp: new Date().toISOString()
+    timestamp: nowTime.toISOString(),
+    publishedWallClock,
+    publishedTimestamp: nowTime.toISOString(),
+    publishedEpochMs: nowTime.getTime()
   };
 
   gameState.activeNewsFlash = newsRecord;
@@ -2093,10 +2102,16 @@ function getSanitizedPublicState(role, teamId) {
         status = 'SCHEDULED';
         appearsInSeconds = Math.max(0, (ev.trigger_second || 0) - gameState.elapsedSeconds);
       }
+      let estimatedWallClock = null;
+      if (status === 'SCHEDULED' && appearsInSeconds > 0) {
+        estimatedWallClock = (new Date(Date.now() + appearsInSeconds * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST').toUpperCase();
+      }
       return {
         ...ev,
         status,
-        appearsInSeconds
+        appearsInSeconds,
+        estimatedWallClock,
+        publishedWallClock: ev.publishedWallClock || null
       };
     });
     payload.finalResultsSnapshot = gameState.finalResultsSnapshot;
