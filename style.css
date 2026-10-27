@@ -4164,5 +4164,467 @@ th.th-wrap {
   outline-offset: 2px;
 }
 
+/* ==========================================================================
+   ZERO-SCROLL MODAL & POPUP ARCHITECTURE (1366x768, 1080p, 4K & 4:3 PROJECTOR)
+   Non-Negotiable Invariant: Zero vertical scrollbars in any modal or dialog.
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 53, 43, 0.52);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px !important;
+  z-index: 100;
+  overflow: hidden !important; /* Never scroll the backdrop */
+}
+
+.modal-content {
+  background-color: var(--card-white);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 36px) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden !important; /* Strict Zero-Scroll Enforcement */
+  padding: 20px 24px !important;
+  animation: modalSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fixed Modal Header & Footer */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--subtle-border);
+  padding-bottom: 10px !important;
+  margin-bottom: 12px !important;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.modal-body-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden !important;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--subtle-border);
+  padding-top: 12px !important;
+  margin-top: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Compact High-Density Form Controls inside Modals */
+.modal-content .form-group {
+  margin-bottom: 10px !important;
+}
+
+.modal-content .form-label {
+  font-size: 10.5px !important;
+  margin-bottom: 4px !important;
+}
+
+.modal-content .form-input {
+  padding: 7px 11px !important;
+  min-height: 34px !important;
+  font-size: 12.5px !important;
+}
+
+.modal-content .cream-panel {
+  padding: 10px 14px !important;
+}
+
+/* --------------------------------------------------------------------------
+   MODAL-SPECIFIC MULTI-COLUMN LAYOUTS (ZERO VERTICAL SCROLL)
+   -------------------------------------------------------------------------- */
+
+/* 1. Trade Order Modal (#tradeModal): 2-Column Split Cockpit */
+#tradeModal .modal-content {
+  max-width: 780px !important;
+}
+.trade-modal-cockpit {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* 2. Company Details & Fundamentals Modal (#detailsModal): 4x3 Metrics Grid */
+#detailsModal .modal-content {
+  max-width: 820px !important;
+}
+.details-fundamentals-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+}
+
+/* 3. Full Interactive Chart Modal (#fullChartModal): Compact 768p Fit */
+#fullChartModal .modal-content {
+  max-width: 880px !important;
+}
+#fullChartModal #largeChartWrap {
+  height: clamp(220px, 38vh, 310px) !important;
+  margin-bottom: 10px !important;
+}
+
+/* 4. Trader Day Completed Overlay (#traderDayCompletedOverlay): 2-Column Split */
+#traderDayCompletedOverlay .modal-content {
+  max-width: 960px !important;
+  padding: 22px 26px !important;
+}
+.day-completed-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 20px;
+  align-items: stretch;
+  text-align: left;
+}
+#traderDayCompletedLeaderboardList {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 6px !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+/* 5. Winner Podium Modal (#winnerPodiumModal): Side-by-Side Podium & Standings */
+#winnerPodiumModal .modal-content {
+  max-width: 1140px !important;
+  padding: 22px 28px !important;
+}
+.podium-modal-split {
+  display: grid;
+  grid-template-columns: 1.05fr 1.15fr;
+  gap: 22px;
+  align-items: center;
+}
+#winnerPodiumModal .podium-container {
+  padding-top: 6px;
+  gap: 12px;
+}
+#winnerPodiumModal .podium-first  { height: 290px !important; padding: 16px !important; }
+#winnerPodiumModal .podium-second { height: 245px !important; padding: 14px !important; }
+#winnerPodiumModal .podium-third  { height: 220px !important; padding: 14px !important; }
+
+/* 6. Rules & Handbook Modal (#rulesHelpModal): 3x2 Bento Grid */
+#rulesHelpModal .modal-content {
+  max-width: 920px !important;
+}
+.rules-bento-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+}
+
+/* 7. Team Investment Inspector (#teamInvestmentDetailModal): 2-Column Ledger */
+#teamInvestmentDetailModal .modal-content {
+  max-width: 1080px !important;
+  padding: 20px 24px !important;
+}
+.inv-modal-tables-split {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 8. Developer & System Architecture Modal (#developerInfoModal) */
+#developerInfoModal .modal-content {
+  max-width: 860px !important;
+  padding: 20px 26px !important;
+}
+.dev-modal-top-split {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* 9. Post-Lock Day 1 Launch Modal (#postLockDay1Modal): 3-Column Action Cards */
+#postLockDay1Modal .modal-content {
+  max-width: 820px !important;
+  padding: 22px 26px !important;
+}
+.post-lock-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: left;
+}
+
+/* 10. Championship Setup Wizard (#championshipWizardModal) & Team Setup (#teamSetupModal) */
+#championshipWizardModal .modal-content,
+#teamSetupModal .modal-content {
+  max-width: 1120px !important;
+  padding: 18px 24px !important;
+}
+.wizard-three-col-bento {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr 1fr;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+.teams-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 12px;
+}
+
+/* --------------------------------------------------------------------------
+   1366x768 COMPACT LAPTOP VIEWPORT TUNING (max-height: 800px)
+   Ensures 100% of modals fit with zero scrollbars on 768p screens
+   -------------------------------------------------------------------------- */
+@media (max-height: 800px) {
+  .modal-overlay {
+    padding: 8px 14px !important;
+  }
+  .modal-content {
+    max-height: calc(100vh - 16px) !important;
+    padding: 14px 20px !important;
+  }
+  .modal-header {
+    padding-bottom: 8px !important;
+    margin-bottom: 10px !important;
+  }
+  .modal-content h2 {
+    font-size: 17px !important;
+  }
+  .modal-content .cream-panel {
+    padding: 8px 12px !important;
+  }
+  #fullChartModal #largeChartWrap {
+    height: 210px !important;
+  }
+  #winnerPodiumModal .podium-first  { height: 240px !important; }
+  #winnerPodiumModal .podium-second { height: 205px !important; }
+  #winnerPodiumModal .podium-third  { height: 185px !important; }
+}
+
+/* --------------------------------------------------------------------------
+   4:3 CLASSROOM PROJECTOR TUNING (1024x768 & 800x600)
+   -------------------------------------------------------------------------- */
+@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 1.4/1) {
+  .projector-container {
+    padding: 12px 18px !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+  #projMarketSpotlightBar {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 8px !important;
+  }
+  .projector-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    grid-template-rows: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .projector-card {
+    padding: 10px 12px !important;
+  }
+  .projector-ticker {
+    font-size: 18px !important;
+  }
+  .projector-price {
+    font-size: 20px !important;
+  }
+}
+
+/* ==========================================================================
+   HOST AIR TRAFFIC CONTROL (ATC) COCKPIT & SINGULAR ACTION BAR
+   Ivory Luxury Theme • Obsidian Borders • Champagne Gold Accents
+   ========================================================================== */
+
+.host-atc-cockpit {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
+  border: 2px solid #14352B; /* Deep Obsidian / Racing Emerald Border */
+  box-shadow: 0 8px 24px rgba(20, 53, 43, 0.08), inset 0 1px 0 rgba(180, 154, 112, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  margin: 14px 24px 0 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Left Zone: Telemetry & Status Pill */
+.atc-telemetry-cluster {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 18px;
+  border-right: 1.5px solid var(--subtle-border);
+}
+
+.atc-status-beacon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1.5px solid transparent;
+}
+
+.atc-status-beacon.state-live {
+  background-color: var(--price-up-bg);
+  color: var(--price-up);
+  border-color: var(--price-up-border);
+  box-shadow: 0 0 14px rgba(21, 128, 61, 0.18);
+}
+
+.atc-status-beacon.state-paused {
+  background-color: var(--warning-bg);
+  color: var(--warning-amber);
+  border-color: var(--warning-border);
+}
+
+.atc-status-beacon.state-blackout {
+  background-color: #0F172A;
+  color: #F8FAFC;
+  border-color: var(--champagne-accent);
+}
+
+.atc-status-beacon.state-standby {
+  background-color: var(--champagne-light);
+  color: #7A6342;
+  border-color: var(--champagne-accent);
+}
+
+.atc-telemetry-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.atc-metric-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.atc-metric-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.atc-metric-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text-forest);
+}
+
+/* Center Zone: Singular Primary Action Slot + Integrated Mode Selector */
+.atc-primary-command-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-atc-singular {
+  min-width: 230px;
+  min-height: 44px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-atc-singular.mode-resume {
+  background: linear-gradient(135deg, #15803D 0%, #14532D 100%);
+  color: #FFFFFF;
+  border: 1.5px solid #052E16;
+  box-shadow: 0 4px 14px rgba(21, 128, 61, 0.28);
+}
+
+.btn-atc-singular.mode-pause {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  color: #92400E;
+  border: 2px solid #D97706;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.16);
+}
+
+/* Integrated Pause Mode Segmented Toggle (Soft Freeze vs Blackout) */
+.atc-mode-selector-pill {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--surface-cream);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+}
+
+.atc-mode-option {
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 800;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.atc-mode-option.active-soft {
+  background-color: #FEF3C7;
+  color: #92400E;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.atc-mode-option.active-blackout {
+  background-color: #0F172A;
+  color: #F8FAFC;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Right Zone: Secondary Lifecycle Cluster */
+.atc-secondary-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 18px;
+  border-left: 1.5px solid var(--subtle-border);
+}
+
 
 
