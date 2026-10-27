@@ -6741,6 +6741,7 @@ function updateHostTournamentFlow(state) {
   const isScheduled = gs.status === 'SCHEDULED';
   const isPre = day === 1 && (isScheduled || gs.status === 'PRE_EVENT_COUNTDOWN' || (gs.elapsedSeconds === 0 && gs.status !== 'LIVE'));
   const isStandby = (gs.status === 'STANDBY' || (gs.elapsedSeconds === 0 && gs.status !== 'LIVE' && !isPre)) && !isScheduled;
+  const isSetupIncomplete = !gs.configLocked || gs.status === 'SETUP' || gs.status === 'RESET' || gs.isReset;
   const remSec = Math.max(0, (gs.dayDurationSeconds || 1800) - gs.elapsedSeconds);
 
   // Update dynamic step pills
