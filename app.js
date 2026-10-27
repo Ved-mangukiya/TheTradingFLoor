@@ -5008,6 +5008,40 @@ function ensureProjectorHeroTicker() {
 let _resumeAutoRotateTimeout = null;
 let _newsReactionDismissTimeout = null;
 
+// ==========================================
+// SMOOTH ROLLING NUMBER ANIMATOR (ODOMETER ROLLBACK & ADVANCE)
+// ==========================================
+function updateRollingPriceElement(el, currentPrice, customClass, prefix = '₹') {
+  if (!el) return;
+  if (!el.dataset) el.dataset = {};
+  const curNum = Number(currentPrice) || 0;
+  const formatted = prefix + curNum.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  const prevRaw = el.dataset.rawPrice !== undefined ? Number(el.dataset.rawPrice) : null;
+  el.dataset.rawPrice = curNum;
+
+  if (customClass !== undefined) {
+    el.className = customClass;
+  }
+
+  // Set textContent for mock environments and fallback
+  el.textContent = formatted;
+
+  // Initial render or unchanged price
+  if (prevRaw === null || Math.abs(prevRaw - curNum) < 0.001) {
+    el.innerHTML = `<span class="rolling-price-val">${formatted}</span>`;
+    return;
+  }
+
+  const isDrop = curNum < prevRaw;
+  const animClass = isDrop ? 'price-roll-down' : 'price-roll-up';
+
+  el.innerHTML = `<span class="rolling-price-val ${animClass}">${formatted}</span>`;
+}
+
 function renderProjectorSpotlight(sortedCompanies) {
   if (!sortedCompanies || sortedCompanies.length === 0) return;
 
@@ -5036,7 +5070,7 @@ function renderProjectorSpotlight(sortedCompanies) {
     const pctG = refG > 0 ? ((curG - refG) / refG) * 100 : 0;
     if (tgTicker) tgTicker.textContent = topGainer.ticker;
     if (tgName) tgName.textContent = topGainer.name || topGainer.ticker;
-    if (tgPrice) tgPrice.textContent = '₹' + curG.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (tgPrice) updateRollingPriceElement(tgPrice, curG, 'projector-price price-up');
     if (tgDelta) {
       tgDelta.textContent = `${pctG >= 0 ? '+' : ''}${pctG.toFixed(2)}% ▲`;
       tgDelta.style.background = '#15803D';
@@ -5055,7 +5089,7 @@ function renderProjectorSpotlight(sortedCompanies) {
     const pctL = refL > 0 ? ((curL - refL) / refL) * 100 : 0;
     if (tlTicker) tlTicker.textContent = topLoser.ticker;
     if (tlName) tlName.textContent = topLoser.name || topLoser.ticker;
-    if (tlPrice) tlPrice.textContent = '₹' + curL.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (tlPrice) updateRollingPriceElement(tlPrice, curL, 'projector-price price-down');
     if (tlDelta) {
       tlDelta.textContent = `${pctL.toFixed(2)}% ▼`;
       tlDelta.style.background = '#DC2626';
@@ -5174,11 +5208,7 @@ function renderProjectorMarketBoard(companies) {
 
         const priceEl = document.getElementById(`projSlotPrice_${i}`);
         if (priceEl) {
-          priceEl.textContent = '₹' + curPrice.toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-          priceEl.className = `projector-price ${intensity.textClass}`;
+          updateRollingPriceElement(priceEl, curPrice, `projector-price ${intensity.textClass}`);
         }
 
         const deltaEl = document.getElementById(`projSlotDelta_${i}`);
@@ -5444,50 +5474,125 @@ function renderProjectorIndices(indicesObj) {
   const indexList = Array.isArray(indicesObj) ? indicesObj : Object.values(indicesObj);
   if (!indexList.length) return;
 
-  container.innerHTML = indexList.map((idx) => {
+  // Identify Flagship Benchmark (NIFTY / Broad Market / First Item)
+  const benchmarkIdx = indexList.find((i) => {
+    const n = (i.name || i.id || '').toUpperCase();
+    return n.includes('NIFTY') || n.includes('BENCHMARK') || n.includes('BROAD');
+  }) || indexList[0];
+
+  const sectorList = indexList.filter((i) => i !== benchmarkIdx);
+
+  const bVal = benchmarkIdx.currentValue !== undefined ? benchmarkIdx.currentValue : (benchmarkIdx.value || 0);
+  const bPct = benchmarkIdx.changePct !== undefined ? benchmarkIdx.changePct : 0;
+  const bPts = benchmarkIdx.change !== undefined ? benchmarkIdx.change : (benchmarkIdx.changePoints || 0);
+  const bIsUp = bPct >= 0;
+  const bSign = bIsUp ? '+' : '';
+  const bIntensity = getMovementIntensity(bPct);
+  const bTickers = benchmarkIdx.tickers || benchmarkIdx.constituents || [];
+  const bCount = benchmarkIdx.constituentsCount !== undefined ? benchmarkIdx.constituentsCount : bTickers.length;
+
+  const heroHtml = `
+    <div class="proj-benchmark-hero">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em;">★ FLAGSHIP TOURNAMENT BENCHMARK ★</span>
+          <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">LIVE MARKET ANCHOR</span>
+        </div>
+        <h2 style="font-size: 26px; font-weight: 900; color: var(--text-forest); margin: 0 0 4px 0; font-family: var(--font-serif); display: flex; align-items: center; gap: 8px;">
+          <span>🏛️</span> ${escapeHtml(benchmarkIdx.name || 'TTF NIFTY 20 Benchmark')}
+        </h2>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+          Official composite index tracking all ${bCount || 20} championship equities across active sectors.
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 12px; font-size: 11px; color: var(--text-forest); font-weight: 700;">
+          <span>Basket: <strong>${bCount} Equities</strong></span>
+          <span>&bull;</span>
+          <span>Base Level: <strong>25,000.00</strong></span>
+          <span>&bull;</span>
+          <span>Weighting: <strong>Equal-Weighted</strong></span>
+        </div>
+      </div>
+
+      <div style="text-align: center; border-left: 2px solid var(--subtle-border); border-right: 2px solid var(--subtle-border); padding: 0 20px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Composite Benchmark Level</div>
+        <div style="font-family: var(--font-mono); font-size: 40px; font-weight: 900; color: var(--text-forest); line-height: 1.1; margin: 4px 0; font-variant-numeric: tabular-nums;">
+          <span class="rolling-price-val">${bVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 8px; margin-top: 2px;">
+          <span class="badge" style="${bIntensity.badgeStyle}; font-family: var(--font-mono); font-size: 13px; font-weight: 800; padding: 3px 10px;">
+            ${bSign}${bPct.toFixed(2)}% ${bIsUp ? '▲' : '▼'}
+          </span>
+          <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800;" class="${bIsUp ? 'price-up' : 'price-down'}">
+            ${bSign}${bPts.toFixed(2)} pts from base
+          </span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; justify-content: center; gap: 8px; font-size: 12px;">
+        <div class="cream-panel" style="padding: 10px 14px; border-radius: 8px; background: #FFFFFF; border: 1px solid var(--subtle-border);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-muted); font-size: 11px; text-transform: uppercase;">Constituent Coverage</span>
+            <span style="font-weight: 800; color: var(--text-forest); font-family: var(--font-mono);">100% Floor Active</span>
+          </div>
+          <div style="color: var(--text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${bTickers.join(', ')}">
+            Symbols: <strong>${bTickers.slice(0, 8).join(', ')}${bTickers.length > 8 ? ` +${bTickers.length - 8} more` : ''}</strong>
+          </div>
+        </div>
+        <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; font-style: italic;">
+          Auditorium reference index updating dynamically every tick.
+        </div>
+      </div>
+    </div>
+  `;
+
+  const sectorCardsHtml = sectorList.map((idx) => {
     const val = idx.currentValue !== undefined ? idx.currentValue : (idx.value || 0);
     const pct = idx.changePct !== undefined ? idx.changePct : 0;
     const pts = idx.change !== undefined ? idx.change : (idx.changePoints || 0);
     const isUp = pct >= 0;
     const tickers = idx.tickers || idx.constituents || [];
     const count = idx.constituentsCount !== undefined ? idx.constituentsCount : tickers.length;
+    const sectorColor = getProjectorSectorColor(idx.sector || idx.name);
 
     return `
-      <div class="luxury-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid var(--card-border);">
+      <div class="luxury-card" style="padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid var(--card-border); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: ${sectorColor};"></div>
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; margin-top: 4px;">
             <div>
-              <span class="badge badge-champagne" style="font-size: 11px; margin-bottom: 4px;">${escapeHtml(idx.sector || 'MARKET BENCHMARK')}</span>
-              <h2 style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin: 0;">${escapeHtml(idx.name || idx.id || 'Index')}</h2>
+              <span class="badge badge-champagne" style="font-size: 10.5px; margin-bottom: 4px; font-weight: 800;">${escapeHtml(idx.sector || 'SECTOR INDEX')}</span>
+              <h3 style="font-size: 18px; font-weight: 900; color: var(--text-forest); margin: 0;">${escapeHtml(idx.name || idx.id || 'Sector Index')}</h3>
             </div>
-            <span class="badge ${isUp ? 'badge-active' : 'badge-halted'}" style="font-size: 13px; font-family: var(--font-mono); font-weight: 800;">
+            <span class="badge ${isUp ? 'badge-active' : 'badge-halted'}" style="font-size: 12.5px; font-family: var(--font-mono); font-weight: 800;">
               ${isUp ? '+' : ''}${pct.toFixed(2)}% ${isUp ? '▲' : '▼'}
             </span>
           </div>
 
-          <div style="margin: 14px 0;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Benchmark Value</div>
-            <div style="font-family: var(--font-mono); font-size: 32px; font-weight: 900; color: var(--text-forest); margin-top: 2px;">
-              ${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div style="margin: 12px 0;">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Index Benchmark Level</div>
+            <div style="font-family: var(--font-mono); font-size: 28px; font-weight: 900; color: var(--text-forest); margin-top: 2px; font-variant-numeric: tabular-nums;">
+              <span class="rolling-price-val">${val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
+            <div style="font-family: var(--font-mono); font-size: 12px; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
               ${isUp ? '+' : ''}${pts.toFixed(2)} points from base
             </div>
           </div>
         </div>
 
-        <div class="cream-panel" style="padding: 10px; font-size: 11px;">
+        <div class="cream-panel" style="padding: 10px 12px; font-size: 11px; border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; color: var(--text-muted); margin-bottom: 4px;">
             <span>Constituents: <strong>${count} Stocks</strong></span>
             <span>Weighting: <strong>${idx.weighting || 'Equal-Weighted'}</strong></span>
           </div>
-          <div style="color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            Symbols: ${tickers.join(', ')}
+          <div style="color: var(--text-forest); font-family: var(--font-mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tickers.join(', ')}">
+            ${tickers.join(' • ')}
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  container.innerHTML = heroHtml + sectorCardsHtml;
 }
 
 // Projector Sector Colors & SVG Donut Chart Synthesizer
@@ -5738,6 +5843,72 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
         : (fullState && fullState.dailyLeaderboard ? fullState.dailyLeaderboard : leaderboard))
     : leaderboard;
 
+  // Floor Macro Analytics & Uninvested Cash
+  const totalFloorCash = (leaderboard || []).reduce((sum, t) => sum + (Number(t.cash) || 0), 0);
+  const totalFloorEquity = (leaderboard || []).reduce((sum, t) => sum + (Number(t.holdingsValue) || 0), 0);
+  const totalFloorNetWorth = totalFloorCash + totalFloorEquity;
+  const floorCashPct = totalFloorNetWorth > 0 ? (totalFloorCash / totalFloorNetWorth) * 100 : 0;
+  const floorEquityPct = totalFloorNetWorth > 0 ? (totalFloorEquity / totalFloorNetWorth) * 100 : 0;
+
+  const floorOverviewHtml = `
+    <div class="proj-floor-overview-bar">
+      <div class="proj-floor-metric-cards">
+        <div class="proj-floor-stat-box">
+          <div class="proj-floor-stat-header">
+            <span>Total Floor Capital</span>
+            <span>🏦 ${(leaderboard || []).length} Desks</span>
+          </div>
+          <div class="proj-floor-stat-val">
+            ${formatINR(totalFloorNetWorth)}
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px;">
+            Audited aggregate student net worth
+          </div>
+        </div>
+
+        <div class="proj-floor-stat-box" style="border-left: 3px solid #10B981;">
+          <div class="proj-floor-stat-header">
+            <span style="color: #059669; font-weight: 800;">💵 Uninvested Liquid Cash</span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-size: 10px; font-weight: 800;">${floorCashPct.toFixed(1)}% LIQUID</span>
+          </div>
+          <div class="proj-floor-stat-val" style="color: #059669;">
+            ${formatINR(totalFloorCash)}
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px;">
+            Uninvested reserves waiting for opportunities
+          </div>
+        </div>
+
+        <div class="proj-floor-stat-box" style="border-left: 3px solid #2563EB;">
+          <div class="proj-floor-stat-header">
+            <span style="color: #2563EB; font-weight: 800;">📈 Active Stock Exposure</span>
+            <span class="badge" style="background: rgba(37, 99, 235, 0.12); color: #2563EB; font-size: 10px; font-weight: 800;">${floorEquityPct.toFixed(1)}% DEPLOYED</span>
+          </div>
+          <div class="proj-floor-stat-val" style="color: #2563EB;">
+            ${formatINR(totalFloorEquity)}
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px;">
+            Capital actively committed in equities
+          </div>
+        </div>
+      </div>
+
+      <div class="proj-liquidity-gauge-wrap">
+        <div class="proj-liquidity-bar-labels">
+          <span style="color: #059669;">💵 Uninvested Cash: ${formatINR(totalFloorCash)} (${floorCashPct.toFixed(1)}%)</span>
+          <span style="color: #2563EB;">📈 Invested Equities: ${formatINR(totalFloorEquity)} (${floorEquityPct.toFixed(1)}%)</span>
+        </div>
+        <div class="proj-liquidity-bar-track" title="Floor Capital Allocation: ${floorCashPct.toFixed(1)}% Cash / ${floorEquityPct.toFixed(1)}% Stocks">
+          <div class="proj-liquidity-bar-cash" style="width: ${floorCashPct}%;"></div>
+          <div class="proj-liquidity-bar-equity" style="width: ${floorEquityPct}%;"></div>
+        </div>
+        <div style="font-size: 10.5px; color: var(--text-muted); text-align: center; margin-top: 2px;">
+          Auditorium Capital Flow Monitor &bull; Instant liquidity ratio across all competing trading desks
+        </div>
+      </div>
+    </div>
+  `;
+
   if (isDailyView) {
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
@@ -5757,6 +5928,8 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
           ★ AUDITED DAY ${curDay} PERFORMANCE ONLY
         </div>
       </div>
+
+      ${floorOverviewHtml}
 
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
@@ -5781,10 +5954,10 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
               const intensity = getMovementIntensity(retVal);
               const isUp = dayPnl >= 0;
 
-              let rankBadge = `<span style="font-weight: 800;">#${rank}</span>`;
-              if (rank === 1) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px;">🥇 #1 Daily Leader</span>`;
-              else if (rank === 2) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px;">🥈 #2</span>`;
-              else if (rank === 3) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px;">🥉 #3</span>`;
+              let rankBadge = `<span class="projector-rank-badge" style="font-size: 12px;">#${rank}</span>`;
+              if (rank === 1) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px; font-weight: 900;">🥇 #1 Daily Leader</span>`;
+              else if (rank === 2) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px; font-weight: 800;">🥈 #2</span>`;
+              else if (rank === 3) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px; font-weight: 800;">🥉 #3</span>`;
 
               return `
                 <tr style="border-bottom: 1px solid var(--subtle-border); ${rank === 1 ? 'background: #FAF9F6;' : ''}">
@@ -5811,6 +5984,61 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
     return;
   }
 
+  // Top 3 Podium Cards Deck (When 3+ teams exist)
+  let podiumDeckHtml = '';
+  if (leaderboard.length >= 3) {
+    const top3 = leaderboard.slice(0, 3);
+    const podiumMeta = [
+      { class: 'rank-1', badge: '🥇 GRAND CHAMPION LEADER', border: '#D4AF37' },
+      { class: 'rank-2', badge: '🥈 2ND PLACE RUNNER-UP', border: '#94A3B8' },
+      { class: 'rank-3', badge: '🥉 3RD PLACE CONTENDER', border: '#D97706' }
+    ];
+
+    podiumDeckHtml = `
+      <div class="proj-podium-deck">
+        ${top3.map((tm, pIdx) => {
+          const meta = podiumMeta[pIdx];
+          const pCash = Number(tm.cash) || 0;
+          const pHoldings = Number(tm.holdingsValue) || 0;
+          const pWorth = Number(tm.netWorth) || (pCash + pHoldings);
+          const pPnl = pWorth - startCash;
+          const pRet = startCash > 0 ? (pPnl / startCash) * 100 : 0;
+          const pIsUp = pPnl >= 0;
+          const pCashPct = pWorth > 0 ? Math.round((pCash / pWorth) * 100) : 0;
+          const pEqPct = Math.max(0, 100 - pCashPct);
+          const pIntensity = getMovementIntensity(pRet);
+
+          return `
+            <div class="proj-podium-card ${meta.class}">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span class="badge ${pIdx === 0 ? 'badge-champagne' : ''}" style="font-size: 11px; font-weight: 900; letter-spacing: 0.05em;">${meta.badge}</span>
+                <span class="badge" style="${pIntensity.badgeStyle}; font-family: var(--font-mono); font-size: 12px; font-weight: 800;">
+                  ${pIsUp ? '+' : ''}${pRet.toFixed(2)}%
+                </span>
+              </div>
+              <h3 style="font-size: 18px; font-weight: 900; color: var(--text-forest); margin: 2px 0 6px 0; font-family: var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${escapeHtml(tm.name)}
+              </h3>
+              <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 900; color: var(--text-forest); margin-bottom: 8px;">
+                ${formatINR(pWorth)}
+              </div>
+              <div class="team-alloc-wrap" style="background: rgba(0,0,0,0.02); padding: 6px 8px; border-radius: 6px;">
+                <div class="team-alloc-text" style="margin-bottom: 2px;">
+                  <span class="alloc-cash-lbl">💵 Cash ${pCashPct}% (${formatINR(pCash)})</span>
+                  <span class="alloc-eq-lbl">📈 Eq ${pEqPct}%</span>
+                </div>
+                <div class="team-alloc-bar">
+                  <div class="team-alloc-cash" style="width: ${pCashPct}%;"></div>
+                  <div class="team-alloc-eq" style="width: ${pEqPct}%;"></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
   // Standard cumulative championship leaderboard (used during live market cycles)
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
@@ -5827,6 +6055,10 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
       </div>
     </div>
 
+    ${floorOverviewHtml}
+
+    ${podiumDeckHtml}
+
     <!-- Confidentiality & Anti-Copy Protection Notice -->
     <div style="background: rgba(30, 41, 59, 0.04); border: 1px solid var(--subtle-border); border-radius: 8px; padding: 7px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 600;">
       <span>🔒 <strong>Anti-Copy Strategy Shield:</strong> Specific stock holdings and share quantities are concealed to protect proprietary team strategies.</span>
@@ -5841,6 +6073,7 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
             <th style="padding: 10px;">Team Desk</th>
             <th style="padding: 10px; text-align: right;">Cash Available</th>
             <th style="padding: 10px; text-align: right;">Stock Valuation</th>
+            <th style="padding: 10px;">Asset Allocation</th>
             <th style="padding: 10px; text-align: right;">Net Portfolio Worth</th>
             <th style="padding: 10px; text-align: right;">Cumulative P/L</th>
             <th style="padding: 10px; text-align: right;">Total Return %</th>
@@ -5849,22 +6082,41 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
         </thead>
         <tbody style="font-family: var(--font-mono);">
           ${leaderboard.map((item, idx) => {
-            const pnl = item.netWorth - startCash;
+            const teamCash = Number(item.cash) || 0;
+            const teamHoldings = Number(item.holdingsValue) || 0;
+            const teamWorth = Number(item.netWorth) || (teamCash + teamHoldings);
+            const teamCashPct = teamWorth > 0 ? Math.round((teamCash / teamWorth) * 100) : 0;
+            const teamEqPct = Math.max(0, 100 - teamCashPct);
+
+            const pnl = teamWorth - startCash;
             const retPct = startCash > 0 ? (pnl / startCash) * 100 : 0;
             const isUp = pnl >= 0;
             const intensity = getMovementIntensity(retPct);
-            let rankBadge = `<span style="font-weight: 800;">#${idx + 1}</span>`;
-            if (idx === 0) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px;">🥇 #1</span>`;
-            else if (idx === 1) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px;">🥈 #2</span>`;
-            else if (idx === 2) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px;">🥉 #3</span>`;
+
+            let rankBadge = `<span class="projector-rank-badge" style="font-size: 12px;">#${idx + 1}</span>`;
+            if (idx === 0) rankBadge = `<span class="badge badge-champagne" style="font-size: 12px; font-weight: 900;">🥇 #1 LEADER</span>`;
+            else if (idx === 1) rankBadge = `<span class="badge" style="background: #F1F5F9; color: #475569; font-size: 12px; font-weight: 800;">🥈 #2</span>`;
+            else if (idx === 2) rankBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-size: 12px; font-weight: 800;">🥉 #3</span>`;
 
             return `
               <tr style="border-bottom: 1px solid var(--subtle-border); ${idx < 3 ? 'background: #FAF9F6;' : ''}">
                 <td style="padding: 10px;">${rankBadge}</td>
                 <td style="padding: 10px; font-family: var(--font-sans); font-weight: 800; color: var(--text-forest);">${escapeHtml(item.name)}</td>
-                <td style="padding: 10px; text-align: right;">${formatINR(item.cash)}</td>
-                <td style="padding: 10px; text-align: right;">${formatINR(item.holdingsValue)}</td>
-                <td style="padding: 10px; text-align: right; font-weight: 900; color: var(--text-forest); font-size: 15px;">${formatINR(item.netWorth)}</td>
+                <td style="padding: 10px; text-align: right;">${formatINR(teamCash)}</td>
+                <td style="padding: 10px; text-align: right;">${formatINR(teamHoldings)}</td>
+                <td style="padding: 10px;">
+                  <div class="team-alloc-wrap" title="Uninvested Cash: ${formatINR(teamCash)} (${teamCashPct}%) | Stocks: ${formatINR(teamHoldings)} (${teamEqPct}%)">
+                    <div class="team-alloc-bar">
+                      <div class="team-alloc-cash" style="width: ${teamCashPct}%;"></div>
+                      <div class="team-alloc-eq" style="width: ${teamEqPct}%;"></div>
+                    </div>
+                    <div class="team-alloc-text">
+                      <span class="alloc-cash-lbl">${teamCashPct}% Cash</span>
+                      <span class="alloc-eq-lbl">${teamEqPct}% Eq</span>
+                    </div>
+                  </div>
+                </td>
+                <td style="padding: 10px; text-align: right; font-weight: 900; color: var(--text-forest); font-size: 15px;">${formatINR(teamWorth)}</td>
                 <td style="padding: 10px; text-align: right; font-weight: 800;" class="${intensity.textClass}">
                   ${isUp ? '+' : ''}${formatINR(pnl)}
                 </td>
@@ -6254,7 +6506,64 @@ function renderAllIndicesBars(indicesInput) {
   if (hostBar) hostBar.innerHTML = html;
 
   const projBar = document.getElementById('projIndicesTickerBar');
-  if (projBar) projBar.innerHTML = html;
+  if (projBar) {
+    projBar.innerHTML = list.map((idx) => {
+      const val = idx.currentValue !== undefined ? idx.currentValue : (idx.value || 0);
+      const pct = idx.changePct !== undefined ? idx.changePct : 0;
+      const pts = idx.change !== undefined ? idx.change : (idx.changePoints || 0);
+      const isUp = pct >= 0;
+      const sign = isUp ? '+' : '';
+      const name = idx.name || idx.id || 'Index';
+      const isBenchmark = name.includes('NIFTY') || name.includes('Benchmark') || name.includes('Broad');
+
+      let icon = '📊';
+      if (isBenchmark) icon = '🏛️';
+      else if (name.includes('BANK')) icon = '🏦';
+      else if (name.includes('IT') || name.includes('Tech')) icon = '💻';
+      else if (name.includes('AUTO') || name.includes('Mobility')) icon = '🚗';
+      else if (name.includes('ENERGY') || name.includes('Power')) icon = '⚡';
+      else if (name.includes('METALS') || name.includes('Infra')) icon = '🏗️';
+      else if (name.includes('CONSUMER') || name.includes('PHARMA') || name.includes('FMCG')) icon = '🛒';
+
+      const shortName = name.replace('Championship ', '').replace('Index', '').trim();
+      const valFormatted = val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const ptsFormatted = `${sign}${pts.toFixed(1)} pts`;
+
+      if (isBenchmark) {
+        return `
+          <div class="proj-index-badge proj-index-benchmark" title="${escapeHtml(name)}: ${valFormatted} (${sign}${pct.toFixed(2)}%)">
+            <div class="proj-idx-icon-wrap" style="background: rgba(180, 154, 112, 0.22);">${icon}</div>
+            <div class="proj-idx-content">
+              <div class="proj-idx-label">
+                <span class="proj-idx-title">${escapeHtml(shortName)}</span>
+                <span class="proj-benchmark-tag">BENCHMARK</span>
+              </div>
+              <div class="proj-idx-figures">
+                <span class="proj-idx-val"><span class="rolling-price-val">${valFormatted}</span></span>
+                <span class="proj-idx-delta ${isUp ? 'up' : 'down'}">${sign}${pct.toFixed(2)}% ${isUp ? '▲' : '▼'}</span>
+                <span class="proj-idx-pts ${isUp ? 'up' : 'down'}">${ptsFormatted}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="proj-index-badge" title="${escapeHtml(name)}: ${valFormatted} (${sign}${pct.toFixed(2)}%)">
+          <div class="proj-idx-icon-wrap">${icon}</div>
+          <div class="proj-idx-content">
+            <div class="proj-idx-label">
+              <span class="proj-idx-title">${escapeHtml(shortName)}</span>
+            </div>
+            <div class="proj-idx-figures">
+              <span class="proj-idx-val"><span class="rolling-price-val">${valFormatted}</span></span>
+              <span class="proj-idx-delta ${isUp ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 }
 
 function calculateClientIndices(companiesList) {
