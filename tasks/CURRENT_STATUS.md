@@ -91,19 +91,16 @@
 
 ---
 
-## 9. Verification & Test Suite Status
-- [x] All test suites organized cleanly in `tests/` directory (zero loose test files at repository root).
-- [x] `tests/test_unified_master_flow.js`: **36/36 PASSED (100%)** (Unified 11-phase state machine verification).
-- [x] `tests/test_chunk2_state_machine.js`: **5/5 PASSED (100%)** (Monotonic stateVersion and countdown guards).
-- [x] `tests/test_chunk3_ui_and_overlays.js`: **89/89 PASSED (100%)** (DOM parity, zero duplicate IDs, role overlays).
-- [x] `tests/test_chunk4_action_contracts.js`: **64/64 PASSED (100%)** (Button locking, network shields, timeout fallback).
-- [x] `tests/test_master_suite.js`: **52/52 PASSED (100%)** (Comprehensive 10-stage regression).
-- [x] `tests/test_dynamic_upgrade_suite.js`: **10/10 PASSED (100%)** (Investment analytics and lifecycle actions).
-- [x] `tests/test_trading_cards_and_lifecycle_suite.js`: **24/24 PASSED (100%)** (Cards, circuit breakers, day transitions).
-- [x] `tests/test_master_lifecycle_and_isolation.js`: **13/13 PASSED (100%)** (Public status, login gating, non-pause invariant).
-- [x] `tests/test_interaction_logic_and_state_machine.js`: **16/16 PASSED (100%)** (Multi-day progression, timer expiration).
-- [x] `tests/test_master_quantitative_and_security_suite.js`: **7/7 PASSED (100%)** (Financial math, 10 bps fee, beta isolation).
-- [x] **Total Automated Verification**: **316+ Passing Assertions Across All Suites (0 Failures, 100% Reliability)**.
+## 9. Verification & Streamlined Test Architecture
+- [x] **4 Authoritative Test Suites (194/194 Passing Assertions, 0 Failures, 100% Reliability)**:
+  1. `tests/test_unified_master_flow.js`: **36/36 PASSED (100%)** (End-to-end 11-phase championship lifecycle flow on port 3099).
+  2. `tests/test_chunk2_state_machine.js`: **5/5 PASSED (100%)** (Monotonic stateVersion and countdown guards on port 3102).
+  3. `tests/test_chunk3_ui_and_overlays.js`: **89/89 PASSED (100%)** (DOM parity, zero duplicate IDs, role overlays on port 3103).
+  4. `tests/test_chunk4_action_contracts.js`: **64/64 PASSED (100%)** (Universal Action Contract locks, network shields, timeout fallback on port 3104).
+- [x] **Zero Dossiers & Lean Codebase Invariant**:
+  - Permanently purged redundant `MASTER_CODEBASE_DOSSIER/`, `docs/archive/argon_dossier/`, `docs/CLAUDE_CSS_MASTER_DOSSIER.md`, and `tools/build_master_dossier.js`.
+  - Permanently purged 7 deprecated/redundant legacy test files.
+  - Zero duplicate code files across the repository.
 
 ---
 
