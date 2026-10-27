@@ -4635,5 +4635,370 @@ th.th-wrap {
   border-left: 1.5px solid var(--subtle-border);
 }
 
+/* ==========================================================================
+   21. SMOOTH ROLLING NUMBER ANIMATIONS (ODOMETER ROLLBACK & ADVANCE)
+   ========================================================================== */
+.rolling-price-val {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.rolling-price-val.price-roll-down {
+  animation: smoothRollDown 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rolling-price-val.price-roll-up {
+  animation: smoothRollUp 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes smoothRollDown {
+  0% {
+    transform: translateY(-32%);
+    opacity: 0.35;
+    filter: blur(0.4px);
+  }
+  60% {
+    transform: translateY(3%);
+    opacity: 0.95;
+    filter: none;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@keyframes smoothRollUp {
+  0% {
+    transform: translateY(32%);
+    opacity: 0.35;
+    filter: blur(0.4px);
+  }
+  60% {
+    transform: translateY(-3%);
+    opacity: 0.95;
+    filter: none;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: none;
+  }
+}
+
+/* ==========================================================================
+   22. PROJECTOR INDICES PRESENTATION & BENCHMARK RIBBON
+   ========================================================================== */
+#projIndicesTickerBar {
+  background: linear-gradient(135deg, #FAF9F6 0%, #FFFFFF 100%);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 8px 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.proj-index-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  border: 1px solid var(--subtle-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.proj-index-badge:hover {
+  transform: translateY(-1px);
+  border-color: var(--champagne-accent);
+}
+
+.proj-index-badge.proj-index-benchmark {
+  background: linear-gradient(135deg, #FAF7F0 0%, #FFFFFF 100%);
+  border: 1.5px solid var(--champagne-accent);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.18);
+}
+
+.proj-idx-icon-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: rgba(30, 41, 59, 0.05);
+  flex-shrink: 0;
+}
+
+.proj-idx-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.proj-idx-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.proj-idx-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-forest);
+  letter-spacing: 0.02em;
+}
+
+.proj-benchmark-tag {
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: var(--champagne-accent);
+  color: #FFFFFF;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.proj-idx-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.proj-idx-val {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 900;
+  color: var(--text-forest);
+  font-variant-numeric: tabular-nums;
+}
+
+.proj-idx-delta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.proj-idx-delta.up {
+  background: rgba(33, 134, 83, 0.12);
+  color: var(--price-up);
+}
+
+.proj-idx-delta.down {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--price-down);
+}
+
+.proj-idx-pts {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.proj-idx-pts.up {
+  color: #15803D;
+}
+
+.proj-idx-pts.down {
+  color: #B91C1C;
+}
+
+/* Scene 2: Flagship Benchmark Hero Banner */
+.proj-benchmark-hero {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #FAF7F0 0%, #FFFFFF 100%);
+  border: 2px solid var(--champagne-accent);
+  border-radius: var(--radius-lg);
+  padding: 22px 28px;
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.12);
+  display: grid;
+  grid-template-columns: 1.4fr 1.6fr 1.2fr;
+  gap: 20px;
+  align-items: center;
+}
+
+/* ==========================================================================
+   23. PROJECTOR LEADERBOARD FLOOR LIQUIDITY & ALLOCATION VISUALS
+   ========================================================================== */
+.proj-floor-overview-bar {
+  background: linear-gradient(135deg, #FAF9F6 0%, #FFFFFF 100%);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.proj-floor-metric-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.proj-floor-stat-box {
+  background: #FFFFFF;
+  border: 1px solid var(--subtle-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.proj-floor-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.proj-floor-stat-val {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-forest);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.proj-liquidity-gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.proj-liquidity-bar-track {
+  height: 11px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  background: #E2E8F0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.proj-liquidity-bar-cash {
+  background: linear-gradient(90deg, #10B981, #059669);
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.proj-liquidity-bar-equity {
+  background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.proj-liquidity-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* Mini Inline Asset Allocation Bar per Team Row */
+.team-alloc-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 135px;
+}
+
+.team-alloc-bar {
+  display: flex;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #E2E8F0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.team-alloc-cash {
+  background: #10B981;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.team-alloc-eq {
+  background: #2563EB;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.team-alloc-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.alloc-cash-lbl {
+  color: #059669;
+}
+
+.alloc-eq-lbl {
+  color: #2563EB;
+}
+
+/* Top 3 Podium Spotlight Cards Deck */
+.proj-podium-deck {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.proj-podium-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #FFFFFF;
+  border: 1.5px solid var(--card-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.proj-podium-card.rank-1 {
+  background: linear-gradient(135deg, #FAF7F0 0%, #FFFFFF 100%);
+  border: 2px solid var(--champagne-accent);
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.2);
+}
+
+.proj-podium-card.rank-2 {
+  background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+  border: 1.5px solid #CBD5E1;
+}
+
+.proj-podium-card.rank-3 {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%);
+  border: 1.5px solid #FDE68A;
+}
+
+
 
 
