@@ -355,23 +355,33 @@
   <!-- 1.4 Floating Order Toast Notification -->
   <div id="orderToast" class="hidden toast-notice"></div>
 
-  <!-- 1.5 Simple English Stock Halt Alert Banner -->
+  <!-- 1.5 Non-Blocking Floating Emergency Circuit Breaker HUD Island -->
   <div id="circuitBreakerAlertBanner" class="hidden circuit-alert-banner">
-    <div style="display: flex; align-items: center; gap: 14px;">
-      <span style="font-size: 22px;">⛔</span>
-      <div>
-        <div style="text-transform: uppercase; font-size: 13px; font-weight: 800; letter-spacing: 0.08em;">STOCK TRADING
-          PAUSED</div>
-        <div id="circuitAlertText" style="font-size: 13px; font-weight: 600; opacity: 0.95;">Price limit reached.
-          Trading paused on this stock.</div>
+    <div class="circuit-alert-inner">
+      <div class="circuit-alert-left">
+        <div class="circuit-alert-icon-box">
+          <span style="font-size: 20px;">⛔</span>
+        </div>
+        <div class="circuit-alert-text-group">
+          <div class="circuit-alert-tags">
+            <span class="circuit-alert-title-tag">CIRCUIT BREAKER ALERT</span>
+            <span id="circuitAlertHaltType" class="circuit-badge-lower">LOWER CIRCUIT HIT</span>
+            <span class="circuit-floor-active-tag">REST OF MARKET ACTIVE</span>
+          </div>
+          <div id="circuitAlertText" class="circuit-alert-primary-msg">
+            Price limit reached. Trading paused on this stock.
+          </div>
+          <div id="circuitAlertSubText" class="circuit-alert-sub-msg">
+            Directional limits in effect. Counter-flow liquidity orders remain permitted.
+          </div>
+        </div>
       </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <span id="circuitAlertCountdownText" style="font-size: 11px; font-family: var(--font-mono); opacity: 0.85;">(Auto-closing in 8s)</span>
-      <button onclick="dismissCircuitAlertBanner()"
-        style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.45); color: #fff; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; font-weight: 700;">
-        OK [✕]
-      </button>
+      <div class="circuit-alert-right">
+        <span id="circuitAlertCountdownText" class="circuit-alert-countdown-pill">(Auto-closing in 8s)</span>
+        <button type="button" onclick="dismissCircuitAlertBanner()" class="circuit-alert-dismiss-btn" title="Dismiss Alert">
+          ✕
+        </button>
+      </div>
     </div>
   </div>
 
