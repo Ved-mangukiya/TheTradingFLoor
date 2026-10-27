@@ -17,7 +17,7 @@
     "fundamentals": {
       "market_cap": "₹19.95 Lakh Cr",
       "pe_ratio": 26.8,
-      "high_52w": 3544.63,
+      "high_52w": 4341.21,
       "low_52w": 2220.3,
       "face_value": 10,
       "debt_to_equity": 0.38,
@@ -48,7 +48,7 @@
     "fundamentals": {
       "market_cap": "₹3.62 Lakh Cr",
       "pe_ratio": 16.4,
-      "high_52w": 1183.82,
+      "high_52w": 1328.51,
       "low_52w": 620.5,
       "face_value": 2,
       "debt_to_equity": 1.15,
@@ -172,7 +172,7 @@
     "fundamentals": {
       "market_cap": "₹7.82 Lakh Cr",
       "pe_ratio": 27.9,
-      "high_52w": 2010.31,
+      "high_52w": 2212.83,
       "low_52w": 1358,
       "face_value": 5,
       "debt_to_equity": 0.05,
@@ -234,7 +234,7 @@
     "fundamentals": {
       "market_cap": "₹8.72 Lakh Cr",
       "pe_ratio": 17.5,
-      "high_52w": 1491.46,
+      "high_52w": 1566.78,
       "low_52w": 910,
       "face_value": 2,
       "debt_to_equity": 5.9,
@@ -292,7 +292,7 @@
     "volatility_factor": 0.0038,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹4.45 Lakh Cr",
       "pe_ratio": 31.8,
@@ -327,7 +327,7 @@
     "fundamentals": {
       "market_cap": "₹4.95 Lakh Cr",
       "pe_ratio": 34.6,
-      "high_52w": 4265.19,
+      "high_52w": 4449.65,
       "low_52w": 2860,
       "face_value": 2,
       "debt_to_equity": 0.7,
@@ -354,7 +354,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹9.12 Lakh Cr",
       "pe_ratio": 48,
@@ -447,7 +447,7 @@
     "volatility_factor": 0.002,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹4.15 Lakh Cr",
       "pe_ratio": 37.5,
@@ -602,7 +602,7 @@
     "volatility_factor": 0.0022,
     "min_price": 1,
     "max_price": 500000,
-    "isEnabled": true,
+    "isEnabled": false,
     "fundamentals": {
       "market_cap": "₹3.08 Lakh Cr",
       "pe_ratio": 85,

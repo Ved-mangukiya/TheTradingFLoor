@@ -649,7 +649,9 @@ function loadScenario(mode = 'live', forceBaseline = false) {
       isHalted: false,
       haltDirection: null,
       activeTransition: null,
-      history: [{ time: 0, price: basePrice }]
+      history: [{ time: 0, day: 1, price: basePrice }],
+      multiDayHistory: [{ time: 0, cumulativeTime: 0, day: 1, price: basePrice }],
+      historyByDay: {}
     };
   });
 
@@ -1458,6 +1460,24 @@ setInterval(() => {
   }
 }, 1000);
 
+function recordStockHistoryPoint(stock) {
+  const pt = { time: gameState.elapsedSeconds, day: gameState.currentDay, price: stock.currentPrice };
+  stock.history.push(pt);
+  if (stock.history.length > 360) stock.history.shift();
+
+  if (!Array.isArray(stock.multiDayHistory)) {
+    stock.multiDayHistory = [{ time: 0, cumulativeTime: 0, day: 1, price: stock.base_price || stock.dayOpenPrice }];
+  }
+  const cumTime = ((gameState.currentDay - 1) * (gameState.dayDurationSeconds || 1800)) + gameState.elapsedSeconds;
+  stock.multiDayHistory.push({
+    time: gameState.elapsedSeconds,
+    cumulativeTime: cumTime,
+    day: gameState.currentDay,
+    price: stock.currentPrice
+  });
+  if (stock.multiDayHistory.length > 1080) stock.multiDayHistory.shift();
+}
+
 function restartEngineInterval() {
   if (priceLoopHandle) clearInterval(priceLoopHandle);
 
@@ -1499,7 +1519,7 @@ function restartEngineInterval() {
             }
           }
         }
-        stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
+        recordStockHistoryPoint(stock);
         return;
       }
 
@@ -1550,7 +1570,7 @@ function restartEngineInterval() {
         if (!stock.week52Low || isNaN(stock.week52Low)) stock.week52Low = +(stock.base_price * 0.75).toFixed(2);
         if (stock.currentPrice > stock.week52High) stock.week52High = stock.currentPrice;
         if (stock.currentPrice < stock.week52Low) stock.week52Low = stock.currentPrice;
-        stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
+        recordStockHistoryPoint(stock);
         return;
       }
 
@@ -1599,13 +1619,16 @@ function restartEngineInterval() {
         stock.isNew52WLow = false;
       }
 
-      // 3. Track history
-      stock.history.push({ time: gameState.elapsedSeconds, price: stock.currentPrice });
+      // 3. Track history with O(1) rolling window cap (prevents fs.writeFileSync bloat)
+      recordStockHistoryPoint(stock);
 
-      // 4. Circuit Breaker Check & Boundary Clamping
-      if (stock.currentPrice >= upperLimit && !stock.isHalted) {
+      // 4. Exact Integer-Paise Circuit Breaker Check & Boundary Clamping
+      const curPaise = Math.round(stock.currentPrice * 100);
+      const upperPaise = Math.round(upperLimit * 100);
+      const lowerPaise = Math.round(lowerLimit * 100);
+      if (curPaise >= upperPaise && !stock.isHalted) {
         triggerCircuitBreaker(stock, 'UPPER');
-      } else if (stock.currentPrice <= lowerLimit && !stock.isHalted) {
+      } else if (curPaise <= lowerPaise && !stock.isHalted) {
         triggerCircuitBreaker(stock, 'LOWER');
       }
     });
@@ -1998,7 +2021,9 @@ function getSanitizedPublicState(role, teamId) {
       isHalted: c.isHalted,
       haltDirection: c.haltDirection,
       fundamentals: c.fundamentals,
-      history: c.history.slice(-180)
+      history: c.history.slice(-180),
+      multiDayHistory: (c.multiDayHistory || c.history || []).slice(-540),
+      historyByDay: c.historyByDay || {}
     }))
   };
 
@@ -2586,11 +2611,21 @@ wss.on('connection', (ws) => {
         return;
       }
 
+      const team = teams[session.id];
+      if (!team) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
+        return;
+      }
+
+      // Authoritative Team-Level + Session-Level 200ms Anti-Spam Debounce (Blocks Multi-Tab Circumvention)
       const nowMs = Date.now();
       session.lastOrderAtByTicker = session.lastOrderAtByTicker || {};
-      const tickerKey = data.ticker || 'GLOBAL';
-      const lastTickerOrder = session.lastOrderAtByTicker[tickerKey] || 0;
-      if (nowMs - lastTickerOrder < 200) {
+      team.lastOrderAtByTicker = team.lastOrderAtByTicker || {};
+      const tickerKey = (data.ticker || 'GLOBAL').toUpperCase().trim();
+      const lastSessionTickerOrder = session.lastOrderAtByTicker[tickerKey] || 0;
+      const lastTeamTickerOrder = team.lastOrderAtByTicker[tickerKey] || 0;
+
+      if (nowMs - lastSessionTickerOrder < 200 || nowMs - lastTeamTickerOrder < 200) {
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
           reason: '⏳ Order rate limit exceeded: Please wait a moment between placing trades. A 200ms anti-spam protection delay protects against accidental double orders.'
@@ -2599,15 +2634,11 @@ wss.on('connection', (ws) => {
       }
       session.lastOrderAtByTicker[tickerKey] = nowMs;
       session.lastOrderAt = nowMs;
+      team.lastOrderAtByTicker[tickerKey] = nowMs;
+      team.lastOrderAt = nowMs;
 
-      const team = teams[session.id];
-      const stock = companies.find((c) => c.ticker === data.ticker);
+      const stock = companies.find((c) => c.ticker === tickerKey);
       const qty = parseInt(data.quantity, 10);
-
-      if (!team) {
-        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
-        return;
-      }
 
       if (!stock) {
         ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Stock not found: Symbol '${data.ticker}' does not exist in the active trading universe.` }));
@@ -2855,8 +2886,14 @@ wss.on('connection', (ws) => {
         return;
       }
 
+      const team = teams[session.id];
+      if (!team) {
+        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
+        return;
+      }
+
       const nowMs = Date.now();
-      if (nowMs - session.lastOrderAt < 200) {
+      if (nowMs - (session.lastOrderAt || 0) < 200 || nowMs - (team.lastOrderAt || 0) < 200) {
         ws.send(JSON.stringify({
           type: 'ORDER_REJECTED',
           reason: '⏳ Order rate limit exceeded: Please wait a moment between placing trades. A 200ms anti-spam protection delay protects against accidental double orders.'
@@ -2864,12 +2901,7 @@ wss.on('connection', (ws) => {
         return;
       }
       session.lastOrderAt = nowMs;
-
-      const team = teams[session.id];
-      if (!team) {
-        ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: `⚠️ Team account error: Profile '${session.id}' was not found in the active team database.` }));
-        return;
-      }
+      team.lastOrderAt = nowMs;
 
       // Identify all held shares with qty > 0
       const activeHoldings = Object.entries(team.holdings || {}).filter(([ticker, q]) => q > 0);
@@ -2902,6 +2934,9 @@ wss.on('connection', (ws) => {
           continue;
         }
 
+        const upperLimit = +(stock.dayOpenPrice * (1 + gameState.circuitBreakerPercent / 100)).toFixed(2);
+        const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
+
         const execPrice = stock.currentPrice;
         const grossValue = +(execPrice * qty).toFixed(2);
         const feeAmount = +((grossValue * feeBps) / 10000).toFixed(2);
@@ -2919,10 +2954,21 @@ wss.on('connection', (ws) => {
         totalNetCredit += netCredit;
         totalFeesCharged += feeAmount;
 
-        // Dynamic market impact (order flow selling pressure)
+        // Dynamic market impact with full Circuit Breaker clamping & Upper Circuit recovery
         const sellImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
-        stock.currentPrice = Math.max(stock.min_price || 1, +(stock.currentPrice - sellImpact).toFixed(2));
+        const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
+        if (Math.round(candidatePrice * 100) <= Math.round(lowerLimit * 100)) {
+          stock.currentPrice = lowerLimit;
+          if (!stock.isHalted) {
+            triggerCircuitBreaker(stock, 'LOWER');
+          }
+        } else {
+          stock.currentPrice = Math.max(stock.min_price || 1, candidatePrice);
+        }
         if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
+        if (stock.isHalted && stock.haltDirection === 'UPPER' && Math.round(stock.currentPrice * 100) < Math.round(upperLimit * 100)) {
+          releaseCircuitBreaker(stock);
+        }
 
         tradeSeqCounter++;
         const tradeRecord = {
@@ -3268,7 +3314,7 @@ wss.on('connection', (ws) => {
       }
 
       // 5.1 Market Pause (Supports Soft Freeze 'VISIBLE_FROZEN' and Blind 'BLACKOUT')
-      if (data.action === 'HOST_PAUSE') {
+      if (data.action === 'HOST_PAUSE' || data.action === 'HOST_SET_PAUSE_MODE') {
         if (!gameState.configLocked || gameState.status === 'SETUP' || gameState.status === 'RESET') {
           ws.send(JSON.stringify({
             type: 'ACTION_REJECTED',
@@ -3283,14 +3329,26 @@ wss.on('connection', (ws) => {
           }));
           return;
         }
-        if (gameState.isPaused && gameState.status !== 'COUNTDOWN' && !activeCountdownTimer) {
+
+        const requestedMode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
+
+        // If already paused (and not in countdown), allow clean mode toggle between VISIBLE_FROZEN and BLACKOUT!
+        if (gameState.isPaused && gameState.status === 'PAUSED' && !activeCountdownTimer) {
+          if (data.action === 'HOST_SET_PAUSE_MODE' || (data.allowModeSwitch && gameState.pauseMode !== requestedMode)) {
+            gameState.pauseMode = requestedMode;
+            recordAuditEvent('PAUSE_MODE_SWITCHED', { triggered_by: 'HOST', pauseMode: requestedMode });
+            broadcastAll({ type: 'MARKET_PAUSED', pauseMode: requestedMode });
+            broadcastTick();
+            broadcastPublicEventStatus();
+            return;
+          }
           ws.send(JSON.stringify({
             type: 'ACTION_REJECTED',
             reason: 'Trading is already paused. Resume trading when you are ready.'
           }));
           return;
         }
-        const mode = data.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'VISIBLE_FROZEN';
+        const mode = requestedMode;
         if (activeCountdownTimer) {
           clearTimeout(activeCountdownTimer);
           activeCountdownTimer = null;
@@ -3308,14 +3366,17 @@ wss.on('connection', (ws) => {
         broadcastAll({ type: 'MARKET_PAUSED', pauseMode: mode });
         broadcastTick();
         broadcastPublicEventStatus();
+        return;
       }
 
       // 5.2 Market Resume with Authoritative 3-2-1 Server Countdown
-      if (data.action === 'HOST_RESUME_COUNTDOWN' || data.action === 'HOST_START_DAY1_NOW') {
+      if (data.action === 'HOST_RESUME_COUNTDOWN' || data.action === 'HOST_START_DAY1_NOW' || data.action === 'RESUME_MARKET') {
         const res = startResumeCountdown('HOST');
         if (!res.ok) {
           ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: res.reason }));
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: res.reason }));
         }
+        return;
       }
 
       // 5.2b Schedule Event for future date/time
@@ -3697,6 +3758,17 @@ wss.on('connection', (ws) => {
           });
 
           companies.forEach((stock) => {
+            if (!stock.historyByDay) stock.historyByDay = {};
+            // Archive completed day's intraday curve before starting the new day
+            stock.historyByDay[`day_${oldDay}`] = {
+              day: oldDay,
+              openPrice: stock.dayOpenPrice,
+              closePrice: stock.currentPrice,
+              highPrice: stock.dayHigh,
+              lowPrice: stock.dayLow,
+              history: (stock.history || []).slice(-360)
+            };
+
             stock.previousClosePrice = stock.currentPrice;
             stock.dayOpenPrice = stock.currentPrice;
             stock.dayHigh = stock.currentPrice;
@@ -3704,7 +3776,17 @@ wss.on('connection', (ws) => {
             stock.isHalted = false;
             stock.haltDirection = null;
             stock.activeTransition = null;
-            stock.history = [{ time: 0, price: stock.currentPrice }];
+            stock.history = [{ time: 0, day: gameState.currentDay, price: stock.currentPrice }];
+
+            if (!Array.isArray(stock.multiDayHistory)) stock.multiDayHistory = [];
+            const cumStart = (gameState.currentDay - 1) * (gameState.dayDurationSeconds || 1800);
+            stock.multiDayHistory.push({
+              time: 0,
+              cumulativeTime: cumStart,
+              day: gameState.currentDay,
+              price: stock.currentPrice,
+              isDayBoundary: true
+            });
           });
 
           // Establish authoritative baseline opening portfolio value for the new day
@@ -4104,7 +4186,9 @@ wss.on('connection', (ws) => {
           }
           stock.dayHigh = stock.base_price;
           stock.dayLow = stock.base_price;
-          stock.history = [{ time: gameState.elapsedSeconds, price: stock.base_price }];
+          stock.history = [{ time: gameState.elapsedSeconds, day: gameState.currentDay, price: stock.base_price }];
+          stock.multiDayHistory = [{ time: gameState.elapsedSeconds, cumulativeTime: 0, day: gameState.currentDay, price: stock.base_price }];
+          stock.historyByDay = {};
         });
 
         saveUniverseToDisk();
@@ -4284,6 +4368,7 @@ wss.on('connection', (ws) => {
         syncDerivedStateFlags(gameState);
         recordAuditEvent('PODIUM_DISMISSED', {});
         broadcastAll({ type: 'PODIUM_DISMISSED' });
+        broadcastAll({ type: 'PROJECTOR_STATE_UPDATE', projectorState: gameState.projectorState });
         broadcastTick();
       }
 

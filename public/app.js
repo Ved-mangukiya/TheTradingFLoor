@@ -396,6 +396,20 @@ if (typeof document !== 'undefined' && document.getElementById) {
       }
     });
 
+    // Multi-Day boundary markers (Day 2 Open, Day 3 Open)
+    hist.forEach(function (d, ix) {
+      if (d.isDayBoundary && ix > 0 && d.time >= t0 && d.time <= t1) {
+        var bx = Math.round(X(d.time)) + 0.5;
+        ctx.save();
+        ctx.strokeStyle = '#3B82F6';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(bx, pt); ctx.lineTo(bx, pt + ih); ctx.stroke();
+        badge(ctx, 'DAY ' + (d.day || 2) + ' OPEN', bx, pt + 6, 'center', '#EFF6FF', '#1D4ED8', 9);
+        ctx.restore();
+      }
+    });
+
     // Hover crosshair (fades in/out; returns to live mode on mouseout)
     if (st.ha > 0) {
       var i2 = nearest(pts, Math.min(Math.max(st.lastMx, pl), W - pr)), p = pts[i2], d = hist[i2];
@@ -1593,7 +1607,26 @@ setInterval(function() {
 }, 2000);
 
 
+let reconnectTimerHandle = null;
+
 function connectWebSocket() {
+  if (reconnectTimerHandle) {
+    clearTimeout(reconnectTimerHandle);
+    reconnectTimerHandle = null;
+  }
+  if (ws) {
+    try {
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    } catch (e) {}
+    ws = null;
+  }
+
   const params = new URLSearchParams(window.location.search);
   const explicitDemo = params.get('demo') === '1' || params.get('showcase') === '1';
   const customServer = params.get('server');
@@ -1688,8 +1721,79 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       return;
     }
 
+    // PHASE 1: IMMEDIATE UNIVERSAL ACTION CONTRACT LOCK RELEASES
+    // (Must execute BEFORE any early return statements to prevent false 5000ms timeouts)
+    switch (msg.type) {
+      case 'LOGIN_SUCCESS':
+      case 'LOGIN_ERROR':
+        releaseActionLockById('btnLoginSubmit');
+        break;
+      case 'ORDER_FILLED':
+      case 'ORDER_REJECTED':
+        releaseActionLockById('btnExecuteTradeOrder');
+        releaseActionLockById('btnConfirmLiquidate');
+        break;
+      case 'PORTFOLIO_LIQUIDATED':
+        releaseActionLockById('btnConfirmLiquidate');
+        break;
+      case 'SETUP_VALIDATION_ERROR':
+      case 'EVENT_CONFIG_LOCKED':
+      case 'EVENT_CONFIG_LOCKED_ACK':
+      case 'EVENT_CONFIG_CHANGED':
+        releaseActionLockById('btnLockEventSetup');
+        releaseActionLockById('btnSubmitLockSetup');
+        break;
+      case 'EVENT_CONFIG_UNLOCKED':
+        releaseActionLockById('btnUnlockEventConfig');
+        break;
+      case 'COUNTDOWN_START':
+      case 'MARKET_RESUMED':
+        releaseActionLockById('btnMarketResume');
+        break;
+      case 'MARKET_PAUSED':
+        releaseActionLockById('btnMarketPauseSoft');
+        releaseActionLockById('btnMarketPauseBlackout');
+        break;
+      case 'DAY_CONCLUDED':
+        releaseActionLockById('btnMarketCloseSession');
+        releaseActionLockById('btnConfirmConcludeDay');
+        break;
+      case 'DAY_TRANSITION':
+      case 'DAY_STARTED':
+        releaseActionLockById('btnExecuteStartNextDay');
+        break;
+      case 'DAY_ADDED':
+      case 'EVENT_DAYS_UPDATED':
+        releaseActionLockById('btnHostAddDay');
+        releaseActionLockById('btnConfirmAddDay');
+        break;
+      case 'EMERGENCY_STOP':
+        releaseActionLockById('btnEmergencyStopTrigger');
+        releaseActionLockById('btnConfirmEmergencyStop');
+        break;
+      case 'CHAMPIONSHIP_RESET':
+        releaseActionLockById('btnConfirmResetChampionship');
+        break;
+      case 'CHECKPOINT_CREATED_ACK':
+        releaseActionLockById('btnHostCreateCheckpoint');
+        break;
+      case 'CHECKPOINT_RESTORED_ACK':
+      case 'MARKET_RESTORED':
+      case 'ACTION_REJECTED':
+      case 'SESSION_EXPIRED':
+        releaseAllActionLocks();
+        break;
+      case 'PROJECTOR_STATE_UPDATE':
+      case 'PODIUM_DISMISSED':
+      case 'PODIUM_LAUNCHED':
+      case 'PRESENTATION_SCENE_UPDATE':
+        releaseActionLockById('btnLaunchPresentationAnalysis');
+        releaseActionLockById('btnLaunchPresentationProjector');
+        releaseActionLockById('hostDismissPodium');
+        break;
+    }
+
     if (msg.type === 'LOGIN_ERROR') {
-      releaseActionLockById('btnLoginSubmit');
       const errEl = document.getElementById('loginError');
       if (errEl) {
         errEl.textContent = msg.message;
@@ -1749,7 +1853,8 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     if (msg.type === 'NEWS_FLASH') {
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('heavy_news_boom');
-      showBreakingNewsToast(msg.news);
+      // Open the BIG Center-Screen Breaking News Modal immediately with full details!
+      openBigBreakingNewsModal(msg.news);
       return;
     }
 
@@ -1815,6 +1920,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'MARKET_PAUSED') {
+      if (typeof closeTradeModal === 'function' && typeof currentTradeModalTicker !== 'undefined' && currentTradeModalTicker) {
+        closeTradeModal();
+      }
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('emergency_klaxon');
       const pauseMode = msg.pauseMode || 'VISIBLE_FROZEN';
@@ -1835,6 +1943,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         latestState.gameState.isPaused = true;
         latestState.gameState.pauseMode = pauseMode;
         latestState.gameState.status = 'PAUSED';
+      }
+      if (currentRole === 'HOST' && typeof syncHostSingularActionBar === 'function') {
+        syncHostSingularActionBar(latestState);
       }
       showOrderToast(
         isBlackout
@@ -1859,6 +1970,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
         latestState.gameState.pauseMode = 'NONE';
         latestState.gameState.status = 'LIVE';
         handleStateUpdate(latestState);
+      }
+      if (currentRole === 'HOST' && typeof syncHostSingularActionBar === 'function') {
+        syncHostSingularActionBar(latestState);
       }
 
       if (!currentCountdownId && (Date.now() - lastCountdownFinishedTime > 1500)) {
@@ -1944,7 +2058,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     if (msg.type === 'NEWS_REACTION_START') {
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('reaction_start_chime');
-      showOrderToast(`📢 BREAKING WIRE: ${msg.headline || 'Market news bulletin'}`, true);
+      // Update badge inside the Breaking News Modal/Banner (NO green bottom-right order toast!)
+      const flashMandate = document.getElementById('flashDeskMandate');
+      if (flashMandate) {
+        flashMandate.innerHTML = '🔴 <strong>PRICE REACTION ACTIVE NOW:</strong> Institutional order flow is actively moving affected stock prices!';
+        flashMandate.style.background = '#FEF2F2';
+        flashMandate.style.color = '#991B1B';
+        flashMandate.style.borderColor = '#F87171';
+      }
       const trafficBadge = document.getElementById('bannerTrafficBadge');
       if (trafficBadge) {
         trafficBadge.textContent = '🔴 LIVE BREAKING NEWS';
@@ -2002,6 +2123,9 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     }
 
     if (msg.type === 'EMERGENCY_STOP') {
+      if (typeof closeTradeModal === 'function' && typeof currentTradeModalTicker !== 'undefined' && currentTradeModalTicker) {
+        closeTradeModal();
+      }
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('emergency_klaxon');
       document.body.classList.add('circuit-strobe-active');
@@ -2239,42 +2363,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       return;
     }
 
-    if (msg.type === 'DAY_TRANSITION' || msg.type === 'DAY_STARTED') {
-      releaseActionLockById('btnExecuteStartNextDay');
-    }
-
-    if (msg.type === 'DAY_ADDED' || msg.type === 'EVENT_DAYS_UPDATED') {
-      releaseActionLockById('btnHostAddDay');
-      releaseActionLockById('btnConfirmAddDay');
-    }
-
-    if (msg.type === 'COUNTDOWN_START' || msg.type === 'MARKET_RESUMED') {
-      releaseActionLockById('btnMarketResume');
-    }
-
-    if (msg.type === 'MARKET_PAUSED') {
-      releaseActionLockById('btnMarketPauseSoft');
-      releaseActionLockById('btnMarketPauseBlackout');
-    }
-
-    if (msg.type === 'DAY_CONCLUDED') {
-      releaseActionLockById('btnMarketCloseSession');
-      releaseActionLockById('btnConfirmConcludeDay');
-    }
-
-    if (msg.type === 'EMERGENCY_STOP') {
-      releaseActionLockById('btnEmergencyStopTrigger');
-      releaseActionLockById('btnConfirmEmergencyStop');
-    }
-
-    if (msg.type === 'CHAMPIONSHIP_RESET') {
-      releaseActionLockById('btnConfirmResetChampionship');
-    }
-
     if (msg.type === 'PROJECTOR_STATE_UPDATE') {
-      releaseActionLockById('btnLaunchPresentationAnalysis');
-      releaseActionLockById('btnLaunchPresentationProjector');
-      releaseActionLockById('hostDismissPodium');
       if (latestState && latestState.gameState) {
         latestState.gameState.projectorState = msg.projectorState;
       }
@@ -2312,7 +2401,8 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     if (!isLocalHost) {
       activateDemoShowcaseMode();
     } else {
-      setTimeout(connectWebSocket, 2000);
+      if (reconnectTimerHandle) clearTimeout(reconnectTimerHandle);
+      reconnectTimerHandle = setTimeout(connectWebSocket, 2000);
     }
   };
 }
@@ -2418,7 +2508,8 @@ window.addEventListener('keydown', (e) => {
     if (modal && !modal.classList.contains('hidden')) {
       if (e.key === 'Enter') {
         const btn = document.getElementById('btnExecuteTradeOrder');
-        if (btn && !btn.disabled) {
+        const isLive = latestState && latestState.gameState && latestState.gameState.status === 'LIVE' && !latestState.gameState.isPaused;
+        if (btn && !btn.disabled && isLive) {
           e.preventDefault();
           executeModalTrade();
         }
@@ -2618,10 +2709,45 @@ function syncRoleOverlays(role, gameState) {
   }
 }
 
+let lastHostAutoRoutedStatus = null;
+let lastClosingTickSecond = -1;
+
+function handleGuidedHostAutoRouting(gs) {
+  if (!gs) return;
+  const curStatus = gs.status;
+
+  // Final 10-second closing bell tension ticks during LIVE trading
+  if (curStatus === 'LIVE' && !gs.isPaused) {
+    const remSec = Math.max(0, (gs.dayDurationSeconds || 1800) - (gs.elapsedSeconds || 0));
+    if (remSec <= 10 && remSec > 0 && remSec !== lastClosingTickSecond) {
+      lastClosingTickSecond = remSec;
+      if (typeof playInstitutionalSound === 'function') {
+        playInstitutionalSound('countdown_tick');
+      }
+    }
+  } else {
+    lastClosingTickSecond = -1;
+  }
+
+  // Only auto-route the Host when gameState.status transitions
+  if (currentRole === 'HOST' && curStatus !== lastHostAutoRoutedStatus) {
+    const prevStatus = lastHostAutoRoutedStatus;
+    lastHostAutoRoutedStatus = curStatus;
+
+    if (prevStatus === 'SETUP' && (curStatus === 'STANDBY' || curStatus === 'LIVE' || curStatus === 'COUNTDOWN')) {
+      if (typeof switchHostTab === 'function') switchHostTab('market');
+    } else if (curStatus === 'WINNER_ANNOUNCEMENT') {
+      if (typeof switchHostTab === 'function') switchHostTab('stage');
+      if (typeof switchHostStageSubTab === 'function') switchHostStageSubTab('projector');
+    }
+  }
+}
+
 function handleStateUpdate(state) {
   if (!state) return;
 
   const gs = state.gameState || {};
+  handleGuidedHostAutoRouting(gs);
   const incomingEventId = gs.eventId || state.eventId;
   const incomingVersion = gs.stateVersion !== undefined ? gs.stateVersion : (state.stateVersion !== undefined ? state.stateVersion : 0);
 
@@ -2699,11 +2825,7 @@ function handleStateUpdate(state) {
   }
 
   if (currentRole === 'TRADER') renderTraderView(state);
-  else if (currentRole === 'HOST') {
-    if (state.gameState && state.gameState.configLocked) {
-      renderHostView(state);
-    }
-  }
+  else if (currentRole === 'HOST') renderHostView(state);
   else if (currentRole === 'PROJECTOR') renderProjectorView(state);
   else if (currentRole === 'SOUND_CONSOLE') renderSoundConsoleView(state);
   else if (currentRole === 'WINNER_DISPLAY') renderWinnerPresentationView(state);
@@ -2870,56 +2992,78 @@ function renderTraderDayCompletedLeaderboard(state) {
     return;
   }
 
-  container.innerHTML = rankings.map((team, idx) => {
-    const rank = team.rank || (idx + 1);
-    const isMe = (team.teamId === myTeamId) || (team.id === myTeamId);
-    const dayOpenVal = team.dayOpeningValuation !== undefined
-      ? team.dayOpeningValuation
-      : (team.dayOpeningPortfolioValue !== undefined ? team.dayOpeningPortfolioValue : (team.startingCash || gs?.startingCash || 500000));
-    const closingWorth = team.netWorth !== undefined ? team.netWorth : (team.closingPortfolioValue !== undefined ? team.closingPortfolioValue : 500000);
-    const dayPnl = team.dailyPnl !== undefined
-      ? team.dailyPnl
-      : (team.dayPnl !== undefined ? team.dayPnl : (closingWorth - dayOpenVal));
-    const retVal = team.dailyReturnPct !== undefined
-      ? team.dailyReturnPct
-      : (team.dayReturnPercent !== undefined ? team.dayReturnPercent : (dayOpenVal > 0 ? (dayPnl / dayOpenVal) * 100 : 0));
-    const intensity = getMovementIntensity(retVal);
-    const pnlFormatted = `${dayPnl >= 0 ? '+' : ''}${formatINR(dayPnl)}`;
-    const netWorthFormatted = formatINR(closingWorth);
-    const retPct = `${retVal >= 0 ? '+' : ''}${retVal.toFixed(2)}%`;
+  // Individual Student Desk Privacy: Find student team only
+  const myIndex = rankings.findIndex((team) => (team.teamId === myTeamId) || (team.id === myTeamId));
+  const myTeam = myIndex >= 0 ? rankings[myIndex] : null;
+  const rank = myTeam ? (myTeam.rank || (myIndex + 1)) : 1;
+  const totalTeams = rankings.length;
 
-    const rankBadgeStyle = rank === 1
-      ? 'background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;'
-      : rank === 2
-      ? 'background: #F1F5F9; color: #475569; border: 1px solid #94A3B8;'
-      : rank === 3
-      ? 'background: #FFEDD5; color: #9A3412; border: 1px solid #FB923C;'
-      : 'background: var(--surface-cream); color: var(--text-muted); border: 1px solid var(--subtle-border);';
+  const dayOpenVal = myTeam && myTeam.dayOpeningValuation !== undefined
+    ? myTeam.dayOpeningValuation
+    : (myTeam && myTeam.dayOpeningPortfolioValue !== undefined ? myTeam.dayOpeningPortfolioValue : (state.portfolio?.startingCash || gs?.startingCash || 500000));
+  const closingWorth = myTeam && myTeam.netWorth !== undefined
+    ? myTeam.netWorth
+    : (myTeam && myTeam.closingPortfolioValue !== undefined ? myTeam.closingPortfolioValue : (state.portfolio?.netWorth || 500000));
+  const dayPnl = myTeam && myTeam.dailyPnl !== undefined
+    ? myTeam.dailyPnl
+    : (myTeam && myTeam.dayPnl !== undefined ? myTeam.dayPnl : (closingWorth - dayOpenVal));
+  const retVal = myTeam && myTeam.dailyReturnPct !== undefined
+    ? myTeam.dailyReturnPct
+    : (myTeam && myTeam.dayReturnPercent !== undefined ? myTeam.dayReturnPercent : (dayOpenVal > 0 ? (dayPnl / dayOpenVal) * 100 : 0));
 
-    const rowBg = isMe
-      ? 'background: rgba(63, 98, 146, 0.08); border: 1.5px solid #3f6292;'
-      : 'background: #FAF9F6; border: 1px solid var(--subtle-border);';
+  const intensity = getMovementIntensity(retVal);
+  const pnlFormatted = `${dayPnl >= 0 ? '+' : ''}${formatINR(dayPnl)}`;
+  const netWorthFormatted = formatINR(closingWorth);
+  const retPct = `${retVal >= 0 ? '+' : ''}${retVal.toFixed(2)}%`;
 
-    return `
-      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; ${rowBg}">
-        <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; ${rankBadgeStyle}">
-          ${rank}
-        </span>
-        <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 14px; font-weight: 800; color: var(--text-forest); display: flex; align-items: center; gap: 6px;">
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(team.teamName || team.name || `Team ${rank}`)}</span>
-            ${isMe ? '<span class="badge" style="background: #3f6292; color: #fff; font-size: 10px; padding: 1px 6px;">YOU</span>' : ''}
+  container.innerHTML = `
+    <div style="background: #FFFFFF; border: 1.5px solid var(--podium-gold); border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 16px rgba(212, 175, 55, 0.15); margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 14px;">
+        <div>
+          <div style="font-size: 11px; font-weight: 800; color: var(--champagne-accent); letter-spacing: 0.08em; text-transform: uppercase;">
+            CONFIDENTIAL DESK AUDIT
           </div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">
-            Net Worth: ${netWorthFormatted} • Return: <span class="${intensity.textClass}" style="font-weight: 700;">${retPct}</span>
+          <div style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin-top: 2px;">
+            ${escapeHtml(state.portfolio ? state.portfolio.name : `Team ${rank}`)}
           </div>
         </div>
-        <div style="text-align: right; font-family: var(--font-mono); font-size: 15px; font-weight: 900; flex-shrink: 0;" class="${intensity.textClass}">
-          ${pnlFormatted}
+        <div style="text-align: right;">
+          <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 900; color: #B45309; line-height: 1;">
+            #${rank}
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
+            of ${totalTeams} Teams
+          </div>
         </div>
       </div>
-    `;
-  }).join('');
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px;">
+        <div class="cream-panel" style="padding: 10px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Opening Worth</span>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-charcoal);">${formatINR(dayOpenVal)}</span>
+        </div>
+        <div class="cream-panel" style="padding: 10px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Closing Worth</span>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-forest);">${netWorthFormatted}</span>
+        </div>
+        <div class="cream-panel" style="padding: 10px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Day Audited P&amp;L</span>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800;" class="${intensity.textClass}">${pnlFormatted}</span>
+        </div>
+        <div class="cream-panel" style="padding: 10px 12px;">
+          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Day Return</span>
+          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800;" class="${intensity.textClass}">${retPct}</span>
+        </div>
+      </div>
+
+      <div style="background: rgba(63, 98, 146, 0.06); border: 1px dashed rgba(63, 98, 146, 0.35); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3F6292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <div style="font-size: 11px; color: var(--text-charcoal); line-height: 1.4;">
+          <strong>Auditorium Stage Notice:</strong> Complete tournament rankings and peer performance standings are broadcast live on the <strong>Main Stage Projector Display</strong> and Host Master Desk.
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 let traderWaitingRoomTickerHandle = null;
@@ -3559,6 +3703,14 @@ function renderTraderView(state) {
               ${deltaDiff >= 0 ? '+' : ''}₹${deltaDiff.toFixed(2)} (${isUp ? '+' : ''}${pct}%) ${isUp ? '▲' : '▼'}
             </span>
           </div>
+          ${(gameState && gameState.currentDay > 1) ? `
+            <div style="display: flex; justify-content: space-between; font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); background: #F8FAFC; padding: 3px 7px; border-radius: 4px; margin: 3px 0; border: 1px dashed var(--subtle-border);">
+              <span>Prev Close: <strong>₹${(stock.previousClosePrice || stock.dayOpenPrice).toFixed(2)}</strong></span>
+              <span class="${((stock.base_price > 0 ? (stock.currentPrice - stock.base_price) : 0) >= 0) ? 'price-up' : 'price-down'}" style="font-weight: 700;">
+                Total (${gameState.currentDay}D): ${stock.base_price > 0 ? (((stock.currentPrice - stock.base_price) / stock.base_price) * 100 >= 0 ? '+' : '') + (((stock.currentPrice - stock.base_price) / stock.base_price) * 100).toFixed(1) + '%' : '0.0%'}
+              </span>
+            </div>
+          ` : ''}
 
           <!-- Circuit Limit Bands (Floor & Cap) -->
           <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin: 3px 0 4px 0; background: #FAF9F6; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--subtle-border);">
@@ -3671,10 +3823,18 @@ function sendOrder(ticker, type, quantity) {
   }));
 }
 
+// Dynamic Preset Tracking for Trade Modal
+let activeTradeBudgetPresetPct = null;  // e.g. 100 when "Max Affordable Buy" is active, null when manual
+let activeTradeHoldingPresetPct = null; // e.g. 100 when "Sell All Held" is active, null when manual
+
 // Interactive Custom Trade Modal
 function openTradeModal(ticker, side = 'BUY', preferredQty = null) {
   currentTradeModalTicker = ticker;
   currentTradeModalSide = side;
+  // Reset dynamic preset tracking on fresh modal open
+  activeTradeBudgetPresetPct = null;
+  activeTradeHoldingPresetPct = null;
+
   if (!latestState) return;
   const stock = latestState.companies.find((c) => c.ticker === ticker);
   if (!stock) return;
@@ -3750,7 +3910,16 @@ function syncTradeModalSide() {
   }
 }
 
+// Called when user manually types in #tradeQuantityInput
+function onManualTradeQuantityInput() {
+  activeTradeBudgetPresetPct = null;
+  activeTradeHoldingPresetPct = null;
+  recalculateTradeModal();
+}
+
 function stepTradeQuantity(delta) {
+  activeTradeBudgetPresetPct = null;
+  activeTradeHoldingPresetPct = null;
   const input = document.getElementById('tradeQuantityInput');
   if (!input) return;
   const current = parseInt(input.value, 10) || 0;
@@ -3760,6 +3929,8 @@ function stepTradeQuantity(delta) {
 }
 
 function setTradeLotPreset(mode, val) {
+  activeTradeBudgetPresetPct = null;
+  activeTradeHoldingPresetPct = null;
   const input = document.getElementById('tradeQuantityInput');
   if (!input) return;
   const current = parseInt(input.value, 10) || 0;
@@ -3772,33 +3943,15 @@ function setTradeLotPreset(mode, val) {
 }
 
 function setTradeBudgetPreset(pct) {
-  if (!latestState || !currentTradeModalTicker) return;
-  const stock = latestState.companies.find((c) => c.ticker === currentTradeModalTicker);
-  const p = latestState.portfolio;
-  if (!stock || !p) return;
-  const feeBps = latestState.gameState.transactionFeeBps || 0;
-  const costPerShare = stock.currentPrice * (1 + feeBps / 10000);
-  const budget = p.cash * (pct / 100);
-  const maxAffordable = Math.floor(budget / costPerShare);
-  const input = document.getElementById('tradeQuantityInput');
-  if (input) {
-    input.value = Math.max(1, maxAffordable);
-    recalculateTradeModal();
-  }
+  activeTradeBudgetPresetPct = pct;
+  activeTradeHoldingPresetPct = null;
+  recalculateTradeModal();
 }
 
 function setTradeHoldingPreset(pct) {
-  if (!latestState || !currentTradeModalTicker) return;
-  const stock = latestState.companies.find((c) => c.ticker === currentTradeModalTicker);
-  const p = latestState.portfolio;
-  if (!stock || !p) return;
-  const held = p.holdings[stock.ticker] || 0;
-  const qty = pct === 100 ? held : Math.floor(held * (pct / 100));
-  const input = document.getElementById('tradeQuantityInput');
-  if (input) {
-    input.value = Math.max(1, qty);
-    recalculateTradeModal();
-  }
+  activeTradeHoldingPresetPct = pct;
+  activeTradeBudgetPresetPct = null;
+  recalculateTradeModal();
 }
 
 function setTradeLot(qty) {
@@ -3820,19 +3973,37 @@ function recalculateTradeModal() {
   const gs = latestState.gameState;
   if (!stock || !p || !gs) return;
 
-  const input = document.getElementById('tradeQuantityInput');
-  const qty = parseInt(input ? input.value : '0', 10) || 0;
   const price = stock.currentPrice;
-  const gross = +(qty * price).toFixed(2);
   const feeBps = gs.transactionFeeBps || 0;
+  const currentHeld = p.holdings[stock.ticker] || 0;
+  const costPerUnit = price * (1 + feeBps / 10000);
+  const maxAffordable = Math.max(0, Math.floor(p.cash / costPerUnit));
+
+  const input = document.getElementById('tradeQuantityInput');
+
+  // ==========================================================================
+  // REAL-TIME DYNAMIC QUANTITY TRACKING:
+  // If the trader clicked "Max Affordable Buy" (or 25%/50%/75% Cash),
+  // dynamically recompute input.value on EVERY price tick!
+  // Example: If maxAffordable was 500, and price rises so maxAffordable is now 499,
+  // input.value automatically updates to 499 so the order never fails!
+  // ==========================================================================
+  if (currentTradeModalSide === 'BUY' && activeTradeBudgetPresetPct !== null && input) {
+    const budget = p.cash * (activeTradeBudgetPresetPct / 100);
+    const dynamicQty = Math.floor(budget / costPerUnit);
+    input.value = Math.max(0, dynamicQty);
+  } else if (currentTradeModalSide === 'SELL' && activeTradeHoldingPresetPct !== null && input) {
+    const dynamicSellQty = activeTradeHoldingPresetPct === 100
+      ? currentHeld
+      : Math.floor(currentHeld * (activeTradeHoldingPresetPct / 100));
+    input.value = Math.max(0, dynamicSellQty);
+  }
+
+  const qty = parseInt(input ? input.value : '0', 10) || 0;
+  const gross = +(qty * price).toFixed(2);
   const fee = +((gross * feeBps) / 10000).toFixed(2);
   const netBuyCost = +(gross + fee).toFixed(2);
   const netSellProceeds = +(gross - fee).toFixed(2);
-  const currentHeld = p.holdings[stock.ticker] || 0;
-
-  // Authoritative max affordable shares calculation
-  const costPerUnit = price * (1 + feeBps / 10000);
-  const maxAffordable = Math.max(0, Math.floor(p.cash / costPerUnit));
 
   // Update header and stat boxes
   const elPrice = document.getElementById('tradeModalPrice');
@@ -3877,8 +4048,13 @@ function recalculateTradeModal() {
 
   if (elHint) {
     if (currentTradeModalSide === 'BUY') {
-      elHint.textContent = `Max Affordable: ${maxAffordable}`;
-      elHint.style.color = qty > maxAffordable ? 'var(--price-down)' : 'var(--text-muted)';
+      const lockTag = activeTradeBudgetPresetPct !== null
+        ? ` • 🔄 Auto-Sync (${activeTradeBudgetPresetPct === 100 ? 'MAX' : activeTradeBudgetPresetPct + '%'})`
+        : '';
+      elHint.textContent = `Max Affordable: ${maxAffordable}${lockTag}`;
+      elHint.style.color = activeTradeBudgetPresetPct !== null
+        ? 'var(--price-up)'
+        : (qty > maxAffordable ? 'var(--price-down)' : 'var(--text-muted)');
     } else {
       elHint.textContent = `Held: ${currentHeld}`;
       elHint.style.color = qty > currentHeld ? 'var(--price-down)' : 'var(--text-muted)';
@@ -4003,6 +4179,12 @@ function executeModalTrade(explicitSide = null) {
   const btn = document.getElementById('btnExecuteTradeOrder');
   if (btn && btn.disabled) return;
 
+  const gs = latestState?.gameState;
+  if (gs && (gs.status !== 'LIVE' || gs.isPaused)) {
+    showOrderToast('Trading is currently paused or inactive.', false);
+    return;
+  }
+
   const side = explicitSide || currentTradeModalSide;
   const input = document.getElementById('tradeQuantityInput');
   const qty = parseInt(input ? input.value : '0', 10);
@@ -4103,9 +4285,19 @@ function closeDetailsModal() {
   document.getElementById('detailsModal').classList.add('hidden');
 }
 
+let activeChartTimeframe = 'TODAY'; // 'TODAY' | 'ALL' | 'day_1' | 'day_2'
+
+function setChartTimeframe(tf) {
+  activeChartTimeframe = tf;
+  if (currentSelectedTickerForChart) {
+    updateFullChartModalData(currentSelectedTickerForChart);
+  }
+}
+
 // Full interactive chart modal
 function openFullChartModal(ticker) {
   currentSelectedTickerForChart = ticker;
+  activeChartTimeframe = 'TODAY';
   updateFullChartModalData(ticker);
   document.getElementById('fullChartModal').classList.remove('hidden');
 }
@@ -4120,28 +4312,91 @@ function updateFullChartModalData(ticker) {
   const stock = latestState.companies.find((c) => c.ticker === ticker);
   if (!stock) return;
 
-  const pctVal = ((stock.currentPrice - stock.dayOpenPrice) / stock.dayOpenPrice) * 100;
+  const curDay = (latestState.gameState && latestState.gameState.currentDay) || 1;
+  const basePrice = stock.base_price || stock.dayOpenPrice || stock.currentPrice;
+
+  // Render past day buttons dynamically if historyByDay has entries
+  const pastDaysContainer = document.getElementById('chartPastDaysButtons');
+  if (pastDaysContainer) {
+    let btnsHtml = '';
+    if (stock.historyByDay) {
+      Object.keys(stock.historyByDay).forEach((dayKey) => {
+        const dNum = dayKey.replace('day_', '');
+        const isAct = activeChartTimeframe === dayKey;
+        btnsHtml += `<button type="button" onclick="setChartTimeframe('${dayKey}')" class="btn ${isAct ? 'btn-sage' : 'btn-outline'}" style="padding: 5px 10px; font-size: 11px; font-weight: 700;">Day ${dNum}</button>`;
+      });
+    }
+    pastDaysContainer.innerHTML = btnsHtml;
+  }
+
+  const btnToday = document.getElementById('btnChartTf_TODAY');
+  const btnAll = document.getElementById('btnChartTf_ALL');
+  if (btnToday) btnToday.className = activeChartTimeframe === 'TODAY' ? 'btn btn-sage' : 'btn btn-outline';
+  if (btnAll) btnAll.className = activeChartTimeframe === 'ALL' ? 'btn btn-sage' : 'btn btn-outline';
+
+  // Select appropriate dataset and reference price based on selected timeframe
+  let chartHistory = stock.history || [];
+  let refOpenPrice = stock.dayOpenPrice;
+  let refHigh = stock.dayHigh;
+  let refLow = stock.dayLow;
+
+  if (activeChartTimeframe === 'ALL' && Array.isArray(stock.multiDayHistory) && stock.multiDayHistory.length > 1) {
+    chartHistory = stock.multiDayHistory.map((pt) => ({
+      time: pt.cumulativeTime !== undefined ? pt.cumulativeTime : pt.time,
+      price: pt.price,
+      day: pt.day,
+      isDayBoundary: pt.isDayBoundary
+    }));
+    refOpenPrice = basePrice;
+    const allPrices = chartHistory.map((p) => p.price);
+    refHigh = Math.max(...allPrices);
+    refLow = Math.min(...allPrices);
+  } else if (activeChartTimeframe.startsWith('day_') && stock.historyByDay && stock.historyByDay[activeChartTimeframe]) {
+    const snap = stock.historyByDay[activeChartTimeframe];
+    chartHistory = snap.history || [];
+    refOpenPrice = snap.openPrice || basePrice;
+    refHigh = snap.highPrice || refOpenPrice;
+    refLow = snap.lowPrice || refOpenPrice;
+  }
+
+  const lastPointPrice = chartHistory.length > 0 ? chartHistory[chartHistory.length - 1].price : stock.currentPrice;
+  const pctVal = refOpenPrice > 0 ? ((lastPointPrice - refOpenPrice) / refOpenPrice) * 100 : 0;
   const isUp = pctVal >= 0;
+
+  // Multi-day cumulative delta vs Day 1 Base Price
+  const allDaysPctVal = basePrice > 0 ? ((stock.currentPrice - basePrice) / basePrice) * 100 : 0;
+  const allDaysEl = document.getElementById('chartModalMultiDayPct');
+  if (allDaysEl) {
+    allDaysEl.textContent = `Vs Day 1 Base (₹${basePrice.toFixed(0)}): ${allDaysPctVal >= 0 ? '+' : ''}${allDaysPctVal.toFixed(2)}%`;
+  }
 
   document.getElementById('chartModalSector').textContent = stock.sector;
   document.getElementById('chartModalTicker').textContent = stock.ticker;
-  document.getElementById('chartModalPrice').textContent = `₹${stock.currentPrice.toFixed(2)}`;
+  document.getElementById('chartModalPrice').textContent = `₹${lastPointPrice.toFixed(2)}`;
   document.getElementById('chartModalPrice').className = isUp ? 'price-up' : 'price-down';
   document.getElementById('chartModalPct').textContent = `${isUp ? '+' : ''}${pctVal.toFixed(2)}% ${isUp ? '▲' : '▼'}`;
   document.getElementById('chartModalPct').className = isUp ? 'price-up' : 'price-down';
 
-  document.getElementById('chartModalOpen').textContent = `₹${stock.dayOpenPrice.toFixed(2)}`;
-  document.getElementById('chartModalHigh').textContent = `₹${stock.dayHigh.toFixed(2)}`;
-  document.getElementById('chartModalLow').textContent = `₹${stock.dayLow.toFixed(2)}`;
+  document.getElementById('chartModalOpen').textContent = `₹${refOpenPrice.toFixed(2)}`;
+  document.getElementById('chartModalHigh').textContent = `₹${refHigh.toFixed(2)}`;
+  document.getElementById('chartModalLow').textContent = `₹${refLow.toFixed(2)}`;
   const chartBaseEl = document.getElementById('chartModalBase');
   if (chartBaseEl) {
-    chartBaseEl.textContent = `₹${(stock.base_price || stock.dayOpenPrice).toFixed(2)}`;
+    chartBaseEl.textContent = `₹${basePrice.toFixed(2)}`;
   }
 
+  const syntheticStockView = {
+    ...stock,
+    history: chartHistory,
+    dayOpenPrice: refOpenPrice,
+    dayHigh: refHigh,
+    dayLow: refLow
+  };
+
   if (window.drawInteractiveMainChart) {
-    drawInteractiveMainChart('largeChartCanvas', stock, document.getElementById('largeChartWrap'));
+    drawInteractiveMainChart('largeChartCanvas', syntheticStockView, document.getElementById('largeChartWrap'));
   } else {
-    drawSmoothBezierSparkline('largeChartCanvas', stock.history, stock.dayOpenPrice, isUp, true);
+    drawSmoothBezierSparkline('largeChartCanvas', chartHistory, refOpenPrice, isUp, true);
   }
 }
 
@@ -6316,171 +6571,6 @@ function updateHostTournamentFlow(state) {
     enablePauseButtons();
   }
 
-  // Synchronize Canonical Market Operations Bar in Hub 3 (Live Market)
-  const btnMktResume = document.getElementById('btnMarketResume');
-  const btnMktPauseSoft = document.getElementById('btnMarketPauseSoft');
-  const btnMktPauseBlackout = document.getElementById('btnMarketPauseBlackout');
-  const btnMktCloseSession = document.getElementById('btnMarketCloseSession');
-  const mktOpsBadge = document.getElementById('marketOpsLiveBadge');
-  const isSetupIncomplete = !gs.configLocked || gs.status === 'SETUP' || gs.status === 'RESET';
-
-  if (mktOpsBadge) {
-    if (isSetupIncomplete) {
-      mktOpsBadge.textContent = '⚙️ SETUP IN PROGRESS • TRADING NOT CONFIGURED';
-      mktOpsBadge.className = 'badge badge-paused';
-    } else if (gs.status === 'LIVE') {
-      mktOpsBadge.textContent = `🟢 LIVE TRADING • DAY ${day}/${total}`;
-      mktOpsBadge.className = 'badge badge-active';
-    } else if (gs.status === 'DAY_COMPLETED') {
-      mktOpsBadge.textContent = `🔔 DAY ${day} CONCLUDED`;
-      mktOpsBadge.className = 'badge badge-champagne';
-    } else if (isWinnerActive) {
-      mktOpsBadge.textContent = `👑 CEREMONY IN PROGRESS`;
-      mktOpsBadge.className = 'badge badge-champagne';
-    } else if (isConcluded) {
-      mktOpsBadge.textContent = `🏆 CHAMPIONSHIP COMPLETE`;
-      mktOpsBadge.className = 'badge badge-champagne';
-    } else if (gs.isPaused && gs.elapsedSeconds > 0) {
-      const pmLabel = gs.pauseMode === 'EMERGENCY_HALT' ? 'EMERGENCY HALT' : gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : 'SOFT FREEZE';
-      mktOpsBadge.textContent = `⏸️ PAUSED (${pmLabel})`;
-      mktOpsBadge.className = 'badge badge-paused';
-    } else if (gs.status === 'COUNTDOWN') {
-      mktOpsBadge.textContent = `⏱️ COUNTDOWN IN PROGRESS (3-2-1)`;
-      mktOpsBadge.className = 'badge badge-active';
-    } else {
-      mktOpsBadge.textContent = `⏳ DAY ${day} STANDBY`;
-      mktOpsBadge.className = 'badge badge-champagne';
-    }
-  }
-
-  if (btnMktResume && btnMktPauseSoft && btnMktPauseBlackout && btnMktCloseSession) {
-    if (isSetupIncomplete) {
-      btnMktResume.classList.remove('hidden');
-      btnMktResume.disabled = false;
-      btnMktResume.textContent = '⚙️ Configure Event (Hub 2)';
-      btnMktResume.className = 'btn btn-outline';
-      btnMktResume.title = 'Complete and lock tournament setup in Hub 2 to arm the trading floor';
-      btnMktResume.onclick = () => switchHostTab('event');
-
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseSoft.disabled = true;
-
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktPauseBlackout.disabled = true;
-
-      btnMktCloseSession.classList.add('hidden');
-      btnMktCloseSession.disabled = true;
-    } else if (gs.status === 'LIVE') {
-      btnMktResume.classList.add('hidden');
-      btnMktResume.disabled = true;
-
-      btnMktPauseSoft.classList.remove('hidden');
-      btnMktPauseSoft.disabled = false;
-      btnMktPauseSoft.title = 'Freeze trading orders while keeping prices visible to participants';
-
-      btnMktPauseBlackout.classList.remove('hidden');
-      btnMktPauseBlackout.disabled = false;
-      btnMktPauseBlackout.title = 'Blackout Blind: Hide prices and freeze trading';
-
-      btnMktCloseSession.classList.remove('hidden');
-      btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = `🔔 Conclude Day ${day}`;
-      btnMktCloseSession.className = 'btn btn-outline';
-      btnMktCloseSession.style.borderColor = '#2563EB';
-      btnMktCloseSession.style.color = '#1D4ED8';
-      btnMktCloseSession.style.background = '';
-      btnMktCloseSession.onclick = () => openConcludeDayModal();
-    } else if (isWinnerActive) {
-      btnMktResume.classList.add('hidden');
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktCloseSession.classList.remove('hidden');
-      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
-      const stageInfo = getWinnerStageAdvanceLabel(curScene);
-      btnMktCloseSession.disabled = stageInfo.isComplete;
-      btnMktCloseSession.textContent = `👑 ${stageInfo.text}`;
-      btnMktCloseSession.className = stageInfo.isComplete ? 'btn btn-outline' : 'btn btn-champagne';
-      btnMktCloseSession.onclick = () => presNextScene();
-    } else if (isConcluded) {
-      btnMktResume.classList.add('hidden');
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktCloseSession.classList.remove('hidden');
-      btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = '👑 Launch Winner Presentation';
-      btnMktCloseSession.className = 'btn btn-champagne';
-      btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
-    } else if (gs.status === 'DAY_COMPLETED') {
-      btnMktResume.classList.add('hidden');
-      btnMktResume.disabled = true;
-
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseSoft.disabled = true;
-
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktPauseBlackout.disabled = true;
-
-      btnMktCloseSession.classList.remove('hidden');
-      btnMktCloseSession.disabled = false;
-      if (day < total) {
-        btnMktCloseSession.textContent = `▶ Start Day ${day + 1} (3-2-1)`;
-        btnMktCloseSession.className = 'btn btn-primary';
-        btnMktCloseSession.style.background = 'var(--price-up)';
-        btnMktCloseSession.style.borderColor = 'var(--price-up)';
-        btnMktCloseSession.style.color = '#FFFFFF';
-        btnMktCloseSession.onclick = () => openStartNextDayModal();
-      } else {
-        btnMktCloseSession.textContent = '🏆 Finalize Championship & Reveal Winner';
-        btnMktCloseSession.className = 'btn btn-champagne';
-        btnMktCloseSession.style.background = '';
-        btnMktCloseSession.style.borderColor = '';
-        btnMktCloseSession.style.color = '';
-        btnMktCloseSession.onclick = () => hostStartWinnerPresentation();
-      }
-    } else if (gs.status === 'COUNTDOWN') {
-      btnMktResume.disabled = true;
-      btnMktPauseSoft.disabled = true;
-      btnMktPauseBlackout.disabled = true;
-      btnMktCloseSession.disabled = true;
-    } else if (gs.isPaused && gs.elapsedSeconds > 0) {
-      btnMktResume.classList.remove('hidden');
-      btnMktResume.disabled = false;
-      btnMktResume.textContent = '▶ Resume 3-2-1';
-      btnMktResume.title = 'Resume live trading with 3-2-1 voice countdown';
-      btnMktResume.onclick = () => hostResumeMarket();
-
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseSoft.disabled = true;
-
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktPauseBlackout.disabled = true;
-
-      btnMktCloseSession.classList.remove('hidden');
-      btnMktCloseSession.disabled = false;
-      btnMktCloseSession.textContent = `🔔 Conclude Day ${day}`;
-      btnMktCloseSession.className = 'btn btn-outline';
-      btnMktCloseSession.style.borderColor = '#2563EB';
-      btnMktCloseSession.style.color = '#1D4ED8';
-      btnMktCloseSession.style.background = '';
-      btnMktCloseSession.onclick = () => openConcludeDayModal();
-    } else if (gs.status === 'STANDBY' || isPre) {
-      btnMktResume.classList.remove('hidden');
-      btnMktResume.disabled = false;
-      btnMktResume.textContent = `▶ Start Day ${day} (3-2-1)`;
-      btnMktResume.title = 'Open market and start live trading with 3-2-1 voice countdown';
-      btnMktResume.onclick = () => hostResumeMarket();
-
-      btnMktPauseSoft.classList.add('hidden');
-      btnMktPauseSoft.disabled = true;
-
-      btnMktPauseBlackout.classList.add('hidden');
-      btnMktPauseBlackout.disabled = true;
-
-      btnMktCloseSession.classList.add('hidden');
-      btnMktCloseSession.disabled = true;
-    }
-  }
-
   // Gate Winner Presentation Launch Buttons (DEF-009 UI Fix)
   const canLaunchPresentation = gs.status === 'CHAMPIONSHIP_CONCLUDED' || gs.isConcluded || (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
   ['btnLaunchPresentationAnalysis', 'btnLaunchPresentationProjector'].forEach((btnId) => {
@@ -6499,53 +6589,8 @@ function updateHostTournamentFlow(state) {
     }
   });
 
-  // Render Persistent Contextual Operation Buttons in Flow Actions Container
-  const actionsContainer = document.getElementById('hostFlowActionsContainer');
-  if (actionsContainer) {
-    let actHtml = '';
-    if (isSetupIncomplete) {
-      actHtml += `<button type="button" onclick="switchHostTab('event')" class="btn btn-primary" style="font-weight: 800; background: #3f6292; border-color: #3f6292; color: #FFF;">⚙️ Configure &amp; Lock Setup (Hub 2) ➔</button>`;
-    } else if (gs.status === 'LIVE') {
-      actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
-      actHtml += `<button type="button" onclick="hostPauseMarket('VISIBLE_FROZEN')" class="btn btn-outline" style="font-weight: 700;">⏸ Pause</button>`;
-      actHtml += `<button type="button" onclick="hostPauseMarket('BLACKOUT')" class="btn btn-outline" style="font-weight: 700;">🕶️ Blackout</button>`;
-      actHtml += `<button type="button" onclick="openCircuitHaltTestModal()" class="btn btn-outline" style="font-weight: 700; border-color: #F59E0B; color: #B45309;" title="Test real-world Upper or Lower circuit limit halts live">⚡ Test Circuit</button>`;
-      actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
-    } else if (isWinnerActive) {
-      const curScene = (gs.presentationState?.scene || 'INTRO').replace('SCENE_', '');
-      const stageInfo = getWinnerStageAdvanceLabel(curScene);
-      actHtml += `<button type="button" onclick="presNextScene()" class="btn btn-champagne" style="font-weight: 800;" ${stageInfo.isComplete ? 'disabled' : ''}>👑 ${stageInfo.text}</button>`;
-      actHtml += `<button type="button" onclick="switchSpaView('WINNER_DISPLAY')" class="btn btn-outline" style="font-weight: 700;">👁️ View Presentation Screen</button>`;
-    } else if (isConcluded) {
-      actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;">👑 Launch Winner Presentation ➔</button>`;
-      actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
-    } else if (gs.status === 'DAY_COMPLETED') {
-      if (day < total) {
-        actHtml += `<button type="button" onclick="openStartNextDayModal()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Start Day ${day + 1} (3-2-1)</button>`;
-        actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
-        actHtml += `<button type="button" onclick="openFinishEventModal()" class="btn btn-champagne" style="font-weight: 700;">🏆 Finish Event Early</button>`;
-      } else {
-        actHtml += `<button type="button" onclick="hostStartWinnerPresentation()" class="btn btn-champagne" style="font-weight: 800;">🏆 Finalize Championship & Reveal Winner</button>`;
-        actHtml += `<button type="button" onclick="openAddDayModal()" class="btn btn-outline" style="font-weight: 700;">➕ Add Next Day (Extend to Day ${total + 1})</button>`;
-      }
-    } else if (gs.status === 'STANDBY') {
-      actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Start Day ${day} (3-2-1)</button>`;
-      actHtml += `<button type="button" onclick="openScheduleEventModal()" class="btn btn-outline" style="font-weight: 700; border-color: #2563EB; color: #1D4ED8;">⏱️ Schedule Day ${day} Countdown</button>`;
-      actHtml += `<button type="button" onclick="openCircuitHaltTestModal()" class="btn btn-outline" style="font-weight: 700; border-color: #F59E0B; color: #B45309;" title="Test circuit breaker halts">⚡ Test Circuit</button>`;
-    } else if (gs.isPaused) {
-      const isEmergencyHalt = gs.pauseMode === 'EMERGENCY_HALT';
-      if (isEmergencyHalt) {
-        actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume from Emergency Halt (3-2-1)</button>`;
-        actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day} (Skip Resume)</button>`;
-        actHtml += `<span style="font-size: 11px; color: #B45309; align-self: center; font-weight: 600;">🛑 Emergency halt active — all desks blinded and frozen.</span>`;
-      } else {
-        actHtml += `<button type="button" onclick="hostResumeMarket()" class="btn btn-primary" style="font-weight: 700; background: var(--price-up); border: none;">▶ Resume Trading (3-2-1)</button>`;
-        actHtml += `<button type="button" onclick="openConcludeDayModal()" class="btn btn-sage" style="font-weight: 700;">🔔 Conclude Day ${day}</button>`;
-        actHtml += `<button type="button" onclick="openEmergencyStopModal()" class="btn btn-danger" style="font-weight: 700; background: #991B1B; color: #FFF; border: none;">🛑 Emergency Stop</button>`;
-      }
-    }
-    actionsContainer.innerHTML = actHtml;
-  }
+  // Authoritative Single Cockpit Bar & Progressive Disclosure Engine
+  syncHostProgressiveDisclosure(gs);
 
   // Update Next Step Hero Card in Hub 1 Overview
   const nextIcon = document.getElementById('nextStepIcon');
@@ -8810,54 +8855,91 @@ function renderHostView(state) {
   }
 
   // 3. Render Leaderboard Table
-  if (leaderboard) {
-    document.getElementById('hostLeaderboardTbody').innerHTML = leaderboard.map((t, idx) => {
-      const isUp = t.pnlPct >= 0;
-      return `
-        <tr style="border-bottom: 1px solid var(--subtle-border);">
-          <td style="padding: 8px; font-weight: 800;">#${idx + 1}</td>
-          <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(t.name)}</td>
-          <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(t.members || '—')}</td>
-          <td style="padding: 8px; text-align: right;">${formatINR(t.cash)}</td>
-          <td style="padding: 8px; text-align: right;">${formatINR(t.holdingsValue)}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 800;">${formatINR(t.netWorth)}</td>
-          <td style="padding: 8px; text-align: right; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
-            ${isUp ? '+' : ''}${t.pnlPct.toFixed(2)}%
-          </td>
-          <td style="padding: 8px; text-align: center;">${t.tradeCount}</td>
-        </tr>
-      `;
-    }).join('');
+  const lbTbody = document.getElementById('hostLeaderboardTbody');
+  if (lbTbody) {
+    if (leaderboard && leaderboard.length > 0) {
+      lbTbody.innerHTML = leaderboard.map((t, idx) => {
+        const isUp = t.pnlPct >= 0;
+        return `
+          <tr style="border-bottom: 1px solid var(--subtle-border);">
+            <td style="padding: 8px; font-weight: 800;">#${idx + 1}</td>
+            <td style="padding: 8px; font-weight: 700; color: var(--text-forest);">${escapeHtml(t.name)}</td>
+            <td style="padding: 8px; color: var(--text-muted); font-size: 11px;">${escapeHtml(t.members || '—')}</td>
+            <td style="padding: 8px; text-align: right;">${formatINR(t.cash)}</td>
+            <td style="padding: 8px; text-align: right;">${formatINR(t.holdingsValue)}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 800;">${formatINR(t.netWorth)}</td>
+            <td style="padding: 8px; text-align: right; font-weight: 700;" class="${isUp ? 'price-up' : 'price-down'}">
+              ${isUp ? '+' : ''}${t.pnlPct.toFixed(2)}%
+            </td>
+            <td style="padding: 8px; text-align: center;">${t.tradeCount}</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      lbTbody.innerHTML = `<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No teams registered on the leaderboard yet.</td></tr>`;
+    }
   }
 
-  // 4. Render Trade Stream Table (if tab is active or initially)
-  if (recentTrades && (activeHostTab === 'trades' || activeHostTab === 'stocks')) {
-    const tradesTbody = document.getElementById('hostRecentTradesTbody');
-    if (tradesTbody) {
-      if (recentTrades.length === 0) {
-        tradesTbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No trades executed yet.</td></tr>`;
-      } else {
-        tradesTbody.innerHTML = recentTrades.map((tr) => `
-          <tr style="border-bottom: 1px solid var(--subtle-border);">
-            <td style="padding: 8px;">#${tr.seq}</td>
-            <td style="padding: 8px;">${tr.timestamp}</td>
-            <td style="padding: 8px; font-weight: 700;">${escapeHtml(tr.teamName)}</td>
-            <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 5px;">${tr.type}</span></td>
-            <td style="padding: 8px; font-weight: 700;">${tr.ticker}</td>
-            <td style="padding: 8px; text-align: right;">${tr.quantity}</td>
-            <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
-            <td style="padding: 8px; text-align: right;">₹${tr.grossValue.toFixed(2)}</td>
-            <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
-            <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.cashAfter.toFixed(2)}</td>
-          </tr>
-        `).join('');
-      }
+  // 4. Render Trade Stream Table (always render when element exists)
+  const tradesTbody = document.getElementById('hostRecentTradesTbody');
+  if (tradesTbody) {
+    if (recentTrades && recentTrades.length > 0) {
+      tradesTbody.innerHTML = recentTrades.map((tr) => `
+        <tr style="border-bottom: 1px solid var(--subtle-border);">
+          <td style="padding: 8px;">#${tr.seq}</td>
+          <td style="padding: 8px;">${tr.timestamp}</td>
+          <td style="padding: 8px; font-weight: 700;">${escapeHtml(tr.teamName)}</td>
+          <td style="padding: 8px;"><span class="badge ${tr.type === 'BUY' ? 'badge-active' : 'badge-paused'}" style="font-size: 9px; padding: 2px 5px;">${tr.type}</span></td>
+          <td style="padding: 8px; font-weight: 700;">${tr.ticker}</td>
+          <td style="padding: 8px; text-align: right;">${tr.quantity}</td>
+          <td style="padding: 8px; text-align: right;">₹${tr.price.toFixed(2)}</td>
+          <td style="padding: 8px; text-align: right;">₹${tr.grossValue.toFixed(2)}</td>
+          <td style="padding: 8px; text-align: right; color: var(--text-muted);">₹${tr.fee.toFixed(2)}</td>
+          <td style="padding: 8px; text-align: right; font-weight: 700;">₹${tr.cashAfter.toFixed(2)}</td>
+        </tr>
+      `).join('');
+    } else {
+      tradesTbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted); font-style: italic;">No trades executed yet.</td></tr>`;
     }
   }
 }
 
-// Host Matrix Actions
+// Host Matrix Actions & Singular Air Traffic Control (ATC) Operations
+let hostSelectedPauseMode = 'VISIBLE_FROZEN';
 let lastPauseActionTime = 0;
+
+function hostSelectOrSwitchPauseMode(mode = 'VISIBLE_FROZEN') {
+  hostSelectedPauseMode = mode;
+  const btnSoft = document.getElementById('btnModeSelectSoft');
+  const btnBlackout = document.getElementById('btnMarketPauseBlackout');
+  
+  if (btnSoft && btnBlackout) {
+    if (mode === 'BLACKOUT') {
+      btnSoft.classList.remove('active-soft');
+      btnBlackout.classList.add('active-blackout');
+    } else {
+      btnSoft.classList.add('active-soft');
+      btnBlackout.classList.remove('active-blackout');
+    }
+  }
+
+  // Update button text if currently visible in LIVE mode
+  const btnPause = document.getElementById('btnMarketPauseSoft');
+  if (btnPause && !btnPause.classList.contains('hidden')) {
+    btnPause.textContent = mode === 'BLACKOUT' ? '🕶️ Pause Market (Blackout)' : '⏸ Pause Market (Visible)';
+  }
+
+  // If already paused, switch pause mode live in real-time on server and client!
+  const gs = latestState?.gameState;
+  if (gs && gs.isPaused) {
+    hostPauseMarket(mode);
+  }
+}
+
+function hostExecuteSingularPause() {
+  hostPauseMarket(hostSelectedPauseMode || 'VISIBLE_FROZEN');
+}
+
 function hostPauseMarket(mode = 'VISIBLE_FROZEN') {
   if (!ws || !sessionToken) return;
   const gs = latestState?.gameState;
@@ -8866,6 +8948,12 @@ function hostPauseMarket(mode = 'VISIBLE_FROZEN') {
     return;
   }
   if (gs && gs.isPaused) {
+    // If the requested mode is different from current pauseMode, allow switching live!
+    if (mode && mode !== gs.pauseMode) {
+      ws.send(JSON.stringify({ action: 'HOST_PAUSE', session_token: sessionToken, pauseMode: mode }));
+      showOrderToast(mode === 'BLACKOUT' ? '🕶️ Switched to Blackout Pause (screens hidden)' : '❄️ Switched to Soft Pause (prices visible)', true);
+      return;
+    }
     showOrderToast('Trading is already paused. Resume trading when you are ready.', false);
     return;
   }
@@ -8895,6 +8983,207 @@ function hostResumeMarket() {
   lastResumeActionTime = Date.now();
   if (btn) applyActionContractLock(btn, 'Resuming (3-2-1)...');
   ws.send(JSON.stringify({ action: 'HOST_RESUME_COUNTDOWN', session_token: sessionToken }));
+}
+
+function syncHostSingularActionBar(state) {
+  const gs = (state && state.gameState) || latestState?.gameState;
+  if (!gs) return;
+  syncHostProgressiveDisclosure(gs);
+}
+
+function syncHostProgressiveDisclosure(gs) {
+  if (!gs) return;
+  const isLocked = !!gs.configLocked && gs.status !== 'SETUP' && gs.status !== 'RESET';
+  const hasStarted = gs.status === 'LIVE' || (gs.elapsedSeconds > 0) || (gs.currentDay > 1) || gs.isConcluded;
+
+  // 1. Hide the "CONFIGURATION UNLOCKED (DRAFT SETUP MODE)" banner once competition is locked & running!
+  const lockBanner = document.getElementById('hostConfigLockBanner');
+  if (lockBanner) {
+    if (hasStarted || isLocked) {
+      lockBanner.classList.add('hidden');
+    } else {
+      lockBanner.classList.remove('hidden');
+    }
+  }
+
+  // 2. Hide top header "Teams Setup" & "Settings" buttons once setup is locked (prevents mid-game clutter)
+  const btnTeamSetup = document.getElementById('btnHostTeamSetup');
+  const btnSettings = document.getElementById('btnHostSettings');
+  if (btnTeamSetup) btnTeamSetup.classList.toggle('hidden', isLocked);
+  if (btnSettings) btnSettings.classList.toggle('hidden', isLocked);
+
+  // 3. Update "⚙️ 2. Event" tab button to show "🔒 2. Event (Locked)" or hide it during active trading
+  const tabBtnEvent = document.getElementById('hostTabBtnEvent');
+  if (tabBtnEvent) {
+    tabBtnEvent.innerHTML = isLocked ? '🔒 2. Event Rules' : '⚙️ 2. Event Setup';
+  }
+
+  // 4. Disable legacy #hostFlowActionsContainer injection so it never creates duplicate buttons
+  const legacyFlowActions = document.getElementById('hostFlowActionsContainer');
+  if (legacyFlowActions) legacyFlowActions.innerHTML = '';
+
+  // 5. Update the Single ATC Bar telemetry and buttons deterministically
+  const day = gs.currentDay || 1;
+  const total = gs.totalDays || 3;
+  const remSec = Math.max(0, (gs.dayDurationSeconds || 1800) - (gs.elapsedSeconds || 0));
+
+  const badge = document.getElementById('marketOpsLiveBadge');
+  const dayText = document.getElementById('atcDayText');
+  const timerVal = document.getElementById('atcTimerValue');
+  const modeText = document.getElementById('atcFloorModeText');
+
+  if (dayText) dayText.textContent = `DAY ${day} / ${total}`;
+  if (timerVal) timerVal.textContent = formatMMSS(remSec);
+  if (modeText) {
+    modeText.textContent = gs.status === 'PAUSED'
+      ? (gs.pauseMode === 'BLACKOUT' ? 'BLACKOUT' : gs.pauseMode === 'EMERGENCY_HALT' ? 'EMERGENCY' : 'SOFT FREEZE')
+      : (gs.status === 'LIVE' ? 'LIVE FLOOR' : gs.status);
+  }
+
+  const btnResume = document.getElementById('btnMarketResume');
+  const btnPause = document.getElementById('btnMarketPauseSoft');
+  const modeSelector = document.getElementById('atcPauseModeSelector');
+  const btnModeSoft = document.getElementById('btnModeSelectSoft');
+  const btnModeBlackout = document.getElementById('btnMarketPauseBlackout');
+  const btnSchedule = document.getElementById('btnFlowScheduleAction');
+  const btnCancelSched = document.getElementById('btnFlowCancelSchedule');
+  const btnConclude = document.getElementById('btnMarketCloseSession');
+  const btnAddDay = document.getElementById('btnAtcAddDay');
+  const btnEmergency = document.getElementById('btnEmergencyStopTrigger');
+
+  // Update mode selector button styling
+  const effectiveMode = gs.isPaused ? (gs.pauseMode || hostSelectedPauseMode) : hostSelectedPauseMode;
+  if (btnModeSoft && btnModeBlackout) {
+    if (effectiveMode === 'BLACKOUT') {
+      btnModeSoft.style.background = 'transparent';
+      btnModeSoft.style.color = 'var(--text-muted)';
+      btnModeBlackout.style.background = '#1E293B';
+      btnModeBlackout.style.color = '#F8FAFC';
+    } else {
+      btnModeSoft.style.background = '#FEF3C7';
+      btnModeSoft.style.color = '#92400E';
+      btnModeBlackout.style.background = 'transparent';
+      btnModeBlackout.style.color = 'var(--text-muted)';
+    }
+  }
+
+  // Helper to hide all optional buttons first, then show ONLY what is needed for the current step
+  [btnResume, btnPause, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
+    if (el) el.classList.add('hidden');
+  });
+
+  if (!isLocked) {
+    // STEP 1: Setup not locked yet -> Show ONLY [⚙️ Lock Event Setup]
+    if (badge) { badge.textContent = '⚙️ DRAFT SETUP'; badge.className = 'badge badge-paused'; }
+    if (btnResume) {
+      btnResume.classList.remove('hidden');
+      btnResume.disabled = false;
+      btnResume.textContent = '⚙️ Complete & Lock Setup ➔';
+      btnResume.className = 'btn btn-primary';
+      btnResume.onclick = () => switchHostTab('event');
+    }
+  } else if (gs.status === 'STANDBY') {
+    // STEP 2: Locked & Standby -> Show [▶ Start Day N (3-2-1)] and [⏱️ Schedule Timer]
+    if (badge) { badge.textContent = `⏳ DAY ${day} STANDBY`; badge.className = 'badge badge-champagne'; }
+    if (btnResume) {
+      btnResume.classList.remove('hidden');
+      btnResume.disabled = false;
+      btnResume.textContent = `▶ Start Day ${day} (3-2-1)`;
+      btnResume.className = 'btn btn-primary';
+      btnResume.onclick = () => hostResumeMarket();
+    }
+    if (btnSchedule) btnSchedule.classList.remove('hidden');
+  } else if (gs.status === 'SCHEDULED') {
+    // STEP 2B: Scheduled Countdown -> Show [▶ Start Now] and [✕ Cancel Schedule]
+    if (badge) { badge.textContent = `⏱️ SCHEDULED`; badge.className = 'badge badge-champagne'; }
+    if (btnResume) {
+      btnResume.classList.remove('hidden');
+      btnResume.disabled = false;
+      btnResume.textContent = `▶ Start Day ${day} Now`;
+      btnResume.className = 'btn btn-primary';
+      btnResume.onclick = () => hostResumeMarket();
+    }
+    if (btnCancelSched) btnCancelSched.classList.remove('hidden');
+  } else if (gs.status === 'LIVE' && !gs.isPaused) {
+    // STEP 3: LIVE TRADING -> Hide Resume! Show [⏸ Pause Market] + Mode Selector + [🔔 Conclude Day] + [🛑 Emergency Stop]
+    if (badge) { badge.textContent = `🟢 LIVE • DAY ${day}/${total}`; badge.className = 'badge badge-active'; }
+    if (btnPause) {
+      btnPause.classList.remove('hidden');
+      btnPause.disabled = false;
+      btnPause.textContent = `⏸ Pause Market (${hostSelectedPauseMode === 'BLACKOUT' ? 'Blackout' : 'Soft'})`;
+    }
+    if (modeSelector) modeSelector.classList.remove('hidden');
+    if (btnConclude) {
+      btnConclude.classList.remove('hidden');
+      btnConclude.disabled = false;
+      btnConclude.textContent = `🔔 Conclude Day ${day}`;
+      btnConclude.className = 'btn btn-outline';
+      btnConclude.style.borderColor = '#14352B';
+      btnConclude.style.color = '#14352B';
+      btnConclude.onclick = () => openConcludeDayModal();
+    }
+    if (btnEmergency) btnEmergency.classList.remove('hidden');
+  } else if (gs.status === 'PAUSED' || gs.isPaused) {
+    // STEP 4: PAUSED -> Hide Pause! Show [▶ Resume Market (3-2-1)] + Mode Switcher + [🔔 Conclude Day]
+    const isBlk = gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'EMERGENCY_HALT';
+    if (badge) {
+      badge.textContent = isBlk ? '🕶️ PAUSED (BLACKOUT)' : '⏸️ PAUSED (SOFT FREEZE)';
+      badge.className = 'badge badge-paused';
+    }
+    if (btnResume) {
+      btnResume.classList.remove('hidden');
+      btnResume.disabled = false;
+      btnResume.textContent = '▶ Resume Market (3-2-1)';
+      btnResume.className = 'btn btn-primary';
+      btnResume.onclick = () => hostResumeMarket();
+    }
+    if (modeSelector) modeSelector.classList.remove('hidden');
+    if (btnConclude) {
+      btnConclude.classList.remove('hidden');
+      btnConclude.disabled = false;
+      btnConclude.textContent = `🔔 Conclude Day ${day}`;
+      btnConclude.className = 'btn btn-outline';
+      btnConclude.style.borderColor = '#14352B';
+      btnConclude.style.color = '#14352B';
+      btnConclude.onclick = () => openConcludeDayModal();
+    }
+  } else if (gs.status === 'DAY_COMPLETED') {
+    // STEP 5: DAY CONCLUDED -> Show [▶ Advance to Day N+1] (or [🏆 Finalize Championship]) + [➕ Add Day]
+    if (badge) { badge.textContent = `🔔 DAY ${day} COMPLETED`; badge.className = 'badge badge-champagne'; }
+    if (btnConclude) {
+      btnConclude.classList.remove('hidden');
+      btnConclude.disabled = false;
+      if (day < total) {
+        btnConclude.textContent = `▶ Advance to Day ${day + 1} ➔`;
+        btnConclude.className = 'btn btn-primary';
+        btnConclude.style.background = 'var(--price-up)';
+        btnConclude.style.borderColor = 'var(--price-up)';
+        btnConclude.style.color = '#FFFFFF';
+        btnConclude.onclick = () => openStartNextDayModal();
+      } else {
+        btnConclude.textContent = '🏆 Finalize Championship ➔';
+        btnConclude.className = 'btn btn-champagne';
+        btnConclude.style.background = '';
+        btnConclude.style.borderColor = '';
+        btnConclude.style.color = '';
+        btnConclude.onclick = () => openFinishEventModal();
+      }
+    }
+    if (btnAddDay) btnAddDay.classList.remove('hidden');
+  } else if (gs.isConcluded || gs.status === 'CHAMPIONSHIP_CONCLUDED' || gs.status === 'WINNER_ANNOUNCEMENT') {
+    // STEP 6: GRAND FINALE CEREMONY
+    if (badge) { badge.textContent = '👑 GRAND FINALE'; badge.className = 'badge badge-champagne'; }
+    if (btnConclude) {
+      btnConclude.classList.remove('hidden');
+      btnConclude.disabled = false;
+      btnConclude.textContent = '👑 Launch / Advance Winner Ceremony ➔';
+      btnConclude.className = 'btn btn-champagne';
+      btnConclude.style.background = '';
+      btnConclude.style.borderColor = '';
+      btnConclude.style.color = '';
+      btnConclude.onclick = () => handleFlowPrimaryAction();
+    }
+  }
 }
 
 function hostCancelSchedule() {
@@ -9956,33 +10245,98 @@ function prepareFullNewsModal(news) {
   }
 }
 
-function showNewsFlashModal(news) {
-  prepareFullNewsModal(news);
+let bigNewsFlashInterval = null;
+let lastActiveBannerNews = null;
+
+function openBigBreakingNewsModal(news) {
+  if (!news) return;
+  lastActiveBannerNews = news;
+
+  // Hide the small top toast banner so there is never a duplicate popup
+  const smallBanner = document.getElementById('breakingNewsToastBanner');
+  if (smallBanner) smallBanner.classList.add('hidden');
+
   const modal = document.getElementById('newsFlashModal');
   if (!modal) return;
+
+  const badgeEl = document.getElementById('flashTrafficBadge');
+  const typeEl = document.getElementById('flashEventType');
+  const tickersEl = document.getElementById('flashAffectedTickers');
+  const headlineEl = document.getElementById('flashHeadline');
+  const explainEl = document.getElementById('flashExplanation');
+  const mandateEl = document.getElementById('flashDeskMandate');
+  const cdBadge = document.getElementById('flashCountdownBadge');
+  const cdBar = document.getElementById('flashCountdownBar');
+
+  if (badgeEl) {
+    badgeEl.textContent = news.trafficLightBadge || '🔴 BREAKING MARKET WIRE';
+    badgeEl.className = 'badge badge-halted';
+  }
+  if (typeEl) {
+    typeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET SHOCK'}`;
+  }
+
+  // Extract affected sector / stocks (or show Market-Wide if macro)
+  if (tickersEl) {
+    if (news.impacts && typeof news.impacts === 'object') {
+      const keys = Object.keys(news.impacts).filter((k) => k !== 'GLOBAL_WEIGHTED');
+      tickersEl.textContent = keys.length > 0 ? `IMPACTS: ${keys.join(', ')}` : 'BROAD MARKET IMPACT';
+    } else {
+      tickersEl.textContent = `${news.type || 'SECTOR'} CATALYST`;
+    }
+  }
+
+  if (headlineEl) headlineEl.textContent = news.headline || 'Breaking Market Announcement';
+  if (explainEl) {
+    explainEl.textContent = news.simple_explanation || news.explanation || 'Institutional desks are repricing sector equities based on this disclosure.';
+  }
+
+  const readSec = news.readingDurationSec && news.readingDurationSec > 0 ? news.readingDurationSec : 15;
+  if (mandateEl) {
+    mandateEl.innerHTML = news.readingDurationSec > 0
+      ? `⏱️ <strong>${readSec}s READING WINDOW:</strong> Analyze sector impact and position your portfolio before the smoothstep price wave begins!`
+      : `⚡ <strong>IMMEDIATE MARKET REACTION:</strong> Stock prices are actively repricing across the trading floor!`;
+    mandateEl.style.background = '#FEF3C7';
+    mandateEl.style.color = '#B45309';
+    mandateEl.style.borderColor = '#FCD34D';
+  }
+
   modal.classList.remove('hidden');
 
-  let remaining = 20;
-  const badge = document.getElementById('flashCountdownBadge');
-  const barEl = document.getElementById('flashCountdownBar');
-  if (badge) badge.textContent = `Auto-closing in ${remaining}s`;
-  if (barEl) barEl.style.width = '100%';
-
+  // Auto-countdown bar (15 seconds)
+  if (bigNewsFlashInterval) clearInterval(bigNewsFlashInterval);
   if (flashTimerHandle) clearInterval(flashTimerHandle);
-  flashTimerHandle = setInterval(() => {
-    remaining--;
-    if (badge) badge.textContent = `Auto-closing in ${remaining}s`;
-    if (barEl) barEl.style.width = `${(remaining / 20) * 100}%`;
-    if (remaining <= 0) {
+  let rem = 15;
+  if (cdBadge) cdBadge.textContent = `Auto-closing in ${rem}s`;
+  if (cdBar) cdBar.style.width = '100%';
+
+  bigNewsFlashInterval = setInterval(() => {
+    rem--;
+    if (cdBadge) cdBadge.textContent = `Auto-closing in ${Math.max(0, rem)}s`;
+    if (cdBar) cdBar.style.width = `${Math.max(0, (rem / 15) * 100)}%`;
+    if (rem <= 0) {
+      clearInterval(bigNewsFlashInterval);
+      bigNewsFlashInterval = null;
       dismissNewsFlash();
     }
   }, 1000);
 }
 
 function dismissNewsFlash() {
-  if (flashTimerHandle) clearInterval(flashTimerHandle);
+  if (bigNewsFlashInterval) {
+    clearInterval(bigNewsFlashInterval);
+    bigNewsFlashInterval = null;
+  }
+  if (flashTimerHandle) {
+    clearInterval(flashTimerHandle);
+    flashTimerHandle = null;
+  }
   const modal = document.getElementById('newsFlashModal');
   if (modal) modal.classList.add('hidden');
+}
+
+function showNewsFlashModal(news) {
+  openBigBreakingNewsModal(news);
 }
 
 // ==========================================
@@ -12196,5 +12550,14 @@ if (typeof window !== 'undefined') {
   window.releaseActionContractLock = releaseActionContractLock;
   window.releaseActionLockById = releaseActionLockById;
   window.releaseAllActionLocks = releaseAllActionLocks;
+  window.hostSelectOrSwitchPauseMode = hostSelectOrSwitchPauseMode;
+  window.hostExecuteSingularPause = hostExecuteSingularPause;
+  window.syncHostSingularActionBar = syncHostSingularActionBar;
+  window.syncHostProgressiveDisclosure = syncHostProgressiveDisclosure;
+  window.openBigBreakingNewsModal = openBigBreakingNewsModal;
+  window.dismissNewsFlash = dismissNewsFlash;
+  window.onManualTradeQuantityInput = onManualTradeQuantityInput;
+  window.setTradeBudgetPreset = setTradeBudgetPreset;
+  window.setTradeHoldingPreset = setTradeHoldingPreset;
 }
 
