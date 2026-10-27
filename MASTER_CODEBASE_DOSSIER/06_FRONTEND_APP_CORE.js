@@ -1960,8 +1960,15 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       playInstitutionalSound('emergency_klaxon');
       document.body.classList.add('circuit-strobe-active');
       setTimeout(() => { document.body.classList.remove('circuit-strobe-active'); }, 5000);
-      showCircuitAlertBanner(`${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`);
+      showCircuitAlertBanner(`${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`, msg);
       showOrderToast(`🚨 CIRCUIT BREAKER: ${msg.ticker} halted (${msg.direction} limit at ₹${msg.price.toFixed(2)})`, false);
+      return;
+    }
+
+    if (msg.type === 'CIRCUIT_RECOVERY_ALERT') {
+      if (!isLoggedIn || currentRole === null) return;
+      dismissCircuitAlertBanner();
+      showOrderToast(`🟢 CIRCUIT RELEASED: ${msg.ticker} resumed normal trading at ₹${(msg.price || 0).toFixed(2)}`, true);
       return;
     }
 
@@ -12134,12 +12141,38 @@ function confirmScheduleOrStartEvent() {
 let circuitBannerTimeoutHandle = null;
 let circuitBannerIntervalHandle = null;
 
-function showCircuitAlertBanner(text) {
+function showCircuitAlertBanner(text, alertData) {
   const banner = document.getElementById('circuitBreakerAlertBanner');
   const alertText = document.getElementById('circuitAlertText');
   const cdText = document.getElementById('circuitAlertCountdownText');
+  const typeBadge = document.getElementById('circuitAlertHaltType');
+  const subText = document.getElementById('circuitAlertSubText');
   if (!banner) return;
   if (alertText) alertText.textContent = text;
+
+  const dir = (alertData && alertData.direction) || (text.includes('UPPER') ? 'UPPER' : text.includes('LOWER') ? 'LOWER' : '');
+  if (typeBadge) {
+    if (dir === 'UPPER') {
+      typeBadge.textContent = 'UPPER CIRCUIT LIMIT HIT';
+      typeBadge.className = 'circuit-badge-upper';
+    } else if (dir === 'LOWER') {
+      typeBadge.textContent = 'LOWER CIRCUIT LIMIT HIT';
+      typeBadge.className = 'circuit-badge-lower';
+    } else {
+      typeBadge.textContent = 'STOCK CIRCUIT HALT';
+      typeBadge.className = 'circuit-badge-general';
+    }
+  }
+
+  if (subText) {
+    if (dir === 'UPPER') {
+      subText.textContent = '⛔ Upper limit breach: BUY orders restricted. SELL orders permitted to provide liquidity. Rest of market active.';
+    } else if (dir === 'LOWER') {
+      subText.textContent = '⛔ Lower limit breach: SELLING restricted to protect price. BUY orders permitted to support price. Rest of market active.';
+    } else {
+      subText.textContent = 'Trading restricted on this stock under circuit rules. Rest of the market remains active.';
+    }
+  }
 
   if (circuitBannerTimeoutHandle) {
     clearTimeout(circuitBannerTimeoutHandle);
@@ -12152,7 +12185,7 @@ function showCircuitAlertBanner(text) {
 
   let remaining = 8;
   if (cdText) cdText.textContent = `(Auto-closing in ${remaining}s)`;
-  banner.classList.remove('hidden');
+  banner.classList.remove('hidden', 'banner-exit');
 
   circuitBannerIntervalHandle = setInterval(() => {
     remaining--;
@@ -12180,7 +12213,13 @@ function dismissCircuitAlertBanner() {
     circuitBannerIntervalHandle = null;
   }
   const banner = document.getElementById('circuitBreakerAlertBanner');
-  if (banner) banner.classList.add('hidden');
+  if (banner) {
+    banner.classList.add('banner-exit');
+    setTimeout(() => {
+      banner.classList.add('hidden');
+      banner.classList.remove('banner-exit');
+    }, 320);
+  }
   document.body.classList.remove('circuit-strobe-active');
 }
 
