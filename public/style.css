@@ -645,7 +645,42 @@ h4, h5, h6 {
   line-height: 1.4;
 }
 
-/* 10. MODALS & OVERLAYS */
+/* 10. MODALS & OVERLAYS & UNIVERSAL SCROLL-LOCK ENGINE */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
+body.modal-open {
+  position: fixed !important;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+body.modal-open > section,
+body.modal-open > header,
+body.modal-open > main,
+body.modal-open > footer,
+body.modal-open > div:not(.modal-overlay):not(.trade-modal-overlay):not([id$="Modal"]):not([id^="modal"]):not(.dialog-overlay):not(.notification-toast) {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+body.modal-open .modal-overlay,
+body.modal-open .trade-modal-overlay,
+body.modal-open [id$="Modal"],
+body.modal-open [id^="modal"],
+body.modal-open .dialog-overlay,
+body.modal-open .notification-toast {
+  pointer-events: auto !important;
+  user-select: auto !important;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -656,11 +691,15 @@ h4, h5, h6 {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  z-index: 100;
+  z-index: 1000;
   overflow-y: auto;
+  overscroll-behavior: contain !important;
 }
 
-.modal-content {
+.modal-content,
+.modal-card,
+.trade-modal-card,
+.trade-modal-cockpit {
   background-color: var(--card-white);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-xl);
@@ -669,6 +708,7 @@ h4, h5, h6 {
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  overscroll-behavior: contain !important;
   padding: 28px;
   animation: modalSlideUp 0.22s ease-out;
 }

@@ -786,6 +786,117 @@ function escapeHtml(str) {
 }
 
 // ==========================================
+// UNIVERSAL MODAL BACKGROUND SCROLL-LOCK ENGINE
+// ==========================================
+function syncBodyModalScrollLock() {
+  if (typeof document === 'undefined' || !document.body) return;
+  const modals = document.querySelectorAll(
+    '.modal-overlay, .trade-modal-overlay, [id$="Modal"], [id^="modal"], .dialog-overlay'
+  );
+  let isOpen = false;
+  for (let i = 0; i < modals.length; i++) {
+    const el = modals[i];
+    if (
+      !el.classList.contains('hidden') &&
+      el.style.display !== 'none' &&
+      !el.classList.contains('soft-pause-card') &&
+      !el.classList.contains('blackout-card') &&
+      !el.classList.contains('day-transition-card') &&
+      (el.offsetWidth > 0 || el.offsetHeight > 0 || (el.getClientRects && el.getClientRects().length > 0))
+    ) {
+      isOpen = true;
+      break;
+    }
+  }
+  if (isOpen) {
+    if (!document.body.classList.contains('modal-open')) {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.dataset.modalSavedScrollY = String(scrollY);
+      document.body.style.top = `-${scrollY}px`;
+      document.body.classList.add('modal-open');
+      if (document.documentElement) document.documentElement.classList.add('modal-open');
+    }
+  } else {
+    if (document.body.classList.contains('modal-open')) {
+      const savedY = parseInt(document.body.dataset.modalSavedScrollY || '0', 10);
+      document.body.classList.remove('modal-open');
+      if (document.documentElement) document.documentElement.classList.remove('modal-open');
+      document.body.style.top = '';
+      delete document.body.dataset.modalSavedScrollY;
+      window.scrollTo(0, savedY);
+    }
+  }
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('wheel', (e) => {
+    if (typeof document !== 'undefined' && document.body && document.body.classList.contains('modal-open')) {
+      const openModal = e.target && typeof e.target.closest === 'function'
+        ? e.target.closest('.modal-overlay:not(.hidden), .trade-modal-overlay:not(.hidden), [id$="Modal"]:not(.hidden), [id^="modal"]:not(.hidden)')
+        : null;
+      if (!openModal) {
+        e.preventDefault();
+        return;
+      }
+      const scrollable = e.target && typeof e.target.closest === 'function'
+        ? e.target.closest('.modal-content, .modal-card, .trade-modal-cockpit, .trade-modal-card, [data-scrollable="true"]')
+        : null;
+      if (!scrollable || scrollable.scrollHeight <= scrollable.clientHeight) {
+        e.preventDefault();
+        return;
+      }
+      const atTop = scrollable.scrollTop <= 0 && e.deltaY < 0;
+      const atBottom = (scrollable.scrollHeight - scrollable.scrollTop <= scrollable.clientHeight + 1) && e.deltaY > 0;
+      if (atTop || atBottom) {
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (typeof document !== 'undefined' && document.body && document.body.classList.contains('modal-open')) {
+      const openModal = e.target && typeof e.target.closest === 'function'
+        ? e.target.closest('.modal-overlay:not(.hidden), .trade-modal-overlay:not(.hidden), [id$="Modal"]:not(.hidden), [id^="modal"]:not(.hidden)')
+        : null;
+      if (!openModal) {
+        e.preventDefault();
+        return;
+      }
+      const scrollable = e.target && typeof e.target.closest === 'function'
+        ? e.target.closest('.modal-content, .modal-card, .trade-modal-cockpit, .trade-modal-card, [data-scrollable="true"]')
+        : null;
+      if (!scrollable || scrollable.scrollHeight <= scrollable.clientHeight) {
+        e.preventDefault();
+      }
+    }
+  }, { passive: false });
+
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+    const modalObserver = new MutationObserver((mutations) => {
+      let shouldCheck = false;
+      for (const m of mutations) {
+        if (m.type === 'attributes' && (m.attributeName === 'class' || m.attributeName === 'style')) {
+          const id = m.target.id || '';
+          const cls = m.target.className || '';
+          if (id.toLowerCase().includes('modal') || (typeof cls === 'string' && cls.includes('modal'))) {
+            shouldCheck = true;
+            break;
+          }
+        }
+      }
+      if (shouldCheck) syncBodyModalScrollLock();
+    });
+    if (document.body) {
+      modalObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (document.body) modalObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class', 'style'] });
+      });
+    }
+  }
+}
+
+// ==========================================
 // 1. INSTITUTIONAL AUDIO SYNTHESIZER (OFFLINE-READY)
 // ==========================================
 // Self-contained Web Audio API synthesizer — works offline without any external MP3s!
@@ -807,9 +918,11 @@ function getSharedAudioContext() {
 
 // User-gesture listener to immediately unlock Web Audio on first interaction
 ['pointerdown', 'keydown', 'touchstart'].forEach((evt) => {
-  window.addEventListener(evt, () => {
-    getSharedAudioContext();
-  }, { once: false, passive: true });
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener(evt, () => {
+      getSharedAudioContext();
+    }, { once: false, passive: true });
+  }
 });
 
 function playInstitutionalSound(cueName) {
@@ -818,7 +931,114 @@ function playInstitutionalSound(cueName) {
     if (!ctx) return;
     const now = ctx.currentTime;
 
-    if (cueName === 'bell_open' || cueName === 'bell_close') {
+    if (cueName === 'modal_open') {
+      // Soft crystalline glassmorphic dual chime
+      [1046.50, 1567.98].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 0.22);
+      });
+    } else if (cueName === 'modal_close') {
+      // Subtle warm acoustic tap
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(360, now);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.06);
+    } else if (cueName === 'ui_click' || cueName === 'lot_click') {
+      // Snappy physical mechanical micro-tick for buttons and lots
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(700, now + 0.014);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.018);
+    } else if (cueName === 'tab_switch') {
+      // Soft haptic UI tab tick
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.025);
+    } else if (cueName === 'order_fill_buy') {
+      // Bullish upward triple cash register chime
+      [880.00, 1174.66, 1760.00].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.22, now + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.35);
+      });
+    } else if (cueName === 'order_fill_sell') {
+      // Descending golden payout chime
+      [1567.98, 1174.66, 783.99].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.22, now + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.4);
+      });
+    } else if (cueName === 'setup_locked') {
+      // Majestic 3-tone brass lock chord
+      [261.63, 392.00, 523.25, 783.99].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = idx < 2 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+        gain.gain.setValueAtTime(0.28, now + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 1.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 1.65);
+      });
+    } else if (cueName === 'circuit_recovery') {
+      // Bright ascending glissando harp cascade (stock circuit limit unhalted)
+      [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.45);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.45);
+      });
+    } else if (cueName === 'bell_open' || cueName === 'bell_close') {
       [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -1681,11 +1901,15 @@ function hideDemoOverlays() {
 function openDeveloperInfoModal() {
   const el = document.getElementById('developerInfoModal');
   if (el) el.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeDeveloperInfoModal() {
   const el = document.getElementById('developerInfoModal');
   if (el) el.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 window.openDeveloperInfoModal = openDeveloperInfoModal;
@@ -1967,6 +2191,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
 
     if (msg.type === 'CIRCUIT_RECOVERY_ALERT') {
       if (!isLoggedIn || currentRole === null) return;
+      playInstitutionalSound('circuit_recovery');
       dismissCircuitAlertBanner();
       showOrderToast(`🟢 CIRCUIT RELEASED: ${msg.ticker} resumed normal trading at ₹${(msg.price || 0).toFixed(2)}`, true);
       return;
@@ -2135,7 +2360,7 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       if (msg.scenarioMode) latestState.scenarioMode = msg.scenarioMode;
 
       if (isLoggedIn) {
-        playInstitutionalSound('competition_ready');
+        playInstitutionalSound('setup_locked');
       }
       updateLoginEventStatusBanner(latestState);
 
@@ -2397,7 +2622,11 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
 
     if (msg.type === 'ORDER_FILLED') {
       releaseActionLockById('btnExecuteTradeOrder');
-      playInstitutionalSound('order_fill');
+      if (msg.orderType === 'BUY') {
+        playInstitutionalSound('order_fill_buy');
+      } else {
+        playInstitutionalSound('order_fill_sell');
+      }
       showOrderToast(`✓ ${msg.orderType} FILLED: ${msg.quantity} ${msg.ticker} @ ₹${msg.price.toFixed(2)} (Net: ₹${msg.totalImpact.toFixed(2)})`, true);
       closeTradeModal();
       return;
@@ -3955,7 +4184,10 @@ function openTradeModal(ticker, side = 'BUY', preferredQty = null) {
 
   syncTradeModalSide();
   recalculateTradeModal();
-  document.getElementById('tradeModal').classList.remove('hidden');
+  const tradeModalEl = document.getElementById('tradeModal');
+  if (tradeModalEl) tradeModalEl.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 
   // Focus and select quantity input for rapid keyboard trading
   setTimeout(() => {
@@ -3972,11 +4204,14 @@ function closeTradeModal() {
   releaseActionLockById('btnExecuteTradeOrder');
   const modal = document.getElementById('tradeModal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function setTradeSide(side) {
   if (currentTradeModalSide === side) return;
   currentTradeModalSide = side;
+  playInstitutionalSound('ui_click');
   syncTradeModalSide();
   recalculateTradeModal();
 }
@@ -4024,6 +4259,7 @@ function onManualTradeQuantityInput() {
 function stepTradeQuantity(delta) {
   activeTradeBudgetPresetPct = null;
   activeTradeHoldingPresetPct = null;
+  playInstitutionalSound('ui_click');
   const input = document.getElementById('tradeQuantityInput');
   if (!input) return;
   const current = parseInt(input.value, 10) || 0;
@@ -4035,6 +4271,7 @@ function stepTradeQuantity(delta) {
 function setTradeLotPreset(mode, val) {
   activeTradeBudgetPresetPct = null;
   activeTradeHoldingPresetPct = null;
+  playInstitutionalSound('lot_click');
   const input = document.getElementById('tradeQuantityInput');
   if (!input) return;
   const current = parseInt(input.value, 10) || 0;
@@ -4049,6 +4286,14 @@ function setTradeLotPreset(mode, val) {
 function setTradeBudgetPreset(pct) {
   activeTradeBudgetPresetPct = pct;
   activeTradeHoldingPresetPct = null;
+  playInstitutionalSound('ui_click');
+  recalculateTradeModal();
+}
+
+function setTradeHoldingPreset(pct) {
+  activeTradeBudgetPresetPct = null;
+  activeTradeHoldingPresetPct = pct;
+  playInstitutionalSound('ui_click');
   recalculateTradeModal();
 }
 
@@ -4383,16 +4628,21 @@ function openDetailsModal(ticker) {
   }
 
   document.getElementById('detailsModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeDetailsModal() {
   document.getElementById('detailsModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 let activeChartTimeframe = 'TODAY'; // 'TODAY' | 'ALL' | 'day_1' | 'day_2'
 
 function setChartTimeframe(tf) {
   activeChartTimeframe = tf;
+  playInstitutionalSound('ui_click');
   if (currentSelectedTickerForChart) {
     updateFullChartModalData(currentSelectedTickerForChart);
   }
@@ -4404,11 +4654,15 @@ function openFullChartModal(ticker) {
   activeChartTimeframe = 'TODAY';
   updateFullChartModalData(ticker);
   document.getElementById('fullChartModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeFullChartModal() {
   currentSelectedTickerForChart = null;
   document.getElementById('fullChartModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function updateFullChartModalData(ticker) {
@@ -4507,10 +4761,14 @@ function updateFullChartModalData(ticker) {
 // Rules & Help Modal
 function openRulesHelpModal() {
   document.getElementById('rulesHelpModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeRulesHelpModal() {
   document.getElementById('rulesHelpModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 let orderToastTimeout = null;
@@ -4579,12 +4837,16 @@ function openLiquidateModal() {
   document.getElementById('liquidateEstCashAfter').textContent = `₹${cashAfter.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   document.getElementById('liquidateModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeLiquidateModal() {
   releaseActionLockById('btnConfirmLiquidate');
   const modal = document.getElementById('liquidateModal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function executeLiquidateAll() {
@@ -7155,10 +7417,14 @@ function openConcludeDayModal() {
   if (el) el.textContent = `Are you sure you want to conclude Day ${day}? This will stop active trading, freeze positions, and save audited Day ${day} leaderboard records.`;
   const m = document.getElementById('modalConcludeDay');
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 function closeConcludeDayModal() {
   const m = document.getElementById('modalConcludeDay');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 let lastConcludeDayActionTime = 0;
 function executeConcludeDay() {
@@ -7190,10 +7456,14 @@ function openStartNextDayModal() {
   if (el) el.textContent = `Ready to begin Day ${nextDay}? Cash and holdings from Day ${currentDay} carry over seamlessly, and Day ${nextDay} news events will be loaded.`;
   const m = document.getElementById('modalStartNextDay');
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 function closeStartNextDayModal() {
   const m = document.getElementById('modalStartNextDay');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function executeStartNextDay() {
@@ -7242,10 +7512,14 @@ function openAddDayModal() {
   if (el) el.textContent = `Extend tournament from ${total} days to ${newTotal} days? All previous day snapshots, portfolios, and historical records are strictly preserved, and new balanced news stories will be scheduled for Day ${newTotal}.`;
   const m = document.getElementById('modalAddDay');
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 function closeAddDayModal() {
   const m = document.getElementById('modalAddDay');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 function executeAddDay() {
   if (isExecutingLifecycleAction) return;
@@ -7263,10 +7537,14 @@ function executeAddDay() {
 function openFinishEventModal() {
   const m = document.getElementById('modalFinishEvent');
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 function closeFinishEventModal() {
   const m = document.getElementById('modalFinishEvent');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 function executeFinishEvent() {
   if (isExecutingLifecycleAction) return;
@@ -7287,14 +7565,20 @@ function openEmergencyStopModal() {
   }
   const m = document.getElementById('modalEmergencyStop');
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 function closeEmergencyStopModal() {
   const m = document.getElementById('modalEmergencyStop');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 function closeLifecycleModal(modalId) {
   const m = document.getElementById(modalId);
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 function executeEmergencyStop() {
   const btn = document.getElementById('btnConfirmEmergencyStop');
@@ -7318,11 +7602,15 @@ function openCircuitHaltTestModal() {
     }).join('');
   }
   if (m) m.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeCircuitTestModal() {
   const m = document.getElementById('modalCircuitTest');
   if (m) m.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function triggerCircuitTest(direction) {
@@ -7580,7 +7868,19 @@ window.switchHostStageSubTab = switchHostStageSubTab;
 
 function switchHostTab(tabName) {
   const targetHub = HOST_TAB_ALIASES[tabName] || tabName;
+
+  // Progressive Disclosure Guard: When event configuration is in draft/setup mode,
+  // do not allow navigation to Live Market or Stage & Results until event is confirmed & locked.
+  const gs = (latestState && latestState.gameState) || {};
+  const isLocked = !!gs.configLocked && gs.status !== 'SETUP' && gs.status !== 'RESET' && !gs.isReset;
+  if (!isLocked && (targetHub === 'market' || targetHub === 'stage')) {
+    playInstitutionalSound('order_rejected');
+    showOrderToast('⚠️ Please configure and lock the tournament event first before accessing Live Market or Stage.', false);
+    return;
+  }
+
   activeHostTab = tabName;
+  playInstitutionalSound('tab_switch');
 
   // Confidentiality safeguard: always re-hide private news impacts when leaving market view
   if (targetHub !== 'market') {
@@ -8616,11 +8916,15 @@ function openPostLockDay1Modal(teamsCount) {
   const span = document.getElementById('postLockTeamsCountSpan');
   if (span) span.textContent = `${teamsCount || 'configured'}`;
   modal.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closePostLockDay1Modal() {
   const modal = document.getElementById('postLockDay1Modal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function executePostLockStartNow() {
@@ -9432,6 +9736,54 @@ function syncHostProgressiveDisclosure(gs) {
     tabBtnEvent.innerHTML = isLocked ? '🔒 2. Event Rules' : '⚙️ 2. Event Setup';
   }
 
+  // 3B. ATC COCKPIT PROGRESSIVE DISCLOSURE:
+  // Until whole event is configured and locked, NEVER show upper operations cockpit (#hostAtcCockpit).
+  // The host is presented purely with the Guided Event Setup until configuration is locked!
+  const atcCockpit = document.getElementById('hostAtcCockpit');
+  if (atcCockpit) {
+    if (!isLocked) {
+      atcCockpit.classList.add('hidden');
+    } else {
+      atcCockpit.classList.remove('hidden');
+    }
+  }
+
+  // 3C. Update Hub Navigation Tabs:
+  // When event is in draft/setup mode, dim and lock tabs 3 (Live Market) and 4 (Stage & Results)
+  const tabBtnMarket = document.getElementById('hostTabBtnMarket');
+  const tabBtnStage = document.getElementById('hostTabBtnStage');
+  if (tabBtnMarket) {
+    if (!isLocked) {
+      tabBtnMarket.innerHTML = '🔒 3. Live Market';
+      tabBtnMarket.style.opacity = '0.45';
+      tabBtnMarket.style.cursor = 'not-allowed';
+      tabBtnMarket.title = 'Event configuration must be locked first';
+    } else {
+      tabBtnMarket.innerHTML = '📈 3. Live Market';
+      tabBtnMarket.style.opacity = '1';
+      tabBtnMarket.style.cursor = 'pointer';
+      tabBtnMarket.title = '';
+    }
+  }
+  if (tabBtnStage) {
+    if (!isLocked) {
+      tabBtnStage.innerHTML = '🔒 4. Stage & Results';
+      tabBtnStage.style.opacity = '0.45';
+      tabBtnStage.style.cursor = 'not-allowed';
+      tabBtnStage.title = 'Event configuration must be locked first';
+    } else {
+      tabBtnStage.innerHTML = '🖥️ 4. Stage & Results';
+      tabBtnStage.style.opacity = '1';
+      tabBtnStage.style.cursor = 'pointer';
+      tabBtnStage.title = '';
+    }
+  }
+
+  // Auto-route away from market/stage to event setup if in draft mode
+  if (!isLocked && (activeHostTab === 'market' || activeHostTab === 'stage')) {
+    switchHostTab('event');
+  }
+
   // 4. Disable legacy #hostFlowActionsContainer injection so it never creates duplicate buttons
   const legacyFlowActions = document.getElementById('hostFlowActionsContainer');
   if (legacyFlowActions) legacyFlowActions.innerHTML = '';
@@ -10215,10 +10567,14 @@ function openCustomNewsModal() {
   select.innerHTML = `<option value="ALL">ALL COMPANIES (GLOBAL MACRO)</option>` +
     latestState.companies.map((c) => `<option value="${c.ticker}">${c.ticker} — ${c.name}</option>`).join('');
   document.getElementById('customNewsModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeCustomNewsModal() {
   document.getElementById('customNewsModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 document.getElementById('customNewsForm').addEventListener('submit', (e) => {
@@ -10255,10 +10611,14 @@ function openEventSettingsModal() {
   document.getElementById('settingStartingCash').value = g.startingCash || 500000;
   document.getElementById('settingFeeBps').value = g.transactionFeeBps || 0;
   document.getElementById('eventSettingsModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeEventSettingsModal() {
   document.getElementById('eventSettingsModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 document.getElementById('eventSettingsForm').addEventListener('submit', (e) => {
@@ -10299,10 +10659,14 @@ function openTeamSetupModal() {
   }
   renderTeamsSetupTable();
   document.getElementById('teamSetupModal').classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeTeamSetupModal() {
   document.getElementById('teamSetupModal').classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function generateTeamRows(count) {
@@ -10716,6 +11080,7 @@ function openBigBreakingNewsModal(news) {
   }
 
   modal.classList.remove('hidden');
+  syncBodyModalScrollLock();
 
   // Auto-countdown bar (15 seconds)
   if (bigNewsFlashInterval) clearInterval(bigNewsFlashInterval);
@@ -10747,6 +11112,7 @@ function dismissNewsFlash() {
   }
   const modal = document.getElementById('newsFlashModal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
 }
 
 function showNewsFlashModal(news) {
@@ -12012,11 +12378,15 @@ function openScheduleEventModal() {
   selectStartMode('SCHEDULED');
   setQuickScheduleMinutes(2);
   modal.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeScheduleEventModal() {
   const modal = document.getElementById('scheduleEventModal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 let currentScheduleMode = 'IMMEDIATE';
@@ -12234,11 +12604,15 @@ function openResetChampionshipModal() {
   if (input) input.value = '';
   if (btn) btn.disabled = true;
   if (modal) modal.classList.remove('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_open');
 }
 
 function closeResetChampionshipModal() {
   const modal = document.getElementById('resetChampionshipModal');
   if (modal) modal.classList.add('hidden');
+  syncBodyModalScrollLock();
+  playInstitutionalSound('modal_close');
 }
 
 function onResetInputChange(val) {
