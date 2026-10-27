@@ -1567,7 +1567,7 @@
     ]
   },
   "live_game_state_sample": {
-    "savedAt": "2026-10-27T10:13:24.451Z",
+    "savedAt": "2026-10-27T10:30:21.295Z",
     "activeScenarioMode": "live",
     "gameState": {
       "eventId": "EVT_1793090313673_WC92GI",
@@ -1589,7 +1589,7 @@
       "elapsedSeconds": 4,
       "isPaused": true,
       "pauseMode": "RECOVERY",
-      "pauseStartedAt": 1793095568046,
+      "pauseStartedAt": 1793096849169,
       "totalShiftOffsetSeconds": 0,
       "tickIntervalMs": 1500,
       "circuitBreakerPercent": 20,
@@ -72794,6 +72794,15 @@
       },
       {
         "token": "16d572ca21e3c2500a87f7d9e87cef92",
+        "role": "PROJECTOR",
+        "id": "PROJECTOR",
+        "name": "Main Stage Projector",
+        "username": "projector",
+        "members": "",
+        "lastOrderAt": 0
+      },
+      {
+        "token": "5b862a7640dd59de26d4981dee6eddb3",
         "role": "PROJECTOR",
         "id": "PROJECTOR",
         "name": "Main Stage Projector",

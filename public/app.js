@@ -3252,54 +3252,34 @@ function renderTraderDayCompletedLeaderboard(state) {
   const netWorthFormatted = formatINR(closingWorth);
   const retPct = `${retVal >= 0 ? '+' : ''}${retVal.toFixed(2)}%`;
 
-  container.innerHTML = `
-    <div style="background: #FFFFFF; border: 1.5px solid var(--podium-gold); border-radius: 12px; padding: 18px 20px; box-shadow: 0 4px 16px rgba(212, 175, 55, 0.15); margin-bottom: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--subtle-border); padding-bottom: 12px; margin-bottom: 14px;">
-        <div>
-          <div style="font-size: 11px; font-weight: 800; color: var(--champagne-accent); letter-spacing: 0.08em; text-transform: uppercase;">
-            CONFIDENTIAL DESK AUDIT
-          </div>
-          <div style="font-size: 18px; font-weight: 800; color: var(--text-forest); margin-top: 2px;">
-            ${escapeHtml(state.portfolio ? state.portfolio.name : `Team ${rank}`)}
-          </div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 900; color: #B45309; line-height: 1;">
-            #${rank}
-          </div>
-          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">
-            of ${totalTeams} Teams
-          </div>
-        </div>
-      </div>
+  const teamNameEl = document.getElementById('traderDeskAuditTeamName');
+  if (teamNameEl) teamNameEl.textContent = state.portfolio ? state.portfolio.name : (myTeam?.teamName || myTeam?.name || `Team ${rank}`);
 
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px;">
-        <div class="cream-panel" style="padding: 10px 12px;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Opening Worth</span>
-          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-charcoal);">${formatINR(dayOpenVal)}</span>
-        </div>
-        <div class="cream-panel" style="padding: 10px 12px;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Closing Worth</span>
-          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: var(--text-forest);">${netWorthFormatted}</span>
-        </div>
-        <div class="cream-panel" style="padding: 10px 12px;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Day Audited P&amp;L</span>
-          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800;" class="${intensity.textClass}">${pnlFormatted}</span>
-        </div>
-        <div class="cream-panel" style="padding: 10px 12px;">
-          <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Day Return</span>
-          <span style="font-family: var(--font-mono); font-size: 14px; font-weight: 800;" class="${intensity.textClass}">${retPct}</span>
-        </div>
-      </div>
+  const rankEl = document.getElementById('traderDayCompletedRank');
+  if (rankEl) rankEl.textContent = `#${rank}`;
 
-      <div style="background: rgba(63, 98, 146, 0.06); border: 1px dashed rgba(63, 98, 146, 0.35); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3F6292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-        <div style="font-size: 11px; color: var(--text-charcoal); line-height: 1.4;">
-          <strong>Auditorium Stage Notice:</strong> Complete tournament rankings and peer performance standings are broadcast live on the <strong>Main Stage Projector Display</strong> and Host Master Desk.
-        </div>
-      </div>
-    </div>
-  `;
+  const totalTeamsEl = document.getElementById('traderDayCompletedTotalTeams');
+  if (totalTeamsEl) totalTeamsEl.textContent = `of ${totalTeams} Teams`;
+
+  const openValEl = document.getElementById('traderDayCompletedOpenVal');
+  if (openValEl) openValEl.textContent = formatINR(dayOpenVal);
+
+  const netWorthEl = document.getElementById('traderDayCompletedNetWorth');
+  if (netWorthEl) netWorthEl.textContent = netWorthFormatted;
+
+  const pnlEl = document.getElementById('traderDayCompletedPnl');
+  if (pnlEl) {
+    pnlEl.textContent = pnlFormatted;
+    pnlEl.className = intensity.textClass;
+  }
+
+  const retEl = document.getElementById('traderDayCompletedReturn');
+  if (retEl) {
+    retEl.textContent = retPct;
+    retEl.className = intensity.textClass;
+  }
+
+  if (container) container.innerHTML = '';
 }
 
 let traderWaitingRoomTickerHandle = null;
@@ -4022,7 +4002,7 @@ function renderTraderView(state) {
     }
   });
 
-  // Render Market Wire Feed
+  // Render Breaking News Feed
   const newsList = document.getElementById('traderNewsList');
   if (!gameState.newsHistory || gameState.newsHistory.length === 0) {
     newsList.innerHTML = `<p style="font-size: 12px; color: var(--text-muted); font-style: italic; padding: 12px;">No market announcements released yet.</p>`;
@@ -4031,7 +4011,7 @@ function renderTraderView(state) {
       <div class="news-item">
         <div class="news-meta">
           <span>DAY ${n.day} &bull; 🕒 ${getNewsWireTime(n)}</span>
-          <span class="badge badge-champagne" style="font-size: 9px; padding: 1px 5px;">${n.type || 'NEWS WIRE'}</span>
+          <span class="badge badge-champagne" style="font-size: 9px; padding: 1px 5px;">${n.type || 'BREAKING NEWS'}</span>
         </div>
         <div class="news-headline">${escapeHtml(n.headline || '')}</div>
         <div class="news-explanation">${escapeHtml(n.simple_explanation || '')}</div>
@@ -5102,7 +5082,7 @@ function renderProjectorView(state) {
       SCENE_INDICES: 'MARKET INDICES',
       SCENE_STRATEGY: 'SECTOR STRATEGY',
       SCENE_LEADERBOARD: isDayCompleted ? `DAY ${gameState.currentDay} RESULTS` : 'LIVE STANDINGS',
-      SCENE_NEWS: 'BREAKING WIRES'
+      SCENE_NEWS: 'BREAKING NEWS'
     };
     const sName = sceneNames[activeScene] || activeScene;
     if (mode === 'AUTO_CYCLE' && !isDayCompleted) {
@@ -6546,7 +6526,7 @@ function renderProjectorLeaderboard(leaderboard, gameState, fullState) {
   `;
 }
 
-// Scene 5: Breaking Wire News Feed
+// Scene 5: Breaking News Feed
 function renderProjectorNews(newsHistory) {
   const container = document.getElementById('projSceneNews');
   if (!container) return;
@@ -6554,7 +6534,7 @@ function renderProjectorNews(newsHistory) {
   if (!newsHistory || newsHistory.length === 0) {
     container.innerHTML = `
       <div style="padding: 36px; text-align: center; color: var(--text-muted);">
-        No published wires yet. Live market monitoring in progress.
+        No published breaking news yet. Live market monitoring in progress.
       </div>
     `;
     return;
@@ -6563,7 +6543,7 @@ function renderProjectorNews(newsHistory) {
   container.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid var(--subtle-border); padding-bottom: 12px;">
       <h2 style="font-size: 22px; font-weight: 900; color: var(--text-forest); margin: 0; font-family: var(--font-serif);">
-        ⚡ Breaking Financial Wires &bull; Official Dispatch Archive
+        ⚡ Breaking Financial News &bull; Official Announcement Archive
       </h2>
       <span class="badge badge-champagne" style="font-size: 12px; font-weight: 800;">VERIFIED REUTERS/BLOOMBERG FORMAT</span>
     </div>
@@ -6573,10 +6553,10 @@ function renderProjectorNews(newsHistory) {
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="badge badge-champagne" style="font-size: 11px; font-weight: 800;">DAY ${item.day || 1}</span>
-              <span class="badge badge-outline" style="font-size: 11px; font-weight: 700;">${item.type || 'NEWS WIRE'}</span>
+              <span class="badge badge-outline" style="font-size: 11px; font-weight: 700;">${item.type || 'BREAKING NEWS'}</span>
             </div>
             <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-weight: 700;">
-              🕒 Wired at: ${getNewsWireTime(item)}
+              🕒 Published at: ${getNewsWireTime(item)}
             </span>
           </div>
           <h3 style="font-size: 17px; font-weight: 800; color: var(--text-forest); margin: 0 0 6px 0; line-height: 1.3;">
@@ -10971,7 +10951,7 @@ function showBreakingNewsToast(news) {
   const trafficBadge = document.getElementById('bannerTrafficBadge');
   const progressBar = document.getElementById('bannerProgressBar');
 
-  if (eventTypeEl) eventTypeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'} • 🕒 ${getNewsWireTime(news)}`;
+  if (eventTypeEl) eventTypeEl.textContent = `DAY ${news.day || 1} • ${news.type || 'BREAKING NEWS'} • 🕒 ${getNewsWireTime(news)}`;
   if (headlineEl) headlineEl.textContent = news.headline;
   if (expEl) expEl.textContent = news.simple_explanation || news.explanation || '';
 
@@ -11057,7 +11037,7 @@ function prepareFullNewsModal(news) {
   const mandateEl = document.getElementById('flashDeskMandate');
   const barEl = document.getElementById('flashCountdownBar');
 
-  if (evtEl) evtEl.textContent = `DAY ${news.day || 1} • ${news.type || 'MARKET WIRE'} • 🕒 ${getNewsWireTime(news)}`;
+  if (evtEl) evtEl.textContent = `DAY ${news.day || 1} • ${news.type || 'BREAKING NEWS'} • 🕒 ${getNewsWireTime(news)}`;
   if (headEl) headEl.textContent = news.headline;
   if (expEl) expEl.textContent = news.simple_explanation || news.explanation || '';
 
@@ -11138,7 +11118,7 @@ function openBigBreakingNewsModal(news) {
   const cdBar = document.getElementById('flashCountdownBar');
 
   if (badgeEl) {
-    badgeEl.textContent = news.trafficLightBadge || '🔴 BREAKING MARKET WIRE';
+    badgeEl.textContent = news.trafficLightBadge || '🔴 BREAKING NEWS';
     badgeEl.className = 'badge badge-halted';
   }
   if (typeEl) {
@@ -11475,9 +11455,9 @@ function updateHostNewsLiveTimers(state) {
         return !isTrig && !isCanc && evDay > currentDay;
       });
       if (futureWire) {
-        bannerEl.innerHTML = `All Day ${currentDay} wires triggered. Next wires scheduled for <strong>Day ${futureWire.day || (currentDay + 1)}</strong>.`;
+        bannerEl.innerHTML = `All Day ${currentDay} news triggered. Next news scheduled for <strong>Day ${futureWire.day || (currentDay + 1)}</strong>.`;
       } else {
-        bannerEl.innerHTML = `✅ All championship scheduled market wires concluded.`;
+        bannerEl.innerHTML = `✅ All championship scheduled breaking news concluded.`;
       }
     }
   }
@@ -11550,7 +11530,7 @@ function renderHostNews(state) {
     if (isCancelled) {
       initialBadge = '<span class="badge" style="background:#FEE2E2; color:#991B1B;">❌ CANCELLED</span>';
     } else if (isTriggered) {
-      initialBadge = `<span class="badge badge-active">🟢 WIRED AT ${getNewsWireTime(ev)}</span>`;
+      initialBadge = `<span class="badge badge-active">🟢 PUBLISHED AT ${getNewsWireTime(ev)}</span>`;
     } else if (evDay < currentDay) {
       initialBadge = `<span class="badge" style="background:#F3F4F6; color:#6B7280;">⚪ DAY ${evDay} CONCLUDED</span>`;
     } else if (evDay > currentDay) {
@@ -11592,7 +11572,7 @@ function renderHostNews(state) {
           <div style="display: flex; gap: 6px;">
             ${!isTriggered && !isCancelled ? `
               <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-sage" style="flex: 2; padding: 6px 10px; font-size: 11px; font-weight: 700;">
-                ⚡ Trigger Wire Now
+                ⚡ Trigger News Now
               </button>
               ${!isLocked ? `
                 <button onclick="hostCancelNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 8px; font-size: 11px; color: var(--error-red);">
@@ -11601,7 +11581,7 @@ function renderHostNews(state) {
               ` : ''}
             ` : `
               <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 10px; font-size: 11px;">
-                Re-Trigger Wire
+                Re-Trigger News
               </button>
             `}
             <button onclick="hostDuplicateNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="padding: 6px 8px; font-size: 11px;" title="Duplicate News Item">
@@ -11620,7 +11600,7 @@ function hostPublishNewsNow(eventId) {
   if (!ws || !sessionToken) return;
   // Server expects 'event_id' field name
   ws.send(JSON.stringify({ action: 'HOST_PUBLISH_NEWS_NOW', session_token: sessionToken, event_id: eventId }));
-  showOrderToast('⚡ News wire published! Price shock transmitted to all desks.', true);
+  showOrderToast('⚡ Breaking news published! Price shock transmitted to all desks.', true);
 }
 
 function hostCancelNews(eventId) {

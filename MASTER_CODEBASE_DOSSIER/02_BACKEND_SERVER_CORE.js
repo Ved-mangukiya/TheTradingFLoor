@@ -1170,11 +1170,11 @@ function triggerNewsEvent(eventObj, triggeredBy = 'SCHEDULE') {
   }
 
   let sentiment = 'NEUTRAL';
-  let trafficLightBadge = '📰 BREAKING WIRE • REGULATORY & INDUSTRY NOTICE';
+  let trafficLightBadge = '📰 BREAKING NEWS • REGULATORY & INDUSTRY NOTICE';
   if (eventObj.type === 'SECTOR') {
-    trafficLightBadge = '📰 SECTOR WIRE • INDUSTRY NOTIFICATION';
+    trafficLightBadge = '📰 SECTOR NEWS • INDUSTRY NOTIFICATION';
   } else if (eventObj.type === 'MACRO' || impacts.GLOBAL_WEIGHTED) {
-    trafficLightBadge = '📰 MACRO WIRE • MONETARY POLICY UPDATE';
+    trafficLightBadge = '📰 MACRO NEWS • MONETARY POLICY UPDATE';
   } else if (eventObj.type && eventObj.type.includes('RUMOR')) {
     trafficLightBadge = '📰 MARKET DESK • UNVERIFIED TRADING SPECULATION';
   } else if (eventObj.type && eventObj.type.includes('FACT_CHECK')) {
