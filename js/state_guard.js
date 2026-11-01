@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * CLIENT MONOTONIC STATE GUARD (public/js/state_guard.js)
  *
  * Prevents race conditions between HTTP polling fallbacks and WebSocket broadcasts (DEF-024).

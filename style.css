@@ -1,11 +1,36 @@
 /* ==========================================================================
-   THE TRADING FLOOR CHAMPIONSHIP 2026 — INSTITUTIONAL DESIGN SYSTEM
+   THE TRADING FLOOR CHAMPIONSHIP — INSTITUTIONAL DESIGN SYSTEM
    Theme: Premium White, Warm Ivory, and Pastel Luxury
    Offline-First Architecture (Zero CDN Dependency)
    ========================================================================== */
 
 /* 1. DESIGN TOKENS & SYSTEM VARIABLES */
 :root {
+  /* v4 Projector-Grade Card Stock Tokens */
+  --paper: #FFFDF9;
+  --paper-2: #EFE5CE;
+  --paper-3: #E4D7B8;
+  --edge: rgba(48, 34, 10, 0.34);
+  --edge-strong: rgba(22, 32, 46, 0.65);
+  --ink: #0A121E;
+  --ink-2: #253244;
+  --ink-3: #435166;
+  --gold-ink: #78530D;
+  --gold: #B88728;
+  --gold-hi: #F5E3A6;
+  --gold-lo: #684A10;
+  --navy: #0F2137;
+  --navy-2: #1E3A5F;
+  --green: #0F683C;
+  --green-bg: #E9F6EE;
+  --red: #B42318;
+  --red-bg: #FEECEB;
+  --amber: #9A4A06;
+  --amber-bg: #FEF3C7;
+  --g1: 18%;
+  --g2: 82%;
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+
   /* Core Luxury Ivory & Pastel Palette (Strictly Light / Pastel Luxury - Zero Dark Shell) */
   --bg-ivory: #F8F5EF;
   --body-gradient: radial-gradient(1200px 800px at 20% 0%, #FFFDF8 0%, #F8F5EF 55%, #F0E9DA 100%);
@@ -837,11 +862,11 @@ textarea.form-input {
 
 .projector-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 14px;
   flex: 1;
-  margin: 10px 0;
+  margin: 8px 0;
   min-height: 0;
   overflow: hidden;
   align-content: stretch;
@@ -851,13 +876,14 @@ textarea.form-input {
   background-color: #FFFFFF;
   border: 2px solid var(--card-border);
   border-radius: var(--radius-lg);
-  padding: 14px 18px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
   height: 100%;
   box-sizing: border-box;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -904,7 +930,7 @@ textarea.form-input {
 }
 
 .projector-ticker {
-  font-size: clamp(20px, 1.8vw, 28px);
+  font-size: clamp(18px, 1.55vw, 24px);
   font-weight: 900;
   color: var(--text-forest);
   line-height: 1.15;
@@ -917,7 +943,7 @@ textarea.form-input {
 
 .projector-price {
   font-family: var(--font-mono);
-  font-size: clamp(24px, 2.2vw, 36px);
+  font-size: clamp(20px, 1.85vw, 30px);
   font-weight: 900;
   line-height: 1.15;
   letter-spacing: -0.02em;
@@ -928,14 +954,22 @@ textarea.form-input {
 
 .projector-delta {
   font-family: var(--font-mono);
-  font-size: clamp(14px, 1.2vw, 17px);
+  font-size: clamp(12px, 1.05vw, 15px);
   font-weight: 800;
   white-space: nowrap;
   line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.projector-52w-strip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .projector-sector {
-  font-size: clamp(11px, 1vw, 13px);
+  font-size: clamp(10px, 0.9vw, 12px);
   color: var(--text-muted);
   font-weight: 700;
   white-space: nowrap;
@@ -2201,7 +2235,7 @@ th.th-wrap {
   border-radius: 20px;
   padding: 44px 32px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-  animation: pulseGently 3s ease-in-out infinite;
+  /* Static card stock - zero continuous repaints */
 }
 
 @keyframes pulseGently {
@@ -2209,13 +2243,11 @@ th.th-wrap {
   50% { transform: scale(1.015); }
 }
 
-/* 17.3 Normal Soft Pause Overlay (Trading Frozen Banner) */
+/* 17.3 Normal Soft Pause Overlay (Trading Frozen Banner - GPU Optimized) */
 .soft-pause-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(26, 48, 38, 0.55);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background-color: rgba(10, 18, 30, 0.88);
   z-index: 9980;
   display: flex;
   align-items: center;
@@ -2873,120 +2905,7 @@ th.th-wrap {
   }
 }
 
-/* ==========================================
-   EXECUTIVE INTERACTIVE SHOWCASE (HOD PREVIEW)
-   ========================================== */
-.ttf-demo-banner {
-  position: sticky;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 99999;
-  background: linear-gradient(135deg, #14352B 0%, #0E251E 100%);
-  color: #FFFFFF;
-  border-bottom: 2px solid var(--podium-gold);
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-}
-
-.btn-demo-pill {
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: #E2E8F0;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.btn-demo-pill:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: var(--podium-gold);
-  color: #FFFFFF;
-  transform: translateY(-1px);
-}
-
-.btn-demo-pill.active {
-  background: var(--podium-gold);
-  color: #1E293B;
-  border-color: var(--podium-gold);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-}
-
-/* ==============================================================================
-   INSTITUTIONAL CHARTING ENGINE SUPPORT STYLES (WARM IVORY LUXURY THEME)
-   ============================================================================== */
-:root {
-  --tf-bg: #FBF9F5;
-  --tf-cream: #F4EFE6;
-  --tf-white: #FFFFFF;
-  --tf-grid: #E6DEC9;
-  --tf-text: #1A3026;
-  --tf-gold: #8E6D3B;
-  --tf-up: #218653;
-  --tf-up-glow: rgba(33, 134, 83, 0.12);
-  --tf-down: #C64B4B;
-  --tf-down-glow: rgba(198, 75, 75, 0.12);
-  --tf-mono: 'Courier New', Consolas, monospace;
-}
-
-.tf-mono { font-family: var(--tf-mono); font-variant-numeric: tabular-nums; }
-.tf-up   { color: var(--tf-up); }
-.tf-down { color: var(--tf-down); }
-
-/* Canvas defaults */
-.tf-chart-canvas { display: block; max-width: 100%; touch-action: pan-y; }
-.tf-chart-canvas--main { cursor: crosshair; }
-
-/* Containers */
-.tf-chart-wrap {
-  position: relative; width: 100%;
-  background: var(--tf-white); border: 1px solid var(--tf-grid); border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(26, 48, 38, 0.06);
-}
-
-/* Stock card with mini sparkline */
-.tf-stock-card {
-  background: var(--tf-cream); border: 1px solid var(--tf-grid); border-radius: 12px;
-  padding: 12px 14px; color: var(--tf-text); cursor: pointer;
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-}
-.tf-stock-card:hover { transform: translateY(-2px); border-color: var(--tf-gold); box-shadow: 0 8px 20px rgba(142, 109, 59, 0.14); }
-.tf-stock-card .tf-ticker { font-weight: 700; letter-spacing: .04em; }
-.tf-stock-card .tf-price  { font-family: var(--tf-mono); font-size: 1.15rem; font-weight: 700; }
-.tf-stock-card canvas { width: 100%; height: 60px; }
-
-/* Chart modal */
-.tf-chart-modal {
-  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-  background: rgba(26, 48, 38, 0.45); backdrop-filter: blur(3px); z-index: 1000; padding: 20px;
-}
-.tf-chart-modal.is-open { display: flex; }
-.tf-chart-modal__panel {
-  background: var(--tf-bg); border: 1px solid var(--tf-grid); border-radius: 16px;
-  width: min(880px, 100%); padding: 20px; color: var(--tf-text);
-}
-
-/* P&L chips */
-.tf-chip {
-  display: inline-block; padding: 3px 10px; border-radius: 999px;
-  font: 700 .75rem var(--tf-mono); letter-spacing: .04em;
-}
-.tf-chip--profit   { background: var(--tf-up-glow);   color: var(--tf-up); }
-.tf-chip--drawdown { background: var(--tf-down-glow); color: var(--tf-down); }
-.tf-chip--halted   { background: var(--tf-down); color: #fff; animation: tf-blink 1s steps(2, end) infinite; }
-@keyframes tf-blink { 50% { opacity: .55; } }
+/* Demo showcase CSS purged */
 
 /* Projector: large, high-contrast variant (50 ft viewing) */
 .tf-projector .tf-stock-card { padding: 18px 20px; }
@@ -2998,7 +2917,7 @@ th.th-wrap {
 }
 
 /* ==========================================================================
-   PAPER TRADING CARDS INSPIRATION & ADVANCED TRADER FILTERS (2026 UPGRADE)
+   PAPER TRADING CARDS INSPIRATION & ADVANCED TRADER FILTERS (PLATFORM UPGRADE)
    ========================================================================== */
 .trader-chip {
   border: 1px solid var(--subtle-border);
@@ -3090,10 +3009,9 @@ th.th-wrap {
   font-weight: 700;
 }
 
-
 /* ==========================================================================
    RESPONSIVE DESIGN ENHANCEMENTS - Mobile First & Projector 4:3 Optimization
-   Added: 2026-10-17 - Comprehensive responsive fixes
+   Comprehensive institutional responsive styling
    ========================================================================== */
 
 /* ========== MOBILE FIRST - BASE (320px+) ========== */
@@ -3701,7 +3619,7 @@ th.th-wrap {
 
 /* ==========================================
    P1/P2 UX IMPROVEMENTS - LOADING STATES & EMPTY STATES
-   Added: October 17, 2026
+   Institutional UX Enhancements
    ========================================== */
 
 /* Button Loading State */
@@ -5198,6 +5116,725 @@ th.th-wrap {
   border: 1.5px solid #FDE68A;
 }
 
+/* ==========================================================================
+   V4 PROJECTOR-GRADE CARD-STOCK LUXURY DESIGN SYSTEM (PHASE 1 + PHASE 2)
+   WCAG AAA Contrast • Security Guilloche • 64-Point Foil Seal • Dotted Ledgers
+   Zero-Scroll 1366x768 & 1080p Modal Guarantee • True 4x2 Projector Grid
+   ========================================================================== */
+
+@property --g1 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 18%;
+}
+
+@property --g2 {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 82%;
+}
+
+:root {
+  --paper: #FFFDF9;
+  --paper-2: #EFE5CE;
+  --paper-3: #E4D7B8;
+  --edge: rgba(48, 34, 10, 0.34);
+  --edge-strong: rgba(22, 32, 46, 0.65);
+
+  /* High-Contrast WCAG AAA Inks */
+  --ink: #0A121E;        /* 18.2:1 contrast on ivory */
+  --ink-2: #253244;      /* 11.4:1 contrast on ivory */
+  --ink-3: #435166;      /* 7.6:1 contrast on ivory */
+
+  /* Deep British Navy & Dual Gold System */
+  --navy: #0F2137;
+  --navy-2: #1E3A5F;
+  --gold-ink: #78530D;   /* 6.4:1 contrast on ivory paper */
+  --gold: #B88728;
+  --gold-hi: #F5E3A6;
+  --gold-lo: #684A10;
+
+  /* High-Luminance Projector Semantic Signals */
+  --green: #0F683C;
+  --green-bg: #DCFCE7;
+  --green-border: rgba(15, 104, 60, 0.38);
+  --red: #B42318;
+  --red-bg: #FEE2E2;
+  --amber: #9A4A06;
+  --amber-bg: #FEF3C7;
+  --amber-border: rgba(154, 74, 6, 0.40);
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .30 0 0 0 0 .22 0 0 0 0 .10 0 0 0 .55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* ---------- 1. PHYSICAL CARD-STOCK SURFACES (.luxury-card-stock & .paper) ---------- */
+.luxury-card-stock,
+.v4-card-paper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--paper) 50%, #F6EFE0 100%);
+  border: 1.5px solid var(--edge);
+  transform: perspective(1200px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+  transform-style: flat;
+  will-change: transform;
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    0 0 0 1px rgba(255, 255, 255, 0.8),
+    0 4px 14px rgba(20, 14, 4, 0.10),
+    0 22px 48px -12px rgba(20, 14, 4, 0.28);
+  transition: box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
+}
+
+.luxury-card-stock::before,
+.v4-card-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: var(--grain);
+  opacity: 0.24;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.luxury-card-stock > *,
+.v4-card-paper > * {
+  position: relative;
+  z-index: 2;
+}
+
+@media (hover: hover) {
+  .luxury-card-stock:hover,
+  .v4-card-paper:hover {
+    box-shadow:
+      inset 0 1px 0 #FFFFFF,
+      0 0 0 1.5px var(--gold),
+      0 8px 24px rgba(184, 135, 40, 0.18),
+      0 28px 56px -12px rgba(20, 14, 4, 0.36);
+  }
+}
+
+/* Obsidian Dark Variant for Blackout (#blackoutOverlay) & Countdown (#countdownOverlay) */
+.luxury-card-stock.obsidian {
+  background: linear-gradient(180deg, #132238 0%, #0A121E 55%, #070D16 100%) !important;
+  border: 2px solid rgba(245, 227, 166, 0.55) !important;
+  color: #F8FAFC !important;
+  box-shadow:
+    inset 0 1px 0 rgba(245, 227, 166, 0.35),
+    0 0 0 2px rgba(245, 227, 166, 0.55),
+    0 24px 48px -12px rgba(0, 0, 0, 0.75) !important;
+}
+
+.luxury-card-stock.obsidian h1,
+.luxury-card-stock.obsidian h2,
+.luxury-card-stock.obsidian h3 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- 2. SECURITY GUILLOCHE HEADER BAND (.guil) & SHEEN ---------- */
+.guil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 92px;
+  z-index: 1 !important;
+  pointer-events: none;
+  background:
+    repeating-radial-gradient(circle at var(--g1, 18%) 135%, transparent 0 5px, rgba(140, 98, 20, 0.45) 5px 6px),
+    repeating-radial-gradient(circle at var(--g2, 82%) -35%, transparent 0 5px, rgba(15, 33, 55, 0.28) 5px 6px);
+  -webkit-mask: linear-gradient(#000 18%, transparent);
+  mask: linear-gradient(#000 18%, transparent);
+  animation: guilShift 16s ease-in-out infinite alternate;
+}
+
+.luxury-card-stock.obsidian .guil {
+  background:
+    repeating-radial-gradient(circle at var(--g1, 18%) 135%, transparent 0 5px, rgba(245, 227, 166, 0.34) 5px 6px),
+    repeating-radial-gradient(circle at var(--g2, 82%) -35%, transparent 0 5px, rgba(56, 189, 248, 0.20) 5px 6px);
+}
+
+@keyframes guilShift {
+  to {
+    --g1: 36%;
+    --g2: 64%;
+  }
+}
+
+.v4-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 1 !important;
+  pointer-events: none;
+  background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 30%), rgba(255, 251, 236, 0.45), transparent 55%);
+}
+
+/* ---------- 3. MONOGRAM CREST & 64-POINT METALLIC FOIL SEAL ---------- */
+.crest-gold,
+.v4-crest {
+  position: relative;
+  overflow: hidden;
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  display: inline-grid;
+  place-items: center;
+  font: 700 20px var(--font-serif);
+  letter-spacing: 0.03em;
+  color: var(--gold-hi);
+  background: linear-gradient(145deg, var(--navy-2), var(--navy));
+  margin: 0 auto 12px auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 0 0 1.5px rgba(245, 227, 166, 0.65),
+    0 8px 14px -6px rgba(15, 33, 55, 0.65);
+}
+
+.crest-gold::after,
+.v4-crest::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.45) 50%, transparent 60%);
+  transform: translateX(-100%);
+  animation: crestSweep 5s ease-in-out 1s infinite;
+}
+
+@keyframes crestSweep {
+  to { transform: translateX(100%); }
+}
+
+.seal-wrap {
+  position: relative;
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 10px auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  filter: drop-shadow(0 8px 12px rgba(60, 40, 5, 0.34));
+}
+
+.seal {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  clip-path: var(--seal-clip, none);
+  background: conic-gradient(from calc(var(--ry, 0) * 8deg + 30deg), #F5E3A6, #B88728, #684A10, #F5E3A6, #B88728, #FFF6D6, #7E5A14, #F5E3A6);
+}
+
+.seal::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #FBF0C4, #D4AE58 55%, #9B7120);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.8),
+    inset 0 -3px 6px rgba(70, 48, 8, 0.55),
+    0 0 0 1.5px rgba(95, 66, 12, 0.65);
+}
+
+.seal-wrap svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.seal-wrap .eng text {
+  font: 800 7.4px var(--font-sans);
+  letter-spacing: 0.18em;
+  fill: #4D3508;
+}
+
+.seal-wrap .rim {
+  fill: none;
+  stroke: rgba(77, 53, 8, 0.65);
+  stroke-width: 1;
+}
+
+.seal-wrap .monoT {
+  font: 700 20px var(--font-serif);
+  fill: #4D3508;
+}
+
+/* ---------- 4. LETTERPRESS DOTTED FINANCIAL LEDGER & MONEY BAR ---------- */
+.v4-ledger {
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.v4-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.v4-line span {
+  white-space: nowrap;
+}
+.v4-line .op {
+  width: 12px;
+  color: var(--gold-ink);
+  font-weight: 800;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.v4-line .dots {
+  flex: 1;
+  min-width: 10px;
+  border-bottom: 2px dotted rgba(10, 18, 30, 0.34);
+}
+.v4-line b {
+  font: 700 13px var(--font-mono);
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.v4-line .op {
+  width: 14px;
+  color: var(--gold-ink);
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.v4-line .dots {
+  flex: 1;
+  border-bottom: 2px dotted rgba(10, 18, 30, 0.34);
+}
+
+.luxury-card-stock.obsidian .v4-line {
+  color: #CBD5E1;
+}
+
+.luxury-card-stock.obsidian .v4-line .dots {
+  border-bottom-color: rgba(245, 227, 166, 0.35);
+}
+
+.v4-line b {
+  font: 700 14px var(--font-mono);
+  color: var(--ink);
+}
+
+.luxury-card-stock.obsidian .v4-line b {
+  color: #FFFFFF;
+}
+
+.v4-line.plus b {
+  color: var(--green);
+}
+
+.v4-rule {
+  height: 1.5px;
+  background: var(--ink);
+  margin: 4px 0;
+}
+
+.luxury-card-stock.obsidian .v4-rule {
+  background: rgba(245, 227, 166, 0.5);
+}
+
+.v4-mtrack {
+  display: flex;
+  height: 9px;
+  border-radius: 5px;
+  background: #DFD5BE;
+  border: 1px solid rgba(48, 34, 10, 0.25);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.v4-seg-base {
+  height: 100%;
+  background: linear-gradient(180deg, var(--navy-2), var(--navy));
+  transition: width 0.25s ease;
+}
+
+.v4-seg-gain {
+  height: 100%;
+  background: linear-gradient(180deg, #188650, var(--green));
+  transition: width 0.25s ease;
+}
+
+/* ---------- 5. TRADER STOCK CARDS & ALIGNED 2-COLUMN TRADE COCKPIT ---------- */
+.stock-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--paper) 55%, #F6EFE0 100%);
+  border: 1.5px solid var(--edge);
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 4px 14px rgba(20, 14, 4, 0.07);
+}
+
+.trade-modal-cockpit {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  align-items: stretch !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  max-width: 100% !important;
+}
+
+.trade-col-left,
+.trade-col-right {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  height: 100% !important;
+  gap: 10px !important;
+}
+
+.trade-box-market,
+.trade-box-ledger {
+  padding: 12px 15px !important;
+  border: 1.5px solid var(--edge) !important;
+  border-radius: 12px !important;
+  background: var(--paper) !important;
+  box-shadow: inset 0 1px 0 #FFFFFF;
+}
+
+.trade-validation-panel {
+  margin-top: auto !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+  min-height: 52px !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+.trade-stepper-wrap {
+  background: var(--paper);
+  border: 1.5px solid var(--edge);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.trade-stepper-bar {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--edge);
+  border-radius: 8px;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.stepper-btn {
+  border: none;
+  background: var(--paper-2);
+  width: 44px;
+  height: 40px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stepper-btn:hover:not(:disabled) {
+  background: var(--paper-3);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepper-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 800;
+  outline: none;
+  color: var(--ink);
+}
+
+.trade-presets-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quick-add-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+}
+
+.shortcuts-grid .trade-pill.good,
+.shortcuts-grid .trade-pill.danger {
+  grid-column: span 1 !important;
+}
+
+.trade-pill {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trade-action-wrap {
+  margin-top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+}
+
+.trade-submit-btn {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 14px rgba(15, 104, 60, 0.25) !important;
+}
+
+.trade-shortcut-hint {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* ---------- 6. PROJECTOR 8-CARD 4x2 GRID & BANNERS ---------- */
+#projectorView,
+.projector-container,
+.tf-projector,
+#projectorView *,
+.projector-container * {
+  cursor: none !important;
+}
+
+.projector-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  flex: 1 !important;
+  margin: 8px 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-content: stretch !important;
+}
+
+.projector-card {
+  position: relative;
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--paper) 60%, #F6EFE0 100%) !important;
+  border: 2px solid var(--edge) !important;
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 4px 12px rgba(20, 14, 4, 0.08) !important;
+  overflow: hidden !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+.projector-rank-badge {
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  color: var(--gold-hi) !important;
+  background: linear-gradient(145deg, var(--navy-2), var(--navy)) !important;
+  border: 1px solid rgba(245, 227, 166, 0.55) !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+}
+
+/* ---------- 7. ZERO-SCROLL COMPACT LAPTOP TUNING (1366x768) ---------- */
+@media (max-height: 820px) {
+  .seal-wrap {
+    width: 72px !important;
+    height: 72px !important;
+    margin: 6px auto !important;
+  }
+  .countdown-seal-ring {
+    width: 104px !important;
+    height: 104px !important;
+    margin: 8px auto 12px auto !important;
+  }
+  #countdownNumber {
+    font-size: 64px !important;
+  }
+  #waitingRoomTimerDisplay {
+    font-size: 40px !important;
+  }
+  .luxury-card-stock {
+    padding: 22px 24px !important;
+  }
+}
+
+/* Status Badges */
+.badge-gold-foil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FEF9E7;
+  color: var(--gold-ink);
+  border: 1.5px solid rgba(184, 135, 40, 0.45);
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 6px;
+}
+
+.badge-desk-armed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1.5px solid var(--green-border);
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 6px;
+}
+
+.dot-pulse-green {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulseGreenDot 2s infinite;
+}
+
+@keyframes pulseGreenDot {
+  0% { box-shadow: 0 0 0 0 rgba(15, 104, 60, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(15, 104, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(15, 104, 60, 0); }
+}
+
+/* Modal Close Button & Zero-Overlap Guarantee */
+.modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid var(--subtle-border) !important;
+  padding-bottom: 14px !important;
+  margin-bottom: 16px !important;
+  gap: 16px !important;
+  position: relative !important;
+}
+
+.modal-close-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid var(--subtle-border) !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: var(--text-muted) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+  margin-left: auto !important;
+}
+
+.modal-close-btn:hover {
+  background: #FEE2E2 !important;
+  color: #991B1B !important;
+  border-color: #FCA5A5 !important;
+}
+
+.news-reader-card .modal-close-btn {
+  position: relative !important;
+  margin-left: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Fast, Instant Overlays (Zero Lag on Pause / Blackout) */
+.soft-pause-overlay,
+.blackout-overlay,
+.modal-overlay {
+  transition: none !important;
+}
+
+/* Floating Circuit Breaker Alert HUD Island (Single Alert Invariant) */
+.circuit-alert-banner {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 100050 !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+}
 
 
+/* Authoritative Toast Notice Positioning: Top-Right Anchor Eliminates All Bottom Overlaps */
+.toast-notice {
+  position: fixed !important;
+  top: 24px !important;
+  right: 24px !important;
+  bottom: auto !important;
+  z-index: 100060 !important;
+  box-shadow: 0 12px 36px rgba(10, 18, 30, 0.22) !important;
+}
 
+/* Modal and Ledger Text Alignment Guard (Zero Text Wrapping on Amounts) */
+#tradeModal .modal-content {
+  max-width: 820px !important;
+  width: 95% !important;
+}
+.trade-col-left .v4-line {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  padding: 4px 0 !important;
+  flex-wrap: nowrap !important;
+}
+.trade-col-left .v4-line span {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+.trade-col-left .v4-line .dots {
+  flex: 1 !important;
+  min-width: 6px !important;
+  border-bottom: 2px dotted rgba(10, 18, 30, 0.28) !important;
+}
+.trade-col-left .v4-line b {
+  font: 700 13.5px var(--font-mono) !important;
+  color: var(--ink) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
