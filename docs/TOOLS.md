@@ -28,7 +28,7 @@ This guide covers the system requirements, development tools, browser support, a
 ### 2.1 1-Click Windows Launchers
 Located in the repository root for streamlined event operations:
 - **`Launch_The_Trading_Floor.bat`**: Master championship desktop launcher. Detects portable or system Node.js, installs dependencies, resolves local LAN IP, starts the authoritative server in live event mode, and automatically opens the Host Operations Desk.
-- **`Create_Live_Demo_Link.bat`**: Generates an instant public HTTPS link via Cloudflare Tunnel (`npx untun`) for live remote presentations to HOD and faculty on their phones or laptops.
+- **`Launch_The_Trading_Floor.bat`**: Generates an instant public HTTPS link via Cloudflare Tunnel (`npx untun`) for live remote presentations to HOD and faculty on their phones or laptops.
 - **`Pack_Portable_USB_Zip.bat`**: Packages the entire project, including offline documentation and portable tools, into a clean standalone ZIP archive for tournament-day USB drives.
 
 ### 2.2 Developer NPM Scripts

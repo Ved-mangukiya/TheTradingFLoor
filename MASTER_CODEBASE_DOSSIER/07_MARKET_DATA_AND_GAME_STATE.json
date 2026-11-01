@@ -1,0 +1,1799 @@
+{
+  "_description": "Active simulation universe, scenario news schedule, and baseline schemas",
+  "universe_active": [
+    {
+      "ticker": "RELIANCE",
+      "name": "Reliance Industries",
+      "sector": "Energy & Conglomerate",
+      "base_price": 2950,
+      "lot_presets": [
+        1,
+        5,
+        10
+      ],
+      "beta": 1.05,
+      "volatility_factor": 0.0022,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹19.95 Lakh Cr",
+        "pe_ratio": 26.8,
+        "high_52w": 4341.21,
+        "low_52w": 2220.3,
+        "face_value": 10,
+        "debt_to_equity": 0.38,
+        "dividend_yield": "0.35%",
+        "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes.",
+        "industry": "Oil Refining, Telecom & Retail",
+        "roe": "14.2%",
+        "roce": "16.8%",
+        "book_value": "₹1,180",
+        "promoter_holding": "50.3%"
+      }
+    },
+    {
+      "ticker": "TATAMOTORS",
+      "name": "Tata Motors Passenger & Commercial",
+      "sector": "Automobile",
+      "base_price": 980,
+      "lot_presets": [
+        5,
+        15,
+        30
+      ],
+      "beta": 1.4,
+      "volatility_factor": 0.0035,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹3.62 Lakh Cr",
+        "pe_ratio": 16.4,
+        "high_52w": 1328.51,
+        "low_52w": 620.5,
+        "face_value": 2,
+        "debt_to_equity": 1.15,
+        "dividend_yield": "0.62%",
+        "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover.",
+        "industry": "Automotive & Commercial Vehicles",
+        "roe": "32.5%",
+        "roce": "24.1%",
+        "book_value": "₹245",
+        "promoter_holding": "46.4%"
+      }
+    },
+    {
+      "ticker": "MARUTI",
+      "name": "Maruti Suzuki India",
+      "sector": "Automobile",
+      "base_price": 12400,
+      "lot_presets": [
+        1,
+        2,
+        5
+      ],
+      "beta": 0.85,
+      "volatility_factor": 0.0018,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹3.90 Lakh Cr",
+        "pe_ratio": 28.2,
+        "high_52w": 15446.95,
+        "low_52w": 9700,
+        "face_value": 5,
+        "debt_to_equity": 0.01,
+        "dividend_yield": "1.05%",
+        "summary": "Undisputed leader in Indian passenger vehicle market commanding >40% market share with zero net debt.",
+        "industry": "Passenger Vehicles & Utility Cars",
+        "roe": "17.4%",
+        "roce": "22.6%",
+        "book_value": "₹2,680",
+        "promoter_holding": "58.2%"
+      }
+    },
+    {
+      "ticker": "M&M",
+      "name": "Mahindra & Mahindra",
+      "sector": "Automobile",
+      "base_price": 2850,
+      "lot_presets": [
+        2,
+        5,
+        10
+      ],
+      "beta": 1.15,
+      "volatility_factor": 0.0028,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹3.54 Lakh Cr",
+        "pe_ratio": 29.8,
+        "high_52w": 3221.43,
+        "low_52w": 1450,
+        "face_value": 5,
+        "debt_to_equity": 0.12,
+        "dividend_yield": "0.72%",
+        "summary": "Dominant SUV and agricultural tractor titan with rapidly expanding electric SUV pipeline and high return on capital.",
+        "industry": "Automotive SUVs & Farm Equipment",
+        "roe": "21.6%",
+        "roce": "23.4%",
+        "book_value": "₹520",
+        "promoter_holding": "19.3%"
+      }
+    },
+    {
+      "ticker": "TCS",
+      "name": "Tata Consultancy Services",
+      "sector": "IT & Tech",
+      "base_price": 4150,
+      "lot_presets": [
+        2,
+        5,
+        10
+      ],
+      "beta": 0.65,
+      "volatility_factor": 0.0015,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹15.02 Lakh Cr",
+        "pe_ratio": 31.4,
+        "high_52w": 4585,
+        "low_52w": 3310,
+        "face_value": 1,
+        "debt_to_equity": 0,
+        "dividend_yield": "2.85%",
+        "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios.",
+        "industry": "IT Consulting & Enterprise Software",
+        "roe": "51.2%",
+        "roce": "65.4%",
+        "book_value": "₹285",
+        "promoter_holding": "71.8%"
+      }
+    },
+    {
+      "ticker": "INFY",
+      "name": "Infosys",
+      "sector": "IT & Tech",
+      "base_price": 1880,
+      "lot_presets": [
+        5,
+        10,
+        25
+      ],
+      "beta": 1.1,
+      "volatility_factor": 0.0026,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹7.82 Lakh Cr",
+        "pe_ratio": 27.9,
+        "high_52w": 2212.83,
+        "low_52w": 1358,
+        "face_value": 5,
+        "debt_to_equity": 0.05,
+        "dividend_yield": "2.20%",
+        "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe.",
+        "industry": "IT Services & Cloud Solutions",
+        "roe": "31.8%",
+        "roce": "41.2%",
+        "book_value": "₹212",
+        "promoter_holding": "14.7%"
+      }
+    },
+    {
+      "ticker": "HDFCBANK",
+      "name": "HDFC Bank",
+      "sector": "Banking",
+      "base_price": 1680,
+      "lot_presets": [
+        5,
+        10,
+        20
+      ],
+      "beta": 0.95,
+      "volatility_factor": 0.002,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹12.85 Lakh Cr",
+        "pe_ratio": 19.2,
+        "high_52w": 1810.51,
+        "low_52w": 1363,
+        "face_value": 1,
+        "debt_to_equity": 6.8,
+        "dividend_yield": "1.22%",
+        "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach.",
+        "industry": "Private Sector Banking",
+        "roe": "16.8%",
+        "roce": "14.5%",
+        "book_value": "₹595",
+        "promoter_holding": "0.0% (Widely Held)"
+      }
+    },
+    {
+      "ticker": "ICICIBANK",
+      "name": "ICICI Bank",
+      "sector": "Banking",
+      "base_price": 1240,
+      "lot_presets": [
+        5,
+        15,
+        30
+      ],
+      "beta": 1.1,
+      "volatility_factor": 0.0024,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹8.72 Lakh Cr",
+        "pe_ratio": 17.5,
+        "high_52w": 1566.78,
+        "low_52w": 910,
+        "face_value": 2,
+        "debt_to_equity": 5.9,
+        "dividend_yield": "0.95%",
+        "summary": "Fastest growing large private lender known for industry-leading net interest margins and prudent risk underwriting.",
+        "industry": "Private Sector Banking",
+        "roe": "18.9%",
+        "roce": "15.8%",
+        "book_value": "₹385",
+        "promoter_holding": "0.0% (Widely Held)"
+      }
+    },
+    {
+      "ticker": "SBIN",
+      "name": "State Bank of India",
+      "sector": "Banking",
+      "base_price": 820,
+      "lot_presets": [
+        10,
+        25,
+        50
+      ],
+      "beta": 1.25,
+      "volatility_factor": 0.003,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹7.32 Lakh Cr",
+        "pe_ratio": 11.2,
+        "high_52w": 912,
+        "low_52w": 555,
+        "face_value": 1,
+        "debt_to_equity": 9.2,
+        "dividend_yield": "1.70%",
+        "summary": "Nation's largest public sector banking pillar commanding approximately one-fourth of entire Indian banking credit and deposits.",
+        "industry": "Public Sector Banking",
+        "roe": "17.2%",
+        "roce": "13.4%",
+        "book_value": "₹465",
+        "promoter_holding": "57.5%"
+      }
+    },
+    {
+      "ticker": "BAJFINANCE",
+      "name": "Bajaj Finance",
+      "sector": "Banking",
+      "base_price": 7200,
+      "lot_presets": [
+        1,
+        3,
+        5
+      ],
+      "beta": 1.5,
+      "volatility_factor": 0.0038,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹4.45 Lakh Cr",
+        "pe_ratio": 31.8,
+        "high_52w": 8190,
+        "low_52w": 5820.69,
+        "face_value": 2,
+        "debt_to_equity": 3.6,
+        "dividend_yield": "0.52%",
+        "summary": "India's highest valuation consumer non-banking lender with massive omnichannel customer acquisition and fintech franchise.",
+        "industry": "Consumer Non-Banking Finance (NBFC)",
+        "roe": "22.4%",
+        "roce": "20.1%",
+        "book_value": "₹1,420",
+        "promoter_holding": "54.8%"
+      }
+    },
+    {
+      "ticker": "LT",
+      "name": "Larsen & Toubro",
+      "sector": "Infrastructure",
+      "base_price": 3600,
+      "lot_presets": [
+        2,
+        5,
+        10
+      ],
+      "beta": 1.05,
+      "volatility_factor": 0.0025,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹4.95 Lakh Cr",
+        "pe_ratio": 34.6,
+        "high_52w": 4449.65,
+        "low_52w": 2860,
+        "face_value": 2,
+        "debt_to_equity": 0.7,
+        "dividend_yield": "1.02%",
+        "summary": "Pinnacle engineering, construction, and defence conglomerate with record order book spanning domestic metro, rail, and West Asian energy plants.",
+        "industry": "Infrastructure Engineering & EPC",
+        "roe": "15.5%",
+        "roce": "18.2%",
+        "book_value": "₹680",
+        "promoter_holding": "0.0% (Institutionally Held)"
+      }
+    },
+    {
+      "ticker": "AIRTEL",
+      "name": "Bharti Airtel",
+      "sector": "Telecom",
+      "base_price": 1550,
+      "lot_presets": [
+        5,
+        10,
+        20
+      ],
+      "beta": 0.8,
+      "volatility_factor": 0.002,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹9.12 Lakh Cr",
+        "pe_ratio": 48,
+        "high_52w": 1780,
+        "low_52w": 915,
+        "face_value": 5,
+        "debt_to_equity": 1.9,
+        "dividend_yield": "0.55%",
+        "summary": "Leading telecommunications network operator across India and Africa with highest industry Average Revenue Per User (ARPU).",
+        "industry": "Telecommunications & Cloud Services",
+        "roe": "19.8%",
+        "roce": "17.4%",
+        "book_value": "₹185",
+        "promoter_holding": "53.2%"
+      }
+    },
+    {
+      "ticker": "ITC",
+      "name": "ITC Limited",
+      "sector": "FMCG",
+      "base_price": 490,
+      "lot_presets": [
+        10,
+        25,
+        50
+      ],
+      "beta": 0.6,
+      "volatility_factor": 0.0016,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": true,
+      "fundamentals": {
+        "market_cap": "₹6.15 Lakh Cr",
+        "pe_ratio": 28.5,
+        "high_52w": 528,
+        "low_52w": 399,
+        "face_value": 1,
+        "debt_to_equity": 0,
+        "dividend_yield": "2.95%",
+        "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout.",
+        "industry": "FMCG, Cigarettes, Hotels & Agri",
+        "roe": "29.4%",
+        "roce": "38.6%",
+        "book_value": "₹65",
+        "promoter_holding": "0.0% (Widely Held / BAT)"
+      }
+    },
+    {
+      "ticker": "HINDUNILVR",
+      "name": "Hindustan Unilever",
+      "sector": "FMCG",
+      "base_price": 2750,
+      "lot_presets": [
+        2,
+        5,
+        10
+      ],
+      "beta": 0.55,
+      "volatility_factor": 0.0015,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹6.48 Lakh Cr",
+        "pe_ratio": 58.2,
+        "high_52w": 3035,
+        "low_52w": 2170,
+        "face_value": 1,
+        "debt_to_equity": 0.02,
+        "dividend_yield": "1.65%",
+        "summary": "Premier FMCG brand owner present in 9 out of 10 Indian households across personal care, beauty, home, and nutrition categories.",
+        "industry": "FMCG - Personal Care & Foods",
+        "roe": "20.5%",
+        "roce": "27.8%",
+        "book_value": "₹220",
+        "promoter_holding": "61.9%"
+      }
+    },
+    {
+      "ticker": "SUNPHARMA",
+      "name": "Sun Pharmaceutical Industries",
+      "sector": "Pharma",
+      "base_price": 1720,
+      "lot_presets": [
+        5,
+        10,
+        20
+      ],
+      "beta": 0.5,
+      "volatility_factor": 0.002,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹4.15 Lakh Cr",
+        "pe_ratio": 37.5,
+        "high_52w": 1973.38,
+        "low_52w": 1100,
+        "face_value": 1,
+        "debt_to_equity": 0.08,
+        "dividend_yield": "0.82%",
+        "summary": "India's top pharmaceutical enterprise by market share with expanding specialty dermatology, ophthalmology, and oncology global franchise.",
+        "industry": "Pharmaceuticals & Global Formulations",
+        "roe": "16.8%",
+        "roce": "19.2%",
+        "book_value": "₹310",
+        "promoter_holding": "54.5%"
+      }
+    },
+    {
+      "ticker": "NTPC",
+      "name": "NTPC Limited",
+      "sector": "Energy & Power",
+      "base_price": 410,
+      "lot_presets": [
+        10,
+        25,
+        50
+      ],
+      "beta": 0.95,
+      "volatility_factor": 0.0022,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹3.98 Lakh Cr",
+        "pe_ratio": 17.8,
+        "high_52w": 448,
+        "low_52w": 232,
+        "face_value": 10,
+        "debt_to_equity": 1.45,
+        "dividend_yield": "1.92%",
+        "summary": "National thermal generation giant driving aggressive solar and nuclear decarbonization targets to supply one-fourth of national electricity.",
+        "industry": "Power Generation & Green Energy",
+        "roe": "13.6%",
+        "roce": "11.8%",
+        "book_value": "₹185",
+        "promoter_holding": "51.1%"
+      }
+    },
+    {
+      "ticker": "POWERGRID",
+      "name": "Power Grid Corporation",
+      "sector": "Energy & Power",
+      "base_price": 340,
+      "lot_presets": [
+        10,
+        30,
+        60
+      ],
+      "beta": 0.7,
+      "volatility_factor": 0.0017,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹3.18 Lakh Cr",
+        "pe_ratio": 19.4,
+        "high_52w": 369.87,
+        "low_52w": 198,
+        "face_value": 10,
+        "debt_to_equity": 1.35,
+        "dividend_yield": "3.35%",
+        "summary": "State-backed high-voltage inter-state transmission utility transmitting approximately 85% of India's bulk inter-regional electric power.",
+        "industry": "Power Transmission Infrastructure",
+        "roe": "19.2%",
+        "roce": "14.8%",
+        "book_value": "₹96",
+        "promoter_holding": "51.3%"
+      }
+    },
+    {
+      "ticker": "TATASTEEL",
+      "name": "Tata Steel",
+      "sector": "Metals",
+      "base_price": 165,
+      "lot_presets": [
+        25,
+        50,
+        100
+      ],
+      "beta": 1.45,
+      "volatility_factor": 0.0036,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹2.08 Lakh Cr",
+        "pe_ratio": 38,
+        "high_52w": 198.61,
+        "low_52w": 118,
+        "face_value": 1,
+        "debt_to_equity": 0.85,
+        "dividend_yield": "2.20%",
+        "summary": "Major integrated global steelmaker with massive low-cost captive iron ore mines in Odisha and Jharkhand and ongoing European green transition.",
+        "industry": "Iron & Steel Manufacturing",
+        "roe": "8.5%",
+        "roce": "12.4%",
+        "book_value": "₹78",
+        "promoter_holding": "33.2%"
+      }
+    },
+    {
+      "ticker": "JSWSTEEL",
+      "name": "JSW Steel",
+      "sector": "Metals",
+      "base_price": 980,
+      "lot_presets": [
+        5,
+        15,
+        30
+      ],
+      "beta": 1.3,
+      "volatility_factor": 0.0032,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹2.42 Lakh Cr",
+        "pe_ratio": 29.5,
+        "high_52w": 1171.38,
+        "low_52w": 735,
+        "face_value": 1,
+        "debt_to_equity": 1.1,
+        "dividend_yield": "0.75%",
+        "summary": "India's highest crude steel production capacity producer with rapid domestic plant expansions and high automotive steel share.",
+        "industry": "Iron & Steel Production",
+        "roe": "14.8%",
+        "roce": "15.2%",
+        "book_value": "₹320",
+        "promoter_holding": "44.8%"
+      }
+    },
+    {
+      "ticker": "TITAN",
+      "name": "Titan Company",
+      "sector": "Consumer & Retail",
+      "base_price": 3450,
+      "lot_presets": [
+        2,
+        5,
+        10
+      ],
+      "beta": 0.9,
+      "volatility_factor": 0.0022,
+      "min_price": 1,
+      "max_price": 500000,
+      "isEnabled": false,
+      "fundamentals": {
+        "market_cap": "₹3.08 Lakh Cr",
+        "pe_ratio": 85,
+        "high_52w": 3886,
+        "low_52w": 3055,
+        "face_value": 1,
+        "debt_to_equity": 0.65,
+        "dividend_yield": "0.32%",
+        "summary": "India's most trusted lifestyle and jewellery retailer through Tanishq, Fastrack, Titan Eyeplus, and luxury watches.",
+        "industry": "Consumer Luxury, Jewellery & Watches",
+        "roe": "31.2%",
+        "roce": "34.5%",
+        "book_value": "₹140",
+        "promoter_holding": "52.9%"
+      }
+    }
+  ],
+  "scenario_live": {
+    "scenario_metadata": {
+      "title": "The Trading Floor Championship",
+      "subtitle": "Gujarat Technological University • Intra-College Trading Championship",
+      "institution": "Gujarat Technological University",
+      "total_days": 3,
+      "day_duration_seconds": 1800,
+      "starting_cash": 500000,
+      "tick_interval_ms": 1500,
+      "circuit_breaker_percent": 20
+    },
+    "companies": [
+      {
+        "ticker": "RELIANCE",
+        "name": "Reliance Industries",
+        "sector": "Energy & Conglomerate",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 2950,
+        "lot_presets": [
+          1,
+          5,
+          10
+        ],
+        "beta": 1.05,
+        "volatility_factor": 0.0022,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹19.95 Lakh Cr",
+          "pe_ratio": 26.8,
+          "high_52w": 3217.9,
+          "low_52w": 2220.3,
+          "face_value": 10,
+          "debt_to_equity": 0.38,
+          "dividend_yield": "0.35%",
+          "summary": "India's largest private enterprise spanning oil-to-chemicals, telecom (Jio), retail, and green energy giga-complexes.",
+          "industry": "Oil Refining, Telecom & Retail",
+          "roe": "14.2%",
+          "roce": "16.8%",
+          "book_value": "₹1,180",
+          "promoter_holding": "50.3%"
+        }
+      },
+      {
+        "ticker": "TATAMOTORS",
+        "name": "Tata Motors Passenger & Commercial",
+        "sector": "Automobile",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 980,
+        "lot_presets": [
+          5,
+          15,
+          30
+        ],
+        "beta": 1.4,
+        "volatility_factor": 0.0035,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.62 Lakh Cr",
+          "pe_ratio": 16.4,
+          "high_52w": 1179.05,
+          "low_52w": 620.5,
+          "face_value": 2,
+          "debt_to_equity": 1.15,
+          "dividend_yield": "0.62%",
+          "summary": "Pioneer in Indian electric vehicles and leading commercial fleet builder with global luxury marque Jaguar Land Rover.",
+          "industry": "Automotive & Commercial Vehicles",
+          "roe": "32.5%",
+          "roce": "24.1%",
+          "book_value": "₹245",
+          "promoter_holding": "46.4%"
+        }
+      },
+      {
+        "ticker": "MARUTI",
+        "name": "Maruti Suzuki India",
+        "sector": "Automobile",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 12400,
+        "lot_presets": [
+          1,
+          2,
+          5
+        ],
+        "beta": 0.85,
+        "volatility_factor": 0.0018,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.90 Lakh Cr",
+          "pe_ratio": 28.2,
+          "high_52w": 13680,
+          "low_52w": 9700,
+          "face_value": 5,
+          "debt_to_equity": 0.01,
+          "dividend_yield": "1.05%",
+          "summary": "Undisputed leader in Indian passenger vehicle market commanding >40% market share with zero net debt.",
+          "industry": "Passenger Vehicles & Utility Cars",
+          "roe": "17.4%",
+          "roce": "22.6%",
+          "book_value": "₹2,680",
+          "promoter_holding": "58.2%"
+        }
+      },
+      {
+        "ticker": "M&M",
+        "name": "Mahindra & Mahindra",
+        "sector": "Automobile",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 2850,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 1.15,
+        "volatility_factor": 0.0028,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.54 Lakh Cr",
+          "pe_ratio": 29.8,
+          "high_52w": 3220,
+          "low_52w": 1450,
+          "face_value": 5,
+          "debt_to_equity": 0.12,
+          "dividend_yield": "0.72%",
+          "summary": "Dominant SUV and agricultural tractor titan with rapidly expanding electric SUV pipeline and high return on capital.",
+          "industry": "Automotive SUVs & Farm Equipment",
+          "roe": "21.6%",
+          "roce": "23.4%",
+          "book_value": "₹520",
+          "promoter_holding": "19.3%"
+        }
+      },
+      {
+        "ticker": "TCS",
+        "name": "Tata Consultancy Services",
+        "sector": "IT & Tech",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 4150,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 0.65,
+        "volatility_factor": 0.0015,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹15.02 Lakh Cr",
+          "pe_ratio": 31.4,
+          "high_52w": 4585,
+          "low_52w": 3310,
+          "face_value": 1,
+          "debt_to_equity": 0,
+          "dividend_yield": "2.85%",
+          "summary": "Flagship IT services bellwether with defensive cash flow profile, robust enterprise banking clients, and high return ratios.",
+          "industry": "IT Consulting & Enterprise Software",
+          "roe": "51.2%",
+          "roce": "65.4%",
+          "book_value": "₹285",
+          "promoter_holding": "71.8%"
+        }
+      },
+      {
+        "ticker": "INFY",
+        "name": "Infosys",
+        "sector": "IT & Tech",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 1880,
+        "lot_presets": [
+          5,
+          10,
+          25
+        ],
+        "beta": 1.1,
+        "volatility_factor": 0.0026,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹7.82 Lakh Cr",
+          "pe_ratio": 27.9,
+          "high_52w": 1990,
+          "low_52w": 1358,
+          "face_value": 5,
+          "debt_to_equity": 0.05,
+          "dividend_yield": "2.20%",
+          "summary": "Global digital transformation and cloud infrastructure leader serving Fortune 500 enterprise customers across US and Europe.",
+          "industry": "IT Services & Cloud Solutions",
+          "roe": "31.8%",
+          "roce": "41.2%",
+          "book_value": "₹212",
+          "promoter_holding": "14.7%"
+        }
+      },
+      {
+        "ticker": "HDFCBANK",
+        "name": "HDFC Bank",
+        "sector": "Banking",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 1680,
+        "lot_presets": [
+          5,
+          10,
+          20
+        ],
+        "beta": 0.95,
+        "volatility_factor": 0.002,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹12.85 Lakh Cr",
+          "pe_ratio": 19.2,
+          "high_52w": 1794,
+          "low_52w": 1363,
+          "face_value": 1,
+          "debt_to_equity": 6.8,
+          "dividend_yield": "1.22%",
+          "summary": "India's premier private banking powerhouse post-merger with unmatched low-cost CASA deposit base and nationwide branch reach.",
+          "industry": "Private Sector Banking",
+          "roe": "16.8%",
+          "roce": "14.5%",
+          "book_value": "₹595",
+          "promoter_holding": "0.0% (Widely Held)"
+        }
+      },
+      {
+        "ticker": "ICICIBANK",
+        "name": "ICICI Bank",
+        "sector": "Banking",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 1240,
+        "lot_presets": [
+          5,
+          15,
+          30
+        ],
+        "beta": 1.1,
+        "volatility_factor": 0.0024,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹8.72 Lakh Cr",
+          "pe_ratio": 17.5,
+          "high_52w": 1330,
+          "low_52w": 910,
+          "face_value": 2,
+          "debt_to_equity": 5.9,
+          "dividend_yield": "0.95%",
+          "summary": "Fastest growing large private lender known for industry-leading net interest margins and prudent risk underwriting.",
+          "industry": "Private Sector Banking",
+          "roe": "18.9%",
+          "roce": "15.8%",
+          "book_value": "₹385",
+          "promoter_holding": "0.0% (Widely Held)"
+        }
+      },
+      {
+        "ticker": "SBIN",
+        "name": "State Bank of India",
+        "sector": "Banking",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 820,
+        "lot_presets": [
+          10,
+          25,
+          50
+        ],
+        "beta": 1.25,
+        "volatility_factor": 0.003,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹7.32 Lakh Cr",
+          "pe_ratio": 11.2,
+          "high_52w": 912,
+          "low_52w": 555,
+          "face_value": 1,
+          "debt_to_equity": 9.2,
+          "dividend_yield": "1.70%",
+          "summary": "Nation's largest public sector banking pillar commanding approximately one-fourth of entire Indian banking credit and deposits.",
+          "industry": "Public Sector Banking",
+          "roe": "17.2%",
+          "roce": "13.4%",
+          "book_value": "₹465",
+          "promoter_holding": "57.5%"
+        }
+      },
+      {
+        "ticker": "BAJFINANCE",
+        "name": "Bajaj Finance",
+        "sector": "Banking",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 7200,
+        "lot_presets": [
+          1,
+          3,
+          5
+        ],
+        "beta": 1.5,
+        "volatility_factor": 0.0038,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹4.45 Lakh Cr",
+          "pe_ratio": 31.8,
+          "high_52w": 8190,
+          "low_52w": 6180,
+          "face_value": 2,
+          "debt_to_equity": 3.6,
+          "dividend_yield": "0.52%",
+          "summary": "India's highest valuation consumer non-banking lender with massive omnichannel customer acquisition and fintech franchise.",
+          "industry": "Consumer Non-Banking Finance (NBFC)",
+          "roe": "22.4%",
+          "roce": "20.1%",
+          "book_value": "₹1,420",
+          "promoter_holding": "54.8%"
+        }
+      },
+      {
+        "ticker": "LT",
+        "name": "Larsen & Toubro",
+        "sector": "Infrastructure",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 3600,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 1.05,
+        "volatility_factor": 0.0025,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹4.95 Lakh Cr",
+          "pe_ratio": 34.6,
+          "high_52w": 3950,
+          "low_52w": 2860,
+          "face_value": 2,
+          "debt_to_equity": 0.7,
+          "dividend_yield": "1.02%",
+          "summary": "Pinnacle engineering, construction, and defence conglomerate with record order book spanning domestic metro, rail, and West Asian energy plants.",
+          "industry": "Infrastructure Engineering & EPC",
+          "roe": "15.5%",
+          "roce": "18.2%",
+          "book_value": "₹680",
+          "promoter_holding": "0.0% (Institutionally Held)"
+        }
+      },
+      {
+        "ticker": "AIRTEL",
+        "name": "Bharti Airtel",
+        "sector": "Telecom",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 1550,
+        "lot_presets": [
+          5,
+          10,
+          20
+        ],
+        "beta": 0.8,
+        "volatility_factor": 0.002,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹9.12 Lakh Cr",
+          "pe_ratio": 48,
+          "high_52w": 1780,
+          "low_52w": 915,
+          "face_value": 5,
+          "debt_to_equity": 1.9,
+          "dividend_yield": "0.55%",
+          "summary": "Leading telecommunications network operator across India and Africa with highest industry Average Revenue Per User (ARPU).",
+          "industry": "Telecommunications & Cloud Services",
+          "roe": "19.8%",
+          "roce": "17.4%",
+          "book_value": "₹185",
+          "promoter_holding": "53.2%"
+        }
+      },
+      {
+        "ticker": "ITC",
+        "name": "ITC Limited",
+        "sector": "FMCG",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 490,
+        "lot_presets": [
+          10,
+          25,
+          50
+        ],
+        "beta": 0.6,
+        "volatility_factor": 0.0016,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹6.15 Lakh Cr",
+          "pe_ratio": 28.5,
+          "high_52w": 528,
+          "low_52w": 399,
+          "face_value": 1,
+          "debt_to_equity": 0,
+          "dividend_yield": "2.95%",
+          "summary": "Cash-generating diversified consumer powerhouse with staple FMCG brands, paperboards, agribusiness, and high dividend payout.",
+          "industry": "FMCG, Cigarettes, Hotels & Agri",
+          "roe": "29.4%",
+          "roce": "38.6%",
+          "book_value": "₹65",
+          "promoter_holding": "0.0% (Widely Held / BAT)"
+        }
+      },
+      {
+        "ticker": "HINDUNILVR",
+        "name": "Hindustan Unilever",
+        "sector": "FMCG",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 2750,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 0.55,
+        "volatility_factor": 0.0015,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹6.48 Lakh Cr",
+          "pe_ratio": 58.2,
+          "high_52w": 3035,
+          "low_52w": 2170,
+          "face_value": 1,
+          "debt_to_equity": 0.02,
+          "dividend_yield": "1.65%",
+          "summary": "Premier FMCG brand owner present in 9 out of 10 Indian households across personal care, beauty, home, and nutrition categories.",
+          "industry": "FMCG - Personal Care & Foods",
+          "roe": "20.5%",
+          "roce": "27.8%",
+          "book_value": "₹220",
+          "promoter_holding": "61.9%"
+        }
+      },
+      {
+        "ticker": "SUNPHARMA",
+        "name": "Sun Pharmaceutical Industries",
+        "sector": "Pharma",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 1720,
+        "lot_presets": [
+          5,
+          10,
+          20
+        ],
+        "beta": 0.5,
+        "volatility_factor": 0.002,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹4.15 Lakh Cr",
+          "pe_ratio": 37.5,
+          "high_52w": 1960,
+          "low_52w": 1100,
+          "face_value": 1,
+          "debt_to_equity": 0.08,
+          "dividend_yield": "0.82%",
+          "summary": "India's top pharmaceutical enterprise by market share with expanding specialty dermatology, ophthalmology, and oncology global franchise.",
+          "industry": "Pharmaceuticals & Global Formulations",
+          "roe": "16.8%",
+          "roce": "19.2%",
+          "book_value": "₹310",
+          "promoter_holding": "54.5%"
+        }
+      },
+      {
+        "ticker": "NTPC",
+        "name": "NTPC Limited",
+        "sector": "Energy & Power",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 410,
+        "lot_presets": [
+          10,
+          25,
+          50
+        ],
+        "beta": 0.95,
+        "volatility_factor": 0.0022,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.98 Lakh Cr",
+          "pe_ratio": 17.8,
+          "high_52w": 448,
+          "low_52w": 232,
+          "face_value": 10,
+          "debt_to_equity": 1.45,
+          "dividend_yield": "1.92%",
+          "summary": "National thermal generation giant driving aggressive solar and nuclear decarbonization targets to supply one-fourth of national electricity.",
+          "industry": "Power Generation & Green Energy",
+          "roe": "13.6%",
+          "roce": "11.8%",
+          "book_value": "₹185",
+          "promoter_holding": "51.1%"
+        }
+      },
+      {
+        "ticker": "POWERGRID",
+        "name": "Power Grid Corporation",
+        "sector": "Energy & Power",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 340,
+        "lot_presets": [
+          10,
+          30,
+          60
+        ],
+        "beta": 0.7,
+        "volatility_factor": 0.0017,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.18 Lakh Cr",
+          "pe_ratio": 19.4,
+          "high_52w": 366,
+          "low_52w": 198,
+          "face_value": 10,
+          "debt_to_equity": 1.35,
+          "dividend_yield": "3.35%",
+          "summary": "State-backed high-voltage inter-state transmission utility transmitting approximately 85% of India's bulk inter-regional electric power.",
+          "industry": "Power Transmission Infrastructure",
+          "roe": "19.2%",
+          "roce": "14.8%",
+          "book_value": "₹96",
+          "promoter_holding": "51.3%"
+        }
+      },
+      {
+        "ticker": "TATASTEEL",
+        "name": "Tata Steel",
+        "sector": "Metals",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 165,
+        "lot_presets": [
+          25,
+          50,
+          100
+        ],
+        "beta": 1.45,
+        "volatility_factor": 0.0036,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹2.08 Lakh Cr",
+          "pe_ratio": 38,
+          "high_52w": 184,
+          "low_52w": 118,
+          "face_value": 1,
+          "debt_to_equity": 0.85,
+          "dividend_yield": "2.20%",
+          "summary": "Major integrated global steelmaker with massive low-cost captive iron ore mines in Odisha and Jharkhand and ongoing European green transition.",
+          "industry": "Iron & Steel Manufacturing",
+          "roe": "8.5%",
+          "roce": "12.4%",
+          "book_value": "₹78",
+          "promoter_holding": "33.2%"
+        }
+      },
+      {
+        "ticker": "JSWSTEEL",
+        "name": "JSW Steel",
+        "sector": "Metals",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 980,
+        "lot_presets": [
+          5,
+          15,
+          30
+        ],
+        "beta": 1.3,
+        "volatility_factor": 0.0032,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹2.42 Lakh Cr",
+          "pe_ratio": 29.5,
+          "high_52w": 1050,
+          "low_52w": 735,
+          "face_value": 1,
+          "debt_to_equity": 1.1,
+          "dividend_yield": "0.75%",
+          "summary": "India's highest crude steel production capacity producer with rapid domestic plant expansions and high automotive steel share.",
+          "industry": "Iron & Steel Production",
+          "roe": "14.8%",
+          "roce": "15.2%",
+          "book_value": "₹320",
+          "promoter_holding": "44.8%"
+        }
+      },
+      {
+        "ticker": "TITAN",
+        "name": "Titan Company",
+        "sector": "Consumer & Retail",
+        "exchange": "NSE",
+        "currency": "INR",
+        "base_price": 3450,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 0.9,
+        "volatility_factor": 0.0022,
+        "min_price": 1,
+        "max_price": 500000,
+        "isEnabled": true,
+        "reference_source": "NSE EOD Official Reference",
+        "reference_timestamp": "2026-10-15T15:30:00Z",
+        "fundamentals": {
+          "market_cap": "₹3.08 Lakh Cr",
+          "pe_ratio": 85,
+          "high_52w": 3886,
+          "low_52w": 3055,
+          "face_value": 1,
+          "debt_to_equity": 0.65,
+          "dividend_yield": "0.32%",
+          "summary": "India's most trusted lifestyle and jewellery retailer through Tanishq, Fastrack, Titan Eyeplus, and luxury watches.",
+          "industry": "Consumer Luxury, Jewellery & Watches",
+          "roe": "31.2%",
+          "roce": "34.5%",
+          "book_value": "₹140",
+          "promoter_holding": "52.9%"
+        }
+      }
+    ],
+    "news_events": [
+      {
+        "event_id": "EVT_D1_01",
+        "day": 1,
+        "trigger_second": 400,
+        "type": "SECTOR",
+        "headline": "Ministry of Heavy Industries Revises Production-Linked Incentive Norms for Component Suppliers",
+        "simple_explanation": "Official notification outlines revised localization standards and battery-pack sourcing criteria for domestic vehicle assemblies.",
+        "impacts": {
+          "TATAMOTORS": {
+            "delta_pct": 11.5,
+            "duration_sec": 45
+          },
+          "M&M": {
+            "delta_pct": 7.5,
+            "duration_sec": 40
+          },
+          "MARUTI": {
+            "delta_pct": -3.5,
+            "duration_sec": 30
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D1_02",
+        "day": 1,
+        "trigger_second": 900,
+        "type": "SECTOR",
+        "headline": "Directorate General of Foreign Trade Issues Standard Operating Guidelines for Flat-Rolled Steel Consignments",
+        "simple_explanation": "Inter-ministerial notification establishes revised quality control standards and tariff schedules on imported industrial grade coils.",
+        "impacts": {
+          "TATASTEEL": {
+            "delta_pct": 12,
+            "duration_sec": 45
+          },
+          "JSWSTEEL": {
+            "delta_pct": 9.5,
+            "duration_sec": 45
+          },
+          "LT": {
+            "delta_pct": -3,
+            "duration_sec": 35
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D1_03",
+        "day": 1,
+        "trigger_second": 1400,
+        "type": "SECTOR",
+        "headline": "North American Enterprise Cloud Modernization Budgets Expand in Q3 Corporate Spending Survey",
+        "simple_explanation": "Quarterly benchmark index highlights resilient offshore IT contract renewals across multinational banking and retail clients.",
+        "impacts": {
+          "TCS": {
+            "delta_pct": 6.8,
+            "duration_sec": 45
+          },
+          "INFY": {
+            "delta_pct": 9.2,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D2_01",
+        "day": 2,
+        "trigger_second": 350,
+        "type": "MACRO",
+        "headline": "Reserve Bank of India Monetary Policy Committee Announces 25 Basis Point Repo Rate Adjustment",
+        "simple_explanation": "Central banking committee cites cooling headline consumer price data in calibrating domestic liquidity operations.",
+        "impacts": {
+          "HDFCBANK": {
+            "delta_pct": 6.5,
+            "duration_sec": 50
+          },
+          "ICICIBANK": {
+            "delta_pct": 8,
+            "duration_sec": 50
+          },
+          "SBIN": {
+            "delta_pct": 9.2,
+            "duration_sec": 50
+          },
+          "BAJFINANCE": {
+            "delta_pct": 12,
+            "duration_sec": 50
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D2_02",
+        "day": 2,
+        "trigger_second": 750,
+        "type": "SECTOR",
+        "headline": "Department of Telecommunications Approves Spectrum Band Harmonization for Urban Digital Clusters",
+        "simple_explanation": "Regulatory order consolidates contiguous mid-band carrier frequencies across metro circles to optimize network throughput.",
+        "impacts": {
+          "AIRTEL": {
+            "delta_pct": 9.8,
+            "duration_sec": 45
+          },
+          "RELIANCE": {
+            "delta_pct": 4.5,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D2_03",
+        "day": 2,
+        "trigger_second": 1150,
+        "type": "RUMOR_TWIST_PART1",
+        "headline": "RUMOR: Speculative Market Reports Suggest Potential Portfolio Reorganization in Domestic Specialty Formulations",
+        "simple_explanation": "Unofficial trading desk circulars speculate on prospective institutional restructuring across specialized therapeutic portfolios.",
+        "impacts": {
+          "SUNPHARMA": {
+            "delta_pct": 14.5,
+            "duration_sec": 30
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D2_04",
+        "day": 2,
+        "trigger_second": 1350,
+        "type": "FACT_CHECK_TWIST_PART2",
+        "headline": "FACT CHECK: Corporate Clarification Affirms Standard Operations Across Therapeutic Facilities Without Reorganization",
+        "simple_explanation": "Official corporate disclosure to stock exchanges refutes unverified morning rumors and confirms normal manufacturing continuity.",
+        "impacts": {
+          "SUNPHARMA": {
+            "delta_pct": -18,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D3_01",
+        "day": 3,
+        "trigger_second": 350,
+        "type": "SECTOR",
+        "headline": "Solar Energy Corporation of India Concludes Initial Round of National Green Ammonia Capacity Auctions",
+        "simple_explanation": "Competitive bidding round allocates long-term power purchase agreements across premier transmission-connected solar parks.",
+        "impacts": {
+          "NTPC": {
+            "delta_pct": 11.2,
+            "duration_sec": 45
+          },
+          "POWERGRID": {
+            "delta_pct": 7.4,
+            "duration_sec": 45
+          },
+          "RELIANCE": {
+            "delta_pct": 8,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D3_02",
+        "day": 3,
+        "trigger_second": 750,
+        "type": "SECTOR",
+        "headline": "Rural FMCG Offtake Survey Indicates Steady Volume Stabilization Across Central Agrarian Districts",
+        "simple_explanation": "Independent consumer research consortium notes steady retail re-stocking patterns across essential personal care and staples.",
+        "impacts": {
+          "ITC": {
+            "delta_pct": 6.2,
+            "duration_sec": 40
+          },
+          "HINDUNILVR": {
+            "delta_pct": 8.5,
+            "duration_sec": 40
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D3_03",
+        "day": 3,
+        "trigger_second": 1100,
+        "type": "SECTOR",
+        "headline": "Domestic Automobile Wholesale Dispatches for Commercial Medium and Heavy Haulers Exceed Quarterly Projections",
+        "simple_explanation": "Fleet modernization programs and freight logistics utilization drive higher industrial deliveries across regional hubs.",
+        "impacts": {
+          "TATAMOTORS": {
+            "delta_pct": 13.5,
+            "duration_sec": 45
+          },
+          "M&M": {
+            "delta_pct": 9.8,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D3_04",
+        "day": 3,
+        "trigger_second": 1400,
+        "type": "SECTOR",
+        "headline": "National Infrastructure Pipeline Reviews Allocation for Rail Logistics and Port Freight Corridors",
+        "simple_explanation": "Apex monitoring group reviews progress across high-density intermodal logistics lines and deepwater terminal connectivity works.",
+        "impacts": {
+          "LT": {
+            "delta_pct": 12.4,
+            "duration_sec": 45
+          },
+          "TATASTEEL": {
+            "delta_pct": 8.2,
+            "duration_sec": 45
+          }
+        }
+      },
+      {
+        "event_id": "EVT_D3_05",
+        "day": 3,
+        "trigger_second": 1650,
+        "type": "SECTOR",
+        "headline": "Consumer Discretionary Footfall and Festival Inventory Booking Index Reflects Broad Urban Demand Resurgence",
+        "simple_explanation": "Retail trade associations report robust seasonal pre-bookings across lifestyle merchandise and consumer lending lines.",
+        "impacts": {
+          "TITAN": {
+            "delta_pct": 10.5,
+            "duration_sec": 40
+          },
+          "BAJFINANCE": {
+            "delta_pct": 7.2,
+            "duration_sec": 40
+          }
+        }
+      }
+    ]
+  },
+  "scenario_test": {
+    "scenario_metadata": {
+      "title": "The Trading Floor - Dry Run Test Mode",
+      "total_days": 1,
+      "day_duration_seconds": 600,
+      "starting_cash": 500000,
+      "tick_interval_ms": 1500,
+      "circuit_breaker_percent": 20
+    },
+    "companies": [
+      {
+        "ticker": "APEXAUTO",
+        "name": "Apex Mobility EV",
+        "sector": "Automobile",
+        "base_price": 800,
+        "lot_presets": [
+          5,
+          15,
+          30
+        ],
+        "beta": 1.35,
+        "volatility_factor": 0.0035,
+        "fundamentals": {
+          "market_cap": "₹2.10 Lakh Cr",
+          "pe_ratio": 18.2,
+          "high_52w": 920,
+          "low_52w": 540,
+          "face_value": 2,
+          "debt_to_equity": 1.1,
+          "dividend_yield": "1.2%",
+          "summary": "Fictitious electric fleet manufacturer used for dry-run calibration."
+        }
+      },
+      {
+        "ticker": "VELOCAR",
+        "name": "Velocity Motors",
+        "sector": "Automobile",
+        "base_price": 4500,
+        "lot_presets": [
+          1,
+          3,
+          5
+        ],
+        "beta": 0.85,
+        "volatility_factor": 0.002,
+        "fundamentals": {
+          "market_cap": "₹1.85 Lakh Cr",
+          "pe_ratio": 24,
+          "high_52w": 5100,
+          "low_52w": 3900,
+          "face_value": 5,
+          "debt_to_equity": 0.05,
+          "dividend_yield": "1.8%",
+          "summary": "Traditional combustion engine automaker with strong rural dealership network."
+        }
+      },
+      {
+        "ticker": "NEXUSTECH",
+        "name": "Nexus Cloud Systems",
+        "sector": "IT & Tech",
+        "base_price": 2400,
+        "lot_presets": [
+          2,
+          5,
+          10
+        ],
+        "beta": 0.7,
+        "volatility_factor": 0.0016,
+        "fundamentals": {
+          "market_cap": "₹9.40 Lakh Cr",
+          "pe_ratio": 29.5,
+          "high_52w": 2800,
+          "low_52w": 2100,
+          "face_value": 1,
+          "debt_to_equity": 0,
+          "dividend_yield": "2.4%",
+          "summary": "Global enterprise software outsourcer with steady cash flows."
+        }
+      },
+      {
+        "ticker": "CYBERINF",
+        "name": "CyberGrid Solutions",
+        "sector": "IT & Tech",
+        "base_price": 1250,
+        "lot_presets": [
+          5,
+          10,
+          25
+        ],
+        "beta": 1.15,
+        "volatility_factor": 0.0028,
+        "fundamentals": {
+          "market_cap": "₹4.20 Lakh Cr",
+          "pe_ratio": 26.1,
+          "high_52w": 1500,
+          "low_52w": 980,
+          "face_value": 5,
+          "debt_to_equity": 0.08,
+          "dividend_yield": "1.5%",
+          "summary": "Cloud migration and AI analytics provider serving North American banks."
+        }
+      },
+      {
+        "ticker": "CROWNBNK",
+        "name": "Crown National Bank",
+        "sector": "Banking",
+        "base_price": 1500,
+        "lot_presets": [
+          5,
+          10,
+          20
+        ],
+        "beta": 0.95,
+        "volatility_factor": 0.002,
+        "fundamentals": {
+          "market_cap": "₹10.1 Lakh Cr",
+          "pe_ratio": 17.9,
+          "high_52w": 1720,
+          "low_52w": 1310,
+          "face_value": 1,
+          "debt_to_equity": 6.4,
+          "dividend_yield": "1.1%",
+          "summary": "Leading institutional and retail lender with low non-performing assets."
+        }
+      },
+      {
+        "ticker": "PULSEFIN",
+        "name": "Pulse Consumer Credit",
+        "sector": "Banking",
+        "base_price": 5200,
+        "lot_presets": [
+          1,
+          3,
+          5
+        ],
+        "beta": 1.5,
+        "volatility_factor": 0.004,
+        "fundamentals": {
+          "market_cap": "₹3.10 Lakh Cr",
+          "pe_ratio": 33.8,
+          "high_52w": 6600,
+          "low_52w": 4300,
+          "face_value": 2,
+          "debt_to_equity": 3.9,
+          "dividend_yield": "0.4%",
+          "summary": "High-growth EMI and digital consumer finance company."
+        }
+      },
+      {
+        "ticker": "SOLARIX",
+        "name": "Solarix Renewables",
+        "sector": "Renewables",
+        "base_price": 1400,
+        "lot_presets": [
+          2,
+          5,
+          15
+        ],
+        "beta": 1.75,
+        "volatility_factor": 0.0048,
+        "fundamentals": {
+          "market_cap": "₹1.95 Lakh Cr",
+          "pe_ratio": 95,
+          "high_52w": 1850,
+          "low_52w": 780,
+          "face_value": 10,
+          "debt_to_equity": 4.2,
+          "dividend_yield": "0.0%",
+          "summary": "Utility-scale wind and solar developer sensitive to interest rates."
+        }
+      },
+      {
+        "ticker": "ZENITHBIO",
+        "name": "Zenith Biopharma",
+        "sector": "Pharma",
+        "base_price": 1100,
+        "lot_presets": [
+          5,
+          10,
+          20
+        ],
+        "beta": 0.55,
+        "volatility_factor": 0.0022,
+        "fundamentals": {
+          "market_cap": "₹2.70 Lakh Cr",
+          "pe_ratio": 31,
+          "high_52w": 1320,
+          "low_52w": 890,
+          "face_value": 1,
+          "debt_to_equity": 0.12,
+          "dividend_yield": "0.9%",
+          "summary": "Defensive pharmaceutical exporter specializing in chronic therapies."
+        }
+      }
+    ],
+    "news_events": [
+      {
+        "event_id": "TEST_01",
+        "day": 1,
+        "trigger_second": 30,
+        "type": "SECTOR",
+        "headline": "DRY RUN: State subsidy announced for commercial electric fleets",
+        "simple_explanation": "EV makers rally strongly on immediate order book expansion.",
+        "impacts": {
+          "APEXAUTO": {
+            "delta_pct": 12,
+            "duration_sec": 30
+          },
+          "VELOCAR": {
+            "delta_pct": -3.5,
+            "duration_sec": 30
+          }
+        }
+      },
+      {
+        "event_id": "TEST_02",
+        "day": 1,
+        "trigger_second": 90,
+        "type": "GLOBAL",
+        "headline": "DRY RUN: Central Bank cuts benchmark lending rate by 40 bps",
+        "simple_explanation": "Broad market rally weighted by company beta.",
+        "impacts": {
+          "GLOBAL_WEIGHTED": {
+            "base_pct": 6,
+            "duration_sec": 45
+          }
+        }
+      }
+    ]
+  }
+}

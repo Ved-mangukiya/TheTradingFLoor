@@ -1,6 +1,6 @@
 # AGENTS.md — PERMANENT INSTRUCTIONS FOR AI DEVELOPMENT
 
-> **AUTHORITATIVE REPOSITORY INSTRUCTION**: All future AI coding agents (Gemini, Claude, GPT, Antigravity, Cursor) working on **The Trading Floor Championship 2026** MUST read and strictly adhere to this file and `README.md` before making any code modifications.
+> **AUTHORITATIVE REPOSITORY INSTRUCTION**: All future AI coding agents (Gemini, Claude, GPT, Antigravity, Cursor) working on **The Trading Floor Championship** MUST read and strictly adhere to this file and `README.md` before making any code modifications.
 
 ---
 

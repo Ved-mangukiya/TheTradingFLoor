@@ -1,9 +1,9 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * AUTHORITATIVE STATE MACHINE MODULE (server/state_machine.js)
  *
- * Implements the 4-dimensional orthogonal state model and authoritative
- * lifecycle transitions (T01 through T20) per Chunk 2 specifications.
+ * Implements the 4-dimensional orthogonal state model, monotonic stateVersion
+ * synchronization, and centralized action-eligibility validation.
  */
 
 'use strict';
@@ -35,13 +35,7 @@ const CANONICAL_STATUSES = [
 /**
  * Deterministic Derived Flag Synchronizer (syncDerivedStateFlags)
  * Guarantees that orthogonal state dimensions (status, pauseMode, dayIndex, presentationState)
- * map deterministically to boolean flags with zero contradictory states.
- *
- * Resolves:
- * - DEF-001: Day completed trading lockout
- * - DEF-002: Unified configLocked across all endpoints
- * - DEF-010: Preserved concluded state after podium dismissal
- * - DEF-020: Normalized pause modes (EMERGENCY_HALT, BLACKOUT, RECOVERY)
+ * map deterministically to boolean flags and monotonically increment stateVersion.
  */
 function syncDerivedStateFlags(gs) {
   if (!gs) return gs;
@@ -57,14 +51,14 @@ function syncDerivedStateFlags(gs) {
     gs.status = 'CHAMPIONSHIP_CONCLUDED';
   }
 
-  // 2. Authoritative configLocked invariant (Fixes DEF-002)
+  // 2. Authoritative configLocked invariant
   gs.configLocked = LOCKED_STATUSES.has(gs.status);
 
-  // 3. Authoritative isConcluded invariant (Fixes DEF-010)
+  // 3. Authoritative isConcluded invariant
   gs.isConcluded = (gs.status === 'CHAMPIONSHIP_CONCLUDED' || gs.status === 'WINNER_ANNOUNCEMENT');
 
   // 4. Authoritative isPaused invariant
-  // Note: DAY_COMPLETED has isPaused = false so terminals render Day Concluded rather than Paused by Host
+  // DAY_COMPLETED has isPaused = false so terminals render Day Concluded rather than Paused by Host
   gs.isPaused = (gs.status !== 'LIVE' && gs.status !== 'DAY_COMPLETED');
 
   // 5. Clean up pauseMode when not in PAUSED
@@ -75,7 +69,7 @@ function syncDerivedStateFlags(gs) {
     gs.pauseMode = 'VISIBLE_FROZEN';
   }
 
-  // 6. Authoritative tradeable check helper (Fixes DEF-001)
+  // 6. Authoritative tradeable check helper & monotonic version bump
   gs.isTradingOpen = (gs.status === 'LIVE' && !gs.isPaused && !gs.isConcluded);
   gs.isFinalDayCompleted = (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
   gs.stateVersion = (gs.stateVersion || 1) + 1;
@@ -93,9 +87,118 @@ function canExecuteTrades(gs) {
 }
 
 /**
+ * Centralized Action-Eligibility Validator.
+ * Returns { allowed: boolean, reason?: string }.
+ */
+function validateActionEligibility(gs, action) {
+  if (!gs) return { allowed: false, reason: 'Game state not initialized.' };
+  const status = gs.status || 'SETUP';
+  const currentDay = gs.currentDay || 1;
+  const totalDays = gs.totalDays || 3;
+  const elapsedSeconds = gs.elapsedSeconds || 0;
+
+  switch (action) {
+    case 'HOST_SET_EVENT_LOCK':
+    case 'HOST_LOCK_EVENT':
+      if (status === 'LIVE' || elapsedSeconds > 0 || currentDay > 1) {
+        return { allowed: false, reason: 'Cannot modify event configuration: The tournament is already underway. Event settings are permanently locked.' };
+      }
+      return { allowed: true };
+
+    case 'HOST_UNLOCK_EVENT_CONFIG':
+    case 'HOST_UNLOCK_EVENT':
+      if (status === 'LIVE' || elapsedSeconds > 0 || currentDay > 1) {
+        return { allowed: false, reason: 'Cannot unlock settings: The competition has already started. Event settings are permanently frozen during live trading.' };
+      }
+      return { allowed: true };
+
+    case 'HOST_TRIGGER_NEWS':
+    case 'HOST_PUBLISH_NEWS_NOW':
+    case 'HOST_CREATE_CUSTOM_NEWS':
+      if (status !== 'LIVE' && status !== 'PAUSED') {
+        return {
+          allowed: false,
+          reason: `Cannot broadcast breaking news while event is in ${status} state. Start the trading session first.`
+        };
+      }
+      return { allowed: true };
+
+    case 'HOST_TRIGGER_CIRCUIT_BREAKER':
+    case 'HOST_HALT_STOCK':
+    case 'HOST_UNHALT_STOCK':
+    case 'HOST_RELEASE_CIRCUIT_BREAKER':
+    case 'HOST_SECTOR_HALT':
+      if (status !== 'LIVE' && status !== 'PAUSED') {
+        return {
+          allowed: false,
+          reason: `Circuit breaker controls are only active during LIVE or PAUSED trading sessions (current: ${status}).`
+        };
+      }
+      return { allowed: true };
+
+    case 'HOST_CONCLUDE_DAY':
+    case 'HOST_FINALIZE_DAY':
+      if (!gs.configLocked || status === 'SETUP' || status === 'RESET') {
+        return { allowed: false, reason: 'Cannot conclude day: No event is currently active or configured. Complete event setup first.' };
+      }
+      if (status === 'DAY_COMPLETED') {
+        return { allowed: false, reason: `Day ${currentDay} is already concluded. Stand by to advance to Day ${currentDay + 1} or finalize the championship.` };
+      }
+      if (gs.isConcluded) {
+        return { allowed: false, reason: 'Championship is already concluded.' };
+      }
+      return { allowed: true };
+
+    case 'HOST_START_NEXT_DAY':
+    case 'HOST_NEXT_DAY':
+      if (status !== 'DAY_COMPLETED') {
+        return { allowed: false, reason: 'Cannot advance to next day. Current day must be concluded first.' };
+      }
+      if (currentDay >= totalDays) {
+        return { allowed: false, reason: `Cannot advance: Day ${currentDay} is the final planned day. Use 'Finish Championship' or 'Add Next Day'.` };
+      }
+      return { allowed: true };
+
+    case 'HOST_CONCLUDE_CHAMPIONSHIP':
+    case 'HOST_FINALIZE_CHAMPIONSHIP':
+    case 'HOST_FINISH_EVENT':
+      if (!gs.isConcluded && (status !== 'DAY_COMPLETED' || currentDay < totalDays)) {
+        return {
+          allowed: false,
+          reason: `Championship finalization requires the final day (Day ${totalDays}) to be completed. Current: Day ${currentDay}/${totalDays}, Status: ${status}`
+        };
+      }
+      return { allowed: true };
+
+    case 'HOST_START_WINNER_PRESENTATION':
+      if (!gs.isConcluded && (status !== 'DAY_COMPLETED' || currentDay < totalDays)) {
+        return {
+          allowed: false,
+          reason: `Stage Presentation requires all tournament days (Day ${totalDays}/${totalDays}) to be concluded first.`
+        };
+      }
+      return { allowed: true };
+
+    default:
+      return { allowed: true };
+  }
+}
+
+/**
  * Validates whether a requested Host transition action is permitted from current state.
  */
 function canTransitionTo(currentStatus, action, meta = {}) {
+  const mockGs = {
+    status: currentStatus,
+    configLocked: LOCKED_STATUSES.has(currentStatus),
+    isConcluded: currentStatus === 'CHAMPIONSHIP_CONCLUDED' || currentStatus === 'WINNER_ANNOUNCEMENT',
+    currentDay: meta.currentDay || 1,
+    totalDays: meta.totalDays || 3,
+    elapsedSeconds: meta.elapsedSeconds || 0
+  };
+  const eligibility = validateActionEligibility(mockGs, action);
+  if (!eligibility.allowed) return false;
+
   switch (action) {
     case 'HOST_SET_EVENT_LOCK':
       return currentStatus === 'SETUP' || currentStatus === 'RESET';
@@ -146,7 +249,7 @@ function canTransitionTo(currentStatus, action, meta = {}) {
       return currentStatus === 'WINNER_ANNOUNCEMENT' || currentStatus === 'CHAMPIONSHIP_CONCLUDED';
 
     case 'HOST_RESET_ENTIRE_CHAMPIONSHIP':
-      return true; // Allowed from any state with authoritative confirmation phrase
+      return true;
 
     case 'HOST_INITIALIZE_NEW_CHAMPIONSHIP':
       return currentStatus === 'RESET' || currentStatus === 'SETUP' || currentStatus === 'STANDBY';
@@ -161,5 +264,6 @@ module.exports = {
   CANONICAL_STATUSES,
   syncDerivedStateFlags,
   canExecuteTrades,
+  validateActionEligibility,
   canTransitionTo
 };

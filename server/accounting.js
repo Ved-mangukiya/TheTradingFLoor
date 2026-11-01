@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * AUTHORITATIVE ACCOUNTING & VALUATION ENGINE (server/accounting.js)
  *
  * Implements server-side portfolio valuation, synchronized leaderboard tie-breakers,

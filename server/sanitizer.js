@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * ROLE SANITIZER & SECURITY BOUNDARY MODULE (server/sanitizer.js)
  *
  * Implements role-based data filtering and formula-injection guards.

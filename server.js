@@ -10,8 +10,20 @@ const {
   CANONICAL_STATUSES,
   syncDerivedStateFlags,
   canExecuteTrades,
+  validateActionEligibility,
   canTransitionTo
 } = require('./server/state_machine');
+const {
+  generateCryptoSeed,
+  createSeededRng,
+  randomGaussian,
+  initializeStockStochastics,
+  computeMultiFactorStep,
+  calculateOrderFlowImpact
+} = require('./server/market_engine');
+
+let simulationSeed = generateCryptoSeed();
+let simulationRng = createSeededRng(simulationSeed);
 
 const app = express();
 const server = http.createServer(app);
@@ -31,10 +43,10 @@ app.use(express.json({ limit: '10mb' }));
 // 1. CREDENTIALS & SESSION TOKEN REGISTRY
 // ==========================================
 const USERS = {
-  host: { username: 'host', password: 'host2026', role: 'HOST', id: 'host', name: 'Master Control' },
-  projector: { username: 'projector', password: 'screen2026', role: 'PROJECTOR', id: 'PROJECTOR', name: 'Main Stage Projector' },
-  sound: { username: 'sound', password: 'sound2026', role: 'SOUND_CONSOLE', id: 'SOUND_CONSOLE', name: 'Hall Sound System' },
-  winner: { username: 'winner', password: 'winner2026', role: 'WINNER_DISPLAY', id: 'WINNER_DISPLAY', name: 'Winner Presentation Stage' }
+  host: { username: 'host', password: 'host', altPassword: 'host2026', role: 'HOST', id: 'host', name: 'Master Control' },
+  projector: { username: 'projector', password: 'screen', altPassword: 'screen2026', role: 'PROJECTOR', id: 'PROJECTOR', name: 'Main Stage Projector' },
+  sound: { username: 'sound', password: 'sound', altPassword: 'sound2026', role: 'SOUND_CONSOLE', id: 'SOUND_CONSOLE', name: 'Hall Sound System' },
+  winner: { username: 'winner', password: 'winner', altPassword: 'winner2026', role: 'WINNER_DISPLAY', id: 'WINNER_DISPLAY', name: 'Winner Presentation Stage' }
 };
 
 // token -> { token, role, id, name, username, members, lastOrderAt }
@@ -52,7 +64,7 @@ const auditFilename = `AUDIT_LOG_${sessionStartTimestamp.replace(/[:.]/g, '-')}.
 const auditFilePath = path.join(LOGS_DIR, auditFilename);
 
 const auditLog = {
-  event_session: 'THE_TRADING_FLOOR_2026',
+  event_session: 'THE_TRADING_FLOOR',
   start_time: sessionStartTimestamp,
   export_time: sessionStartTimestamp,
   total_records: 0,
@@ -126,7 +138,7 @@ let gameState = {
   stateVersion: 1,
   isReset: false,
   resetMessage: null,
-  title: 'The Trading Floor - Championship 2026',
+  title: 'The Trading Floor Championship',
   subtitle: 'Gujarat Technological University • Intra-College Trading Championship',
   institution: 'Gujarat Technological University',
   status: 'SETUP',
@@ -140,7 +152,7 @@ let gameState = {
   startingCash: 500000,
   elapsedSeconds: 0,
   isPaused: true,
-  pauseMode: 'VISIBLE_FROZEN',
+  pauseMode: 'NONE',
   pauseStartedAt: null,
   totalShiftOffsetSeconds: 0,
   tickIntervalMs: 1500,
@@ -541,7 +553,7 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     stateVersion: (gameState && gameState.stateVersion) || 1,
     isReset: false,
     resetMessage: null,
-    title: meta.title || 'The Trading Floor - Championship 2026',
+    title: meta.title || 'The Trading Floor Championship',
     subtitle: meta.subtitle || 'Gujarat Technological University • Intra-College Trading Championship',
     institution: meta.institution || 'Gujarat Technological University',
     status: 'SETUP',
@@ -602,6 +614,10 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     }
   }
 
+  simulationSeed = (gameState && gameState.simulationSeed) || generateCryptoSeed();
+  simulationRng = createSeededRng(simulationSeed);
+  gameState.simulationSeed = simulationSeed;
+
   companies = rawCompanies.map((c, idx) => {
     const basePrice = parseFloat(c.base_price) || 100;
     const f = c.fundamentals || {};
@@ -612,9 +628,9 @@ function loadScenario(mode = 'live', forceBaseline = false) {
     if (week52High < basePrice) week52High = +(basePrice * 1.05).toFixed(2);
     if (week52Low > basePrice) week52Low = +(basePrice * 0.95).toFixed(2);
 
-    // Intraday wave parameters for realistic divergence (prevents all stocks moving together)
-    const trendPhase = ((idx * 1.73) % (Math.PI * 2));
-    const trendFreq = 0.012 + ((idx % 7) * 0.005);
+    // Independent per-run stochastic wave phase & frequency (eliminates repetitive opening outcomes)
+    const trendPhase = simulationRng() * Math.PI * 2;
+    const trendFreq = 0.010 + simulationRng() * 0.025;
     // Unbiased market breadth: True statistical fairness (E[ΔP] = 0); divergence driven by cyclical waves
     const sentimentBias = 0;
 
@@ -717,7 +733,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Automobile',
     type: 'SECTOR',
     headline: 'Ministry of Heavy Industries Outlines Updated Production and Component Sourcing Guidelines',
-    simple_explanation: 'Regulatory notification revises localization targets and battery sourcing criteria for domestic vehicle manufacturers.',
+    simple_explanation: 'The government announced supportive new rules and subsidies for local car and electric vehicle makers. Positive for automobile shares.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -732,7 +748,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Metals',
     type: 'SECTOR',
     headline: 'Directorate General of Foreign Trade Issues Operational Guidelines for Industrial Steel Shipments',
-    simple_explanation: 'Notification establishes standardized quality testing protocols and tariff updates on imported industrial coils.',
+    simple_explanation: 'New quality checks and import taxes were set for foreign steel. This helps domestic Indian steel and metal companies sell more.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -747,7 +763,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Information Technology',
     type: 'SECTOR',
     headline: 'North American Enterprise Cloud Modernization Budgets Expand in Q3 Spending Survey',
-    simple_explanation: 'Quarterly industry benchmark index highlights resilient offshore IT contract renewals across multinational banking and retail clients.',
+    simple_explanation: 'Major global banks and retailers expanded their cloud software contracts with Indian tech companies. Strong demand boosts IT shares.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -762,7 +778,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Banking & Financial Services',
     type: 'MACRO',
     headline: 'Reserve Bank of India Monetary Policy Committee Announces Liquidity Operations Framework',
-    simple_explanation: 'Central banking committee calibrates domestic liquidity facilities following latest consumer price stability benchmarks.',
+    simple_explanation: 'The Reserve Bank kept interest rates stable and provided extra funds to commercial banks. Great news for banking and finance shares.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -777,7 +793,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Energy & Power',
     type: 'SECTOR',
     headline: 'Central Electricity Authority Finalizes Green Energy Transmission Corridor Phase II',
-    simple_explanation: 'National transmission roadmap clears capital expenditure allocations for inter-state renewable energy feeding corridors.',
+    simple_explanation: 'New nationwide power lines and solar transmission networks were approved. Clean energy and power companies benefit.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -792,7 +808,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Pharmaceuticals & Healthcare',
     type: 'SECTOR',
     headline: 'Global Health Regulators Conclude Multi-Facility Good Manufacturing Practice Audits',
-    simple_explanation: 'Inspection reports for domestic active pharmaceutical ingredient sites concluded with standard voluntary action observations.',
+    simple_explanation: 'Health authorities gave safety clearances to pharmaceutical manufacturing plants. Positive signal for medicine and healthcare shares.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -807,7 +823,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Consumer & Retail',
     type: 'SECTOR',
     headline: 'Agricultural Harvest Data Indicates Steady Consumer Household Spending in Rural Markets',
-    simple_explanation: 'Seasonal procurement indices point to steady packaged goods replenishment across semi-urban distribution chains.',
+    simple_explanation: 'A strong harvest and festival shopping are boosting sales of packaged foods, soaps, and household goods across towns.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -822,7 +838,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Infrastructure & Engineering',
     type: 'SECTOR',
     headline: 'National Highway and Dedicated Freight Logistics Network Crosses Operational Milestone',
-    simple_explanation: 'Cabinet committee reviews multimodal logistics transit times along major industrial expressways and port terminals.',
+    simple_explanation: 'New expressways and port freight corridors opened ahead of schedule. Faster goods transport helps engineering and logistics companies.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -837,7 +853,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'Telecommunications',
     type: 'SECTOR',
     headline: 'Department of Telecommunications Approves Spectrum Band Harmonization in Metro Circles',
-    simple_explanation: 'Regulatory order consolidates contiguous mid-band carrier frequencies across urban clusters to optimize data capacity.',
+    simple_explanation: 'Telecom companies were granted dedicated 5G mobile network frequencies in major cities. Speeds up data and boosts telecom stocks.',
     generator: (sectorStocks) => {
       const impacts = {};
       sectorStocks.forEach((s, idx) => {
@@ -852,7 +868,7 @@ const NEWS_TEMPLATE_LIBRARY = [
     sector: 'MACRO',
     type: 'MACRO',
     headline: 'Ministry of Statistics Reports Manufacturing and Mining Output Indices for Past Quarter',
-    simple_explanation: 'Broad-based capital goods and core sector index figures demonstrate sustained domestic industrial utilization.',
+    simple_explanation: 'Indian factories and heavy industries showed strong manufacturing growth and high production. Positive for the overall economy.',
     generator: () => ({
       GLOBAL_WEIGHTED: { base_pct: 4.5, duration_sec: 50 }
     })
@@ -1426,13 +1442,16 @@ function concludeCurrentDay(isAutoClose = false) {
 // ==========================================
 // 5. REAL-TIME ENGINE LOOPS
 // ==========================================
+let lastClockTickMs = Date.now();
 setInterval(() => {
+  const nowMs = Date.now();
   // Check for Scheduled Event Auto-Start
   if (gameState.status === 'SCHEDULED' && gameState.scheduledStartTime) {
     const targetMs = new Date(gameState.scheduledStartTime).getTime();
     if (!isNaN(targetMs)) {
-      if (Date.now() >= targetMs) {
+      if (nowMs >= targetMs) {
         gameState.status = 'COUNTDOWN';
+        syncDerivedStateFlags(gameState);
         startResumeCountdown('SCHEDULED_TIMER');
       } else {
         // Broadcast tick every second so all screens and waiting room timers stay live and synced
@@ -1441,31 +1460,42 @@ setInterval(() => {
     }
   }
 
-  if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') return;
+  if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') {
+    lastClockTickMs = nowMs;
+    return;
+  }
 
-  gameState.elapsedSeconds++;
+  // Advance elapsedSeconds using monotonic wall-clock delta (bounded to prevent huge jumps on OS sleep)
+  const deltaSec = Math.max(1, Math.min(5, Math.round((nowMs - lastClockTickMs) / 1000)));
+  lastClockTickMs = nowMs;
 
-  newsEvents.forEach((ev) => {
-    if (!ev.triggered && !ev.cancelled && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
-      triggerNewsEvent(ev, 'AUTO_CLOCK');
+  for (let step = 0; step < deltaSec; step++) {
+    if (gameState.status !== 'LIVE' || gameState.isPaused || gameState.isConcluded) break;
+    gameState.elapsedSeconds++;
+
+    newsEvents.forEach((ev) => {
+      if (!ev.triggered && !ev.cancelled && ev.day === gameState.currentDay && ev.trigger_second === gameState.elapsedSeconds) {
+        triggerNewsEvent(ev, 'AUTO_CLOCK');
+      }
+      // 5-Phase News Flow: Transition from READING to REACTING when decision deadline expires
+      if (ev.triggered && !ev.cancelled && ev.phase === 'READING' && gameState.elapsedSeconds >= (ev.reactionStartSecond || (ev.trigger_second + 25))) {
+        ev.phase = 'REACTING';
+        applyNewsImpactsToStocks(ev);
+        broadcastAudioCue('reaction_start_chime', 'news', { event_id: ev.event_id, headline: ev.headline });
+        broadcastAll({
+          type: 'NEWS_REACTION_START',
+          event_id: ev.event_id,
+          headline: ev.headline
+        });
+      }
+    });
+
+    // Automatic Day Clock Expiration
+    if (gameState.elapsedSeconds >= gameState.dayDurationSeconds) {
+      recordAuditEvent('DAY_CLOSE_CLOCK_EXPIRED', { day: gameState.currentDay, elapsed: gameState.elapsedSeconds });
+      concludeCurrentDay(true);
+      break;
     }
-    // 5-Phase News Flow: Transition from READING to REACTING when decision deadline expires
-    if (ev.triggered && !ev.cancelled && ev.phase === 'READING' && gameState.elapsedSeconds >= (ev.reactionStartSecond || (ev.trigger_second + 25))) {
-      ev.phase = 'REACTING';
-      applyNewsImpactsToStocks(ev);
-      broadcastAudioCue('reaction_start_chime', 'news', { event_id: ev.event_id, headline: ev.headline });
-      broadcastAll({
-        type: 'NEWS_REACTION_START',
-        event_id: ev.event_id,
-        headline: ev.headline
-      });
-    }
-  });
-
-  // Automatic Day Clock Expiration
-  if (gameState.elapsedSeconds >= gameState.dayDurationSeconds) {
-    recordAuditEvent('DAY_CLOSE_CLOCK_EXPIRED', { day: gameState.currentDay, elapsed: gameState.elapsedSeconds });
-    concludeCurrentDay(true);
   }
 }, 1000);
 
@@ -1493,6 +1523,16 @@ function restartEngineInterval() {
   priceLoopHandle = setInterval(() => {
     if (gameState.isPaused || gameState.isConcluded || gameState.status === 'DAY_COMPLETED' || gameState.status !== 'LIVE') return;
 
+    // 1. Generate market-wide and sector-level correlated normal shocks for this tick
+    const marketShockZ = randomGaussian(0, 1, simulationRng);
+    const sectorShocks = {};
+    companies.forEach((s) => {
+      const sec = s.sector || 'General';
+      if (sectorShocks[sec] === undefined) {
+        sectorShocks[sec] = randomGaussian(0, 1, simulationRng);
+      }
+    });
+
     companies.forEach((stock) => {
       if (!stock.isEnabled) return;
 
@@ -1506,8 +1546,8 @@ function restartEngineInterval() {
         const unhaltLowerThreshold = +(lowerLimit + (stock.dayOpenPrice * 0.008)).toFixed(2);
 
         if (stock.haltDirection === 'UPPER') {
-          const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
-          const randDrift = (Math.random() - 0.58) * stock.volatility_factor * stock.currentPrice * 0.2;
+          const meanReversion = -0.0004 * (stock.currentPrice - stock.dayOpenPrice);
+          const randDrift = (simulationRng() - 0.58) * stock.volatility_factor * stock.currentPrice * 0.2;
           const downwardPull = Math.min(0, meanReversion + randDrift);
           if (downwardPull < -0.02) {
             stock.currentPrice = Math.min(upperLimit, +(stock.currentPrice + downwardPull).toFixed(2));
@@ -1518,8 +1558,8 @@ function restartEngineInterval() {
         } else if (stock.haltDirection === 'LOWER') {
           // While at LOWER circuit limit: downward drift is clamped.
           // Background drift requires at least 0.8% buffer away from floor before unhalting (or active counter-order execution)
-          const meanReversion = -0.0004 * (stock.currentPrice - stock.base_price);
-          const randDrift = (Math.random() - 0.42) * stock.volatility_factor * stock.currentPrice * 0.2;
+          const meanReversion = -0.0004 * (stock.currentPrice - stock.dayOpenPrice);
+          const randDrift = (simulationRng() - 0.42) * stock.volatility_factor * stock.currentPrice * 0.2;
           const upwardPull = Math.max(0, meanReversion + randDrift);
           if (upwardPull > 0.02) {
             stock.currentPrice = Math.max(lowerLimit, +(stock.currentPrice + upwardPull).toFixed(2));
@@ -1532,7 +1572,7 @@ function restartEngineInterval() {
         return;
       }
 
-      // 1. Process active news transition using mathematically bounded smoothstep
+      // 2. Process active news transition using mathematically bounded smoothstep
       // Formula: u = clamp((t - t0) / T, 0, 1), s(u) = 3*u^2 - 2*u^3, P(t) = P0 + (PT - P0) * s(u)
       if (stock.activeTransition) {
         const elapsedMs = Date.now() - stock.activeTransition.startTimeMs;
@@ -1580,26 +1620,23 @@ function restartEngineInterval() {
         if (stock.currentPrice > stock.week52High) stock.week52High = stock.currentPrice;
         if (stock.currentPrice < stock.week52Low) stock.week52Low = stock.currentPrice;
         recordStockHistoryPoint(stock);
+
+        const curPaise = Math.round(stock.currentPrice * 100);
+        if (curPaise >= Math.round(upperLimit * 100) && !stock.isHalted) {
+          triggerCircuitBreaker(stock, 'UPPER');
+        } else if (curPaise <= Math.round(lowerLimit * 100) && !stock.isHalted) {
+          triggerCircuitBreaker(stock, 'LOWER');
+        }
         return;
       }
 
-      // 2. Realistic Gaussian + micro-drift + cyclical waves + mean-reversion
-      // Dynamic volatility calibrated to institutional simulation: balanced, exciting, no positive bias
-      const effectiveVol = Math.max(0.0035, (stock.volatility_factor || 0.004) * (stock.beta || 1.0) * 1.5);
-      const gaussianComponent = gaussianRandom() * effectiveVol * stock.currentPrice * 0.45;
-      // UNBIASED microDrift: Mean is exactly 0 (Math.random() - 0.50) to prevent artificial upward profit creep
-      const microDrift = (Math.random() - 0.50) * effectiveVol * stock.currentPrice * 0.35;
-      // Intraday cyclical sine wave creates natural swings and divergences across stocks
-      const cyclicalWave = Math.cos((gameState.elapsedSeconds * (stock.trendFreq || 0.02)) + (stock.trendPhase || 0)) * effectiveVol * stock.currentPrice * 0.35;
-      // Mild sentiment drift creates clear winning and losing stocks to prevent ties
-      const trendDrift = (stock.sentimentBias || 0) * stock.currentPrice;
-      // Gentle mean-reversion towards dayOpenPrice prevents runaway divergence
-      const meanReversion = -0.00015 * (stock.currentPrice - stock.dayOpenPrice);
-      const totalDrift = gaussianComponent + microDrift + cyclicalWave + trendDrift + meanReversion;
-
-      const minBound = stock.min_price || 1;
-      const maxBound = stock.max_price || 500000;
-      stock.currentPrice = Math.max(minBound, Math.min(maxBound, +(stock.currentPrice + totalDrift).toFixed(2)));
+      // 3. Multi-factor correlated price evolution
+      stock.currentPrice = computeMultiFactorStep(stock, {
+        rng: simulationRng,
+        elapsedSeconds: gameState.elapsedSeconds,
+        marketShockZ,
+        sectorShockZ: sectorShocks[stock.sector || 'General'] || 0
+      });
 
       if (stock.currentPrice > stock.dayHigh) stock.dayHigh = stock.currentPrice;
       if (stock.currentPrice < stock.dayLow) stock.dayLow = stock.currentPrice;
@@ -1628,10 +1665,10 @@ function restartEngineInterval() {
         stock.isNew52WLow = false;
       }
 
-      // 3. Track history with O(1) rolling window cap (prevents fs.writeFileSync bloat)
+      // 4. Track history with O(1) rolling window cap (prevents fs.writeFileSync bloat)
       recordStockHistoryPoint(stock);
 
-      // 4. Exact Integer-Paise Circuit Breaker Check & Boundary Clamping
+      // 5. Exact Integer-Paise Circuit Breaker Check & Boundary Clamping
       const curPaise = Math.round(stock.currentPrice * 100);
       const upperPaise = Math.round(upperLimit * 100);
       const lowerPaise = Math.round(lowerLimit * 100);
@@ -2502,7 +2539,12 @@ wss.on('connection', (ws) => {
       const usernameKey = (data.username || '').trim().toLowerCase();
       const userRecord = USERS[usernameKey];
 
-      if (!userRecord || userRecord.password !== data.password) {
+      const pwMatches = userRecord && (
+        userRecord.password === data.password ||
+        (userRecord.altPassword && userRecord.altPassword === data.password)
+      );
+
+      if (!userRecord || !pwMatches) {
         ws.send(JSON.stringify({ type: 'LOGIN_ERROR', message: 'Invalid terminal credentials.' }));
         return;
       }
@@ -2733,10 +2775,10 @@ wss.on('connection', (ws) => {
         team.avgBuyPrice[stock.ticker] = +((prevCost + grossValue) / (prevQty + qty)).toFixed(2);
         team.tradeCount++;
 
-        // Dynamic market impact (order flow buying pressure)
-        const buyImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
+        // Dynamic market impact (unified order-flow buying pressure)
+        const buyImpact = calculateOrderFlowImpact(stock, qty, 'BUY');
         const candidatePrice = +(stock.currentPrice + buyImpact).toFixed(2);
-        if (candidatePrice >= upperLimit) {
+        if (Math.round(candidatePrice * 100) >= Math.round(upperLimit * 100)) {
           stock.currentPrice = upperLimit;
           if (!stock.isHalted) {
             triggerCircuitBreaker(stock, 'UPPER');
@@ -2754,7 +2796,7 @@ wss.on('connection', (ws) => {
         }
 
         // Circuit Recovery: If stock was at lower limit and buying pressure lifts it above floor, unhalt
-        if (stock.isHalted && stock.haltDirection === 'LOWER' && stock.currentPrice > lowerLimit) {
+        if (stock.isHalted && stock.haltDirection === 'LOWER' && Math.round(stock.currentPrice * 100) > Math.round(lowerLimit * 100)) {
           releaseCircuitBreaker(stock);
         }
 
@@ -2818,10 +2860,10 @@ wss.on('connection', (ws) => {
         if (team.holdings[stock.ticker] === 0) team.avgBuyPrice[stock.ticker] = 0;
         team.tradeCount++;
 
-        // Dynamic market impact (order flow selling pressure)
-        const sellImpact = +(Math.max(0.15, stock.currentPrice * Math.min(0.005, Math.max(0.0003, (qty / 50) * 0.001)))).toFixed(2);
+        // Dynamic market impact (unified order-flow selling pressure)
+        const sellImpact = Math.abs(calculateOrderFlowImpact(stock, qty, 'SELL'));
         const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
-        if (candidatePrice <= lowerLimit) {
+        if (Math.round(candidatePrice * 100) <= Math.round(lowerLimit * 100)) {
           stock.currentPrice = lowerLimit;
           if (!stock.isHalted) {
             triggerCircuitBreaker(stock, 'LOWER');
@@ -2839,7 +2881,7 @@ wss.on('connection', (ws) => {
         }
 
         // Circuit Recovery: If stock was at upper limit and selling pressure drops it below ceiling, unhalt
-        if (stock.isHalted && stock.haltDirection === 'UPPER' && stock.currentPrice < upperLimit) {
+        if (stock.isHalted && stock.haltDirection === 'UPPER' && Math.round(stock.currentPrice * 100) < Math.round(upperLimit * 100)) {
           releaseCircuitBreaker(stock);
         }
 
@@ -2970,7 +3012,7 @@ wss.on('connection', (ws) => {
         totalFeesCharged += feeAmount;
 
         // Dynamic market impact with full Circuit Breaker clamping & Upper Circuit recovery
-        const sellImpact = +(stock.currentPrice * Math.min(0.003, (qty / 1000) * 0.0005)).toFixed(2);
+        const sellImpact = Math.abs(calculateOrderFlowImpact(stock, qty, 'SELL'));
         const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
         if (Math.round(candidatePrice * 100) <= Math.round(lowerLimit * 100)) {
           stock.currentPrice = lowerLimit;
@@ -3349,7 +3391,7 @@ wss.on('connection', (ws) => {
 
         // If already paused (and not in countdown), allow clean mode toggle between VISIBLE_FROZEN and BLACKOUT!
         if (gameState.isPaused && gameState.status === 'PAUSED' && !activeCountdownTimer) {
-          if (data.action === 'HOST_SET_PAUSE_MODE' || (data.allowModeSwitch && gameState.pauseMode !== requestedMode)) {
+          if (data.action === 'HOST_SET_PAUSE_MODE' || (data.allowModeSwitch && gameState.pauseMode !== requestedMode) || (gameState.pauseMode !== requestedMode)) {
             gameState.pauseMode = requestedMode;
             recordAuditEvent('PAUSE_MODE_SWITCHED', { triggered_by: 'HOST', pauseMode: requestedMode });
             broadcastAll({ type: 'MARKET_PAUSED', pauseMode: requestedMode });
@@ -3397,7 +3439,7 @@ wss.on('connection', (ws) => {
       // 5.2b Schedule Event for future date/time
       if (data.action === 'HOST_SCHEDULE_EVENT') {
         gameState.startMode = 'SCHEDULED';
-        gameState.scheduledStartTime = data.scheduledStartTime; // ISO string e.g. "2026-10-15T09:00:00"
+        gameState.scheduledStartTime = data.scheduledStartTime; // Future ISO timestamp e.g. "YYYY-MM-DDTHH:mm:ss"
         gameState.pausePolicy = data.pausePolicy === 'ELAPSED_TIME' ? 'ELAPSED_TIME' : 'TRADING_TIME';
         gameState.status = 'SCHEDULED';
         gameState.configLocked = true;
@@ -3471,6 +3513,12 @@ wss.on('connection', (ws) => {
 
       // 5.2d News Control Center: Publish Now, Cancel, Edit, Duplicate
       if (data.action === 'HOST_PUBLISH_NEWS_NOW') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (ev) {
           if (ev.triggered) {
@@ -3756,9 +3804,10 @@ wss.on('connection', (ws) => {
           gameState.elapsedSeconds = 0;
           gameState.isPaused = true;
           gameState.status = 'STANDBY';
-          gameState.pauseMode = 'VISIBLE_FROZEN';
-          gameState.pauseStartedAt = Date.now();
+          gameState.pauseMode = 'NONE';
+          gameState.pauseStartedAt = null;
           gameState.activeCountdown = null;
+          syncDerivedStateFlags(gameState);
 
           // Clear fired news events for new day
           firedNewsEventsPerDay.clear();
@@ -3803,6 +3852,9 @@ wss.on('connection', (ws) => {
               isDayBoundary: true
             });
           });
+
+          initializeStockStochastics(companies, simulationRng);
+          syncDerivedStateFlags(gameState);
 
           // Establish authoritative baseline opening portfolio value for the new day
           Object.values(teams).forEach((t) => {
@@ -3935,6 +3987,12 @@ wss.on('connection', (ws) => {
 
       // 5.4 Trigger Existing Scheduled News
       if (data.action === 'HOST_TRIGGER_NEWS') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const ev = newsEvents.find((e) => e.event_id === data.event_id);
         if (!ev) {
           ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: 'News event not found' }));
@@ -3954,6 +4012,12 @@ wss.on('connection', (ws) => {
 
       // 5.5 Create Custom Breaking News
       if (data.action === 'HOST_CREATE_CUSTOM_NEWS') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const headline = (data.headline || '').trim();
         const explanation = (data.explanation || '').trim();
         const type = (data.type || 'SPECIAL SHOCK').toUpperCase().trim();
@@ -3991,6 +4055,12 @@ wss.on('connection', (ws) => {
 
       // 5.6 Unhalt Stock / Release Circuit Breaker
       if (data.action === 'HOST_UNHALT_STOCK' || data.action === 'HOST_RELEASE_CIRCUIT_BREAKER') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const stock = companies.find((c) => c.ticker === data.ticker);
         if (stock) {
           releaseCircuitBreaker(stock);
@@ -4000,6 +4070,12 @@ wss.on('connection', (ws) => {
 
       // 5.6b Direct Circuit Breaker Trigger / Halt Simulation
       if (data.action === 'HOST_TRIGGER_CIRCUIT_BREAKER' || data.action === 'HOST_HALT_STOCK') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const stock = companies.find((c) => c.ticker === data.ticker);
         const direction = (data.direction || 'UPPER').toUpperCase();
         if (stock) {
@@ -4058,8 +4134,8 @@ wss.on('connection', (ws) => {
             week52Low: +(base_price * 0.75).toFixed(2),
             isNew52WHigh: false,
             isNew52WLow: false,
-            trendPhase: (companies.length * 1.73) % (Math.PI * 2),
-            trendFreq: 0.012 + ((companies.length % 7) * 0.005),
+            trendPhase: simulationRng() * Math.PI * 2,
+            trendFreq: 0.010 + simulationRng() * 0.025,
             sentimentBias: 0,
             history: [{ time: gameState.elapsedSeconds, price: base_price }],
             fundamentals: {
@@ -4132,8 +4208,8 @@ wss.on('connection', (ws) => {
             ...source,
             ticker: newTicker,
             name: `${source.name} (Series ${copyNum})`,
-            trendPhase: ((companies.length + copyNum) * 1.73) % (Math.PI * 2),
-            trendFreq: 0.012 + (((companies.length + copyNum) % 7) * 0.005),
+            trendPhase: simulationRng() * Math.PI * 2,
+            trendFreq: 0.010 + simulationRng() * 0.025,
             sentimentBias: 0,
             history: [{ time: gameState.elapsedSeconds, price: source.currentPrice }]
           };
@@ -4172,6 +4248,12 @@ wss.on('connection', (ws) => {
 
       // 5.13 Sector-Wide Halt / Unhalt
       if (data.action === 'HOST_SECTOR_HALT') {
+        const eligibility = validateActionEligibility(gameState, data.action);
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          ws.send(JSON.stringify({ type: 'ORDER_REJECTED', reason: eligibility.reason }));
+          return;
+        }
         const targetSector = data.sector;
         const haltAction = data.isHalted !== false;
 
@@ -4445,7 +4527,8 @@ wss.on('connection', (ws) => {
         // 5. Reset Game State to pristine Day 1 Setup
         gameState.status = 'RESET';
         gameState.isPaused = true;
-        gameState.pauseMode = 'VISIBLE_FROZEN';
+        gameState.pauseMode = 'NONE';
+        gameState.pauseStartedAt = null;
         gameState.haltReason = null;
         gameState.elapsedSeconds = 0;
         gameState.currentDay = 1;
@@ -4523,6 +4606,12 @@ wss.on('connection', (ws) => {
           ev.impactsApplied = false;
         });
         firedNewsEventsPerDay.clear();
+
+        simulationSeed = generateCryptoSeed();
+        simulationRng = createSeededRng(simulationSeed);
+        gameState.simulationSeed = simulationSeed;
+        initializeStockStochastics(companies, simulationRng);
+        syncDerivedStateFlags(gameState);
 
         recordAuditEvent('CHAMPIONSHIP_FULL_RESET', { triggered_by: 'HOST', newEventId: gameState.eventId });
 
@@ -4602,7 +4691,7 @@ wss.on('connection', (ws) => {
       // 5.22 Host Initialize & Launch New Championship from Setup Wizard
       if (data.action === 'HOST_INITIALIZE_NEW_CHAMPIONSHIP') {
         const config = data.config || {};
-        const title = (config.title || 'The Trading Floor Championship 2026').trim();
+        const title = (config.title || 'The Trading Floor Championship').trim();
         const totalDays = Math.max(1, Math.min(10, parseInt(config.totalDays, 10) || 3));
         const dayDurationSeconds = Math.max(60, Math.min(7200, parseInt(config.dayDurationSeconds, 10) || 1800));
         const startingCash = Math.max(1000, parseFloat(config.startingCash) || 500000);
@@ -4726,6 +4815,11 @@ wss.on('connection', (ws) => {
         const enabledTickers = companies.filter((c) => c.isEnabled !== false).map((c) => c.ticker);
         newsEvents = generateAutoNewsPlan(enabledTickers, totalDays, dayDurationSeconds);
         firedNewsEventsPerDay.clear();
+
+        simulationSeed = generateCryptoSeed();
+        simulationRng = createSeededRng(simulationSeed);
+        gameState.simulationSeed = simulationSeed;
+        initializeStockStochastics(companies, simulationRng);
         syncDerivedStateFlags(gameState);
 
         // 6. Persist to disk
@@ -5095,8 +5189,10 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(` • Router LAN URL:    http://${lanIp}:${PORT}`);
   console.log('----------------------------------------------------------------');
   console.log(' Credentials:');
-  console.log('   Host Matrix:       host / host2026');
-  console.log('   Stage Projector:   projector / screen2026');
+  console.log('   Host Matrix:       host / host');
+  console.log('   Stage Projector:   projector / screen');
+  console.log('   Sound Console:     sound / sound');
+  console.log('   Winner Stage:      winner / winner');
   console.log('   Trader Teams:      team1..team16 / trade100..trade1600');
   console.log('================================================================');
 });

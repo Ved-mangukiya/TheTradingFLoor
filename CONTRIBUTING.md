@@ -1,6 +1,6 @@
 # CONTRIBUTING TO THE TRADING FLOOR CHAMPIONSHIP
 
-Thank you for contributing to **The Trading Floor Championship 2026**. This document outlines the development workflow, architectural principles, testing procedures, and code standards for maintaining the platform.
+Thank you for contributing to **The Trading Floor Championship**. This document outlines the development workflow, architectural principles, testing procedures, and code standards for maintaining the platform.
 
 ---
 

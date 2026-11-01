@@ -1,8 +1,25 @@
-# CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP 2026
+# CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP
 
-**Date**: 2026-10-18  
-**Version**: 2.6.2 (Target Architecture, Authoritative State Model & Monotonic State-Guard Verified)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 5/5 Chunk 2 State Machine Assertions Passing with Zero Port Collisions or Process Leaks)  
+**Date**: 2026-11-01  
+**Version**: 2.7.0 (News State-Machine Bug Fix, Reset Sanitization & Zero-2026 Timeless Architecture Verified)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 194/194 Total Chunk Assertions Passing + 5/5 Phase 1 Assertions Passing)  
+
+---
+
+## 0. RECENT FIXES & AUDITED DEFECT RESOLUTION (2026-11-01)
+- [x] **Host News Centre `⏸️ PAUSED` Badge Elimination in Pre-Market & Standby**:
+  - *Root Cause*: `updateHostNewsLiveTimers(state)` previously evaluated `else if (gs.isPaused)` before default scheduling badges. Because `server/state_machine.js` authoritatively defines `gs.isPaused = (gs.status !== 'LIVE' && gs.status !== 'DAY_COMPLETED')`, every non-live state (`STANDBY`, `COUNTDOWN`, `RESET`, `SETUP`, `SCHEDULED`) had `gs.isPaused === true`, causing incoming news badges to erroneously display `[⏸ PAUSED (15:00 REM)]` before the opening bell.
+  - *Fix*: Decoupled the status evaluator in `public/app.js` and `renderHostNews(state)`. Badges now strictly check:
+    - `LIVE` / `RUNNING` ➔ `⏱️ Triggers in MM:SS` (or `⚠️ IMMINENT: IN Xs`, `⚡ TRIGGERING NOW...`)
+    - `COUNTDOWN` ➔ `🔔 STARTING (3-2-1)...`
+    - `PAUSED` ➔ `⏸️ PAUSED (MM:SS rem)` (only when genuinely paused mid-session by the Host)
+    - `STANDBY` ➔ `⏳ AT MM:SS (Day N)`
+    - `SCHEDULED` / `SETUP` / `RESET` ➔ `⏳ AT MM:SS`
+- [x] **Persistent Stale Pause Clearing on Reset & Start New Event**:
+  - *Root Cause*: On server reset (`CHAMPIONSHIP_RESET`), `server.js` was initializing `gameState.pauseMode = 'VISIBLE_FROZEN'` instead of `'NONE'`. In client handlers (`CHAMPIONSHIP_RESET` and `CHAMPIONSHIP_RESET_ACK`), `latestState.allScheduledNews` was not purged, retaining stale paused badges across new event setups.
+  - *Fix*: Server reset now initializes `gameState.pauseMode = 'NONE'`, `pauseStartedAt = null`, and triggers `syncDerivedStateFlags`. Client handlers clear `allScheduledNews`, `newsEvents`, and set `pauseMode = 'NONE'`.
+- [x] **Host Header Status Clarity**:
+  - `renderHostView` now distinguishes `STANDBY`, `COUNTDOWN`, `SETUP DRAFT`, `DAY CONCLUDED`, and `PAUSED`, eliminating misleading "PAUSED" text in the top host header when market is merely in Standby.
 
 ---
 
@@ -144,7 +161,7 @@
   - Floating top demo role switcher banner (`#ttfDemoBanner`) with quick-switch pills (`👑 Host`, `📊 Projector`, `💻 Trader`, `🏆 Winner Stage`, `🔊 Sound`).
 - [x] **1-Click Cloud Deployment Blueprint (`render.yaml`)**:
   - Zero-config blueprint ready for Render.com free tier hosting (`node server.js live` with full WebSocket support).
-- [x] **Instant 10-Second Public Tunnel (`Create_Live_Demo_Link.bat`)**:
+- [x] **Instant 10-Second Public Tunnel (`Launch_The_Trading_Floor.bat`)**:
   - Launches local server and exposes it via secure Cloudflare Tunnel (`npx -y untun tunnel --port 3000`), giving Ved an instant public HTTPS link for live demonstration.
 - [x] **Production Event Day LAN Invariant Preserved**:
   - When accessed on localhost or local LAN IP (`192.168.x.x`), the system connects 100% directly to the authoritative Node.js server. Demo overlays stay hidden.

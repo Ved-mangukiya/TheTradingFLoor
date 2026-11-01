@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * NEWS SCHEDULER & TIMING ENGINE (server/news_scheduler.js)
  *
  * Implements proportional timing t_i = round(D * p_i), dynamic cognitive reading

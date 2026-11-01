@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP PLATFORM
  * PERSISTENCE & DISASTER RECOVERY MODULE (server/persistence.js)
  *
  * Implements atomic checkpointing, crash recovery, and sessions map serialization.

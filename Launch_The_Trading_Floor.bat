@@ -1,11 +1,11 @@
 @echo off
-title The Trading Floor — Championship Platform 2026
+title The Trading Floor - Championship Platform
 cd /d "%~dp0"
 cls
 color 0F
 
 echo ========================================================================
-echo          THE TRADING FLOOR -- CHAMPIONSHIP SIMULATOR 2026
+echo          THE TRADING FLOOR -- CHAMPIONSHIP PLATFORM
 echo             Offline Institutional Stock Exchange Platform
 echo ========================================================================
 echo.
@@ -60,10 +60,10 @@ echo ------------------------------------------------------------------------
 echo   CHAMPIONSHIP ACCESS ADDRESSES:
 echo ------------------------------------------------------------------------
 echo   * Host Master Deck : http://localhost:3000/?role=host
-echo     Username: host  ^|  Password: host2026
+echo     Username: host  ^|  Password: host
 echo.
 echo   * Stage Projector  : http://localhost:3000/?role=projector
-echo     Username: projector  ^|  Password: screen2026
+echo     Username: projector  ^|  Password: screen
 echo.
 echo   * Teams on LAN     : http://%LAN_IP%:3000/
 echo     Share this link with student participants on the same Wi-Fi.

@@ -1,4 +1,7 @@
 
+
+
+
 // ==========================================
 // BACKWARD COMPATIBILITY DOM ID ALIASES (FLOW-002)
 // ==========================================
@@ -25,7 +28,7 @@ if (typeof document !== 'undefined' && document.getElementById) {
 }
 
 /*!
- * Trading Floor Championship 2026: Vanilla charting engine
+ * Trading Floor Championship Platform: Vanilla charting engine
  * Zero dependencies. Canvas 2D, HiDPI-aware, monotone cubic Bezier splines.
  *
  * Public API (attached to window and window.TFCharts):
@@ -243,6 +246,10 @@ if (typeof document !== 'undefined' && document.getElementById) {
     };
   }
   function renderSpark(canvas, st, t) {
+    if (canvas && canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+      st.w = canvas.clientWidth;
+      st.h = canvas.clientHeight;
+    }
     var ctx = prepare(canvas, st), W = st.w, H = st.h;
     var data = thin(st.hist, 240);
     if (data.length < 2) return;
@@ -543,9 +550,8 @@ if (typeof document !== 'undefined' && document.getElementById) {
   global.drawPortfolioEquityCurve = drawPortfolioEquityCurve;
 })(typeof window !== 'undefined' ? window : this);
 
-
 // ==========================================================================
-// THE TRADING FLOOR CHAMPIONSHIP 2026 — CLIENT ENGINE & INTERFACE CONTROLLER
+// THE TRADING FLOOR CHAMPIONSHIP — CLIENT ENGINE & INTERFACE CONTROLLER
 // Offline-First Institutional Trading Terminal
 // ==========================================================================
 
@@ -1231,19 +1237,19 @@ function getAutoCredentials(paramVal, allParams) {
   if (!paramVal) return null;
   const lower = paramVal.toLowerCase().trim();
   if (lower === 'host') {
-    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'host2026';
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'host';
     return { u: 'host', p: pass };
   }
   if (lower === 'projector') {
-    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'screen2026';
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'screen';
     return { u: 'projector', p: pass };
   }
   if (lower === 'sound') {
-    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'sound2026';
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'sound';
     return { u: 'sound', p: pass };
   }
   if (lower === 'winner') {
-    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'winner2026';
+    const pass = (allParams && (allParams.get('password') || allParams.get('pass') || allParams.get('p'))) || 'winner';
     return { u: 'winner', p: pass };
   }
   const teamMatch = lower.match(/^team(\d+)$/);
@@ -1343,7 +1349,7 @@ class MockEngine {
     this.gameState = {
       eventId: 'EVT_DEMO_SHOWCASE',
       stateVersion: 1,
-      title: 'The Trading Floor Championship 2026',
+      title: 'The Trading Floor Championship',
       subtitle: 'BBA Department • Annual Stock Simulation',
       institution: 'Gujarat Technological University',
       status: 'LIVE',
@@ -1493,27 +1499,90 @@ class MockEngine {
     };
   }
 
-  tick() {
-    this.gameState.elapsedSeconds += 2;
-    if (this.gameState.isPaused) return;
+  exportSnapshot() {
+    return {
+      lastTickAtMs: this.lastTickAtMs || Date.now(),
+      gameState: this.gameState,
+      companies: this.companies,
+      teams: this.teams
+    };
+  }
 
-    for (var k = 0; k < 4; k++) {
-      var idx = Math.floor(Math.random() * this.companies.length);
-      var c = this.companies[idx];
-      if (c && !c.isHalted) {
-        var delta = (Math.random() - 0.49) * 0.006 * c.price;
-        c.price = Number(Math.max(1, c.price + delta).toFixed(2));
+  ImportSnapshot(snap) {
+    if (!snap || !snap.gameState) return;
+    if ((snap.gameState.stateVersion || 0) < (this.gameState.stateVersion || 0)) return;
+    this.lastTickAtMs = snap.lastTickAtMs || Date.now();
+    this.gameState = Object.assign({}, this.gameState, snap.gameState);
+    if (Array.isArray(snap.companies)) this.companies = snap.companies;
+    if (Array.isArray(snap.teams)) this.teams = snap.teams;
+  }
+
+  stepSingleTick() {
+    this.gameState.elapsedSeconds += 2;
+    this.gameState.stateVersion = (this.gameState.stateVersion || 1) + 1;
+    if (this.gameState.isPaused || this.gameState.status !== 'LIVE') return;
+
+    const marketZ = (Math.random() - 0.50) * 2;
+    for (var i = 0; i < this.companies.length; i++) {
+      var c = this.companies[i];
+      if (c && c.isEnabled !== false && !c.isHalted) {
+        var idio = (Math.random() - 0.50) * 2;
+        var pctMove = (marketZ * 0.0015) + (idio * 0.0045);
+        c.price = Number(Math.max(1, c.price * Math.exp(pctMove)).toFixed(2));
         c.currentPrice = c.price;
-        c.change = Number((c.price - (c.dayOpenPrice || c.basePrice)).toFixed(2));
-        c.changePercent = Number(((c.change / (c.dayOpenPrice || c.basePrice)) * 100).toFixed(2));
-        c.high = Math.max(c.high, c.price);
-        c.low = Math.min(c.low, c.price);
+        var openRef = c.dayOpenPrice || c.basePrice || c.price;
+        c.change = Number((c.price - openRef).toFixed(2));
+        c.changePercent = Number(((c.change / openRef) * 100).toFixed(2));
+        c.high = Math.max(c.high || c.price, c.price);
+        c.low = Math.min(c.low || c.price, c.price);
+        if (!Array.isArray(c.priceHistory)) c.priceHistory = [openRef];
         c.priceHistory.push(c.price);
-        if (c.priceHistory.length > 50) c.priceHistory.shift();
+        if (c.priceHistory.length > 60) c.priceHistory.shift();
+        c.history = c.priceHistory.map(function(val, idx) {
+          return { time: idx * 2, price: val };
+        });
       }
     }
+    for (var tIdx = 0; tIdx < this.teams.length; tIdx++) {
+      this.recalcTeam(this.teams[tIdx]);
+    }
+  }
 
-    this.recalcTeam(this.teams[0]);
+  catchUpElapsedTicks() {
+    var now = Date.now();
+    if (!this.lastTickAtMs) {
+      this.lastTickAtMs = now;
+      return;
+    }
+    if (this.gameState.isPaused || this.gameState.status !== 'LIVE') {
+      this.lastTickAtMs = now;
+      return;
+    }
+    var missedSteps = Math.min(300, Math.floor((now - this.lastTickAtMs) / 2000));
+    if (missedSteps > 0) {
+      for (var s = 0; s < missedSteps; s++) {
+        this.stepSingleTick();
+      }
+      this.lastTickAtMs = now;
+    }
+  }
+
+  tick() {
+    var now = Date.now();
+    if (!this.lastTickAtMs) this.lastTickAtMs = now - 2000;
+    var steps = Math.max(1, Math.min(30, Math.floor((now - this.lastTickAtMs) / 2000)));
+    this.lastTickAtMs = now;
+    for (var s = 0; s < steps; s++) {
+      this.stepSingleTick();
+    }
+    if (typeof crossTabChannel !== 'undefined' && crossTabChannel) {
+      try {
+        crossTabChannel.postMessage({
+          type: 'DEMO_STATE_SYNC',
+          snapshot: this.exportSnapshot()
+        });
+      } catch (e) {}
+    }
   }
 
   handleClientMessage(data, socket) {
@@ -1742,7 +1811,30 @@ class MockWebSocket {
 let isDemoMode = false;
 let mockEngineInstance = null;
 
-function activateDemoShowcaseMode(preselectedRole) {
+const crossTabChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('ttf_simulation_sync_v1') : null;
+if (crossTabChannel) {
+  crossTabChannel.onmessage = function(ev) {
+    if (ev.data && ev.data.type === 'DEMO_STATE_SYNC' && mockEngineInstance) {
+      mockEngineInstance.ImportSnapshot(ev.data.snapshot);
+      if (typeof renderCurrentView === 'function') renderCurrentView();
+    }
+  };
+}
+
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      if (ws && ws.readyState === WebSocket.OPEN && typeof sessionToken === 'string' && sessionToken && !isDemoMode) {
+        ws.send(JSON.stringify({ action: 'GET_STATE', session_token: sessionToken }));
+      } else if (mockEngineInstance) {
+        mockEngineInstance.catchUpElapsedTicks();
+        if (typeof renderCurrentView === 'function') renderCurrentView();
+      }
+    }
+  });
+}
+
+function activateDemoShowcaseMode(preselectedRole) { return; // Purged
   if (!mockEngineInstance) {
     mockEngineInstance = new MockEngine();
   }
@@ -1821,15 +1913,7 @@ window.launchDemoRole = launchDemoRole;
 window.exitDemoMode = exitDemoMode;
 window.activateDemoShowcaseMode = activateDemoShowcaseMode;
 
-setInterval(function() {
-  if (isDemoMode && mockEngineInstance) {
-    mockEngineInstance.tick();
-    if (ws && ws.onmessage) {
-      ws.onmessage({ data: JSON.stringify(mockEngineInstance.getState(currentRole || 'HOST', 'team1')) });
-    }
-  }
-}, 2000);
-
+/* Demo ticker interval disabled - production LAN server engine is authoritative */
 
 let reconnectTimerHandle = null;
 
@@ -1852,15 +1936,7 @@ function connectWebSocket() {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const explicitDemo = params.get('demo') === '1' || params.get('showcase') === '1';
   const customServer = params.get('server');
-  const isGitHubPages = window.location.hostname.includes('github.io');
-  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || /^192\.168\./.test(window.location.hostname) || /^10\./.test(window.location.hostname);
-
-  if ((isGitHubPages && !customServer) || explicitDemo) {
-    activateDemoShowcaseMode();
-    return;
-  }
 
   let wsUrl;
   if (customServer) {
@@ -1874,25 +1950,15 @@ function connectWebSocket() {
     ws = new WebSocket(wsUrl);
   } catch (err) {
     console.warn('[WS INIT NOTE]', err);
-    if (!isLocalHost) {
-      activateDemoShowcaseMode();
-      return;
-    }
+    if (reconnectTimerHandle) clearTimeout(reconnectTimerHandle);
+    reconnectTimerHandle = setTimeout(connectWebSocket, 2000);
+    return;
   }
 
-  let connectTimeout = setTimeout(function() {
-    if (ws && ws.readyState !== WebSocket.OPEN && !isLocalHost) {
-      console.info('[TTF] Server unreachable, activating Executive Demo Mode for showcase.');
-      try { ws.close(); } catch (e) {}
-      activateDemoShowcaseMode();
-    }
-  }, 3500);
-
-  attachWebSocketEvents(function() { clearTimeout(connectTimeout); }, isLocalHost);
+  attachWebSocketEvents();
 }
 
-function attachWebSocketEvents(onOpenHook, isLocalHost) {
-  if (typeof isLocalHost === 'undefined') isLocalHost = true;
+function attachWebSocketEvents(onOpenHook) {
   ws.onopen = () => {
     if (onOpenHook) onOpenHook();
     if (!isDemoMode) hideDemoOverlays();
@@ -2084,11 +2150,14 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
 
     if (msg.type === 'CIRCUIT_BREAKER_ALERT') {
       if (!isLoggedIn || currentRole === null) return;
+      // Suppress any existing or overlapping toast to ensure single authoritative circuit alert
+      const existingToast = document.getElementById('orderToast');
+      if (existingToast) existingToast.classList.add('hidden');
+
       playInstitutionalSound('emergency_klaxon');
       document.body.classList.add('circuit-strobe-active');
       setTimeout(() => { document.body.classList.remove('circuit-strobe-active'); }, 5000);
       showCircuitAlertBanner(`${msg.name || msg.ticker} (${msg.ticker}) HALTED at ₹${msg.price.toFixed(2)} due to ${msg.direction || '20%'} circuit limit breach.`, msg);
-      showOrderToast(`🚨 CIRCUIT BREAKER: ${msg.ticker} halted (${msg.direction} limit at ₹${msg.price.toFixed(2)})`, false);
       return;
     }
 
@@ -2400,9 +2469,13 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       latestState.gameState.resetMessage = resetMsg;
       latestState.gameState.currentDay = 1;
       latestState.gameState.elapsedSeconds = 0;
-      latestState.gameState.isPaused = true;
+      latestState.gameState.isPaused = false;
+      latestState.gameState.pauseMode = 'NONE';
+      latestState.gameState.pauseStartedAt = null;
       latestState.gameState.isConcluded = false;
       latestState.gameState.winnerData = null;
+      latestState.allScheduledNews = [];
+      latestState.newsEvents = [];
       setupInitialized = false;
       try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
       updateLoginEventStatusBanner(latestState);
@@ -2440,6 +2513,11 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
       latestState.gameState.isReset = true;
       latestState.gameState.currentDay = 1;
       latestState.gameState.elapsedSeconds = 0;
+      latestState.gameState.isPaused = false;
+      latestState.gameState.pauseMode = 'NONE';
+      latestState.gameState.pauseStartedAt = null;
+      latestState.allScheduledNews = [];
+      latestState.newsEvents = [];
       setupInitialized = false;
       try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
       updateLoginEventStatusBanner(latestState);
@@ -2623,9 +2701,8 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     const connText = document.getElementById('loginServerConnectionText');
     if (connDot) connDot.style.background = '#EF4444';
     if (connText) connText.textContent = 'Server Offline • Reconnecting...';
-    if (!isLocalHost && !isDemoMode) {
-      activateDemoShowcaseMode();
-    }
+    if (reconnectTimerHandle) clearTimeout(reconnectTimerHandle);
+    reconnectTimerHandle = setTimeout(connectWebSocket, 2000);
   };
 
   ws.onclose = () => {
@@ -2633,13 +2710,8 @@ function attachWebSocketEvents(onOpenHook, isLocalHost) {
     const connText = document.getElementById('loginServerConnectionText');
     if (connDot) connDot.style.background = '#EF4444';
     if (connText) connText.textContent = 'Server Offline • Reconnecting...';
-    if (isDemoMode) return;
-    if (!isLocalHost) {
-      activateDemoShowcaseMode();
-    } else {
-      if (reconnectTimerHandle) clearTimeout(reconnectTimerHandle);
-      reconnectTimerHandle = setTimeout(connectWebSocket, 2000);
-    }
+    if (reconnectTimerHandle) clearTimeout(reconnectTimerHandle);
+    reconnectTimerHandle = setTimeout(connectWebSocket, 2000);
   };
 }
 
@@ -2840,7 +2912,6 @@ function autoCloseLifecycleModalsOnStateTransition(newState) {
     }
   }
 }
-
 
 // ==========================================
 // AUTHORITATIVE ROLE & OVERLAY RESOLVER (FLOW-001)
@@ -3477,7 +3548,7 @@ function renderTraderView(state) {
       const wrTimerDisplay = document.getElementById('waitingRoomTimerDisplay');
       const wrTimerNote = document.getElementById('waitingRoomTimerNote');
 
-      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship 2026';
+      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship';
       if (wrSub) wrSub.textContent = 'Competition Trading Concluded • Audited Standings Finalized';
       if (wrTeam && portfolio) wrTeam.textContent = portfolio.name;
       if (wrCash) wrCash.textContent = formatINR(portfolio ? (portfolio.cash || gameState.startingCash || 500000) : (gameState.startingCash || 500000));
@@ -3523,7 +3594,7 @@ function renderTraderView(state) {
       const wrTimerDisplay = document.getElementById('waitingRoomTimerDisplay');
       const wrTimerNote = document.getElementById('waitingRoomTimerNote');
 
-      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship 2026';
+      if (wrTitle) wrTitle.textContent = gameState.title || 'The Trading Floor Championship';
       if (wrSub) wrSub.textContent = gameState.subtitle || `${gameState.institution || 'Gujarat Technological University'} • Official Trading Terminal`;
       if (wrTeam && portfolio) wrTeam.textContent = portfolio.name;
       if (wrCash) wrCash.textContent = formatINR(portfolio ? (portfolio.cash || gameState.startingCash || 500000) : (gameState.startingCash || 500000));
@@ -4112,21 +4183,23 @@ function syncTradeModalSide() {
   if (isBuy) {
     if (presetLabel) presetLabel.textContent = 'Budget Shortcuts:';
     if (pillsContainer) {
+      pillsContainer.className = 'shortcuts-grid';
       pillsContainer.innerHTML = `
         <button type="button" onclick="setTradeBudgetPreset(25)" class="trade-pill">25% Cash</button>
         <button type="button" onclick="setTradeBudgetPreset(50)" class="trade-pill">50% Cash</button>
         <button type="button" onclick="setTradeBudgetPreset(75)" class="trade-pill">75% Cash</button>
-        <button type="button" onclick="setTradeBudgetPreset(100)" class="trade-pill good" title="Use maximum affordable cash">⚡ Max Affordable Buy</button>
+        <button type="button" onclick="setTradeBudgetPreset(100)" class="trade-pill good" title="Use maximum affordable cash">⚡ Max (100%)</button>
       `;
     }
   } else {
     if (presetLabel) presetLabel.textContent = 'Holding Shortcuts:';
     if (pillsContainer) {
+      pillsContainer.className = 'shortcuts-grid';
       pillsContainer.innerHTML = `
         <button type="button" onclick="setTradeHoldingPreset(25)" class="trade-pill">25% Held</button>
         <button type="button" onclick="setTradeHoldingPreset(50)" class="trade-pill">50% Held</button>
         <button type="button" onclick="setTradeHoldingPreset(75)" class="trade-pill">75% Held</button>
-        <button type="button" onclick="setTradeHoldingPreset(100)" class="trade-pill danger" title="Liquidate all held shares of this stock">⚡ Sell All Held</button>
+        <button type="button" onclick="setTradeHoldingPreset(100)" class="trade-pill danger" title="Sell all held shares of this stock">⚡ All (100%)</button>
       `;
     }
   }
@@ -4295,11 +4368,21 @@ function recalculateTradeModal() {
 
   const isBuy = currentTradeModalSide === 'BUY';
   if (elNetLabel) elNetLabel.textContent = isBuy ? 'Total Amount to Pay:' : 'Total Amount You Receive:';
-  if (elNet) elNet.textContent = `${isBuy ? '−' : '+'}₹${(isBuy ? netBuyCost : netSellProceeds).toFixed(2)}`;
+  if (elNet) elNet.textContent = `₹${(isBuy ? netBuyCost : netSellProceeds).toFixed(2)}`;
 
   const cashAfter = isBuy ? Math.max(0, p.cash - netBuyCost) : p.cash + netSellProceeds;
   if (elCashAfterLabel) elCashAfterLabel.textContent = isBuy ? 'Money Left After Buying:' : 'Total Cash After Selling:';
   if (elCashAfter) elCashAfter.textContent = formatINR(cashAfter);
+
+  const barUsed = document.getElementById('tradeModalBarUsed');
+  const barLeft = document.getElementById('tradeModalBarLeft');
+  if (barUsed && barLeft) {
+    const usedRatio = isBuy
+      ? (p.cash > 0 ? Math.min(100, Math.max(0, (netBuyCost / p.cash) * 100)) : 100)
+      : (currentHeld > 0 ? Math.min(100, Math.max(0, (qty / currentHeld) * 100)) : 0);
+    barUsed.style.width = `${usedRatio.toFixed(1)}%`;
+    barLeft.style.width = `${(100 - usedRatio).toFixed(1)}%`;
+  }
 
   const isMarketPaused = gs.isPaused || gs.isConcluded || gs.status === 'DAY_COMPLETED';
   const isUpperHalted = stock.isHalted && stock.haltDirection === 'UPPER';
@@ -4658,6 +4741,13 @@ let orderToastTimeout = null;
 function showOrderToast(message, isSuccess) {
   const toast = document.getElementById('orderToast');
   if (!toast) return;
+
+  // Single Authoritative Circuit Alert: Suppress secondary orderToast when Circuit Alert HUD is active
+  const cbBanner = document.getElementById('circuitBreakerAlertBanner');
+  if (cbBanner && !cbBanner.classList.contains('hidden')) {
+    return;
+  }
+
   if (orderToastTimeout) clearTimeout(orderToastTimeout);
 
   toast.innerHTML = `
@@ -5146,7 +5236,7 @@ function renderProjectorHeroCountdown(state, remSec) {
   const durEl = document.getElementById('projHeroDurationDisplay');
   const circuitEl = document.getElementById('projHeroCircuitDisplay');
 
-  if (titleEl) titleEl.textContent = gameState.title || 'The Trading Floor Championship 2026';
+  if (titleEl) titleEl.textContent = gameState.title || 'The Trading Floor Championship';
   if (instEl) instEl.textContent = gameState.institution || 'Gujarat Technological University • SSASIT';
   if (sessionPill) sessionPill.textContent = `DAY ${gameState.currentDay || 1} PRE-MARKET`;
 
@@ -7801,7 +7891,6 @@ const HOST_TAB_ALIASES = {
   'exports': 'stage'
 };
 
-
 // ==========================================
 // SUB-NAVIGATION CONTROLLERS (FLOW-003)
 // ==========================================
@@ -8174,7 +8263,7 @@ function initOrRestoreEventSetup() {
   const cbEl = document.getElementById('setupCircuitBreaker');
   const riskEl = document.getElementById('setupRiskProfile');
 
-  if (titleEl) titleEl.value = (draft && draft.title) || gs.title || 'The Trading Floor Championship 2026';
+  if (titleEl) titleEl.value = (draft && draft.title) || gs.title || 'The Trading Floor Championship';
   if (instEl) instEl.value = (draft && draft.institution) || gs.institution || 'Gujarat Technological University';
   if (cashEl) cashEl.value = String((draft && draft.startingCash) || gs.startingCash || 500000);
   if (daysEl) daysEl.value = String((draft && draft.totalDays) || gs.totalDays || 3);
@@ -8475,7 +8564,7 @@ function copySetupCredentialsToClipboard() {
   const teams = getSetupTeamsArray();
   const origin = window.location.origin;
   const lines = [
-    `THE TRADING FLOOR CHAMPIONSHIP 2026 — ${teams.length} TEAMS CREDENTIALS`,
+    `THE TRADING FLOOR CHAMPIONSHIP — ${teams.length} TEAMS CREDENTIALS`,
     '============================================================',
     ''
   ];
@@ -8733,6 +8822,7 @@ function generateClientNewsPreview(selectedTickers, totalDays, dayDurationSecond
 
 function updateNewsPreviewFromSelection() {
   const container = document.getElementById('setupNewsPreviewList');
+  const summaryContainer = document.getElementById('setupNewsSummaryBar');
   if (!container) return;
 
   const totalDays = parseInt(document.getElementById('setupTotalDays')?.value, 10) || 3;
@@ -8747,55 +8837,108 @@ function updateNewsPreviewFromSelection() {
   const schedDate = schedTimeVal ? new Date(schedTimeVal) : null;
 
   const summaryHtml = `
-    <div class="cream-panel" style="padding: 12px 16px; margin-bottom: 12px; border-left: 3px solid var(--gold); background: #FAF9F6;">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div class="cream-panel" style="padding: 16px 20px; border-left: 4px solid var(--champagne-accent, #B88728); background: #FAF9F6; border-radius: 12px; box-shadow: 0 2px 8px rgba(10, 18, 30, 0.04); margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
-          <strong style="color: var(--text-forest); font-size: 13px;">⏱️ Dynamic Schedule: ${durationMins} Minutes per Day (${dayDuration.toLocaleString()}s)</strong>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="color: var(--text-forest); font-size: 14px;">⏱️ Dynamic Tournament Schedule: ${durationMins} Minutes per Day (${dayDuration.toLocaleString()}s)</strong>
+            <span class="badge badge-active" style="font-size: 10.5px; font-weight: 800;">✓ Schedule Feasible</span>
+          </div>
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
             ${previewEvents.length} total news stories across ${totalDays} days &bull; ${readingSec}s reading window before each reaction &bull; Min separation: 60s
           </div>
         </div>
-        <span class="badge badge-active" style="font-size: 11px; font-weight: 800;">✓ Schedule Feasible</span>
       </div>
     </div>
   `;
 
-  const cardsHtml = previewEvents.map((ev) => {
-    const isUp = ev.impact_pct >= 0;
-    const offsetMin = Math.floor(ev.trigger_second / 60);
-    const offsetSec = ev.trigger_second % 60;
-    const pctOfSession = Math.round((ev.relative_position || (ev.trigger_second / dayDuration)) * 100);
+  if (summaryContainer) {
+    summaryContainer.innerHTML = summaryHtml;
+  }
 
-    let clockTimeHtml = '';
-    if (schedDate && !isNaN(schedDate.getTime())) {
-      const targetTime = new Date(schedDate.getTime() + (ev.trigger_second * 1000));
-      clockTimeHtml = ` &bull; 🕒 Estimated: ${formatClock12H(targetTime)}`;
-    }
+  // Group events by day for clear, intuitive chronological review
+  const eventsByDay = {};
+  for (let d = 1; d <= totalDays; d++) {
+    eventsByDay[d] = [];
+  }
+  previewEvents.forEach(ev => {
+    const d = ev.day || 1;
+    if (!eventsByDay[d]) eventsByDay[d] = [];
+    eventsByDay[d].push(ev);
+  });
 
-    return `
-      <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); background: #FFFFFF;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">
-            DAY ${ev.day} &bull; ${offsetMin}m ${offsetSec}s AFTER START (${pctOfSession}% of session) &bull; AT ${formatMMSS(ev.trigger_second)}${clockTimeHtml}
+  let daysHtml = '';
+  for (let d = 1; d <= totalDays; d++) {
+    const dayEvs = eventsByDay[d] || [];
+    const dayCards = dayEvs.map(ev => {
+      const isUp = ev.impact_pct >= 0;
+      const offsetMin = Math.floor(ev.trigger_second / 60);
+      const offsetSec = ev.trigger_second % 60;
+      const pctOfSession = Math.round((ev.relative_position || (ev.trigger_second / dayDuration)) * 100);
+
+      let clockTimeHtml = '';
+      if (schedDate && !isNaN(schedDate.getTime())) {
+        const targetTime = new Date(schedDate.getTime() + (ev.trigger_second * 1000));
+        clockTimeHtml = ` &bull; 🕒 Estimated: ${formatClock12H(targetTime)}`;
+      }
+
+      return `
+        <div class="cream-panel" style="padding: 16px; border: 1.5px solid var(--subtle-border); border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(10, 18, 30, 0.04); min-width: 0; overflow: hidden;">
+          <div>
+            <!-- Clean Header: Left side timestamp badge, right side stock pill (never overlaps) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span class="badge badge-champagne" style="font-size: 10.5px; font-weight: 800; white-space: nowrap;">
+                DAY ${ev.day} &bull; @ ${formatMMSS(ev.trigger_second)}
+              </span>
+              <span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10.5px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">
+                ${ev.ticker} ${isUp ? '+' : ''}${ev.impact_pct}%
+              </span>
+            </div>
+
+            <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 8px; line-height: 1.3;">
+              ⏱️ ${offsetMin}m ${offsetSec}s into round (${pctOfSession}% of session)${clockTimeHtml}
+            </div>
+
+            <h4 style="font-weight: 800; font-size: 13.5px; color: var(--text-forest); margin: 0 0 6px 0; line-height: 1.35; word-break: break-word;">
+              ${escapeHtml(ev.headline)}
+            </h4>
+            <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.45; margin: 0 0 10px 0; word-break: break-word;">
+              ${escapeHtml(ev.simple_explanation)}
+            </p>
+          </div>
+
+          <div style="padding-top: 8px; border-top: 1px dashed var(--subtle-border); margin-top: auto;">
+            <div style="font-size: 10.5px; color: var(--gold-dark, #78530D); font-weight: 700; background: rgba(184, 135, 40, 0.08); padding: 5px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+              📖 ${ev.reading_duration_sec}s reading &amp; discussion window
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    daysHtml += `
+      <div class="setup-day-timeline-group" style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--champagne-light, #F1ECE1);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge badge-champagne" style="font-size: 11px; font-weight: 900; letter-spacing: 0.05em; padding: 4px 10px;">
+              DAY ${d} TIMELINE
+            </span>
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-forest);">
+              ${dayEvs.length} Automated News Dispatch${dayEvs.length === 1 ? '' : 'es'}
+            </span>
+          </div>
+          <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); font-weight: 600;">
+            Evenly spaced across session
           </span>
-          <span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10px; font-weight: 800;">
-            ${ev.ticker} ${isUp ? '+' : ''}${ev.impact_pct}%
-          </span>
         </div>
-        <div style="font-weight: 800; font-size: 13px; color: var(--text-forest); margin-bottom: 4px; line-height: 1.35;">
-          ${escapeHtml(ev.headline)}
-        </div>
-        <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px;">
-          ${escapeHtml(ev.simple_explanation)}
-        </div>
-        <div style="font-size: 10px; color: var(--gold-dark); font-weight: 600;">
-          📖 ${ev.reading_duration_sec}s reading &amp; discussion window before market price reaction begins
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;">
+          ${dayCards}
         </div>
       </div>
     `;
-  }).join('');
+  }
 
-  container.innerHTML = summaryHtml + cardsHtml;
+  container.innerHTML = (summaryContainer ? '' : summaryHtml) + daysHtml;
 }
 
 function regenerateNewsTimeline() {
@@ -9472,7 +9615,17 @@ function renderHostView(state) {
     const remMs = gameState.scheduledStartTime ? Math.max(0, new Date(gameState.scheduledStartTime).getTime() - Date.now()) : 0;
     const schTime = gameState.scheduledStartTime ? formatClock12H(gameState.scheduledStartTime) : '';
     hostStatusText = `SCHEDULED (Opens at ${schTime} • in ${formatMMSS(Math.floor(remMs / 1000))})`;
-  } else if (gameState.isPaused) {
+  } else if (gameState.status === 'COUNTDOWN') {
+    hostStatusText = 'COUNTDOWN (3-2-1)';
+  } else if (gameState.status === 'STANDBY') {
+    hostStatusText = 'STANDBY';
+  } else if (gameState.status === 'SETUP' || gameState.status === 'RESET') {
+    hostStatusText = 'SETUP DRAFT';
+  } else if (gameState.status === 'DAY_COMPLETED') {
+    hostStatusText = 'DAY CONCLUDED';
+  } else if (gameState.status === 'CHAMPIONSHIP_CONCLUDED' || gameState.status === 'WINNER_ANNOUNCEMENT') {
+    hostStatusText = 'CHAMPIONSHIP CONCLUDED';
+  } else if (gameState.status === 'PAUSED') {
     if (gameState.pauseMode === 'EMERGENCY_HALT') {
       hostStatusText = 'EMERGENCY HALT';
     } else if (gameState.pauseMode === 'BLACKOUT') {
@@ -9739,7 +9892,12 @@ function hostPauseMarket(mode = 'VISIBLE_FROZEN') {
   if (gs && gs.isPaused) {
     // If the requested mode is different from current pauseMode, allow switching live!
     if (mode && mode !== gs.pauseMode) {
-      ws.send(JSON.stringify({ action: 'HOST_PAUSE', session_token: sessionToken, pauseMode: mode }));
+      ws.send(JSON.stringify({ action: 'HOST_SET_PAUSE_MODE', session_token: sessionToken, pauseMode: mode }));
+      if (latestState && latestState.gameState) {
+        latestState.gameState.pauseMode = mode;
+        if (typeof syncHostSingularActionBar === 'function') syncHostSingularActionBar(latestState);
+        if (typeof syncRoleOverlays === 'function') syncRoleOverlays(currentRole, latestState.gameState);
+      }
       showOrderToast(mode === 'BLACKOUT' ? '🕶️ Switched to Blackout Pause (screens hidden)' : '❄️ Switched to Soft Pause (prices visible)', true);
       return;
     }
@@ -9888,24 +10046,8 @@ function syncHostProgressiveDisclosure(gs) {
   const btnAddDay = document.getElementById('btnAtcAddDay');
   const btnEmergency = document.getElementById('btnEmergencyStopTrigger');
 
-  // Update mode selector button styling
-  const effectiveMode = gs.isPaused ? (gs.pauseMode || hostSelectedPauseMode) : hostSelectedPauseMode;
-  if (btnModeSoft && btnModeBlackout) {
-    if (effectiveMode === 'BLACKOUT') {
-      btnModeSoft.style.background = 'transparent';
-      btnModeSoft.style.color = 'var(--text-muted)';
-      btnModeBlackout.style.background = '#1E293B';
-      btnModeBlackout.style.color = '#F8FAFC';
-    } else {
-      btnModeSoft.style.background = '#FEF3C7';
-      btnModeSoft.style.color = '#92400E';
-      btnModeBlackout.style.background = 'transparent';
-      btnModeBlackout.style.color = 'var(--text-muted)';
-    }
-  }
-
   // Helper to hide all optional buttons first, then show ONLY what is needed for the current step
-  [btnResume, btnPause, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
+  [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
     if (el) el.classList.add('hidden');
   });
 
@@ -9942,14 +10084,20 @@ function syncHostProgressiveDisclosure(gs) {
     }
     if (btnCancelSched) btnCancelSched.classList.remove('hidden');
   } else if (gs.status === 'LIVE' && !gs.isPaused) {
-    // STEP 3: LIVE TRADING -> Hide Resume! Show [⏸ Pause Market] + Mode Selector + [🔔 Conclude Day] + [🛑 Emergency Stop]
+    // STEP 3: LIVE TRADING -> Direct Choice Pause Actions (Zero Duplication)
     if (badge) { badge.textContent = `🟢 LIVE • DAY ${day}/${total}`; badge.className = 'badge badge-active'; }
     if (btnPause) {
       btnPause.classList.remove('hidden');
       btnPause.disabled = false;
-      btnPause.textContent = `⏸ Pause Market (${hostSelectedPauseMode === 'BLACKOUT' ? 'Blackout' : 'Soft'})`;
+      btnPause.textContent = '⏸ Pause (Soft Freeze)';
+      btnPause.onclick = () => hostPauseMarket('VISIBLE_FROZEN');
     }
-    if (modeSelector) modeSelector.classList.remove('hidden');
+    if (btnModeBlackout) {
+      btnModeBlackout.classList.remove('hidden');
+      btnModeBlackout.disabled = false;
+      btnModeBlackout.textContent = '🕶️ Blackout Pause';
+      btnModeBlackout.onclick = () => hostPauseMarket('BLACKOUT');
+    }
     if (btnConclude) {
       btnConclude.classList.remove('hidden');
       btnConclude.disabled = false;
@@ -9961,7 +10109,7 @@ function syncHostProgressiveDisclosure(gs) {
     }
     if (btnEmergency) btnEmergency.classList.remove('hidden');
   } else if (gs.status === 'PAUSED' || gs.isPaused) {
-    // STEP 4: PAUSED -> Hide Pause! Show [▶ Resume Market (3-2-1)] + Mode Switcher + [🔔 Conclude Day]
+    // STEP 4: PAUSED -> Show [▶ Resume Market (3-2-1)] + Direct 1-Click Mode Switcher
     const isBlk = gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'EMERGENCY_HALT';
     if (badge) {
       badge.textContent = isBlk ? '🕶️ PAUSED (BLACKOUT)' : '⏸️ PAUSED (SOFT FREEZE)';
@@ -9974,7 +10122,21 @@ function syncHostProgressiveDisclosure(gs) {
       btnResume.className = 'btn btn-primary';
       btnResume.onclick = () => hostResumeMarket();
     }
-    if (modeSelector) modeSelector.classList.remove('hidden');
+    if (isBlk) {
+      if (btnPause) {
+        btnPause.classList.remove('hidden');
+        btnPause.disabled = false;
+        btnPause.textContent = 'Switch to ❄️ Soft Freeze';
+        btnPause.onclick = () => hostSelectOrSwitchPauseMode('VISIBLE_FROZEN');
+      }
+    } else {
+      if (btnModeBlackout) {
+        btnModeBlackout.classList.remove('hidden');
+        btnModeBlackout.disabled = false;
+        btnModeBlackout.textContent = 'Switch to 🕶️ Blackout';
+        btnModeBlackout.onclick = () => hostSelectOrSwitchPauseMode('BLACKOUT');
+      }
+    }
     if (btnConclude) {
       btnConclude.classList.remove('hidden');
       btnConclude.disabled = false;
@@ -10198,10 +10360,10 @@ function copyToClipboard(text) {
 function copyAllCredentialsToClipboard() {
   const origin = window.location.origin;
   let text = `==========================================================\n`;
-  text += `THE TRADING FLOOR CHAMPIONSHIP 2026 — TERMINAL CREDENTIALS\n`;
+  text += `THE TRADING FLOOR CHAMPIONSHIP — TERMINAL CREDENTIALS\n`;
   text += `==========================================================\n\n`;
-  text += `[HOST MASTER CONTROL]\nURL: ${origin}/?role=host\nUsername: host\nPassword: host2026\n\n`;
-  text += `[AUDITORIUM STAGE PROJECTOR]\nURL: ${origin}/?role=projector\nUsername: projector\nPassword: screen2026\n\n`;
+  text += `[HOST MASTER CONTROL]\nURL: ${origin}/?role=host\nUsername: host\nPassword: host\n\n`;
+  text += `[AUDITORIUM STAGE PROJECTOR]\nURL: ${origin}/?role=projector\nUsername: projector\nPassword: screen\n\n`;
   text += `[TRADER TERMINALS (TEAMS 1 - 16)]\n`;
   for (let i = 1; i <= 16; i++) {
     text += `Team ${i}: Username: team${i} | Password: trade${i}00 | Direct Link: ${origin}/?team=team${i}\n`;
@@ -11446,7 +11608,17 @@ function updateHostNewsLiveTimers(state) {
 
     if (upcoming) {
       const rem = Math.max(0, (upcoming.trigger_second || 0) - elapsed);
-      bannerEl.innerHTML = `<span style="color:var(--price-up);">⚡ ${escapeHtml(upcoming.headline.slice(0, 50))}...</span> in <strong style="color:var(--text-forest);">${formatMMSS(rem)}</strong> (Day ${upcoming.day || 1} @ ${formatMMSS(upcoming.trigger_second || 0)})`;
+      if (gs.status === 'PAUSED') {
+        bannerEl.innerHTML = `<span style="color:#B45309;">⏸️ Market Paused:</span> <span style="color:var(--text-forest); font-weight:700;">${escapeHtml(upcoming.headline.slice(0, 50))}...</span> (<strong style="color:var(--text-forest);">${formatMMSS(rem)}</strong> remaining after resume)`;
+      } else if (gs.status === 'COUNTDOWN') {
+        bannerEl.innerHTML = `<span style="color:var(--price-up);">🔔 Market Starting:</span> <span style="color:var(--text-forest); font-weight:700;">${escapeHtml(upcoming.headline.slice(0, 50))}...</span> triggers at <strong>${formatMMSS(upcoming.trigger_second || 0)}</strong>`;
+      } else if (gs.status === 'STANDBY') {
+        bannerEl.innerHTML = `<span style="color:var(--text-forest);">⏳ Day ${currentDay} Standby:</span> First news wire <span style="color:var(--price-up); font-weight:700;">⚡ ${escapeHtml(upcoming.headline.slice(0, 50))}...</span> scheduled at <strong>${formatMMSS(upcoming.trigger_second || 0)}</strong> (starts on market open)`;
+      } else if (gs.status === 'RESET' || gs.status === 'SETUP') {
+        bannerEl.innerHTML = `🛠️ Event Configuration: News timeline will arm once event setup is locked.`;
+      } else {
+        bannerEl.innerHTML = `<span style="color:var(--price-up);">⚡ ${escapeHtml(upcoming.headline.slice(0, 50))}...</span> in <strong style="color:var(--text-forest);">${formatMMSS(rem)}</strong> (Day ${upcoming.day || 1} @ ${formatMMSS(upcoming.trigger_second || 0)})`;
+      }
     } else {
       const futureWire = allNews.find((ev) => {
         const isTrig = ev.triggered || ev.status === 'PUBLISHED';
@@ -11489,8 +11661,12 @@ function updateHostNewsLiveTimers(state) {
         } else {
           badgeEl.innerHTML = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ Triggers in ${formatMMSS(remSec)}</span>`;
         }
-      } else if (gs.isPaused) {
+      } else if (gs.status === 'COUNTDOWN') {
+        badgeEl.innerHTML = `<span class="badge badge-active" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC; font-weight:800; animation: pulse 1s infinite;">🔔 STARTING (3-2-1)...</span>`;
+      } else if (gs.status === 'PAUSED') {
         badgeEl.innerHTML = `<span class="badge badge-paused">⏸️ PAUSED (${formatMMSS(remSec)} rem)</span>`;
+      } else if (gs.status === 'STANDBY') {
+        badgeEl.innerHTML = `<span class="badge badge-champagne" style="font-weight:700;">⏳ AT ${formatMMSS(ev.trigger_second || 0)} (Day ${evDay})</span>`;
       } else {
         badgeEl.innerHTML = `<span class="badge badge-champagne">⏳ AT ${formatMMSS(ev.trigger_second || 0)}</span>`;
       }
@@ -11505,7 +11681,7 @@ function renderHostNews(state) {
 
   let newsItems = state.allScheduledNews || state.newsEvents || [];
   if (newsItems.length === 0) {
-    newsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No breaking news scheduled. Click "+ Create Breaking News" to broadcast wire items.</div>`;
+    newsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No breaking news scheduled for this session.</div>`;
     return;
   }
 
@@ -11536,11 +11712,24 @@ function renderHostNews(state) {
     } else if (evDay > currentDay) {
       initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(triggerSec)}</span>`;
     } else {
-      const estTimeStr = ev.estimatedWallClock || (remSec > 0 ? new Date(Date.now() + remSec * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');
-      if (remSec <= 60 && remSec > 0 && (state.gameState.status === 'LIVE' || state.gameState.status === 'RUNNING')) {
-        initialBadge = `<span class="badge news-imminent-pulse" style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-weight:800;">⚠️ IMMINENT: IN ${remSec}s (~${estTimeStr})</span>`;
+      const gsStatus = (state.gameState && state.gameState.status) || 'STANDBY';
+      if (gsStatus === 'LIVE' || gsStatus === 'RUNNING') {
+        const estTimeStr = ev.estimatedWallClock || (remSec > 0 ? new Date(Date.now() + remSec * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');
+        if (remSec === 0) {
+          initialBadge = `<span class="badge" style="background:#DCFCE7; color:#166534; font-weight:800;">⚡ TRIGGERING NOW...</span>`;
+        } else if (remSec <= 60 && remSec > 0) {
+          initialBadge = `<span class="badge news-imminent-pulse" style="background:#FEF3C7; color:#92400E; border:1px solid #F59E0B; font-weight:800;">⚠️ IMMINENT: IN ${remSec}s (~${estTimeStr})</span>`;
+        } else {
+          initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ Triggers in ${formatMMSS(remSec)}</span>`;
+        }
+      } else if (gsStatus === 'COUNTDOWN') {
+        initialBadge = `<span class="badge badge-active" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC; font-weight:800; animation: pulse 1s infinite;">🔔 STARTING (3-2-1)...</span>`;
+      } else if (gsStatus === 'PAUSED') {
+        initialBadge = `<span class="badge badge-paused">⏸️ PAUSED (${formatMMSS(remSec)} rem)</span>`;
+      } else if (gsStatus === 'STANDBY') {
+        initialBadge = `<span class="badge badge-champagne" style="font-weight:700;">⏳ AT ${formatMMSS(triggerSec)} (Day ${evDay})</span>`;
       } else {
-        initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ ~${estTimeStr} (in ${formatMMSS(remSec)})</span>`;
+        initialBadge = `<span class="badge badge-champagne">⏳ AT ${formatMMSS(triggerSec)}</span>`;
       }
     }
 
@@ -11569,24 +11758,11 @@ function renderHostNews(state) {
             </div>
           ` : ''}
 
-          <div style="display: flex; gap: 6px;">
-            ${!isTriggered && !isCancelled ? `
-              <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-sage" style="flex: 2; padding: 6px 10px; font-size: 11px; font-weight: 700;">
-                ⚡ Trigger News Now
-              </button>
-              ${!isLocked ? `
-                <button onclick="hostCancelNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 8px; font-size: 11px; color: var(--error-red);">
-                  Cancel
-                </button>
-              ` : ''}
-            ` : `
-              <button onclick="hostPublishNewsNow('${ev.event_id || ev.id}')" class="btn btn-outline" style="flex: 1; padding: 6px 10px; font-size: 11px;">
-                Re-Trigger News
-              </button>
-            `}
-            <button onclick="hostDuplicateNews('${ev.event_id || ev.id}')" class="btn btn-outline" style="padding: 6px 8px; font-size: 11px;" title="Duplicate News Item">
-              📋
-            </button>
+          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--subtle-border); display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: 700;">
+            <span style="display: inline-flex; align-items: center; gap: 5px;">
+              <span class="dot-pulse-green"></span> 🔒 Rigid Schedule Automated
+            </span>
+            <span style="font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted);">Auto-Trigger Wire</span>
           </div>
         </div>
       </div>
@@ -12146,7 +12322,7 @@ function generateClientSnapshotFromLeaderboard(state) {
     };
   });
   return {
-    championshipTitle: (state.gameState && state.gameState.title) || 'The Trading Floor Championship 2026',
+    championshipTitle: (state.gameState && state.gameState.title) || 'The Trading Floor Championship',
     finalizedAt: new Date().toISOString(),
     rankings: rankings
   };
@@ -12428,7 +12604,7 @@ function openScheduleEventModal() {
     const policySelect = document.getElementById('schedulePausePolicySelect');
     const durMinDisp = document.getElementById('scheduleDurationMinDisplay');
 
-    if (titleInput) titleInput.value = gs.title || 'The Trading Floor Championship 2026';
+    if (titleInput) titleInput.value = gs.title || 'The Trading Floor Championship';
     if (instInput) instInput.value = gs.institution || 'Gujarat Technological University';
     if (durInput) durInput.value = durationSec;
     if (durMinDisp) durMinDisp.textContent = `${durationMin} minutes`;
@@ -12543,7 +12719,7 @@ function confirmScheduleOrStartEvent() {
   const policySelect = document.getElementById('schedulePausePolicySelect');
   const pausePolicy = policySelect ? policySelect.value : (gs?.pausePolicy || 'TRADING_TIME');
   const titleInput = document.getElementById('scheduleEventTitleInput');
-  const eventTitle = (titleInput ? titleInput.value.trim() : '') || gs?.title || 'The Trading Floor Championship 2026';
+  const eventTitle = (titleInput ? titleInput.value.trim() : '') || gs?.title || 'The Trading Floor Championship';
   const instInput = document.getElementById('scheduleInstitutionInput');
   const institution = (instInput ? instInput.value.trim() : '') || gs?.institution || 'Gujarat Technological University';
 
@@ -12585,6 +12761,11 @@ let circuitBannerTimeoutHandle = null;
 let circuitBannerIntervalHandle = null;
 
 function showCircuitAlertBanner(text, alertData) {
+  const existingToast = document.getElementById('orderToast');
+  if (existingToast) {
+    existingToast.classList.add('hidden');
+    if (orderToastTimeout) clearTimeout(orderToastTimeout);
+  }
   const banner = document.getElementById('circuitBreakerAlertBanner');
   const alertText = document.getElementById('circuitAlertText');
   const cdText = document.getElementById('circuitAlertCountdownText');
@@ -12725,7 +12906,7 @@ function openChampionshipWizardModal() {
     const feeEl = document.getElementById('wizardTransactionFee');
     const cbEl = document.getElementById('wizardCircuitBreaker');
 
-    if (titleEl) titleEl.value = gs.title || 'The Trading Floor Championship 2026';
+    if (titleEl) titleEl.value = gs.title || 'The Trading Floor Championship';
     if (cashEl) cashEl.value = gs.startingCash || 500000;
     if (daysEl) daysEl.value = String(gs.totalDays || 3);
     if (durEl) durEl.value = String(gs.dayDurationSeconds || 1800);
@@ -13132,10 +13313,9 @@ try {
 // Initialize connection on load
 connectWebSocket();
 
-
 // ==========================================
 // P1/P2: ENHANCED KEYBOARD SHORTCUTS & HELP MODAL
-// Added: October 17, 2026
+// Institutional Trading Floor Keyboard Shortcuts
 // ==========================================
 
 // Show keyboard shortcuts help modal
@@ -13453,3 +13633,191 @@ if (typeof window !== 'undefined') {
   window.setTradeHoldingPreset = setTradeHoldingPreset;
 }
 
+// -----------------------------------------------------------------------------
+// Interactive Institutional News Reader Modal (#fullNewsModal)
+// -----------------------------------------------------------------------------
+function openFullNewsStory(newsIdx) {
+  if (!latestState || !latestState.gameState || !latestState.gameState.newsHistory) return;
+  const news = latestState.gameState.newsHistory[newsIdx];
+  if (!news) return;
+
+  const modal = document.getElementById('fullNewsModal');
+  if (!modal) return;
+
+  const headlineEl = document.getElementById('fullNewsHeadline');
+  if (headlineEl) headlineEl.textContent = news.headline || 'Market Announcement';
+
+  const expEl = document.getElementById('fullNewsExplanation');
+  if (expEl) expEl.textContent = news.simple_explanation || news.explanation || 'Market conditions are developing in response to macroeconomic shifts.';
+
+  const catEl = document.getElementById('fullNewsCategory');
+  if (catEl) catEl.textContent = news.type || news.category || 'SECTOR NEWS';
+
+  const timeEl = document.getElementById('fullNewsTime');
+  if (timeEl) timeEl.textContent = `DAY ${news.day || 1} • ${getNewsWireTime(news)}`;
+
+  let affectedText = 'Market-wide equities and general investor sentiment';
+  if (news.impacts) {
+    const tickers = Object.keys(news.impacts).filter((k) => k !== 'GLOBAL_WEIGHTED');
+    if (tickers.length > 0) affectedText = tickers.join(', ');
+  } else if (news.affectedTickers && news.affectedTickers.length > 0) {
+    affectedText = news.affectedTickers.join(', ');
+  } else if (news.category) {
+    affectedText = `${news.category} Sector`;
+  }
+  const affTextEl = document.getElementById('fullNewsAffectedText');
+  if (affTextEl) affTextEl.textContent = affectedText;
+
+  modal.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+
+function closeFullNewsModal() {
+  const modal = document.getElementById('fullNewsModal');
+  if (modal) modal.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+
+window.openFullNewsStory = openFullNewsStory;
+window.closeFullNewsModal = closeFullNewsModal;
+
+
+// ==========================================================================
+// V4 CARD-STOCK FOIL SEAL CLIP-PATH, PARTICLE FLECKS & TACTILE HOVER ENGINE
+// ==========================================================================
+(function initV4CardStockSystem() {
+  if (typeof document === 'undefined') return;
+
+  // 1. Compute 64-Point Scalloped Star Polygon Clip-Path once at boot
+  const pts = Array.from({ length: 64 }, (_, i) => {
+    const a = (i / 64) * Math.PI * 2;
+    const r = i % 2 ? 46.5 : 50;
+    return `${(50 + r * Math.cos(a)).toFixed(2)}% ${(50 + r * Math.sin(a)).toFixed(2)}%`;
+  });
+  const sealClip = `polygon(${pts.join(',')})`;
+  if (document.documentElement && document.documentElement.style && typeof document.documentElement.style.setProperty === 'function') {
+    document.documentElement.style.setProperty('--seal-clip', sealClip);
+  }
+
+  // 2. Foil Flecks Particle Burst on Seal Click
+  function triggerCardFoilFlecks(sealBtn) {
+    try {
+      if (!sealBtn || typeof window === 'undefined') return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const card = sealBtn.closest('.luxury-card-stock');
+      const cv = card ? card.querySelector('.fx-canvas') : null;
+      if (!cv || !cv.getContext) return;
+      const cx = cv.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const W = card.offsetWidth || 500;
+      const H = card.offsetHeight || 400;
+      cv.width = W * dpr;
+      cv.height = H * dpr;
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const a = sealBtn.getBoundingClientRect();
+      const b = card.getBoundingClientRect();
+      const ox = a.left - b.left + a.width / 2;
+      const oy = a.top - b.top + a.height / 2;
+      const cols = ['#B88728', '#E6C56F', '#F5E3A6', '#78530D', '#FFF6D6'];
+
+      const particles = Array.from({ length: 48 }, () => {
+        const ang = Math.random() * Math.PI * 2;
+        const sp = 2 + Math.random() * 5.5;
+        return {
+          x: ox + Math.cos(ang) * 28,
+          y: oy + Math.sin(ang) * 28,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp - 1,
+          s: 1.4 + Math.random() * 2.0,
+          c: cols[(Math.random() * cols.length) | 0],
+          l: 1
+        };
+      });
+
+      (function stepFlecks() {
+        cx.clearRect(0, 0, W, H);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.vx *= 0.95;
+          p.vy = p.vy * 0.95 + 0.05;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.l -= 0.022;
+          cx.globalAlpha = Math.max(p.l, 0);
+          cx.fillStyle = p.c;
+          cx.beginPath();
+          cx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+          cx.fill();
+        }
+        if (particles.some((p) => p.l > 0)) {
+          requestAnimationFrame(stepFlecks);
+        } else {
+          cx.clearRect(0, 0, W, H);
+        }
+      })();
+    } catch (e) {}
+  }
+
+  window.triggerCardFoilFlecks = triggerCardFoilFlecks;
+
+  // 3. Subtle Damped Spring Tilt on Interactive Overlay Cards (Disabled on Projector)
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('pointermove', (e) => {
+      if (typeof currentRole !== 'undefined' && currentRole === 'PROJECTOR') return;
+      if (e.pointerType && e.pointerType !== 'mouse') return;
+      const activeCard = e.target && typeof e.target.closest === 'function'
+        ? e.target.closest('.luxury-card-stock')
+        : null;
+      if (!activeCard || !activeCard.getBoundingClientRect) return;
+      const rect = activeCard.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const normX = Math.max(-1, Math.min(1, (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2)));
+      const normY = Math.max(-1, Math.min(1, (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2)));
+
+      activeCard.style.setProperty('--rx', (-normY * 1.6).toFixed(2));
+      activeCard.style.setProperty('--ry', (normX * 1.8).toFixed(2));
+      activeCard.style.setProperty('--mx', (50 + normX * 25).toFixed(1) + '%');
+      activeCard.style.setProperty('--my', (30 + normY * 20).toFixed(1) + '%');
+    }, { passive: true });
+  }
+})();
+
+// ==========================================================================
+// TIMELESS REAL-TIME WALL CLOCK & DYNAMIC YEAR ENGINE (MULTI-DECADE COMPATIBLE)
+// ==========================================================================
+(function initTimelessRealtimeEngine() {
+  function tickRealtimeClocks() {
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+      const yearStr = String(now.getFullYear());
+
+      // Update all real-time wall clocks
+      const traderRtc = document.getElementById('traderRealTimeClock');
+      if (traderRtc) traderRtc.textContent = timeStr;
+
+      const projRtc = document.getElementById('projRealTimeClock');
+      if (projRtc) projRtc.textContent = '🕒 ' + timeStr;
+
+      const loginRtc = document.getElementById('loginRealTimeClock');
+      if (loginRtc) loginRtc.textContent = timeStr;
+
+      // Update all dynamic year elements across footers and certificates
+      if (typeof document !== 'undefined') {
+        const yearEls = document.querySelectorAll('.ttf-current-year');
+        for (let i = 0; i < yearEls.length; i++) {
+          if (yearEls[i].textContent !== yearStr) {
+            yearEls[i].textContent = yearStr;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    tickRealtimeClocks();
+    setInterval(tickRealtimeClocks, 1000);
+  }
+})();

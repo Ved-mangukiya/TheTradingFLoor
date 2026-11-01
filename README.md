@@ -1,4 +1,4 @@
-# THE TRADING FLOOR CHAMPIONSHIP 2026 📈
+# THE TRADING FLOOR CHAMPIONSHIP 📈
 ### Institutional-Grade Offline Stock Market Simulator for College Competitions
 
 > **A Complete, Portable, 100% Offline Trading Platform**  
@@ -30,7 +30,7 @@
 ---
 
 ## 1. WHAT THIS SOFTWARE IS
-**The Trading Floor Championship 2026** is a standalone, server-authoritative stock market exchange simulator. It turns any ordinary laptop into a high-speed institutional stock exchange that hosts dozens of competing student teams over local Wi-Fi. 
+**The Trading Floor Championship** is a standalone, server-authoritative stock market exchange simulator. It turns any ordinary laptop into a high-speed institutional stock exchange that hosts dozens of competing student teams over local Wi-Fi. 
 
 Participants trade real-time simulated blue-chip equities across Indian economic sectors (IT, Banking, Automotive, Energy, FMCG, Pharmaceuticals). Prices move organically using a mean-reverting geometric random walk model, responding to breaking economic news shocks, sector developments, and circuit breaker trading halts.
 
@@ -85,7 +85,7 @@ Participants trade real-time simulated blue-chip equities across Indian economic
 ## 3. INTERFACE PREVIEWS & LIVE ROLES
 The application operates four coordinated experiences from a single server:
 
-1. **Host Control Centre (`?role=host&pass=host2026`)**:
+1. **Host Control Centre (`?role=host&pass=host`)**:
    - Master 4-Hub architecture:
      - **🏠 1. Home**: Next Step guidance card, interactive readiness checklist, connected terminals monitor, live audit feed.
      - **⚙️ 2. Event**: 8-step guided wizard (Details → Teams → Companies → Trading Rules → Schedule → News Plan → Projector & Sound → Review & Lock) with automatic lock and pre-start unlock safeguard.
@@ -99,13 +99,13 @@ The application operates four coordinated experiences from a single server:
    - Interactive Trade Modal with tabbed BUY/SELL switcher, quick lot pills, dynamic budget presets (`% cash` / `% held`), and real-time affordability recalculation.
    - Real-time portfolio valuation, cash balance, and executed trade receipts.
 
-3. **Stage Auditorium Projector (`?role=projector&pass=screen2026`)**:
+3. **Stage Auditorium Projector (`?role=projector&pass=screen`)**:
    - High-contrast auditorium display legible from 50 feet away in 1080p and 4K.
    - Auto-cycle rotation through Market Board (8 cards per page with live ranking badges `#1..#N`), Real Indices (`NIFTY_TF20`, `BANK_TF`, `IT_TF`, `AUTO_TF`), Macro Sector Strategy, Standings, and News.
    - Dedicated `#projDayCompletedBanner` on day conclusion presenting audited daily snapshot without "Market Paused" confusion.
    - Embedded full-screen Winner Reveal stage (`Bronze → Silver → Champion → Podium → Standings`).
 
-4. **Venue Sound Console (`?role=sound&pass=sound2026`)**:
+4. **Venue Sound Console (`?role=sound&pass=sound`)**:
    - Dedicated audio client for sound laptop plugged into auditorium PA speakers.
    - Role-isolated: strictly audio cue playback, zero administrative host privileges.
    - 1-click Host Audio Self-Test integration and 100% offline Web Audio API institutional synthesis.
@@ -272,7 +272,7 @@ Navigate to the **📥 Reports & CSV Exports** tab in the Host Controller:
 
 ## 14. DISASTER RECOVERY CHECKPOINTS & INSTANT GAME RESTORE
 
-The Trading Floor Championship 2026 features an institutional-grade disaster recovery and checkpoint system:
+The Trading Floor Championship features an institutional-grade disaster recovery and checkpoint system:
 
 - **Automatic Checkpoints**: Every 120 seconds during live trading, the server saves an automated full-state snapshot (`checkpoint_DayX_..._auto.json`) in `data/checkpoints/`.
 - **Manual Instant Checkpoint**: In the Host panel under **`🖥️ 4. Stage & Results`**, click **`💾 Save Instant Checkpoint Now`** to create an immediate recovery point.
@@ -288,7 +288,7 @@ Using a standalone JioFiber router as an offline local Wi-Fi hub is the most rel
 
 1. **Factory Reset**: Hold the back reset pin for 15 seconds until lights blink.
 2. **Admin Panel**: Connect via LAN/Wi-Fi to `http://192.168.29.1` (Username `admin`, Password `Jiocentrum`).
-3. **Wi-Fi SSID & Password**: Name it `TheTradingFloor` (WPA2-PSK: `tradingfloor2026`). Keep 5 GHz enabled for zero radio interference.
+3. **Wi-Fi SSID & Password**: Name it `TheTradingFloor` (WPA2-PSK: `tradingfloor`). Keep 5 GHz enabled for zero radio interference.
 4. **MANDATORY: Disable AP Isolation**: Ensure **AP Isolation / Client Isolation / Station Separation** is **DISABLED** so student laptops can connect to the host IP.
 5. **Max Clients**: In DHCP settings, set Max Clients to **64** and lease time to 1 day (`86400`s).
 6. **"No Internet" Prompt**: Because there is no yellow fiber cable plugged in at the college, laptops and smartphones will display *"Wi-Fi has no internet connection. Stay connected?"* — All teams **MUST click "Yes / Stay Connected"**.
@@ -323,8 +323,8 @@ While the **actual event day operates 100% offline on a dedicated local Wi-Fi ro
   - Includes a floating top demo switcher bar (`✦ HOD PREVIEW • INTERACTIVE DEMO`) allowing seamless switching between Host, Projector, Trader, and Winner Stage views.
   - Realistic 2-second micro-ticks update all 20 Indian listed companies with live sparklines, order execution, breaking news toasts, and sound effects.
 
-### Method B: Instant 10-Second Live Tunnel (`Create_Live_Demo_Link.bat`)
-- Double-click **`Create_Live_Demo_Link.bat`** on your laptop.
+### Method B: Instant 10-Second Live Tunnel (`Launch_The_Trading_Floor.bat`)
+- Double-click **`Launch_The_Trading_Floor.bat`** on your laptop.
 - It starts the local server and generates an instant public HTTPS link (powered by Cloudflare Tunnel, e.g. `https://xxxx.trycloudflare.com`).
 - Share this link with your HOD during a presentation so they can interact with your real running server from their own phone or laptop.
 

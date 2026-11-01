@@ -1,0 +1,2912 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>The Trading Floor – Championship Platform (v4 Projector-Grade Card Stock Suite)</title>
+    <style>
+        /* =====================================================================
+   THE TRADING FLOOR — INFORMATIVE STATE CARDS v4 (PROJECTOR-GRADE v3)
+   Built on v3's physical card-stock architecture:
+   - Stacked paper (.back.s1, .back.s2) + ivory grain (.paper)
+   - Security guilloche pattern (.guil) + 3D parallax tilt
+   - Letterpress dotted financial ledger + segmented money bar
+   - 64-point scalloped metallic foil seal + canvas foil flecks
+   - Slide-up read-only portfolio sheet (.sheet) with interactive donut
+   - Upgraded to WCAG AAA Contrast for Auditorium Projectors
+   ===================================================================== */
+
+        @property --g1 {
+            syntax: "<percentage>";
+            inherits: false;
+            initial-value: 18%
+        }
+
+        @property --g2 {
+            syntax: "<percentage>";
+            inherits: false;
+            initial-value: 82%
+        }
+
+        :root {
+            /* Projector-Calibrated Surfaces (Stronger separation than v3) */
+            --bg: #cfc3aa;
+            --bg-glow: #e8dfc9;
+            --paper: #fffdf9;
+            --paper-2: #efe5ce;
+            --paper-3: #e4d7b8;
+            --edge: rgba(48, 34, 10, .34);
+            --edge-strong: rgba(22, 32, 46, .65);
+
+            /* High-Contrast WCAG AAA Typography Inks */
+            --ink: #0a121e;
+            /* 18.2:1 contrast on ivory */
+            --ink-2: #253244;
+            /* 11.4:1 contrast on ivory */
+            --ink-3: #435166;
+            /* 7.6:1 contrast on ivory (replaces washed-out #7f8896) */
+
+            /* Deep British Navy & Racing Green Accents */
+            --navy: #0f2137;
+            --navy-2: #1e3a5f;
+
+            /* Dual Gold System: Dark Bronze for Text on Ivory, Metallic Gold for Foil/Dark */
+            --gold-ink: #78530d;
+            /* 6.4:1 contrast on ivory paper */
+            --gold: #b88728;
+            --gold-hi: #f5e3a6;
+            --gold-lo: #684a10;
+
+            /* Financial Semantic Colors (High-Luminance Projector Safe) */
+            --green: #0f683c;
+            --green-bg: #dcfce7;
+            --green-border: rgba(15, 104, 60, .38);
+            --red: #b42318;
+            --red-bg: #fee2e2;
+            --amber: #9a4a06;
+            --amber-bg: #fef3c7;
+            --amber-border: rgba(154, 74, 6, .4);
+
+            /* Offline-Safe Font Stacks matching v3 */
+            --serif: 'Newsreader', 'Playfair Display', 'Libre Baskerville', Georgia, serif;
+            --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --mono: 'JetBrains Mono', 'IBM Plex Mono', Consolas, monospace;
+
+            --r: 20px;
+            --ease: cubic-bezier(.2, .8, .2, 1);
+            --spring: cubic-bezier(.3, 1.35, .5, 1);
+            --seal-at: .85s;
+            --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .30 0 0 0 0 .22 0 0 0 0 .10 0 0 0 .55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+        }
+
+        body.projector-dark {
+            --bg: #09101a;
+            --bg-glow: #16263b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 88px 20px 60px;
+            overflow-x: hidden;
+            font-family: var(--sans);
+            color: var(--ink);
+            background:
+                radial-gradient(1100px 650px at 50% 12%, var(--bg-glow), transparent 70%),
+                radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(30, 20, 5, .28)),
+                var(--bg);
+            transition: background .35s ease;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: var(--grain);
+            opacity: .26;
+            mix-blend-mode: multiply;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ---------- INTERACTIVE SHOWCASE TOP NAV ---------- */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 18, 30, .94);
+            backdrop-filter: blur(14px);
+            border-bottom: 1.5px solid rgba(245, 227, 166, .28);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .nav-brand .mini-crest {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font: 700 14px var(--serif);
+            color: var(--gold-hi);
+            background: linear-gradient(145deg, var(--navy-2), var(--navy));
+            border: 1px solid rgba(245, 227, 166, .55);
+        }
+
+        .nav-brand div b {
+            display: block;
+            font-size: 12.5px;
+            letter-spacing: .03em;
+            color: #fff
+        }
+
+        .nav-brand div small {
+            display: block;
+            font-size: 10px;
+            color: var(--gold-hi);
+            letter-spacing: .08em;
+            text-transform: uppercase
+        }
+
+        .nav-pills {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 2px 4px;
+            scrollbar-width: none;
+        }
+
+        .nav-pills::-webkit-scrollbar {
+            display: none
+        }
+
+        .npill {
+            flex: none;
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            background: rgba(255, 255, 255, .06);
+            color: #dce3ec;
+            font: 600 11.5px var(--sans);
+            letter-spacing: .02em;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .npill:hover {
+            background: rgba(255, 255, 255, .14);
+            color: #fff
+        }
+
+        .npill.active {
+            background: linear-gradient(180deg, #f5e3a6, #c99a3a);
+            color: #0a121e;
+            border-color: #fff;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(201, 154, 58, .4);
+        }
+
+        .nav-tools {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0
+        }
+
+        .tbtn {
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 1px solid rgba(245, 227, 166, .4);
+            background: rgba(30, 58, 95, .55);
+            color: var(--gold-hi);
+            font: 700 11px var(--sans);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+
+        .tbtn:hover,
+        .tbtn.on {
+            background: var(--gold-hi);
+            color: #0a121e
+        }
+
+        /* ---------- STAGE LAYOUT & GRID VIEW ---------- */
+        .showcase {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            place-items: center;
+            min-height: calc(100vh - 150px);
+        }
+
+        .showcase.grid-mode {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+            gap: 54px 36px;
+            align-items: start;
+            max-width: 1680px;
+            margin: 0 auto;
+        }
+
+        .card-slot {
+            display: none;
+            width: 100%;
+            justify-items: center
+        }
+
+        .card-slot.active {
+            display: grid
+        }
+
+        .showcase.grid-mode .card-slot {
+            display: grid
+        }
+
+        .slot-label {
+            display: none;
+            margin-bottom: 12px;
+            padding: 5px 12px;
+            border-radius: 6px;
+            background: var(--navy);
+            color: var(--gold-hi);
+            font: 700 11px var(--mono);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            border: 1px solid rgba(245, 227, 166, .4);
+        }
+
+        .showcase.grid-mode .slot-label {
+            display: inline-block
+        }
+
+        /* ---------- THE PHYSICAL OBJECT: STAGE -> CARD -> STACK + PAPER ---------- */
+        .stage {
+            position: relative;
+            width: min(100%, 570px);
+            perspective: 1500px;
+            animation: settle .85s var(--ease) backwards;
+        }
+
+        .stage.wide {
+            width: min(100%, 920px)
+        }
+
+        .stage.celebrate {
+            animation: press .6s ease-out
+        }
+
+        .floor {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            bottom: -26px;
+            height: 46px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(20, 14, 4, .62), transparent 70%);
+            filter: blur(14px);
+        }
+
+        .card {
+            position: relative;
+            transform: perspective(1200px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg));
+            transform-style: flat; /* Strict 2D plane: keeps all text, badges and elements firmly glued to the card */
+            will-change: transform;
+            transition: box-shadow .22s cubic-bezier(.2, .8, .2, 1);
+        }
+
+        body.projector-hide-cursor,
+        body.projector-hide-cursor * {
+            cursor: none !important;
+        }
+
+        .back {
+            display: none !important;
+        }
+
+        .back.s1, .back.s2 {
+            display: none !important;
+        }
+
+        .paper {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--r);
+            padding: 0 28px 24px;
+            background: linear-gradient(180deg, #ffffff, var(--paper) 50%, #f6efe0);
+            box-shadow:
+                inset 0 1px 0 #fff,
+                0 0 0 1.5px var(--edge),
+                0 4px 12px rgba(20, 14, 4, .10),
+                0 22px 38px -12px rgba(20, 14, 4, .28);
+            transition: box-shadow .22s var(--ease), border-color .22s var(--ease);
+        }
+
+        .card:hover .paper {
+            box-shadow:
+                inset 0 1px 0 #fff,
+                0 0 0 1.5px var(--gold),
+                0 8px 24px rgba(184, 135, 40, .18),
+                0 28px 48px -12px rgba(20, 14, 4, .36);
+        }
+
+        .paper::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 8;
+            background: var(--grain);
+            opacity: .28;
+            mix-blend-mode: multiply;
+            pointer-events: none;
+        }
+
+        /* Dark Obsidian Variant for Card 6 (Stage Freeze) & Card 7 (Countdown) */
+        .paper.obsidian {
+            background: linear-gradient(180deg, #132238, #0a121e 55%, #070d16);
+            color: #f8fafc;
+            box-shadow:
+                inset 0 1px 0 rgba(245, 227, 166, .35),
+                0 0 0 2px rgba(245, 227, 166, .55),
+                0 24px 48px -12px rgba(0, 0, 0, .75);
+        }
+
+        .paper.obsidian .cap {
+            color: #cbd5e1
+        }
+
+        .paper.obsidian .sub,
+        .paper.obsidian .fine {
+            color: #cbd5e1
+        }
+
+        .paper.obsidian .tag {
+            background: rgba(255, 255, 255, .09);
+            border-color: rgba(245, 227, 166, .35);
+            color: #f1f5f9
+        }
+
+        .paper.obsidian .team {
+            border-color: rgba(245, 227, 166, .25)
+        }
+
+        .paper.obsidian .line {
+            color: #cbd5e1
+        }
+
+        .paper.obsidian .line b {
+            color: #fff
+        }
+
+        .paper.obsidian .line .dots {
+            border-bottom-color: rgba(245, 227, 166, .35)
+        }
+
+        .paper.obsidian .rule {
+            background: rgba(245, 227, 166, .5)
+        }
+
+        .sheen {
+            position: absolute;
+            inset: 0;
+            z-index: 7;
+            pointer-events: none;
+            background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 30%), rgba(255, 251, 236, .5), transparent 55%);
+        }
+
+        .glint {
+            position: absolute;
+            inset: 0;
+            z-index: 7;
+            pointer-events: none;
+            opacity: 0;
+            background: linear-gradient(110deg, transparent 38%, rgba(245, 227, 166, .65) 50%, transparent 62%);
+            transform: translateX(-100%);
+        }
+
+        .celebrate .glint {
+            animation: glint 1.3s ease-out
+        }
+
+        .paper>canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9;
+            pointer-events: none
+        }
+
+        /* Guilloche Security Pattern (Strengthened for Projector) */
+        .guil {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 98px;
+            pointer-events: none;
+            background:
+                repeating-radial-gradient(circle at var(--g1) 135%, transparent 0 5px, rgba(140, 98, 20, .55) 5px 6px),
+                repeating-radial-gradient(circle at var(--g2) -35%, transparent 0 5px, rgba(15, 33, 55, .36) 5px 6px);
+            -webkit-mask: linear-gradient(#000 18%, transparent);
+            mask: linear-gradient(#000 18%, transparent);
+            animation: guil 16s ease-in-out infinite alternate;
+        }
+
+        .paper.obsidian .guil {
+            background:
+                repeating-radial-gradient(circle at var(--g1) 135%, transparent 0 5px, rgba(245, 227, 166, .38) 5px 6px),
+                repeating-radial-gradient(circle at var(--g2) -35%, transparent 0 5px, rgba(56, 189, 248, .22) 5px 6px);
+        }
+
+        .in {
+            position: relative;
+            z-index: 2;
+            padding-top: 24px
+        }
+
+        .layer {
+            translate: 0 0 !important;
+        }
+
+        .cap {
+            font: 700 11px/1.25 var(--sans);
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        /* ---------- HEADER & CREST ---------- */
+        .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px
+        }
+
+        .crest {
+            position: relative;
+            overflow: hidden;
+            width: 48px;
+            height: 48px;
+            border-radius: 11px;
+            display: grid;
+            place-items: center;
+            font: 700 20px var(--serif);
+            letter-spacing: .03em;
+            color: var(--gold-hi);
+            background: linear-gradient(145deg, var(--navy-2), var(--navy));
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, .32),
+                inset 0 0 0 1.5px rgba(245, 227, 166, .65),
+                0 8px 14px -6px rgba(15, 33, 55, .65);
+        }
+
+        .crest::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .45) 50%, transparent 60%);
+            transform: translateX(-100%);
+            animation: sweep 5s ease-in-out 1s infinite;
+        }
+
+        .status {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 7px
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 11px;
+            border: 1.5px solid var(--edge);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, .9);
+            font: 700 10.5px var(--sans);
+            letter-spacing: .11em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+        }
+
+        .tag.live {
+            color: var(--green);
+            background: var(--green-bg);
+            border-color: var(--green-border)
+        }
+
+        .tag.amber {
+            color: var(--amber);
+            background: var(--amber-bg);
+            border-color: var(--amber-border)
+        }
+
+        .tag.gold {
+            color: var(--gold-ink);
+            background: #fef9e7;
+            border-color: rgba(184, 135, 40, .45)
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: ping 2s infinite
+        }
+
+        .dot.amber {
+            background: var(--amber);
+            animation: pingAmber 2s infinite
+        }
+
+        .title {
+            margin-top: 22px
+        }
+
+        .title .cap {
+            color: var(--gold-ink)
+        }
+
+        .paper.obsidian .title .cap {
+            color: var(--gold-hi)
+        }
+
+        h1 {
+            margin-top: 6px;
+            font: 600 clamp(30px, 8vw, 42px)/1.06 var(--serif);
+            letter-spacing: -.018em;
+            color: var(--ink);
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        .paper.obsidian h1 {
+            color: #ffffff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, .6)
+        }
+
+        .sub {
+            margin-top: 9px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.55;
+            color: var(--ink-2)
+        }
+
+        /* ---------- TEAM & DAYS BAR ---------- */
+        .team {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 18px;
+            padding: 13px 0;
+            border-top: 1.5px solid var(--edge);
+            border-bottom: 1.5px solid var(--edge);
+        }
+
+        .team b {
+            display: block;
+            margin-top: 4px;
+            font: 600 21px/1.15 var(--serif);
+            color: var(--ink)
+        }
+
+        .paper.obsidian .team b {
+            color: #fff
+        }
+
+        .dayswrap {
+            text-align: right
+        }
+
+        .days {
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 7px
+        }
+
+        .days i {
+            position: relative;
+            overflow: hidden;
+            width: 26px;
+            height: 6px;
+            border-radius: 3px;
+            background: #dcd1b8;
+            border: 1px solid rgba(48, 34, 10, .2);
+        }
+
+        .days i.done::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, var(--navy), var(--gold));
+        }
+
+        .days i.active::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: var(--amber);
+        }
+
+        /* ---------- LETTERPRESS FINANCIAL LEDGER ---------- */
+        .ledger {
+            margin-top: 14px;
+            font-variant-numeric: tabular-nums
+        }
+
+        .line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink-2);
+        }
+
+        .line .op {
+            width: 14px;
+            color: var(--gold-ink);
+            font-weight: 800
+        }
+
+        .line .dots {
+            flex: 1;
+            border-bottom: 2px dotted rgba(10, 18, 30, .38);
+        }
+
+        .line b {
+            font: 700 15.5px var(--mono);
+            color: var(--ink)
+        }
+
+        .line.plus b {
+            color: var(--green)
+        }
+
+        .line.amber b {
+            color: var(--amber)
+        }
+
+        .rule {
+            height: 1.5px;
+            background: var(--ink)
+        }
+
+        .total {
+            padding-top: 12px
+        }
+
+        .tl {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        .tl .cap span {
+            text-transform: none;
+            letter-spacing: .01em;
+            font-weight: 600;
+            color: var(--ink-2)
+        }
+
+        .delta {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 9px;
+            border-radius: 6px;
+            background: var(--green-bg);
+            border: 1px solid var(--green-border);
+            font: 700 12px var(--sans);
+            color: var(--green);
+        }
+
+        .delta::before {
+            content: "";
+            width: 8px;
+            height: 7px;
+            background: currentColor;
+            clip-path: polygon(50% 0, 100% 100%, 0 100%)
+        }
+
+        .delta.amber {
+            background: var(--amber-bg);
+            border-color: var(--amber-border);
+            color: var(--amber)
+        }
+
+        .delta.amber::before {
+            clip-path: circle(50%)
+        }
+
+        .amt {
+            margin: 8px 0 2px;
+            font: 600 clamp(42px, 11vw, 62px)/1 var(--serif);
+            letter-spacing: -.025em;
+            font-variant-numeric: lining-nums tabular-nums;
+            color: var(--ink);
+            text-shadow: 0 1px 0 #fff, 0 2px 6px rgba(48, 34, 10, .15);
+        }
+
+        .amt.mono-clock {
+            font-family: var(--mono);
+            font-weight: 800;
+            letter-spacing: .02em;
+            color: var(--navy);
+        }
+
+        .rs {
+            margin-right: 5px;
+            font-size: .58em;
+            vertical-align: .34em;
+            color: var(--gold-ink)
+        }
+
+        .total::after {
+            content: "";
+            display: block;
+            height: 6px;
+            margin-top: 10px;
+            border-top: 1.5px solid var(--ink);
+            border-bottom: 1.5px solid var(--ink);
+        }
+
+        .paper.obsidian .total::after {
+            border-color: rgba(245, 227, 166, .55)
+        }
+
+        /* ---------- MONEY GROWTH BAR ---------- */
+        .mbar {
+            margin-top: 18px
+        }
+
+        .mrow {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px
+        }
+
+        .mtrack {
+            display: flex;
+            height: 11px;
+            border-radius: 6px;
+            background: #dfd5be;
+            border: 1px solid rgba(48, 34, 10, .25);
+            overflow: hidden;
+        }
+
+        .seg {
+            height: 100%;
+            width: calc(var(--p)*1%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35)
+        }
+
+        .seg.base {
+            background: linear-gradient(180deg, var(--navy-2), var(--navy))
+        }
+
+        .seg.gain {
+            background:
+                linear-gradient(115deg, rgba(255, 255, 255, .28) 25%, transparent 25% 50%, rgba(255, 255, 255, .28) 50% 75%, transparent 75%) 0 0/20px 20px,
+                linear-gradient(180deg, #188650, var(--green));
+            animation: stripes 2s linear infinite;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink-2);
+        }
+
+        .legend b {
+            color: var(--ink);
+            font-weight: 700;
+            font-family: var(--mono)
+        }
+
+        .sw {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-right: 6px;
+            border-radius: 2px;
+            vertical-align: middle
+        }
+
+        /* ---------- SCALLOPED 64-POINT METAL FOIL SEAL ---------- */
+        .finish {
+            margin-top: 24px;
+            text-align: center
+        }
+
+        .seal-wrap {
+            position: relative;
+            display: block;
+            width: 116px;
+            height: 116px;
+            margin: 0 auto;
+            padding: 0;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            filter: drop-shadow(0 10px 12px rgba(60, 40, 5, .38));
+            animation: sealIn .85s var(--ease) backwards;
+        }
+
+        .seal {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from calc(var(--ry, 0)*8deg + 30deg), #f5e3a6, #b88728, #684a10, #f5e3a6, #b88728, #fff6d6, #7e5a14, #f5e3a6);
+        }
+
+        .seal.silver {
+            background: conic-gradient(from 30deg, #f8fafc, #94a3b8, #475569, #e2e8f0, #64748b, #ffffff, #475569, #f8fafc);
+        }
+
+        .seal.bronze {
+            background: conic-gradient(from 30deg, #fed7aa, #b45309, #7c2d12, #ffedd5, #9a3412, #fff7ed, #7c2d12, #fed7aa);
+        }
+
+        .seal::before {
+            content: "";
+            position: absolute;
+            inset: 11px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 28%, #fbf0c4, #d4ae58 55%, #9b7120);
+            box-shadow:
+                inset 0 2px 3px rgba(255, 255, 255, .8),
+                inset 0 -3px 6px rgba(70, 48, 8, .55),
+                0 0 0 1.5px rgba(95, 66, 12, .65);
+        }
+
+        .seal.silver::before {
+            background: radial-gradient(circle at 35% 28%, #ffffff, #cbd5e1 55%, #64748b);
+            box-shadow: inset 0 2px 3px #fff, inset 0 -3px 6px rgba(15, 23, 42, .5), 0 0 0 1.5px #475569;
+        }
+
+        .seal.bronze::before {
+            background: radial-gradient(circle at 35% 28%, #ffedd5, #d97706 55%, #7c2d12);
+            box-shadow: inset 0 2px 3px #fff, inset 0 -3px 6px rgba(67, 20, 7, .5), 0 0 0 1.5px #7c2d12;
+        }
+
+        .seal-wrap svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%
+        }
+
+        .eng text {
+            font: 800 7.4px var(--sans);
+            letter-spacing: .19em;
+            fill: #4d3508
+        }
+
+        .seal.silver+svg .eng text,
+        .seal.silver+svg .monoT {
+            fill: #1e293b
+        }
+
+        .seal.bronze+svg .eng text,
+        .seal.bronze+svg .monoT {
+            fill: #431407
+        }
+
+        .eng,
+        .monoT {
+            filter: drop-shadow(0 .8px 0 rgba(255, 248, 220, .95))
+        }
+
+        .rim {
+            fill: none;
+            stroke: rgba(77, 53, 8, .65);
+            stroke-width: 1
+        }
+
+        .monoT {
+            font: 700 22px var(--serif);
+            fill: #4d3508
+        }
+
+        .done-label {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 16px 0 8px;
+            font: 700 15px var(--serif);
+            letter-spacing: .32em;
+            text-indent: .32em;
+            text-transform: uppercase;
+            color: var(--ink);
+        }
+
+        .paper.obsidian .done-label {
+            color: var(--gold-hi)
+        }
+
+        .done-label i {
+            flex: 1;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--gold-ink))
+        }
+
+        .paper.obsidian .done-label i {
+            background: linear-gradient(90deg, transparent, var(--gold-hi))
+        }
+
+        .done-label i:last-child {
+            transform: scaleX(-1)
+        }
+
+        .msg {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ink)
+        }
+
+        .paper.obsidian .msg {
+            color: #fff
+        }
+
+        .fine {
+            max-width: 44ch;
+            margin: 6px auto 0;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.55;
+            color: var(--ink-2)
+        }
+
+        /* Sub-state switcher pills inside Card 3 & Card 7 */
+        .sub-switch {
+            display: inline-flex;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 4px;
+            border-radius: 8px;
+            background: rgba(15, 33, 55, .08);
+            border: 1px solid var(--edge);
+        }
+
+        .paper.obsidian .sub-switch {
+            background: rgba(255, 255, 255, .08);
+            border-color: rgba(245, 227, 166, .3)
+        }
+
+        .sbtn {
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 0;
+            background: transparent;
+            font: 700 10.5px var(--sans);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-2);
+            cursor: pointer;
+        }
+
+        .paper.obsidian .sbtn {
+            color: #cbd5e1
+        }
+
+        .sbtn.on {
+            background: var(--navy);
+            color: var(--gold-hi)
+        }
+
+        .paper.obsidian .sbtn.on {
+            background: var(--gold-hi);
+            color: #0a121e
+        }
+
+        /* ---------- PRIMARY CTA BUTTON ---------- */
+        .cta {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 18px;
+            border: 0;
+            border-radius: 11px;
+            cursor: pointer;
+            font: 700 14.5px var(--sans);
+            letter-spacing: .02em;
+            color: #fff;
+            background: linear-gradient(180deg, var(--navy-2), var(--navy));
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, .28),
+                0 0 0 1.5px rgba(245, 227, 166, .65),
+                0 12px 22px -8px rgba(15, 33, 55, .75);
+            transition: transform .2s var(--ease), box-shadow .2s;
+        }
+
+        .cta:hover {
+            transform: translateY(-2px)
+        }
+
+        .cta .arr {
+            transition: transform .2s
+        }
+
+        .cta:hover .arr {
+            transform: translateX(4px)
+        }
+
+        .cta-note {
+            margin-top: 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-3)
+        }
+
+        /* ---------- STRATEGY CALLOUT & FOOTER TICKER ---------- */
+        .strategy-box {
+            margin-top: 16px;
+            padding: 11px 14px;
+            border-radius: 10px;
+            background: var(--paper-2);
+            border: 1.5px solid var(--edge);
+            font-size: 12.5px;
+            font-weight: 600;
+            line-height: 1.45;
+            color: var(--ink-2);
+        }
+
+        .strategy-box b {
+            color: var(--gold-ink);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-right: 4px
+        }
+
+        .foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1.5px solid var(--edge);
+        }
+
+        .foot.security-foot {
+            justify-content: space-between;
+            background: rgba(245, 239, 226, .55);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--edge);
+            margin-top: 18px;
+        }
+
+        .foot-security-note {
+            font: 600 11.5px/1.3 var(--sans);
+            color: var(--ink-3);
+            letter-spacing: .02em;
+        }
+
+        .foot .tag {
+            flex: none
+        }
+
+        .ticker {
+            flex: 1;
+            overflow: hidden;
+            -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+            mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+        }
+
+        .track {
+            display: flex;
+            width: max-content;
+            animation: marquee 26s linear infinite
+        }
+
+        .track span {
+            padding-right: 26px;
+            font: 700 12px var(--mono);
+            letter-spacing: .04em;
+            white-space: nowrap;
+            color: var(--ink-2);
+        }
+
+        .up {
+            color: var(--green)
+        }
+
+        .down {
+            color: var(--red)
+        }
+
+        /* ---------- SLIDE-UP READ-ONLY PORTFOLIO SHEET (v3) ---------- */
+        .sheet {
+            position: absolute;
+            inset: 0;
+            z-index: 12;
+            padding: 22px 24px;
+            overflow: auto;
+            border-radius: inherit;
+            background: linear-gradient(180deg, #ffffff, var(--paper));
+            transform: translateY(104%);
+            visibility: hidden;
+            transition: transform .6s var(--ease), visibility 0s .6s;
+        }
+
+        .sheet.open {
+            transform: none;
+            visibility: visible;
+            transition-delay: 0s
+        }
+
+        .sheet-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 13px;
+            border: 1.5px solid var(--edge);
+            border-radius: 8px;
+            background: #fff;
+            font: 700 12.5px var(--sans);
+            color: var(--ink);
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: var(--paper-2)
+        }
+
+        .sheet h2 {
+            margin: 16px 0 2px;
+            font: 600 28px var(--serif)
+        }
+
+        .pf {
+            display: grid;
+            grid-template-columns: 132px 1fr;
+            gap: 20px;
+            align-items: center;
+            margin: 14px 0 6px
+        }
+
+        .donut {
+            position: relative;
+            width: 132px;
+            height: 132px
+        }
+
+        .donut svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg)
+        }
+
+        .arc {
+            fill: none;
+            stroke: var(--c);
+            stroke-width: 5.4;
+            stroke-dasharray: var(--len) 100;
+            stroke-dashoffset: var(--off)
+        }
+
+        .arc.trk {
+            stroke: #e6dec8;
+            stroke-dasharray: none;
+            stroke-dashoffset: 0
+        }
+
+        .dc {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-content: center;
+            text-align: center
+        }
+
+        .dc b {
+            font: 700 20px var(--mono);
+            color: var(--green)
+        }
+
+        .line.sm {
+            padding: 6px 0;
+            font-size: 13px
+        }
+
+        .line.sm b {
+            font-size: 13.5px
+        }
+
+        .th {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ink)
+        }
+
+        .rows {
+            list-style: none;
+            padding: 0
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 12px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 11px 4px;
+            border-bottom: 1px solid var(--edge);
+        }
+
+        .key {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            background: var(--c)
+        }
+
+        .nm b {
+            font-size: 13.5px;
+            font-family: var(--mono)
+        }
+
+        .nm span {
+            margin-left: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink-2)
+        }
+
+        .nm small {
+            display: block;
+            margin-top: 2px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-3)
+        }
+
+        .val {
+            text-align: right;
+            font-family: var(--mono)
+        }
+
+        .val b {
+            display: block;
+            font-size: 14px
+        }
+
+        .val small {
+            font-size: 11.5px;
+            font-weight: 700
+        }
+
+        .lock {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            padding: 10px 12px;
+            border: 1.5px dashed var(--edge);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink-2);
+        }
+
+        /* ---------- CARD 7 GIANT 3-2-1 COUNTDOWN RING ---------- */
+        .cd-ring-wrap {
+            position: relative;
+            width: 196px;
+            height: 196px;
+            margin: 22px auto 14px;
+            display: grid;
+            place-items: center;
+        }
+
+        .cd-ring-wrap .seal {
+            animation: spinSlow 14s linear infinite;
+        }
+
+        .cd-ring-inner {
+            position: relative;
+            z-index: 2;
+            width: 154px;
+            height: 154px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #162944, #0a121e);
+            border: 2px solid var(--gold-hi);
+            display: grid;
+            place-items: center;
+            box-shadow: inset 0 0 24px rgba(245, 227, 166, .25);
+        }
+
+        .cd-digit {
+            font: 800 84px/1 var(--mono);
+            color: var(--gold-hi);
+            text-shadow: 0 4px 20px rgba(245, 227, 166, .45);
+        }
+
+        /* ---------- CARD 9 PROJECTOR AUDITORIUM BANNERS ---------- */
+        .banner-stack {
+            display: grid;
+            gap: 18px;
+            margin-top: 18px
+        }
+
+        .proj-banner {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: center;
+            padding: 20px 24px;
+            border-radius: 14px;
+            background: var(--paper-2);
+            border: 2px solid var(--edge);
+            box-shadow: inset 0 1px 0 #fff;
+        }
+
+        .proj-banner.pause {
+            background: #fff8eb;
+            border-color: var(--amber-border)
+        }
+
+        .proj-banner.done {
+            background: #f2fbf6;
+            border-color: var(--green-border)
+        }
+
+        .proj-banner h3 {
+            margin-top: 6px;
+            font: 600 26px/1.12 var(--serif);
+            color: var(--ink)
+        }
+
+        .proj-banner p {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink-2)
+        }
+
+        /* ---------- CARD 10 OLYMPIC 3-TIER PODIUM & TABLE ---------- */
+        .podium-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.15fr 1fr;
+            gap: 16px;
+            align-items: end;
+            margin-top: 22px;
+        }
+
+        .pod-col {
+            position: relative;
+            padding: 20px 16px 18px;
+            border-radius: 16px;
+            background: var(--paper-2);
+            border: 1.5px solid var(--edge);
+            text-align: center;
+        }
+
+        .pod-col.first {
+            padding: 26px 18px 22px;
+            background: linear-gradient(180deg, #fffdf6, #f6ebd0);
+            border: 2px solid var(--gold);
+            box-shadow: 0 16px 32px -12px rgba(120, 83, 13, .35);
+        }
+
+        .pod-col .seal-wrap {
+            width: 84px;
+            height: 84px;
+            margin-bottom: 10px
+        }
+
+        .pod-col.first .seal-wrap {
+            width: 100px;
+            height: 100px
+        }
+
+        .pod-col h3 {
+            margin-top: 6px;
+            font: 600 20px var(--serif);
+            color: var(--ink)
+        }
+
+        .pod-col.first h3 {
+            font-size: 23px
+        }
+
+        .pod-members {
+            margin-top: 4px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-2)
+        }
+
+        .pod-worth {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1.5px dotted var(--edge);
+            font: 800 20px var(--mono);
+            color: var(--ink);
+        }
+
+        .pod-col.first .pod-worth {
+            font-size: 23px;
+            color: var(--navy)
+        }
+
+        .pod-ret {
+            display: inline-block;
+            margin-top: 5px;
+            font: 700 12px var(--mono);
+            color: var(--green)
+        }
+
+        .rank-table {
+            width: 100%;
+            margin-top: 22px;
+            border-collapse: collapse;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rank-table th {
+            padding: 9px 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--ink);
+            font: 700 10.5px var(--sans);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--ink-3);
+        }
+
+        .rank-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--edge);
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink-2);
+        }
+
+        .rank-table td b {
+            color: var(--ink);
+            font-family: var(--mono)
+        }
+
+        .rank-table td.r-num {
+            font-family: var(--mono);
+            font-weight: 800;
+            color: var(--gold-ink)
+        }
+
+        /* ---------- KEYFRAMES ---------- */
+        @keyframes settle {
+            from {
+                opacity: 0;
+                transform: translateY(-28px) scale(1.03) rotateX(10deg)
+            }
+        }
+
+        @keyframes press {
+            35% {
+                transform: translateY(4px) scale(.992)
+            }
+        }
+
+        @keyframes stripes {
+            to {
+                background-position: 20px 0, 0 0
+            }
+        }
+
+        @keyframes guil {
+            to {
+                --g1: 36%;
+                --g2: 64%
+            }
+        }
+
+        @keyframes sweep {
+            to {
+                transform: translateX(100%)
+            }
+        }
+
+        @keyframes ping {
+            0% {
+                box-shadow: 0 0 0 0 rgba(15, 104, 60, .55)
+            }
+
+            70%,
+            100% {
+                box-shadow: 0 0 0 8px transparent
+            }
+        }
+
+        @keyframes pingAmber {
+            0% {
+                box-shadow: 0 0 0 0 rgba(154, 74, 6, .55)
+            }
+
+            70%,
+            100% {
+                box-shadow: 0 0 0 8px transparent
+            }
+        }
+
+        @keyframes sealIn {
+            0% {
+                opacity: 0;
+                transform: scale(1.75) rotate(-22deg)
+            }
+
+            70% {
+                opacity: 1;
+                transform: scale(.95) rotate(2deg)
+            }
+        }
+
+        @keyframes glint {
+            0% {
+                opacity: 1;
+                transform: translateX(-100%)
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateX(100%)
+            }
+        }
+
+        @keyframes marquee {
+            to {
+                transform: translateX(-50%)
+            }
+        }
+
+        @keyframes spinSlow {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @media(max-width:760px) {
+            .podium-grid {
+                grid-template-columns: 1fr
+            }
+
+            .proj-banner {
+                grid-template-columns: 1fr;
+                text-align: left
+            }
+
+            .showcase.grid-mode {
+                grid-template-columns: 1fr
+            }
+
+            .pf {
+                grid-template-columns: 1fr;
+                justify-items: center
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+
+            *,
+            ::before,
+            ::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- STICKY TOP NAVIGATION TOOLBAR -->
+    <nav class="nav-bar" aria-label="State Card Switcher">
+        <div class="nav-brand">
+            <div class="mini-crest">TF</div>
+            <div>
+                <b>Championship Platform • v4 Card Stock</b>
+                <small>Projector WCAG AAA Contrast Suite</small>
+            </div>
+        </div>
+        <div class="nav-pills" id="navPills">
+            <button class="npill active" data-card="1">[1] Pre-Event Countdown</button>
+            <button class="npill" data-card="2">[2] Day 2 Standby</button>
+            <button class="npill" data-card="3">[3] Concluded (v3 Upgrade)</button>
+            <button class="npill" data-card="4">[4] Day 1 Desk Audit</button>
+            <button class="npill" data-card="5">[5] Market Soft Pause</button>
+            <button class="npill" data-card="6">[6] Stage Blackout</button>
+            <button class="npill" data-card="7">[7] 3-2-1 Countdown</button>
+            <button class="npill" data-card="8">[8] Day Transition</button>
+            <button class="npill" data-card="9">[9] Projector Banners</button>
+            <button class="npill" data-card="10">[10] Victory Podium</button>
+        </div>
+        <div class="nav-tools">
+            <button class="tbtn on" id="toggleAutoHover"
+                title="Simulate projector screen: hides cursor and runs smooth auto-hover animation">🎥 Projector Auto-Hover: ON</button>
+            <button class="tbtn" id="toggleStageBg"
+                title="Test how the ivory card pops against a dark auditorium projector">Projector Dark Bg</button>
+            <button class="tbtn" id="toggleGrid">Show All (10)</button>
+        </div>
+    </nav>
+
+    <main class="showcase" id="showcase">
+
+        <!-- =================================================================
+       CARD 1: TRADER PRE-EVENT STANDBY & OPENING COUNTDOWN
+       ================================================================= -->
+        <div class="card-slot active" data-slot="1">
+            <span class="slot-label">Card 1 • #traderWaitingRoomOverlay (Pre-Event Countdown)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">Tournament Waiting Room</span>
+                                    <span class="tag live"><i class="dot"></i>Desk Connected &amp; Armed</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">Gujarat Technological University • Official Trading Terminal</p>
+                                <h1>Championship Platform</h1>
+                                <p class="sub">Your trading desk is armed. All selected corporate equities will unlock
+                                    when the opening countdown reaches zero.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Assigned Desk</span><b>Dalal Street Titans</b></div>
+                                <div class="dayswrap">
+                                    <span class="cap">Session Round • Day 1 of 3</span>
+                                    <div class="days"><i class="active"></i><i></i><i></i></div>
+                                </div>
+                            </div>
+                            <section class="ledger" aria-label="Pre-event desk parameters">
+                                <div class="line"><span class="op">•</span><span>Starting capital allocated</span><i
+                                        class="dots"></i><b>₹5,00,000.00</b></div>
+                                <div class="line"><span class="op">•</span><span>Scheduled opening bell</span><i
+                                        class="dots"></i><b>10:30 AM IST</b></div>
+                                <div class="rule"></div>
+                                <div class="total">
+                                    <div class="tl">
+                                        <span class="cap">Official Market Opening Countdown <span>(live
+                                                sync)</span></span>
+                                        <span class="delta amber"> bell rings in 4m 59s</span>
+                                    </div>
+                                    <div class="amt mono-clock layer" style="--d:6" id="c1Timer">00:04:59</div>
+                                </div>
+                            </section>
+                            <section class="finish">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r1" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r1" textLength="230">DESK ARMED · OPENING BELL · THE TRADING FLOOR ·
+                                                </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">DAY 1</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Armed &amp; Ready<i></i></div>
+                                <p class="msg">Selected Corporate Equities Ready • Live Floor Execution</p>
+                                <p class="fine">Stand by at your terminal. Order execution unlocks automatically at
+                                    00:00:00.</p>
+                            </section>
+                            <div class="strategy-box">
+                                <b>Strategy Tip:</b> Watch breaking news flashes closely. Sector headlines drive
+                                immediate share price shifts across the floor.
+                            </div>
+                            <footer class="foot security-foot">
+                                <span class="tag gold"><i class="dot gold"></i>Official Floor Desk</span>
+                                <span class="foot-security-note">🔒 Live Trading Connection • SSASIT GTU • Zero Leakage Guaranteed</span>
+                            </footer>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 2: TRADER BETWEEN-DAY STANDBY LOBBY (STANDBY FOR DAY 2)
+       ================================================================= -->
+        <div class="card-slot" data-slot="2">
+            <span class="slot-label">Card 2 • #traderWaitingRoomOverlay (Between-Day Standby)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">Day 2 Standby Lobby</span>
+                                    <span class="tag live"><i class="dot"></i>Desk Connected &amp; Armed</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">The Trading Floor • Official Trading Terminal</p>
+                                <h1>Championship Platform</h1>
+                                <p class="sub">Day 1 is complete. Your cash and share holdings have carried forward to
+                                    Day 2.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Assigned Desk</span><b>Dalal Street Titans</b></div>
+                                <div class="dayswrap">
+                                    <span class="cap">Session Round • Day 2 of 3</span>
+                                    <div class="days"><i class="done"></i><i class="active"></i><i></i></div>
+                                </div>
+                            </div>
+                            <section class="ledger" aria-label="Carried forward capital breakdown">
+                                <div class="line"><span class="op"></span><span>Day 1 starting capital</span><i
+                                        class="dots"></i><b>₹5,00,000</b></div>
+                                <div class="line plus"><span class="op">+</span><span>Day 1 locked profit carried
+                                        forward</span><i class="dots"></i><b>+₹84,320.00</b></div>
+                                <div class="rule"></div>
+                                <div class="total">
+                                    <div class="tl">
+                                        <span class="cap">Current Capital for Day 2 <span>(net worth)</span></span>
+                                        <span class="delta">16.86% up after Day 1</span>
+                                    </div>
+                                    <div class="amt layer" style="--d:6"><span
+                                            class="rs">₹</span><span>5,84,320.00</span></div>
+                                </div>
+                            </section>
+                            <section class="mbar">
+                                <div class="mrow"><span class="cap">Capital carried into Day 2</span><span
+                                        class="cap">Grew by +16.86%</span></div>
+                                <div class="mtrack"><i class="seg base" style="--p:85.57"></i><i class="seg gain"
+                                        style="--p:14.43"></i></div>
+                                <div class="legend">
+                                    <span><i class="sw" style="background:var(--navy-2)"></i>Started with <b>₹5.00
+                                            L</b></span>
+                                    <span><i class="sw" style="background:var(--green)"></i>Day 1 Gain <b>+₹0.84
+                                            L</b></span>
+                                </div>
+                            </section>
+                            <section class="finish">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r2" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r2" textLength="230">CARRIED FORWARD · DAY 2 STANDBY ·
+                                                </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">DAY 2</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Standby<i></i></div>
+                                <p class="msg">Day 2 • Waiting for Host to Open Floor</p>
+                                <p class="fine">Analyze your closing performance from Day 1 to rebalance your portfolio
+                                    when Day 2 bells ring.</p>
+                            </section>
+                            <button class="cta js-open-sheet">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="9" rx="2.5" />
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                                </svg>
+                                See carried-forward portfolio (read only) <span class="arr">→</span>
+                            </button>
+                            <footer class="foot security-foot">
+                                <span class="tag gold"><i class="dot gold"></i>Official Floor Desk</span>
+                                <span class="foot-security-note">🔒 Live Trading Connection • SSASIT GTU • Zero Leakage Guaranteed</span>
+                            </footer>
+                        </div>
+                        <!-- Shared Portfolio Sheet injected by JS -->
+                        <section class="sheet js-sheet" role="dialog" aria-modal="true" aria-hidden="true"></section>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 3: TRADER CHAMPIONSHIP CONCLUDED LOBBY (EXACT v3 UPGRADE)
+       ================================================================= -->
+        <div class="card-slot" data-slot="3">
+            <span class="slot-label">Card 3 • #traderWaitingRoomOverlay (Concluded — v3 Projector Upgrade)</span>
+            <div class="stage" id="c3Stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag">Tournament room</span>
+                                    <span class="tag live"><i class="dot"></i>Connected</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">The Trading Floor</p>
+                                <h1>Championship Platform</h1>
+                                <p class="sub">Competition trading has ended. Your final score is audited and
+                                    permanently saved.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Team name</span><b>Dalal Street Titans</b></div>
+                                <div class="dayswrap">
+                                    <span class="cap">3 of 3 trading days done</span>
+                                    <div class="days"><i class="done"></i><i class="done"></i><i class="done"></i></div>
+                                </div>
+                            </div>
+                            <section class="ledger" aria-label="How the total was made">
+                                <div class="line"><span class="op"></span><span>Money you started with</span><i
+                                        class="dots"></i><b id="c3Start">₹5,00,000</b></div>
+                                <div class="line plus"><span class="op">+</span><span>Profit you made</span><i
+                                        class="dots"></i><b id="c3Profit">+₹1,30,132.41</b></div>
+                                <div class="rule"></div>
+                                <div class="total">
+                                    <div class="tl">
+                                        <span class="cap">Money your team has now <span>(net worth)</span></span>
+                                        <span class="delta">26.03% up since the start</span>
+                                    </div>
+                                    <div class="amt layer" style="--d:7"><span class="rs">₹</span><span
+                                            id="c3Worth">6,30,132.41</span></div>
+                                </div>
+                            </section>
+                            <section class="mbar">
+                                <div class="mrow"><span class="cap">How your money grew</span><span class="cap">Grew by
+                                        26.0%</span></div>
+                                <div class="mtrack"><i class="seg base" style="--p:79.35"></i><i class="seg gain"
+                                        style="--p:20.65"></i></div>
+                                <div class="legend">
+                                    <span><i class="sw" style="background:var(--navy-2)"></i>Started with <b>₹5.00
+                                            L</b></span>
+                                    <span><i class="sw" style="background:var(--green)"></i>Profit <b>+₹1.30
+                                            L</b></span>
+                                </div>
+                            </section>
+                            <section class="finish">
+                                <button class="seal-wrap layer" style="--d:12" aria-label="Replay the seal animation">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r3" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r3" textLength="230">FINAL RESULT · CHAMPIONSHIP THE TRADING FLOOR ·
+                                                </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" id="c3SealMono" x="60" y="69" text-anchor="middle">TF</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i><span id="c3StateLabel">Completed</span><i></i></div>
+                                <p class="msg" id="c3StateMsg">Winners were announced on the main stage.</p>
+                                <p class="fine" id="c3StateFine">Your final score and every trade are saved. Nothing can
+                                    be changed now.</p>
+                                <!-- Scenario A / B / C State Switcher -->
+                                <div class="sub-switch" role="group" aria-label="Preview Card 3 Sub-States">
+                                    <button class="sbtn on" data-c3="COMPLETED">Completed</button>
+                                    <button class="sbtn" data-c3="CEREMONY">Live Ceremony</button>
+                                    <button class="sbtn" data-c3="AUDITED">Pending Reveal</button>
+                                </div>
+                            </section>
+                            <button class="cta js-open-sheet">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="9" rx="2.5" />
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                                </svg>
+                                See portfolio (read only) <span class="arr">→</span>
+                            </button>
+                            <p class="cta-note">You can look, but you cannot change anything.</p>
+                            <footer class="foot security-foot">
+                                <span class="tag gold"><i class="dot gold"></i>Official Floor Desk</span>
+                                <span class="foot-security-note">🔒 Live Trading Connection • SSASIT GTU • Zero Leakage Guaranteed</span>
+                            </footer>
+                        </div>
+                        <section class="sheet js-sheet" role="dialog" aria-modal="true" aria-hidden="true"></section>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 4: TRADER DAY CONCLUDED OFFICIAL DESK AUDIT MODAL
+       ================================================================= -->
+        <div class="card-slot" data-slot="4">
+            <span class="slot-label">Card 4 • #traderDayCompletedOverlay (Daily Official Desk Audit)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">Day 1 Completed</span>
+                                    <span class="tag live"><i class="dot"></i>Trading Session Closed</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">Official Desk Audit • Verified Daily Settlement</p>
+                                <h1>Day 1 Concluded</h1>
+                                <p class="sub">Trading session completed. All student portfolios are audited and locked
+                                    for the day.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Audited Desk</span><b>Dalal Street Titans</b></div>
+                                <div class="dayswrap">
+                                    <span class="cap">Today's Standing</span>
+                                    <b style="font:800 20px var(--mono);color:var(--gold-ink)">Rank #1 of 4 Teams</b>
+                                </div>
+                            </div>
+                            <section class="ledger" aria-label="Day 1 Financial Audit Breakdown">
+                                <div class="line"><span class="op">1</span><span>Starting Balance (Day morning
+                                        cash)</span><i class="dots"></i><b>₹5,00,000.00</b></div>
+                                <div class="line"><span class="op">2</span><span>Active Equity Holdings (Market
+                                        value)</span><i class="dots"></i><b>₹4,75,560.00</b></div>
+                                <div class="line"><span class="op">3</span><span>Uninvested Cash Reserve</span><i
+                                        class="dots"></i><b>₹1,08,760.00</b></div>
+                                <div class="line plus"><span class="op">+</span><span>Today's Net Profit / Loss
+                                        (+16.86%)</span><i class="dots"></i><b>+₹84,320.00</b></div>
+                                <div class="rule"></div>
+                                <div class="total">
+                                    <div class="tl">
+                                        <span class="cap">Closing Net Worth <span>(cash + stock values)</span></span>
+                                        <span class="delta">+16.86% gain on starting cash</span>
+                                    </div>
+                                    <div class="amt layer" style="--d:6"><span
+                                            class="rs">₹</span><span>5,84,320.00</span></div>
+                                </div>
+                            </section>
+                            <section class="finish">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r4" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r4" textLength="230">OFFICIAL DESK AUDIT · DAY 1 CLOSED
+                                                    · </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">#1</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Waiting for Host<i></i></div>
+                                <p class="msg">All portfolios and cash carry forward seamlessly to Day 2.</p>
+                                <p class="fine">The next trading day has not started yet. You may inspect your holdings
+                                    in read-only mode.</p>
+                            </section>
+                            <button class="cta js-open-sheet">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="9" rx="2.5" />
+                                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                                </svg>
+                                View My Portfolio &amp; Market (Read-Only) <span class="arr">→</span>
+                            </button>
+                        </div>
+                        <section class="sheet js-sheet" role="dialog" aria-modal="true" aria-hidden="true"></section>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 5: MARKET SOFT PAUSE OVERLAY
+       ================================================================= -->
+        <div class="card-slot" data-slot="5">
+            <span class="slot-label">Card 5 • #softPauseOverlay (Market Soft Pause)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag amber"><i class="dot amber"></i>Market Standby</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">Host Control • Temporary Floor Suspension</p>
+                                <h1>Trading Paused</h1>
+                                <p class="sub">The host has temporarily paused live trading. All share prices, cash
+                                    balances, and open portfolios are safely frozen.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Assigned Desk</span><b>Dalal Street Titans</b></div>
+                                <div class="dayswrap"><span class="cap">Order Book Status</span><b
+                                        style="color:var(--amber)">Frozen Safely</b></div>
+                            </div>
+                            <section class="ledger" aria-label="Frozen desk status">
+                                <div class="line"><span class="op">•</span><span>Protected desk net worth</span><i
+                                        class="dots"></i><b>₹5,84,320.00</b></div>
+                                <div class="line amber"><span class="op">•</span><span>Re-opening protocol</span><i
+                                        class="dots"></i><b>3-Second Live Countdown</b></div>
+                                <div class="rule"></div>
+                            </section>
+                            <section class="finish">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r5" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r5" textLength="230">MARKET STANDBY · POSITIONS SAFE ·
+                                                </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">II</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Standby<i></i></div>
+                                <p class="msg">Host Will Resume Trading Shortly</p>
+                                <p class="fine">Keep your eyes on your terminal. A synchronized 3-second countdown will
+                                    appear before the floor unlocks.</p>
+                            </section>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 6: BLACKOUT / AUDITORIUM ATTENTION FREEZE
+       ================================================================= -->
+        <div class="card-slot" data-slot="6">
+            <span class="slot-label">Card 6 • #blackoutOverlay (Stage Blackout Attention Freeze)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper obsidian">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag"><i class="dot amber"></i>Stage Standby • Screens Paused</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">Main Auditorium Directive • Terminal Lock</p>
+                                <h1>Market On Standby</h1>
+                                <p class="sub">Trading is paused by the Host for a main stage announcement. Please look
+                                    up at the auditorium stage.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Terminal Security</span><b>All Desks Locked</b></div>
+                                <div class="dayswrap"><span class="cap">Portfolio Integrity</span><b
+                                        style="color:var(--gold-hi)">100% Protected</b></div>
+                            </div>
+                            <section class="finish" style="margin-top:30px">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r6" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r6" textLength="230">STAGE FREEZE · EYES ON MAIN STAGE
+                                                    · </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">LOCK</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Eyes on Stage<i></i></div>
+                                <p class="msg">Host Will Resume Trading Shortly</p>
+                                <p class="fine">Your terminal will automatically unlock as soon as the stage briefing
+                                    concludes.</p>
+                            </section>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 7: SYNCHRONIZED 3-2-1 RESUME / OPENING COUNTDOWN OVERLAY
+       ================================================================= -->
+        <div class="card-slot" data-slot="7">
+            <span class="slot-label">Card 7 • #countdownOverlay (Synchronized 3-2-1 Countdown)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper obsidian" style="text-align:center">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag"><i class="dot"></i>Global Floor Sync</span>
+                                </div>
+                            </header>
+                            <div class="title" style="margin-top:18px">
+                                <p class="cap" style="font-size:13px;letter-spacing:.22em">Market Starting In</p>
+                            </div>
+                            <!-- Giant Scalloped Foil Ring Countdown -->
+                            <div class="cd-ring-wrap layer" style="--d:10">
+                                <span class="seal"></span>
+                                <div class="cd-ring-inner">
+                                    <span class="cd-digit" id="c7Digit">3</span>
+                                </div>
+                            </div>
+                            <div class="done-label"><i></i>Get Ready on Your Terminals<i></i></div>
+                            <p class="msg">Live Order Execution Unlocking Across All Desks</p>
+                            <div class="sub-switch" role="group" aria-label="Test Countdown Digits">
+                                <button class="sbtn on" data-cd="3">3</button>
+                                <button class="sbtn" data-cd="2">2</button>
+                                <button class="sbtn" data-cd="1">1</button>
+                                <button class="sbtn" data-cd="GO!">GO!</button>
+                                <button class="sbtn" id="c7Play">▶ Play 3-2-1</button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 8: CINEMATIC DAY TRANSITION FLASH SCREEN
+       ================================================================= -->
+        <div class="card-slot" data-slot="8">
+            <span class="slot-label">Card 8 • #dayTransitionOverlay (Cinematic Day Transition)</span>
+            <div class="stage">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">Session Transition</span>
+                                    <span class="tag live"><i class="dot"></i>All Desks On Standby</span>
+                                </div>
+                            </header>
+                            <div class="title layer" style="--d:3">
+                                <p class="cap">Closing Bell Sounded • Official Settlement Complete</p>
+                                <h1>Day 1 Concluded</h1>
+                                <p class="sub">All portfolios and cash have carried forward seamlessly. Day 2 is now
+                                    armed on Standby.</p>
+                            </div>
+                            <div class="team">
+                                <div><span class="cap">Completed Session</span><b>Day 1 Audited &amp; Locked</b></div>
+                                <div class="dayswrap">
+                                    <span class="cap">Next Session Armed</span>
+                                    <b style="color:var(--green)">Day 2 of 3 Standby</b>
+                                </div>
+                            </div>
+                            <section class="finish" style="margin-top:26px">
+                                <button class="seal-wrap layer" style="--d:10" aria-label="Replay foil seal">
+                                    <span class="seal"></span>
+                                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                                        <defs>
+                                            <path id="r8" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                        </defs>
+                                        <g class="eng"><text>
+                                                <textPath href="#r8" textLength="230">CLOSING BELL · DAY 1 CONCLUDED ·
+                                                </textPath>
+                                            </text></g>
+                                        <circle class="rim" cx="60" cy="60" r="27" />
+                                        <text class="monoT" x="60" y="68" text-anchor="middle">BELL</text>
+                                    </svg>
+                                </button>
+                                <div class="done-label"><i></i>Day 2 Standby<i></i></div>
+                                <p class="msg">Waiting for Host to Launch Next Trading Session</p>
+                                <p class="fine">Your closing net worth from Day 1 is now your starting capital for Day
+                                    2.</p>
+                            </section>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 9: PROJECTOR MAIN STAGE AUDITORIUM ANNOUNCEMENT BANNERS
+       ================================================================= -->
+        <div class="card-slot" data-slot="9">
+            <span class="slot-label">Card 9 • Projector Main Stage Auditorium Banners (3 Variants)</span>
+            <div class="stage wide">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">4K Auditorium Projector Suite</span>
+                                    <span class="tag live"><i class="dot"></i>40-Foot High-Contrast Legibility</span>
+                                </div>
+                            </header>
+                            <div class="title">
+                                <p class="cap">Main Stage Display • Top Announcement Overlays</p>
+                                <h1>Auditorium Stage Banners</h1>
+                                <p class="sub">Engineered with heavy serif headlines and high-contrast ink borders so
+                                    students in the back row can read every state change clearly.</p>
+                            </div>
+
+                            <div class="banner-stack">
+                                <!-- 9A: Standby Banner (#projStandbyBanner) -->
+                                <div class="proj-banner" id="projStandbyBanner">
+                                    <div>
+                                        <div class="status" style="justify-content:flex-start;margin-bottom:6px">
+                                            <span class="tag gold">Auditorium Stage</span>
+                                            <span class="tag live"><i class="dot"></i>Day 2 Standby</span>
+                                        </div>
+                                        <h3>Next Trading Session Opening Soon</h3>
+                                        <p>Trading desks are on standby. The host will start the 3-second opening
+                                            countdown in a moment.</p>
+                                    </div>
+                                    <div class="crest" style="width:58px;height:58px;font-size:16px">D2</div>
+                                </div>
+
+                                <!-- 9B: Paused Banner (#projPauseBanner) -->
+                                <div class="proj-banner pause" id="projPauseBanner">
+                                    <div>
+                                        <div class="status" style="justify-content:flex-start;margin-bottom:6px">
+                                            <span class="tag amber"><i class="dot amber"></i>Trading Temporarily
+                                                Suspended</span>
+                                        </div>
+                                        <h3>Market Paused by Host Control</h3>
+                                        <p>All share prices and portfolio balances are frozen safely. Trading will
+                                            resume with a 3-second live countdown.</p>
+                                    </div>
+                                    <div class="crest"
+                                        style="width:58px;height:58px;font-size:18px;background:var(--amber)">II</div>
+                                </div>
+
+                                <!-- 9C: Day Completed Banner (#projDayCompletedBanner) -->
+                                <div class="proj-banner done" id="projDayCompletedBanner">
+                                    <div>
+                                        <div class="status" style="justify-content:flex-start;margin-bottom:6px">
+                                            <span class="tag gold">Auditorium Stage</span>
+                                            <span class="tag live"><i class="dot"></i>Day 1 Completed</span>
+                                        </div>
+                                        <h3>Day 1 Concluded • Official Session Standings</h3>
+                                        <p>Trading for this session has officially ended. All student portfolios are
+                                            audited and locked. Waiting for host to launch Day 2.</p>
+                                    </div>
+                                    <div class="crest"
+                                        style="width:58px;height:58px;font-size:18px;background:var(--green)">✓</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <!-- =================================================================
+       CARD 10: GRAND CHAMPIONSHIP VICTORY PODIUM & AWARDS CEREMONY
+       ================================================================= -->
+        <div class="card-slot" data-slot="10">
+            <span class="slot-label">Card 10 • #winnerPodiumModal (Grand Championship Victory Podium)</span>
+            <div class="stage wide">
+                <div class="floor"></div>
+                <article class="card">
+                    <i class="back s1"></i><i class="back s2"></i>
+                    <div class="paper">
+                        <i class="guil" aria-hidden="true"></i><i class="sheen"></i><i class="glint"></i>
+                        <canvas class="fx-canvas" aria-hidden="true"></canvas>
+                        <div class="in">
+                            <header class="top">
+                                <div class="crest">TF</div>
+                                <div class="status">
+                                    <span class="tag gold">Official Championship Grand Finale</span>
+                                    <span class="tag live"><i class="dot"></i>Audited Final Standings</span>
+                                </div>
+                            </header>
+                            <div class="title" style="text-align:center">
+                                <p class="cap">Gujarat Technological University • Official Settlement</p>
+                                <h1>The Trading Floor Championship Platform</h1>
+                                <p class="sub">Verified 3-Day Final Standings &amp; Podium Honours</p>
+                            </div>
+
+                            <!-- 3-Tier Olympic Card-Stock Podium -->
+                            <section class="podium-grid" aria-label="Top 3 Championship Podium">
+                                <!-- 2nd Place (Silver) -->
+                                <div class="pod-col">
+                                    <button class="seal-wrap" aria-label="2nd Place Silver Seal">
+                                        <span class="seal silver"></span>
+                                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                                            <defs>
+                                                <path id="r10s" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                            </defs>
+                                            <g class="eng"><text>
+                                                    <textPath href="#r10s" textLength="230">SECOND PLACE · SILVER
+                                                        MEDALIST · </textPath>
+                                                </text></g>
+                                            <circle class="rim" cx="60" cy="60" r="27" />
+                                            <text class="monoT" x="60" y="68" text-anchor="middle">2ND</text>
+                                        </svg>
+                                    </button>
+                                    <span class="tag">2nd Place • Runner-Up</span>
+                                    <h3>Bull Run Syndicate</h3>
+                                    <p class="pod-members">Aarav Desai, Krisha Patel, Rohan Shah</p>
+                                    <div class="pod-worth">₹5,89,120.00</div>
+                                    <span class="pod-ret">▲ +17.82% Gain</span>
+                                </div>
+
+                                <!-- 1st Place (Grand Champion Gold) -->
+                                <div class="pod-col first">
+                                    <button class="seal-wrap" aria-label="1st Place Gold Seal">
+                                        <span class="seal"></span>
+                                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                                            <defs>
+                                                <path id="r10g" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                            </defs>
+                                            <g class="eng"><text>
+                                                    <textPath href="#r10g" textLength="230">GRAND CHAMPION · FIRST PLACE
+                                                        · THE TRADING FLOOR · </textPath>
+                                                </text></g>
+                                            <circle class="rim" cx="60" cy="60" r="27" />
+                                            <text class="monoT" x="60" y="68" text-anchor="middle">1ST</text>
+                                        </svg>
+                                    </button>
+                                    <span class="tag gold">★ Grand Champion ★</span>
+                                    <h3>Dalal Street Titans</h3>
+                                    <p class="pod-members">Ved Mangukiya, Smit Hadiya, Tirth Kargar</p>
+                                    <div class="pod-worth">₹6,42,850.00</div>
+                                    <span class="pod-ret">▲ +28.57% Gain</span>
+                                </div>
+
+                                <!-- 3rd Place (Bronze) -->
+                                <div class="pod-col">
+                                    <button class="seal-wrap" aria-label="3rd Place Bronze Seal">
+                                        <span class="seal bronze"></span>
+                                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                                            <defs>
+                                                <path id="r10b" d="M60 60m-37 0a37 37 0 1 1 74 0a37 37 0 1 1-74 0" />
+                                            </defs>
+                                            <g class="eng"><text>
+                                                    <textPath href="#r10b" textLength="230">THIRD PLACE · BRONZE
+                                                        MEDALIST · </textPath>
+                                                </text></g>
+                                            <circle class="rim" cx="60" cy="60" r="27" />
+                                            <text class="monoT" x="60" y="68" text-anchor="middle">3RD</text>
+                                        </svg>
+                                    </button>
+                                    <span class="tag">3rd Place • Second Runner-Up</span>
+                                    <h3>Venture Capitalists</h3>
+                                    <p class="pod-members">Devanshi Joshi, Harshil Mehta, Yash Vora</p>
+                                    <div class="pod-worth">₹5,41,600.00</div>
+                                    <span class="pod-ret">▲ +8.32% Gain</span>
+                                </div>
+                            </section>
+
+                            <!-- Ranks 4 through 8 Official Ledger Table -->
+                            <table class="rank-table" aria-label="Championship Standings Ranks 4 to 8">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Trading Desk</th>
+                                        <th>Audited Trades</th>
+                                        <th>Net P&amp;L</th>
+                                        <th>Final Net Worth</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="r-num">#4</td>
+                                        <td><b>Alpha Quant Collective</b></td>
+                                        <td>42</td>
+                                        <td class="up">+₹31,400.00 (+6.28%)</td>
+                                        <td><b>₹5,31,400.00</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="r-num">#5</td>
+                                        <td><b>Nifty Navigators</b></td>
+                                        <td>38</td>
+                                        <td class="up">+₹19,850.00 (+3.97%)</td>
+                                        <td><b>₹5,19,850.00</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="r-num">#6</td>
+                                        <td><b>Sensex Strategists</b></td>
+                                        <td>51</td>
+                                        <td class="up">+₹8,210.00 (+1.64%)</td>
+                                        <td><b>₹5,08,210.00</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="r-num">#7</td>
+                                        <td><b>Arbitrage Architects</b></td>
+                                        <td>29</td>
+                                        <td class="down">−₹6,450.00 (−1.29%)</td>
+                                        <td><b>₹4,93,550.00</b></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="r-num">#8</td>
+                                        <td><b>Bluechip Brigade</b></td>
+                                        <td>64</td>
+                                        <td class="down">−₹18,900.00 (−3.78%)</td>
+                                        <td><b>₹4,81,100.00</b></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        /* ===================== SHARED DATA ENGINE (v3 COMPATIBLE) ===================== */
+        const CARD_DATA = {
+            team: 'Dalal Street Titans',
+            startingCapital: 500000,
+            daysDone: 3, daysTotal: 3,
+            holdings: [
+                { sym: 'RELIANCE', name: 'Reliance Industries', sector: 'Energy', qty: 50, buy: 1250, now: 1610 },
+                { sym: 'TCS', name: 'Tata Consultancy', sector: 'IT', qty: 20, buy: 3800, now: 4620 },
+                { sym: 'HDFCBANK', name: 'HDFC Bank', sector: 'Banking', qty: 80, buy: 1600, now: 2055.5 },
+                { sym: 'INFY', name: 'Infosys', sector: 'IT', qty: 40, buy: 1500, now: 1985 },
+                { sym: 'ITC', name: 'ITC', sector: 'FMCG', qty: 150, buy: 420, now: 516.18 },
+                { sym: 'SUNPHARMA', name: 'Sun Pharma', sector: 'Pharma', qty: 30, buy: 1700, now: 2195 },
+                { sym: 'BHARTIARTL', name: 'Bharti Airtel', sector: 'Telecom', qty: 43, buy: 980, now: 1226.87 }
+            ]
+        };
+
+        const $$ = s => Array.from(document.querySelectorAll(s));
+        const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+        const r2 = n => Math.round(n * 100) / 100;
+        const total = (a, k) => r2(a.reduce((s, x) => s + x[k], 0));
+        const num = (n, d = 2) => n.toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+        const inr = (n, d = 2) => '₹' + num(n, d);
+        const sgn = (n, d = 2) => (n < 0 ? '−' : '+') + inr(Math.abs(n), d);
+        const pc = n => (n < 0 ? '−' : '+') + Math.abs(n).toFixed(1) + '%';
+
+        const D = CARD_DATA;
+        const H = D.holdings.map(h => ({ ...h, cost: r2(h.qty * h.buy), value: r2(h.qty * h.now) }));
+        const start = D.startingCapital, invested = total(H, 'cost'), held = total(H, 'value');
+        const cash = r2(start - invested), worth = r2(cash + held), profit = r2(worth - start), gainPct = profit / start * 100;
+
+        /* 1. Scalloped 64-Point Star Cut-out on All Foil Seals */
+        const pts = Array.from({ length: 64 }, (_, i) => {
+            const a = i / 64 * 6.2832, r = i % 2 ? 46.5 : 50;
+            return `${(50 + r * Math.cos(a)).toFixed(2)}% ${(50 + r * Math.sin(a)).toFixed(2)}%`;
+        });
+        const sealClip = `polygon(${pts.join(',')})`; $$('.seal').forEach(el => { el.style.clipPath = sealClip; });  /* 2. Footer Tickers Permanently Removed to Protect Tournament Fair Play & Prevent Share Leaks */
+
+        /* 3. Build Read-Only Portfolio Sheets inside Cards 2, 3, and 4 */
+        const COLORS = ['#0f2137', '#b88728', '#0f683c', '#2b547e', '#9a4a06', '#5b4b8a', '#4d6b3c'], CASHC = '#b8a67e';
+        const sorted = [...H].sort((a, b) => b.value - a.value);
+        let acc = 0;
+        const arcsHtml = [...sorted.map((h, i) => ({ v: h.value, c: COLORS[i % 7] })), { v: cash, c: CASHC }].map((p, i) => {
+            const len = p.v / worth * 100;
+            const s = `<circle class="arc" data-i="${i}" cx="21" cy="21" r="15.915" style="--len:${Math.max(len - .6, .1).toFixed(2)};--off:${(-acc).toFixed(2)};--c:${p.c};--k:${i}"/>`;
+            acc += len;
+            return s;
+        }).join('');
+
+        const rowsHtml = sorted.map((h, i) => {
+            const pl = r2(h.value - h.cost);
+            return `<li class="row" data-i="${i}" style="--i:${i};--c:${COLORS[i % 7]}"><i class="key"></i>
+    <div class="nm"><b>${h.sym}</b><span>${h.name}</span><small>${h.qty} shares · bought at ${inr(h.buy)} · ${h.sector}</small></div>
+    <div class="val"><b>${inr(h.value)}</b><small class="${pl >= 0 ? 'up' : 'down'}">${sgn(pl)} · ${pc(pl / h.cost * 100)}</small></div></li>`;
+        }).join('') + `<li class="row" data-i="${sorted.length}" style="--i:${sorted.length};--c:${CASHC}"><i class="key"></i>
+    <div class="nm"><b>CASH</b><span>Cash left</span><small>Money not used to buy shares</small></div>
+    <div class="val"><b>${inr(cash)}</b></div></li>`;
+
+        const sheetTemplate = `
+  <div class="sheet-top">
+    <button class="back-btn js-close-sheet">← Back to Card</button>
+    <span class="tag">🔒 Read only</span>
+  </div>
+  <h2>Team portfolio</h2>
+  <p class="sub">${D.team} · Indian shares (NSE)</p>
+  <div class="pf">
+    <div class="donut">
+      <svg viewBox="0 0 42 42" aria-hidden="true"><circle class="arc trk" cx="21" cy="21" r="15.915"/><g>${arcsHtml}</g></svg>
+      <div class="dc"><span class="cap">Return</span><b>${pc(gainPct)}</b></div>
+    </div>
+    <div>
+      <div class="line sm"><span>Money put in shares</span><i class="dots"></i><b>${inr(invested, 0)}</b></div>
+      <div class="line sm"><span>Shares are worth</span><i class="dots"></i><b>${inr(held)}</b></div>
+      <div class="line sm"><span>Cash left</span><i class="dots"></i><b>${inr(cash, 0)}</b></div>
+      <div class="line sm plus"><span>Profit</span><i class="dots"></i><b>${sgn(profit)}</b></div>
+    </div>
+  </div>
+  <div class="th"><span class="cap">Share</span><span class="cap">Value now · Profit or loss</span></div>
+  <ul class="rows">${rowsHtml}</ul>
+  <p class="lock">🔒 View only. Nothing here can be bought, sold or changed.</p>
+`;
+
+        $$('.js-sheet').forEach(sheet => {
+            sheet.innerHTML = sheetTemplate;
+            const donut = sheet.querySelector('.donut');
+            const rows = sheet.querySelector('.rows');
+            rows.addEventListener('pointerover', e => {
+                const r = e.target.closest('.row');
+                donut.classList.toggle('f', !!r);
+                donut.querySelectorAll('.arc[data-i]').forEach(a => a.classList.toggle('on', !!r && a.dataset.i === r.dataset.i));
+            });
+            rows.addEventListener('pointerleave', () => donut.classList.remove('f'));
+        });
+
+        $$('.js-open-sheet').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const paper = btn.closest('.paper');
+                const sheet = paper.querySelector('.js-sheet');
+                sheet.classList.add('open');
+                sheet.setAttribute('aria-hidden', 'false');
+                sheet.scrollTop = 0;
+            });
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target.closest('.js-close-sheet')) {
+                const sheet = e.target.closest('.js-sheet');
+                sheet.classList.remove('open');
+                sheet.setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                $$('.js-sheet.open').forEach(sheet => {
+                    sheet.classList.remove('open');
+                    sheet.setAttribute('aria-hidden', 'true');
+                });
+            }
+        });
+
+        /* 4. Count-Up Numbers for Card 3 (START Phase) */
+        function countTo(el, to, { delay = 0, dur = 1500, fmt = inr } = {}) {
+            if (!el) return;
+            if (reduce) { el.textContent = fmt(to); return; }
+            const t0 = performance.now() + delay;
+            (function f(t) {
+                const p = Math.min(Math.max((t - t0) / dur, 0), 1);
+                el.textContent = fmt(to * (p === 1 ? 1 : 1 - Math.pow(2, -10 * p)));
+                if (p < 1) requestAnimationFrame(f);
+            })(t0);
+        }
+
+        function runCard3CountUp() {
+            countTo(document.getElementById('c3Start'), start, { delay: 200, dur: 1100, fmt: n => inr(n, 0) });
+            countTo(document.getElementById('c3Profit'), profit, { delay: 450, dur: 1300, fmt: n => sgn(n) });
+            countTo(document.getElementById('c3Worth'), worth, { delay: 700, dur: 1600, fmt: n => num(n) });
+        }
+
+        /* 5. Foil Flecks Particle Burst on Any Seal Click */
+        function flecks(sealBtn) {
+            if (reduce || !sealBtn) return;
+            const paper = sealBtn.closest('.paper');
+            const cv = paper ? paper.querySelector('.fx-canvas') : null;
+            if (!cv) return;
+            const cx = cv.getContext('2d');
+            const k = Math.min(devicePixelRatio || 1, 2), W = paper.offsetWidth, Ht = paper.offsetHeight;
+            cv.width = W * k; cv.height = Ht * k; cx.setTransform(k, 0, 0, k, 0, 0);
+            const a = sealBtn.getBoundingClientRect(), b = paper.getBoundingClientRect();
+            const ox = a.left - b.left + a.width / 2, oy = a.top - b.top + a.height / 2;
+            const cols = ['#b88728', '#e6c56f', '#f5e3a6', '#78530d', '#fff6d6'];
+            const ps = Array.from({ length: 65 }, () => {
+                const ang = Math.random() * 6.2832, sp = 2 + Math.random() * 6;
+                return {
+                    x: ox + Math.cos(ang) * 40,
+                    y: oy + Math.sin(ang) * 40,
+                    vx: Math.cos(ang) * sp,
+                    vy: Math.sin(ang) * sp - 1,
+                    s: 1.4 + Math.random() * 2.2,
+                    c: cols[Math.random() * 5 | 0],
+                    l: 1
+                };
+            });
+            const stg = sealBtn.closest('.stage');
+            if (stg) {
+                stg.classList.remove('celebrate');
+                void stg.offsetWidth;
+                stg.classList.add('celebrate');
+            }
+            (function f() {
+                cx.clearRect(0, 0, W, Ht);
+                for (const p of ps) {
+                    p.vx *= .955; p.vy = p.vy * .955 + .05; p.x += p.vx; p.y += p.vy; p.l -= .018;
+                    cx.globalAlpha = Math.max(p.l, 0); cx.fillStyle = p.c;
+                    cx.beginPath(); cx.arc(p.x, p.y, p.s, 0, 6.29); cx.fill();
+                }
+                ps.some(p => p.l > 0) ? requestAnimationFrame(f) : cx.clearRect(0, 0, W, Ht);
+            })();
+        }
+
+        $$('.seal-wrap').forEach(btn => {
+            btn.addEventListener('click', () => flecks(btn));
+        });
+
+        /* 6. Card 3 Scenario A / B / C State Switcher */
+        const C3_STATES = {
+            COMPLETED: {
+                mono: 'TF',
+                label: 'Completed',
+                msg: 'Winners were announced on the main stage.',
+                fine: 'Your final score and every trade are saved. Nothing can be changed now.'
+            },
+            CEREMONY: {
+                mono: 'LIVE',
+                label: 'Ceremony',
+                msg: 'Stage ceremony in progress — watch the auditorium projector.',
+                fine: 'The host is currently revealing the top performers, runner-up, and grand champion live on stage.'
+            },
+            AUDITED: {
+                mono: 'LOCK',
+                label: 'Audited',
+                msg: 'Final results audited — winner announcement pending.',
+                fine: 'All trading rounds are complete. The host is preparing the official stage ceremony.'
+            }
+        };
+
+        $$('[data-c3]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('[data-c3]').forEach(b => b.classList.remove('on'));
+                btn.classList.add('on');
+                const st = C3_STATES[btn.dataset.c3];
+                document.getElementById('c3SealMono').textContent = st.mono;
+                document.getElementById('c3StateLabel').textContent = st.label;
+                document.getElementById('c3StateMsg').textContent = st.msg;
+                document.getElementById('c3StateFine').textContent = st.fine;
+                flecks(document.querySelector('#c3Stage .seal-wrap'));
+            });
+        });
+
+        /* 7. Card 7 3-2-1 Countdown Switcher & Sequencer */
+        const c7Digit = document.getElementById('c7Digit');
+        $$('[data-cd]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('[data-cd]').forEach(b => b.classList.remove('on'));
+                btn.classList.add('on');
+                c7Digit.textContent = btn.dataset.cd;
+            });
+        });
+
+        document.getElementById('c7Play').addEventListener('click', () => {
+            const seq = ['3', '2', '1', 'GO!'];
+            seq.forEach((val, idx) => {
+                setTimeout(() => {
+                    c7Digit.textContent = val;
+                    $$('[data-cd]').forEach(b => b.classList.toggle('on', b.dataset.cd === val));
+                }, idx * 850);
+            });
+        });
+
+        /* 8. Card 1 Live Second-by-Second Timer Tick */
+        let c1Sec = 299;
+        setInterval(() => {
+            c1Sec = c1Sec > 0 ? c1Sec - 1 : 299;
+            const m = String(Math.floor(c1Sec / 60)).padStart(2, '0');
+            const s = String(c1Sec % 60).padStart(2, '0');
+            const el = document.getElementById('c1Timer');
+            if (el) el.textContent = `00:${m}:${s}`;
+        }, 1000);
+
+        /* 9. Navigation Toolbar & Grid View Switcher */
+        const showcase = document.getElementById('showcase');
+        const toggleGridBtn = document.getElementById('toggleGrid');
+
+        $$('#navPills .npill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                showcase.classList.remove('grid-mode');
+                toggleGridBtn.classList.remove('on');
+                toggleGridBtn.textContent = 'Show All (10)';
+                $$('#navPills .npill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                const target = pill.dataset.card;
+                $$('.card-slot').forEach(slot => {
+                    slot.classList.toggle('active', slot.dataset.slot === target);
+                });
+                if (target === '3') runCard3CountUp();
+                const activeSeal = document.querySelector('.card-slot.active .seal-wrap');
+                if (activeSeal) setTimeout(() => flecks(activeSeal), 420);
+            });
+        });
+
+        toggleGridBtn.addEventListener('click', () => {
+            const isGrid = showcase.classList.toggle('grid-mode');
+            toggleGridBtn.classList.toggle('on', isGrid);
+            toggleGridBtn.textContent = isGrid ? 'Single Card View' : 'Show All (10)';
+            if (isGrid) runCard3CountUp();
+        });
+
+        const toggleStageBgBtn = document.getElementById('toggleStageBg');
+        toggleStageBgBtn.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('projector-dark');
+            toggleStageBgBtn.classList.toggle('on', isDark);
+            toggleStageBgBtn.textContent = isDark ? 'Warm Stone Bg' : 'Projector Dark Bg';
+        });
+
+        /* 10. Dual-Mode Card Hover & Projector Auto-Hover Engine */
+        let clientMouseX = -9999, clientMouseY = -9999;
+        let isUserMovingMouse = false;
+        let lastUserMouseMoveTime = 0;
+        let autoHoverEnabled = true;
+
+        const toggleAutoHoverBtn = document.getElementById('toggleAutoHover');
+        if (toggleAutoHoverBtn) {
+            toggleAutoHoverBtn.addEventListener('click', () => {
+                autoHoverEnabled = !autoHoverEnabled;
+                toggleAutoHoverBtn.classList.toggle('on', autoHoverEnabled);
+                toggleAutoHoverBtn.textContent = autoHoverEnabled ? '🎥 Projector Auto-Hover: ON' : '🖱️ Mouse Hover Only';
+                document.body.classList.toggle('projector-hide-cursor', autoHoverEnabled);
+            });
+        }
+
+        addEventListener('pointermove', e => {
+            if (e.pointerType === 'mouse') {
+                clientMouseX = e.clientX;
+                clientMouseY = e.clientY;
+                isUserMovingMouse = true;
+                lastUserMouseMoveTime = performance.now();
+                if (autoHoverEnabled) {
+                    document.body.classList.remove('projector-hide-cursor');
+                }
+            }
+        });
+
+        document.addEventListener('pointerleave', () => {
+            isUserMovingMouse = false;
+            clientMouseX = -9999;
+            clientMouseY = -9999;
+            if (autoHoverEnabled) {
+                document.body.classList.add('projector-hide-cursor');
+            }
+        });
+
+        const cardTiltStateMap = new WeakMap();
+
+        if (!reduce) (function loop(time) {
+            const idle = !isUserMovingMouse || (performance.now() - lastUserMouseMoveTime > 1800);
+
+            if (idle && autoHoverEnabled) {
+                document.body.classList.add('projector-hide-cursor');
+            }
+
+            const visibleCards = $$('.card-slot.active .card, .showcase.grid-mode .card');
+
+            visibleCards.forEach(card => {
+                let state = cardTiltStateMap.get(card);
+                if (!state) {
+                    state = { curRx: 0, curRy: 0, curMx: 50, curMy: 35 };
+                    cardTiltStateMap.set(card, state);
+                }
+
+                let targetRx = 0, targetRy = 0, targetMx = 50, targetMy = 35;
+
+                if (idle && autoHoverEnabled) {
+                    // Projector Auto-Hover: No cursor visible, gentle breathing ambient orbit
+                    const autoX = Math.sin(time * 0.001) * 0.75;
+                    const autoY = Math.cos(time * 0.0012) * 0.65;
+                    targetRx = -autoY * 2.0;
+                    targetRy = autoX * 2.4;
+                    targetMx = 50 + autoX * 24;
+                    targetMy = 35 + autoY * 20;
+                } else {
+                    // Interactive Desktop Hover: Active ONLY when cursor is on/near the card (+45px outer buffer)
+                    const rect = card.getBoundingClientRect();
+                    const buffer = 45; // comfortable space around the card
+                    const isNear = isUserMovingMouse &&
+                                   clientMouseX >= (rect.left - buffer) &&
+                                   clientMouseX <= (rect.right + buffer) &&
+                                   clientMouseY >= (rect.top - buffer) &&
+                                   clientMouseY <= (rect.bottom + buffer);
+
+                    if (isNear) {
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const normX = Math.max(-1.1, Math.min(1.1, (clientMouseX - centerX) / (rect.width / 2 + buffer)));
+                        const normY = Math.max(-1.1, Math.min(1.1, (clientMouseY - centerY) / (rect.height / 2 + buffer)));
+
+                        // Smooth, subtle, small tilt ('just feel': max ±2.2 deg, gentle push, zero hard twist)
+                        targetRx = -normY * 2.2;
+                        targetRy = normX * 2.5;
+                        targetMx = 50 + normX * 28;
+                        targetMy = 35 + normY * 24;
+                    } else {
+                        // Cursor is outside card bounds: smoothly glide back to flat rest position
+                        targetRx = 0;
+                        targetRy = 0;
+                        targetMx = 50;
+                        targetMy = 35;
+                    }
+                }
+
+                // Spring damping interpolation (smooth, organic, subtle luxury feel)
+                state.curRx += (targetRx - state.curRx) * 0.085;
+                state.curRy += (targetRy - state.curRy) * 0.085;
+                state.curMx += (targetMx - state.curMx) * 0.085;
+                state.curMy += (targetMy - state.curMy) * 0.085;
+
+                const s = card.style;
+                s.setProperty('--rx', state.curRx.toFixed(2));
+                s.setProperty('--ry', state.curRy.toFixed(2));
+                s.setProperty('--mx', state.curMx.toFixed(1) + '%');
+                s.setProperty('--my', state.curMy.toFixed(1) + '%');
+            });
+
+            requestAnimationFrame(loop);
+        })(0);
+    </script>
+</body>
+
+</html>
