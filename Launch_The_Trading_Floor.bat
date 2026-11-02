@@ -21,15 +21,9 @@ if %ERRORLEVEL% NEQ 0 (
         set "NODE_EXEC=%~dp0bin\node.exe"
         echo [INFO] Running with portable Node engine from bin folder.
     ) else (
-        echo [ERROR] Node.js was not found on this computer!
-        echo.
-        echo To run this application:
-        echo 1. Install Node.js LTS from: https://nodejs.org/
-        echo    OR place node.exe directly inside a 'tools' folder in this directory.
-        echo 2. Relaunch this file.
-        echo.
-        pause
-        exit /b 1
+        echo [INFO] Node.js was not found. Launching automated fresh-PC bootstrapper...
+        powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\bootstrap.ps1"
+        exit /b %ERRORLEVEL%
     )
 )
 

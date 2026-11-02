@@ -47,7 +47,7 @@
  * AUTHORITATIVE STATE MACHINE MODULE (server/state_machine.js)
  *
  * Implements the 4-dimensional orthogonal state model, monotonic stateVersion
- * synchronization, and centralized action-eligibility validation.
+ * synchronization, configuration validation, and centralized action-eligibility enforcement.
  */
 
 'use strict';
@@ -114,7 +114,7 @@ function syncDerivedStateFlags(gs) {
   }
 
   // 6. Authoritative tradeable check helper & monotonic version bump
-  gs.isTradingOpen = (gs.status === 'LIVE' && !gs.isPaused && !gs.isConcluded);
+  gs.isTradingOpen = (gs.status === 'LIVE' && !gs.isPaused && !gs.isConcluded && !gs.activeCountdown);
   gs.isFinalDayCompleted = (gs.status === 'DAY_COMPLETED' && gs.currentDay >= gs.totalDays);
   gs.stateVersion = (gs.stateVersion || 1) + 1;
 
@@ -122,12 +122,82 @@ function syncDerivedStateFlags(gs) {
 }
 
 /**
- * Single Trading Gate Helper (STATE-006)
- * Authoritative check enforced identically across ORDER and LIQUIDATE_ALL.
+ * Single Authoritative Trading Gate Helper (STATE-006)
+ * Enforced identically across ORDER and LIQUIDATE_ALL on the backend.
  */
 function canExecuteTrades(gs) {
   if (!gs) return false;
-  return gs.status === 'LIVE' && !gs.isPaused && !gs.isConcluded;
+  return (
+    gs.configLocked === true &&
+    gs.status === 'LIVE' &&
+    gs.isPaused === false &&
+    gs.isConcluded === false &&
+    !gs.activeCountdown
+  );
+}
+
+/**
+ * Validates required event configuration before allowing lock or initialization.
+ */
+function validateEventConfigPayload(payload, currentCompanies = [], currentTeams = {}) {
+  const errors = [];
+  const title = payload.eventTitle !== undefined ? payload.eventTitle : payload.title;
+  if (title !== undefined && (!String(title).trim() || String(title).trim().length < 2)) {
+    errors.push('Event title must be at least 2 characters long.');
+  }
+
+  const cash = payload.startingCash !== undefined ? Number(payload.startingCash) : 500000;
+  if (!Number.isFinite(cash) || cash < 1000 || cash > 100000000) {
+    errors.push('Starting capital must be between ₹1,000 and ₹10,00,00,000.');
+  }
+
+  const days = payload.totalDays !== undefined ? parseInt(payload.totalDays, 10) : 3;
+  if (!Number.isFinite(days) || days < 1 || days > 10) {
+    errors.push('Total competition days must be between 1 and 10.');
+  }
+
+  const dur = payload.dayDurationSeconds !== undefined ? parseInt(payload.dayDurationSeconds, 10) : 1800;
+  if (!Number.isFinite(dur) || dur < 60 || dur > 14400) {
+    errors.push('Session duration per day must be between 60 seconds (1 min) and 14,400 seconds (4 hours).');
+  }
+
+  let selectedTickers = payload.selectedTickers;
+  if (Array.isArray(selectedTickers)) {
+    const validTickers = selectedTickers
+      .map((t) => String(t || '').toUpperCase().trim())
+      .filter((t) => currentCompanies.some((c) => c.ticker === t));
+    if (validTickers.length < 4) {
+      errors.push('Please select at least 4 verified tradeable stocks for the market universe.');
+    }
+  } else {
+    const enabledCount = currentCompanies.filter((c) => c.isEnabled !== false).length;
+    if (enabledCount < 4) {
+      errors.push('Please select at least 4 verified tradeable stocks for the market universe.');
+    }
+  }
+
+  if (Array.isArray(payload.teams)) {
+    if (payload.teams.length < 1) {
+      errors.push('At least 1 participating team is required.');
+    }
+    const seenUsernames = new Set();
+    payload.teams.forEach((t, idx) => {
+      const n = String(t.name || '').trim();
+      const p = String(t.password || '').trim();
+      const u = String(t.username || `team${idx + 1}`).trim().toLowerCase();
+      if (!n) errors.push(`Team ${idx + 1} display name is required.`);
+      if (!p) errors.push(`Team ${idx + 1} password is required.`);
+      if (seenUsernames.has(u)) errors.push(`Duplicate username "${u}" on Team ${idx + 1}.`);
+      seenUsernames.add(u);
+    });
+  } else if (Object.keys(currentTeams || {}).length < 1) {
+    errors.push('At least 1 participating team must be configured.');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
 }
 
 /**
@@ -140,19 +210,81 @@ function validateActionEligibility(gs, action) {
   const currentDay = gs.currentDay || 1;
   const totalDays = gs.totalDays || 3;
   const elapsedSeconds = gs.elapsedSeconds || 0;
+  const isConfigReady = !!gs.configLocked && status !== 'SETUP' && status !== 'RESET';
 
   switch (action) {
     case 'HOST_SET_EVENT_LOCK':
     case 'HOST_LOCK_EVENT':
-      if (status === 'LIVE' || elapsedSeconds > 0 || currentDay > 1) {
-        return { allowed: false, reason: 'Cannot modify event configuration: The tournament is already underway. Event settings are permanently locked.' };
+    case 'HOST_INITIALIZE_NEW_CHAMPIONSHIP':
+      if (status === 'LIVE' || status === 'COUNTDOWN' || elapsedSeconds > 0 || currentDay > 1) {
+        return {
+          allowed: false,
+          reason: 'Cannot re-initialize or modify event configuration: The tournament is already underway. Reset the championship first if you need a fresh event.'
+        };
       }
       return { allowed: true };
 
     case 'HOST_UNLOCK_EVENT_CONFIG':
     case 'HOST_UNLOCK_EVENT':
-      if (status === 'LIVE' || elapsedSeconds > 0 || currentDay > 1) {
-        return { allowed: false, reason: 'Cannot unlock settings: The competition has already started. Event settings are permanently frozen during live trading.' };
+      if (status === 'LIVE' || status === 'COUNTDOWN' || elapsedSeconds > 0 || currentDay > 1) {
+        return {
+          allowed: false,
+          reason: 'Cannot unlock settings: The competition has already started. Event settings are permanently frozen during live trading.'
+        };
+      }
+      return { allowed: true };
+
+    case 'HOST_RESUME_COUNTDOWN':
+    case 'HOST_START_DAY1_NOW':
+    case 'RESUME_MARKET':
+    case 'HOST_START_EVENT_NOW':
+    case 'HOST_START_MARKET':
+    case 'HOST_SCHEDULE_EVENT':
+      if (!isConfigReady) {
+        return {
+          allowed: false,
+          reason: 'Cannot launch or schedule market: Event configuration is incomplete. Complete and lock event setup first.'
+        };
+      }
+      if (status === 'DAY_COMPLETED') {
+        return {
+          allowed: false,
+          reason: `Day ${currentDay} has ended. Trading cannot be resumed. Review the results and prepare the next day.`
+        };
+      }
+      if (gs.isConcluded) {
+        return {
+          allowed: false,
+          reason: 'Cannot resume: The championship is already concluded.'
+        };
+      }
+      if (status === 'LIVE' && !gs.isPaused) {
+        return {
+          allowed: false,
+          reason: 'Trading is already active and running live.'
+        };
+      }
+      return { allowed: true };
+
+    case 'HOST_PAUSE':
+    case 'HOST_SET_PAUSE_MODE':
+      if (!isConfigReady) {
+        return {
+          allowed: false,
+          reason: 'Cannot pause market: Event configuration is incomplete. Complete and lock event setup first.'
+        };
+      }
+      if (status === 'DAY_COMPLETED' || gs.isConcluded) {
+        return {
+          allowed: false,
+          reason: `Cannot pause market: Day ${currentDay} is already concluded.`
+        };
+      }
+      if (status === 'STANDBY' || status === 'SCHEDULED') {
+        return {
+          allowed: false,
+          reason: 'Cannot pause market: Trading session has not started yet (currently on Standby).'
+        };
       }
       return { allowed: true };
 
@@ -182,11 +314,17 @@ function validateActionEligibility(gs, action) {
 
     case 'HOST_CONCLUDE_DAY':
     case 'HOST_FINALIZE_DAY':
-      if (!gs.configLocked || status === 'SETUP' || status === 'RESET') {
-        return { allowed: false, reason: 'Cannot conclude day: No event is currently active or configured. Complete event setup first.' };
+      if (!isConfigReady) {
+        return {
+          allowed: false,
+          reason: 'Cannot conclude day: No event is currently active or configured. Complete event setup first.'
+        };
       }
       if (status === 'DAY_COMPLETED') {
-        return { allowed: false, reason: `Day ${currentDay} is already concluded. Stand by to advance to Day ${currentDay + 1} or finalize the championship.` };
+        return {
+          allowed: false,
+          reason: `Day ${currentDay} is already concluded. Stand by to advance to Day ${currentDay + 1} or finalize the championship.`
+        };
       }
       if (gs.isConcluded) {
         return { allowed: false, reason: 'Championship is already concluded.' };
@@ -199,7 +337,10 @@ function validateActionEligibility(gs, action) {
         return { allowed: false, reason: 'Cannot advance to next day. Current day must be concluded first.' };
       }
       if (currentDay >= totalDays) {
-        return { allowed: false, reason: `Cannot advance: Day ${currentDay} is the final planned day. Use 'Finish Championship' or 'Add Next Day'.` };
+        return {
+          allowed: false,
+          reason: `Cannot advance: Day ${currentDay} is the final planned day. Use 'Finish Championship' or 'Add Next Day'.`
+        };
       }
       return { allowed: true };
 
@@ -235,72 +376,14 @@ function canTransitionTo(currentStatus, action, meta = {}) {
   const mockGs = {
     status: currentStatus,
     configLocked: LOCKED_STATUSES.has(currentStatus),
+    isPaused: currentStatus !== 'LIVE' && currentStatus !== 'DAY_COMPLETED',
     isConcluded: currentStatus === 'CHAMPIONSHIP_CONCLUDED' || currentStatus === 'WINNER_ANNOUNCEMENT',
     currentDay: meta.currentDay || 1,
     totalDays: meta.totalDays || 3,
     elapsedSeconds: meta.elapsedSeconds || 0
   };
   const eligibility = validateActionEligibility(mockGs, action);
-  if (!eligibility.allowed) return false;
-
-  switch (action) {
-    case 'HOST_SET_EVENT_LOCK':
-      return currentStatus === 'SETUP' || currentStatus === 'RESET';
-
-    case 'HOST_UNLOCK_EVENT_CONFIG':
-      return (currentStatus === 'STANDBY' || currentStatus === 'SCHEDULED') && (meta.currentDay === 1 && meta.elapsedSeconds === 0);
-
-    case 'HOST_SCHEDULE_EVENT':
-      return currentStatus === 'SETUP' || currentStatus === 'STANDBY';
-
-    case 'HOST_CANCEL_SCHEDULE':
-      return currentStatus === 'SCHEDULED';
-
-    case 'HOST_RESUME_COUNTDOWN':
-      return currentStatus === 'STANDBY' || currentStatus === 'SCHEDULED' || currentStatus === 'PAUSED';
-
-    case 'HOST_PAUSE':
-    case 'HOST_EMERGENCY_STOP':
-      return currentStatus === 'LIVE' || currentStatus === 'COUNTDOWN';
-
-    case 'HOST_START_EVENT_NOW':
-    case 'HOST_START_MARKET':
-      return currentStatus === 'STANDBY' || currentStatus === 'SCHEDULED' || currentStatus === 'PAUSED';
-
-    case 'HOST_CONCLUDE_DAY':
-    case 'HOST_FINALIZE_DAY':
-      return currentStatus === 'LIVE' || currentStatus === 'PAUSED' || currentStatus === 'COUNTDOWN';
-
-    case 'HOST_START_NEXT_DAY':
-    case 'HOST_NEXT_DAY':
-      return currentStatus === 'DAY_COMPLETED' && (meta.currentDay < meta.totalDays);
-
-    case 'HOST_ADD_DAY':
-      return !meta.isConcluded && (meta.totalDays < 10);
-
-    case 'HOST_CONCLUDE_CHAMPIONSHIP':
-    case 'HOST_FINALIZE_CHAMPIONSHIP':
-      return currentStatus === 'DAY_COMPLETED' && (meta.currentDay >= meta.totalDays);
-
-    case 'HOST_START_WINNER_PRESENTATION':
-      return currentStatus === 'CHAMPIONSHIP_CONCLUDED' || (currentStatus === 'DAY_COMPLETED' && meta.currentDay >= meta.totalDays);
-
-    case 'HOST_SET_PRESENTATION_SCENE':
-      return currentStatus === 'WINNER_ANNOUNCEMENT' || meta.isConcluded;
-
-    case 'HOST_EXIT_WINNER_PRESENTATION':
-    case 'HOST_DISMISS_PODIUM':
-      return currentStatus === 'WINNER_ANNOUNCEMENT' || currentStatus === 'CHAMPIONSHIP_CONCLUDED';
-
-    case 'HOST_RESET_ENTIRE_CHAMPIONSHIP':
-      return true;
-
-    case 'HOST_INITIALIZE_NEW_CHAMPIONSHIP':
-      return currentStatus === 'RESET' || currentStatus === 'SETUP' || currentStatus === 'STANDBY';
-
-    default:
-      return true;
-  }
+  return eligibility.allowed;
 }
 
 module.exports = {
@@ -308,6 +391,7 @@ module.exports = {
   CANONICAL_STATUSES,
   syncDerivedStateFlags,
   canExecuteTrades,
+  validateEventConfigPayload,
   validateActionEligibility,
   canTransitionTo
 };

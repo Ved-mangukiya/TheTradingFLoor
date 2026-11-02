@@ -130,7 +130,7 @@ Contains:
       <div style="background: rgba(30, 41, 59, 0.04); border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; border: 1px solid var(--subtle-border);">
         <div>
           <div style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 800; color: var(--text-charcoal);">
-            © <span class="ttf-current-year"></span> Ved Mangukiya. All Rights Reserved.
+            Ved Mangukiya • All Rights Reserved.
           </div>
           <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-sans);">
             Surat, Gujarat, India • Masterwork of The Trading Floor Championship.
@@ -564,7 +564,7 @@ Contains:
           Developer &amp; System Architecture Info
         </button>
         <div style="font-size: 11px; font-weight: 800; color: var(--text-charcoal); line-height: 1.4;">
-          © <span class="ttf-current-year"></span> Ved Mangukiya. All Rights Reserved.
+          Ved Mangukiya • All Rights Reserved.
         </div>
         <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
           Lead Developer &amp; Architect • Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India
@@ -1185,7 +1185,7 @@ Contains:
     <!-- Trader View Footer Branding -->
     <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
       <div style="color: var(--text-muted);">
-        <strong style="color: var(--text-charcoal);">The Trading Floor Championship</strong> • © <span class="ttf-current-year"></span> Ved Mangukiya. All Rights Reserved.
+        <strong style="color: var(--text-charcoal);">The Trading Floor Championship</strong> • Ved Mangukiya • All Rights Reserved.
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="color: var(--text-muted);">Gujarat Technological University • Surat, Gujarat, India</span>
@@ -1270,13 +1270,13 @@ Contains:
         <!-- 2. Center: ONE Primary Action Button + Clean Mode Toggle -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <!-- Direct Jump to Hub 2 when in draft setup mode -->
-          <button id="btnAtcDraftJump" type="button" onclick="switchHostTab('event'); switchSetupSection('review');" class="hidden btn btn-primary"
+          <button id="btnAtcDraftJump" type="button" onclick="switchHostTab('event'); switchSetupSection('review');" class="btn btn-primary"
             style="min-width: 250px; padding: 10px 22px; font-size: 13.5px; font-weight: 900; background: #1D4ED8; border-color: #1E40AF; box-shadow: 0 4px 12px rgba(29,78,216,0.25);">
             🔒 Complete Setup in Step 6 to Arm Floor ➔
           </button>
 
           <!-- Appears ONLY when Paused or Standby -->
-          <button id="btnMarketResume" type="button" onclick="hostResumeMarket()" class="btn btn-primary"
+          <button id="btnMarketResume" type="button" onclick="hostResumeMarket()" class="hidden btn btn-primary"
             style="min-width: 210px; padding: 10px 22px; font-size: 13.5px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 12px rgba(21,128,61,0.25);">
             ▶ Start / Resume (3-2-1)
           </button>
@@ -1298,7 +1298,7 @@ Contains:
 
         <!-- 3. Right: Contextual Lifecycle Actions -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button id="btnFlowScheduleAction" type="button" onclick="openScheduleEventModal()" class="btn btn-outline"
+          <button id="btnFlowScheduleAction" type="button" onclick="openScheduleEventModal()" class="hidden btn btn-outline"
             style="padding: 8px 14px; font-size: 12px; font-weight: 700; border-color: #2563EB; color: #1D4ED8;">
             ⏱️ Schedule Timer
           </button>
@@ -2921,7 +2921,7 @@ Contains:
     <!-- Host View Footer Branding -->
     <footer style="padding: 12px 24px; border-top: 1px solid var(--subtle-border); background: var(--bg-ivory); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 11px;">
       <div style="color: var(--text-muted);">
-        <strong style="color: var(--text-charcoal);">Host Operations Desk</strong> • Architected &amp; Engineered by Ved Mangukiya • © <span class="ttf-current-year"></span> All Rights Reserved.
+        <strong style="color: var(--text-charcoal);">Host Operations Desk</strong> • Architected &amp; Engineered by Ved Mangukiya • All Rights Reserved.
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
         <span style="color: var(--text-muted);">Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India</span>
@@ -3785,7 +3785,7 @@ Contains:
         </div>
       </div>
       <div style="font-size: 11px; font-weight: 700; color: #94A3B8; white-space: nowrap; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 8px;">
-        <span>© <span class="ttf-current-year"></span> Ved Mangukiya • Gujarat Technological University</span>
+        <span>Ved Mangukiya • Gujarat Technological University</span>
         <button type="button" onclick="openDeveloperInfoModal()" class="btn-demo-pill" style="font-size: 10px; padding: 2px 8px;">Info</button>
       </div>
     </footer>
@@ -4699,17 +4699,7 @@ Contains:
     </div>
   </div>
 
-<!-- Wizard Modal Footer -->
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--subtle-border); margin-top: 14px;">
-        <button type="button" onclick="closeChampionshipWizardModal()" class="btn btn-outline">Close Wizard</button>
-        <button type="button" onclick="submitChampionshipWizard()" class="btn btn-primary"
-          style="padding: 10px 24px; font-size: 14px;">
-          🚀 Initialize & Launch New Championship
-        </button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Modal J: Liquidate Entire Portfolio Confirmation Modal -->
   <div id="liquidateModal" class="hidden modal-overlay">

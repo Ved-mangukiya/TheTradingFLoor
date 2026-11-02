@@ -10,6 +10,7 @@ const {
   CANONICAL_STATUSES,
   syncDerivedStateFlags,
   canExecuteTrades,
+  validateEventConfigPayload,
   validateActionEligibility,
   canTransitionTo
 } = require('./server/state_machine');
@@ -38,13 +39,17 @@ const {
 const {
   sanitizeCsvCell
 } = require('./server/sanitizer');
+const logger = require('./server/logger');
 
 let simulationSeed = generateCryptoSeed();
 let simulationRng = createSeededRng(simulationSeed);
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+  server,
+  maxPayload: 64 * 1024 // 64 KB WebSocket frame cap to prevent memory exhaustion
+});
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -53,11 +58,24 @@ if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
+// Institutional HTTP Security Headers Middleware (100% Offline-First Compatible)
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss: http: https:; font-src 'self' data:;"
+  );
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 
 // ==========================================
-// 1. CREDENTIALS & SESSION TOKEN REGISTRY
+// 1. CREDENTIALS, TIMING-SAFE AUTH & RATE LIMITING
 // ==========================================
 const USERS = {
   host: { username: 'host', password: 'host', altPassword: 'host2026', role: 'HOST', id: 'host', name: 'Master Control' },
@@ -65,6 +83,46 @@ const USERS = {
   sound: { username: 'sound', password: 'sound', altPassword: 'sound2026', role: 'SOUND_CONSOLE', id: 'SOUND_CONSOLE', name: 'Hall Sound System' },
   winner: { username: 'winner', password: 'winner', altPassword: 'winner2026', role: 'WINNER_DISPLAY', id: 'WINNER_DISPLAY', name: 'Winner Presentation Stage' }
 };
+
+function safeCompareStrings(inputStr, targetStr) {
+  if (typeof inputStr !== 'string' || typeof targetStr !== 'string') return false;
+  const hashA = crypto.createHash('sha256').update(inputStr).digest();
+  const hashB = crypto.createHash('sha256').update(targetStr).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
+
+// Per-IP Login Rate Limiter (Max 12 failed attempts per 60s window)
+const loginAttemptsByIp = new Map();
+function checkLoginRateLimit(ip) {
+  const now = Date.now();
+  const rec = loginAttemptsByIp.get(ip);
+  if (!rec || now > rec.resetAt) {
+    return { allowed: true };
+  }
+  if (rec.failedCount >= 12) {
+    const waitSec = Math.ceil((rec.resetAt - now) / 1000);
+    return {
+      allowed: false,
+      waitSec,
+      message: `Too many failed login attempts. Please wait ${waitSec} seconds before trying again.`
+    };
+  }
+  return { allowed: true };
+}
+
+function recordFailedLoginAttempt(ip) {
+  const now = Date.now();
+  const rec = loginAttemptsByIp.get(ip);
+  if (!rec || now > rec.resetAt) {
+    loginAttemptsByIp.set(ip, { failedCount: 1, resetAt: now + 60000 });
+  } else {
+    rec.failedCount++;
+  }
+}
+
+function clearLoginAttempts(ip) {
+  loginAttemptsByIp.delete(ip);
+}
 
 // token -> { token, role, id, name, username, members, lastOrderAt }
 const sessions = new Map();
@@ -1725,6 +1783,7 @@ function getSanitizedPublicState(role, teamId) {
   const marketIndices = calculateMarketIndices();
   const teamSectorAllocations = calculateTeamSectorAllocations();
   const isHost = role === 'HOST';
+  const isBlackout = !isHost && gameState.status === 'PAUSED' && (gameState.pauseMode === 'BLACKOUT' || gameState.pauseMode === 'EMERGENCY_HALT');
 
   // Sanitize newsHistory: strip private 'impacts' from non-host screens
   const sanitizedNewsHistory = gameState.newsHistory.map((n) => {
@@ -1784,22 +1843,23 @@ function getSanitizedPublicState(role, teamId) {
       exchange: c.exchange || 'NSE',
       currency: c.currency || 'INR',
       base_price: c.base_price,
-      currentPrice: c.currentPrice,
-      dayOpenPrice: c.dayOpenPrice,
-      dayHigh: c.dayHigh,
-      dayLow: c.dayLow,
-      week52High: c.week52High || (c.fundamentals && parseFloat(c.fundamentals.high_52w)) || +(c.base_price * 1.25).toFixed(2),
-      week52Low: c.week52Low || (c.fundamentals && parseFloat(c.fundamentals.low_52w)) || +(c.base_price * 0.75).toFixed(2),
-      isNew52WHigh: !!(c.isNew52WHigh || c.currentPrice >= (c.week52High || 999999)),
-      isNew52WLow: !!(c.isNew52WLow || c.currentPrice <= (c.week52Low || 0)),
+      currentPrice: isBlackout ? null : c.currentPrice,
+      dayOpenPrice: isBlackout ? null : c.dayOpenPrice,
+      dayHigh: isBlackout ? null : c.dayHigh,
+      dayLow: isBlackout ? null : c.dayLow,
+      week52High: isBlackout ? null : (c.week52High || (c.fundamentals && parseFloat(c.fundamentals.high_52w)) || +(c.base_price * 1.25).toFixed(2)),
+      week52Low: isBlackout ? null : (c.week52Low || (c.fundamentals && parseFloat(c.fundamentals.low_52w)) || +(c.base_price * 0.75).toFixed(2)),
+      isNew52WHigh: isBlackout ? false : !!(c.isNew52WHigh || c.currentPrice >= (c.week52High || 999999)),
+      isNew52WLow: isBlackout ? false : !!(c.isNew52WLow || c.currentPrice <= (c.week52Low || 0)),
       lot_presets: c.lot_presets,
       ...(isHost ? { beta: c.beta, volatility_factor: c.volatility_factor } : {}),
       isHalted: c.isHalted,
       haltDirection: c.haltDirection,
       fundamentals: c.fundamentals,
-      history: c.history.slice(-180),
-      multiDayHistory: (c.multiDayHistory || c.history || []).slice(-540),
-      historyByDay: c.historyByDay || {}
+      history: isBlackout ? [] : c.history.slice(-180),
+      multiDayHistory: isBlackout ? [] : (c.multiDayHistory || c.history || []).slice(-540),
+      historyByDay: isBlackout ? {} : (c.historyByDay || {}),
+      ...(isBlackout ? { isBlackoutRedacted: true } : {})
     }))
   };
 
@@ -1818,13 +1878,22 @@ function getSanitizedPublicState(role, teamId) {
     const netWorth = +(t.cash + holdingsValue).toFixed(2);
     const pnlPct = +(((netWorth - t.startingCash) / t.startingCash) * 100).toFixed(2);
 
-    payload.portfolio = {
-      ...t,
-      holdingsValue: +holdingsValue.toFixed(2),
-      netWorth,
-      pnlPct,
-      unrealizedPnl: +unrealizedPnl.toFixed(2)
-    };
+    payload.portfolio = isBlackout
+      ? {
+          ...t,
+          holdingsValue: null,
+          netWorth: null,
+          pnlPct: null,
+          unrealizedPnl: null,
+          isBlackoutRedacted: true
+        }
+      : {
+          ...t,
+          holdingsValue: +holdingsValue.toFixed(2),
+          netWorth,
+          pnlPct,
+          unrealizedPnl: +unrealizedPnl.toFixed(2)
+        };
     payload.teamTrades = executedTrades
       .filter((tr) => tr.teamId === teamId)
       .slice(-30)
@@ -2275,18 +2344,28 @@ wss.on('connection', (ws) => {
 
     // --- 1. LOGIN ---
     if (data.action === 'LOGIN') {
+      const clientIp = (ws._socket && ws._socket.remoteAddress) || '127.0.0.1';
+      const rateCheck = checkLoginRateLimit(clientIp);
+      if (!rateCheck.allowed) {
+        ws.send(JSON.stringify({ type: 'LOGIN_ERROR', message: rateCheck.message }));
+        return;
+      }
+
       const usernameKey = (data.username || '').trim().toLowerCase();
       const userRecord = USERS[usernameKey];
 
       const pwMatches = userRecord && (
-        userRecord.password === data.password ||
-        (userRecord.altPassword && userRecord.altPassword === data.password)
+        safeCompareStrings(String(data.password || ''), String(userRecord.password || '')) ||
+        (userRecord.altPassword && safeCompareStrings(String(data.password || ''), String(userRecord.altPassword || '')))
       );
 
       if (!userRecord || !pwMatches) {
+        recordFailedLoginAttempt(clientIp);
         ws.send(JSON.stringify({ type: 'LOGIN_ERROR', message: 'Invalid terminal credentials.' }));
         return;
       }
+
+      clearLoginAttempts(clientIp);
 
       // TRADER login gating: Teams cannot log in until host completes and locks event setup
       if (userRecord.role === 'TRADER' && !gameState.configLocked) {
@@ -4480,7 +4559,28 @@ wss.on('connection', (ws) => {
 
       // 5.22 Host Initialize & Launch New Championship from Setup Wizard
       if (data.action === 'HOST_INITIALIZE_NEW_CHAMPIONSHIP') {
+        const eligibility = validateActionEligibility(gameState, 'HOST_INITIALIZE_NEW_CHAMPIONSHIP');
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            action: data.action,
+            reason: eligibility.reason
+          }));
+          return;
+        }
+
         const config = data.config || {};
+        const valRes = validateEventConfigPayload(config, companies, teams);
+        if (!valRes.valid) {
+          ws.send(JSON.stringify({
+            type: 'SETUP_VALIDATION_ERROR',
+            action: data.action,
+            errors: valRes.errors,
+            message: 'Setup validation failed: ' + valRes.errors.join(' ')
+          }));
+          return;
+        }
+
         const title = (config.title || 'The Trading Floor Championship').trim();
         const totalDays = Math.max(1, Math.min(10, parseInt(config.totalDays, 10) || 3));
         const dayDurationSeconds = Math.max(60, Math.min(7200, parseInt(config.dayDurationSeconds, 10) || 1800));
