@@ -110,3 +110,4 @@ if (-not $SkipBrowserLaunch) {
 Write-Host " [OK] Starting Trading Floor simulation engine..." -ForegroundColor Cyan
 Write-Host ""
 & $NodePath server.js $Mode
+

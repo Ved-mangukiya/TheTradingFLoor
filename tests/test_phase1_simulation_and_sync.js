@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP
  * PHASE 1 SIMULATION & SYNCHRONIZATION VERIFICATION SUITE
  * File: tests/test_phase1_simulation_and_sync.js
  */
@@ -25,7 +25,7 @@ console.log('===================================================================
 
 // [SIM-01]: Deterministic Seed Reproducibility
 console.log('[SIM-01] Identically seeded runs produce 100% bit-for-bit reproducible trajectories');
-const seed = 20261018;
+const seed = 12345678;
 const rngA = createSeededRng(seed);
 const rngB = createSeededRng(seed);
 

@@ -1,4 +1,4 @@
-# SHARE UNIVERSE MANAGEMENT & MARKET BUILDER — THE TRADING FLOOR CHAMPIONSHIP 2026
+# SHARE UNIVERSE MANAGEMENT & MARKET BUILDER — THE TRADING FLOOR CHAMPIONSHIP
 
 ## 1. Overview & Objective
 In competitive trading tournaments, competition hosts require complete control over which equities participate in each round. The **Share Universe Manager / Market Builder** empowers organizers to configure tradeable shares, introduce new companies, adjust starting valuations, modify volatility, apply market sector presets, and randomize prices without touching code or restarting the server.

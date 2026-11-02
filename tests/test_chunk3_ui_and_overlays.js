@@ -151,7 +151,7 @@ function createSandbox(customDoc) {
 
 async function runChunk3TestSuite() {
   console.log('\n===============================================================');
-  console.log('🧪 THE TRADING FLOOR CHAMPIONSHIP 2026 — CHUNK 3 VERIFICATION');
+  console.log('🧪 THE TRADING FLOOR CHAMPIONSHIP — CHUNK 3 VERIFICATION');
   console.log('===============================================================\n');
 
   const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
@@ -507,19 +507,19 @@ async function runChunk3TestSuite() {
       openSockets.push(wsHost, wsSound, wsTrader, wsPublic);
 
       // Authenticate Host
-      wsHost.send(JSON.stringify({ action: 'LOGIN', username: 'host', password: 'host2026' }));
+      wsHost.send(JSON.stringify({ action: 'LOGIN', username: 'host', password: 'host' }));
       const hostLogin = await waitFor(wsHost, (m) => m.type === 'LOGIN_SUCCESS');
       const hostToken = hostLogin.session_token;
 
       // Authenticate Sound Console
-      wsSound.send(JSON.stringify({ action: 'LOGIN', username: 'sound', password: 'sound2026' }));
+      wsSound.send(JSON.stringify({ action: 'LOGIN', username: 'sound', password: 'sound' }));
       await waitFor(wsSound, (m) => m.type === 'LOGIN_SUCCESS');
 
       // Lock event setup so trader can login
       wsHost.send(JSON.stringify({
         action: 'HOST_SET_EVENT_LOCK',
         session_token: hostToken,
-        title: 'Audio Isolation Test 2026',
+        title: 'Audio Isolation Test',
         startingCash: 500000,
         totalDays: 2,
         dayDurationSeconds: 1800

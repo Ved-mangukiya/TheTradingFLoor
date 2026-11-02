@@ -1,12 +1,12 @@
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP
 
-**Date**: 2026-11-02  
+**Date**: 2025-11-02  
 **Version**: 2.9.0 (Unified Operational Flow Refactor • Hub 2 Guided Workspace • Ceremony Director Bar)  
 **Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 195/195 Total Chunk Assertions Passing across all 4 suites + 0 Duplicate DOM IDs)  
 
 ---
 
-## 0. RECENT FIXES & AUDITED DEFECT RESOLUTION (2026-11-02)
+## 0. RECENT FIXES & AUDITED DEFECT RESOLUTION (2025-11-02)
 
 ### A. Unified Operational Flow & Hub 2 Setup Streamlining
 1. **Elimination of Redundant Setup Modals**:
@@ -182,7 +182,7 @@
 
 ---
 
-## 10. Dynamic Team Capacity, Risk Profiles & Post-Lock Launch Engine (v2.3.0)
+## 10. Dynamic Team Capacity, Risk Profiles & Post-Lock Launch Engine (v2.7.0)
 - [x] **Dynamic Team Capacity**:
   - Eliminated hardcoded 16-team limits.
   - Quick presets: Solo (1 Desk), 2 Teams, 4 Teams, 8 Teams, 16 Teams, Custom ($N \ge 1$).
@@ -229,7 +229,7 @@
 
 ---
 
-## 12. Paper Trading Cards UX, Universe Filters & Directional Circuit Breakers (v2.5.0)
+## 12. Paper Trading Cards UX, Universe Filters & Directional Circuit Breakers (v2.7.0)
 - [x] **Upgraded Stock Trading Cards (Inspired by Paper Trading Cards `media_1792231121505.html`)**:
   - Structured card layout: Clean stock identity, sector badge, current price, day open, and percentage delta.
   - Position Unrealized P&L: Displays live profit/loss breakdown (`+₹Z (+W%)`) with color-coded badges for active positions.
@@ -269,7 +269,7 @@
 
 ---
 
-## 13. P0 Critical Invariants, Responsive 4:3 Projector & UX/DX Enhancements (v2.5.1)
+## 13. P0 Critical Invariants, Responsive 4:3 Projector & UX/DX Enhancements (v2.7.0)
 - [x] **P0 Circuit Breaker Day Open Price Immutability**:
   - Eliminated rogue reassignment of `dayOpenPrice = currentPrice` during manual unhalt (`HOST_UNHALT_STOCK`) and sector unhalt (`HOST_SECTOR_HALT`).
   - `dayOpenPrice` remains anchored as the true immutable reference for the trading day, preventing stocks from escaping $\pm 20\%$ daily circuit boundaries.
@@ -321,7 +321,7 @@
 
 ---
 
-## 14. Master Bug-Fix & UX Polish (v2.5.2)
+## 14. Master Bug-Fix & UX Polish (v2.7.0)
 - [x] **Day Conclusion Non-Pause Invariant**:
   - `concludeCurrentDay()` sets `isPaused = false` and `status = 'DAY_COMPLETED'`. Day completion is an authoritative terminal state, not a pause.
   - Stopped clock and price loops when status is not `LIVE`.
@@ -345,7 +345,7 @@
 
 ---
 
-## 15. Master Interaction Logic, State Machine & UX Hardening (v2.5.3)
+## 15. Master Interaction Logic, State Machine & UX Hardening (v2.7.0)
 - [x] **Authoritative State-Aware Resume & Pause Protection**:
   - Exact prompt compliance on concluded day resume attempts: Returns authoritative rejection `"Day N has ended. Trading cannot be resumed. Review the results and prepare the next day."` with exact day number.
   - Countdown callback race condition eliminated: In countdown timer callback, checks `if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) return;` preventing unpausing if conclusion occurs during 3-2-1.
@@ -371,7 +371,7 @@
 
 ---
 
-## 16. Master Quantitative Engine, Dynamic Time Ratios, News Scheduling & Sensitive Parameter Security (v2.6.0)
+## 16. Master Quantitative Engine, Dynamic Time Ratios, News Scheduling & Sensitive Parameter Security (v2.7.0)
 - [x] **Sensitive Parameter Security & Public State Sanitization**:
   - `beta` and `volatility_factor` are attached to `companies` inside `getSanitizedPublicState()` strictly when `isHost === true`. For `TRADER`, `PROJECTOR`, and unauthenticated sockets, internal parameters are completely stripped (`undefined`).
   - Removed `BETA:` display on trader stock cards, replaced with `LOT: N SH`.
@@ -399,7 +399,7 @@
 
 ---
 
-## 17. Unified Single-Flow Master Verification Architecture (v2.6.1)
+## 17. Unified Single-Flow Master Verification Architecture (v2.7.0)
 - [x] **Elimination of Port Collisions & Process Leaks**:
   - Replaced fragmented, overlapping test runners with a single authoritative chronological state-machine test runner: `test_unified_master_flow.js`.
   - Bound exclusively to isolated port 3099 with child-process lifecycle tracking and guaranteed `serverProcess.kill('SIGKILL')` cleanup in a robust `finally` block.
@@ -429,7 +429,7 @@
 
 ---
 
-## 18. Chunk 3 — Complete User Journeys and Screen Redesign (v2.6.3)
+## 18. Chunk 3 — Complete User Journeys and Screen Redesign (v2.7.0)
 - [x] **FLOW-001: Deterministic Role & Overlay Router (`syncRoleOverlays`)**:
   - Overlay visibility across terminals is a deterministic mathematical function of `(status, pauseMode, currentRole)`.
   - `#traderWaitingRoomOverlay` is visible strictly during `STANDBY` and `SCHEDULED`.
@@ -469,7 +469,7 @@
 
 ---
 
-## 19. Chunk 4 — Universal Action Contracts, In-Flight Locking & Double-Click Shield (v2.6.4)
+## 19. Chunk 4 — Universal Action Contracts, In-Flight Locking & Double-Click Shield (v2.7.0)
 - [x] **BTN-000: Universal Action Contract Pattern (`applyActionContractLock`, `releaseActionContractLock`)**:
   - Centralized in-flight contract engine tracking all pending network operations via `inFlightActionButtons` Map.
   - Calling `applyActionContractLock(button, processingText)`:
@@ -545,7 +545,7 @@
 
 ---
 
-## 22. Host Live Market Data Population, Dedicated Projector Indices & Child-Friendly Strategy UI (v2.6.5)
+## 22. Host Live Market Data Population, Dedicated Projector Indices & Child-Friendly Strategy UI (v2.7.0)
 - [x] **Host Live Market Tables Always Populated**:
   - Resolved empty tables in Host "Live Market" tab (`#hostLeaderboardTbody` and `#hostRecentTradesTbody`).
   - Added fallback `effectiveLeaderboard` derived from `state.allTeamsList` (with initial net worth = starting cash, 0 trades, 0% P&L) when tournament has not executed trades yet.

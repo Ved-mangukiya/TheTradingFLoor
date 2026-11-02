@@ -1,4 +1,4 @@
-# USER FLOWS & JOURNEYS — THE TRADING FLOOR CHAMPIONSHIP 2026
+# USER FLOWS & JOURNEYS — THE TRADING FLOOR CHAMPIONSHIP
 
 This document details the end-to-end user journeys for the Competition Host, Student Trader Teams, and the Stage Projector under the **4-Hub Architecture** and **One Action Principle**.
 

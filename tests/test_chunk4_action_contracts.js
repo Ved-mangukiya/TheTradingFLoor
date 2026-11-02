@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026 — CHUNK 4 AUTOMATED TEST SUITE
+ * THE TRADING FLOOR CHAMPIONSHIP — CHUNK 4 AUTOMATED TEST SUITE
  * Universal Action Contract Pattern, In-Flight Locking & Double-Click Rate-Limit Enforcement
  * 
  * Verifies:
@@ -35,7 +35,7 @@ function assert(condition, message) {
 }
 
 console.log('\n===============================================================');
-console.log('🧪 THE TRADING FLOOR CHAMPIONSHIP 2026 — CHUNK 4 VERIFICATION');
+console.log('🧪 THE TRADING FLOOR CHAMPIONSHIP — CHUNK 4 VERIFICATION');
 console.log('===============================================================\n');
 
 // -------------------------------------------------------------

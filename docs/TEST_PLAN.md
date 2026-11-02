@@ -1,7 +1,7 @@
-# COMPREHENSIVE TEST PLAN & VERIFICATION MATRIX — THE TRADING FLOOR CHAMPIONSHIP 2026
+# COMPREHENSIVE TEST PLAN & VERIFICATION MATRIX — THE TRADING FLOOR CHAMPIONSHIP
 
 ## 1. Overview
-This test plan defines the automated and manual verification procedures for validating **The Trading Floor Championship 2026**. All 24 core tournament scenarios must pass before deploying the platform in live collegiate competitions.
+This test plan defines the automated and manual verification procedures for validating **The Trading Floor Championship**. All 24 core tournament scenarios must pass before deploying the platform in live collegiate competitions.
 
 ---
 
@@ -11,7 +11,7 @@ This test plan defines the automated and manual verification procedures for vali
 | :---: | :--- | :--- | :--- | :--- |
 | **01** | Setup | Fresh repository installation | `npm install` runs cleanly without native compile errors. | Automated (`npm install`) |
 | **02** | Setup | Zero undocumented dependencies | Runs solely with `express` and `ws` listed in `package.json`. | Automated (`node server.js`) |
-| **03** | Auth | Host authentication & initialization | `LOGIN` with `host` / `host2026` grants `HOST` session token. | Automated WebSocket test |
+| **03** | Auth | Host authentication & initialization | `LOGIN` with `host` / `host` grants `HOST` session token. | Automated WebSocket test |
 | **04** | Universe | Host adds brand-new share | Stock is appended, saved to disk, and team holdings initialized to 0. | Automated test (`HOST_ADD_SHARE`) |
 | **05** | Universe | Host disables share from market | Stock marked `isEnabled = false`, hidden from teams, orders rejected. | Automated test (`HOST_TOGGLE_SHARE`) |
 | **06** | Universe | Host activates market presets | Selected template (e.g. Balanced, High Vol) sets tradeable status. | Automated test (`HOST_APPLY_MARKET_TEMPLATE`) |

@@ -5,9 +5,9 @@ In live college auditorium competitions, venue audio is typically driven by an A
 
 The system provides a dedicated **Venue Sound Console** interface accessible via:
 ```
-http://localhost:3000/?role=sound&pass=sound2026
+http://localhost:3000/?role=sound&pass=sound
 ```
-(or via LAN `http://<SERVER_IP>:3000/?role=sound&pass=sound2026`)
+(or via LAN `http://<SERVER_IP>:3000/?role=sound&pass=sound`)
 
 ---
 

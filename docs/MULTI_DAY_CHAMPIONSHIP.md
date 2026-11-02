@@ -1,7 +1,7 @@
 # Multi-Day Championship Lifecycle & Portfolio Scoring Model
 
 ## 1. Overview
-The Trading Floor Championship 2026 natively supports multi-day tournaments (typically 3 competition days) with continuous overnight portfolio tracking and end-of-day standings finalization.
+The Trading Floor Championship natively supports multi-day tournaments (typically 3 competition days) with continuous overnight portfolio tracking and end-of-day standings finalization.
 
 ## 2. Championship Scoring Model: Continuous Portfolio
 1. **Capital Carry-Over**: Teams retain their cash and stock positions across tournament days.

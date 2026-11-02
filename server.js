@@ -40,6 +40,7 @@ const {
   sanitizeCsvCell
 } = require('./server/sanitizer');
 const logger = require('./server/logger');
+const realNewsFeed = require('./server/real_news_feed');
 
 let simulationSeed = generateCryptoSeed();
 let simulationRng = createSeededRng(simulationSeed);
@@ -2334,7 +2335,7 @@ wss.on('connection', (ws) => {
     }));
   } catch (e) {}
 
-  ws.on('message', (rawMessage) => {
+  ws.on('message', async (rawMessage) => {
     let data;
     try {
       data = JSON.parse(rawMessage);
@@ -3443,6 +3444,62 @@ wss.on('connection', (ws) => {
           feasibility,
           allScheduledNews: newsEvents
         }));
+        broadcastTick();
+        return;
+      }
+
+      // 5.2d3 Real-World Live Financial News Engine
+      if (data.action === 'HOST_FETCH_REAL_NEWS') {
+        const feedData = realNewsFeed.getRealWorldNews();
+        ws.send(JSON.stringify({
+          type: 'REAL_NEWS_UPDATE',
+          ...feedData
+        }));
+        return;
+      }
+
+      if (data.action === 'HOST_SYNC_REAL_NEWS') {
+        try {
+          const feedData = await realNewsFeed.fetchRealWorldNews(true);
+          broadcastAll({
+            type: 'REAL_NEWS_UPDATE',
+            ...feedData
+          });
+          ws.send(JSON.stringify({
+            type: 'ACTION_CONFIRMED',
+            action: 'HOST_SYNC_REAL_NEWS',
+            message: `Synchronized ${feedData.articles.length} genuine financial news stories.`
+          }));
+        } catch (err) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: `Live news feed synchronization failed: ${err.message}`
+          }));
+        }
+        return;
+      }
+
+      if (data.action === 'HOST_BROADCAST_REAL_NEWS') {
+        const eligibility = validateActionEligibility(gameState, 'HOST_PUBLISH_NEWS_NOW');
+        if (!eligibility.allowed) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: eligibility.reason }));
+          return;
+        }
+        const { articleId, targetTicker, shockPct, durationSec } = data;
+        const feedData = realNewsFeed.getRealWorldNews();
+        const article = (feedData.articles || []).find((a) => a.id === articleId) || data.article;
+        if (!article) {
+          ws.send(JSON.stringify({ type: 'ACTION_REJECTED', reason: 'Article not found in real-world news catalog.' }));
+          return;
+        }
+        const ticker = targetTicker || article.matchedTicker || 'RELIANCE';
+        const shock = parseFloat(shockPct) || (article.sentiment === 'BEARISH' ? -4.5 : 5.0);
+        const ev = realNewsFeed.createMarketEventFromRealNews(article, ticker, shock, durationSec || 45);
+        ev.day = gameState.currentDay;
+        ev.reading_duration_sec = 15;
+        ev.trigger_second = gameState.elapsedSeconds;
+        newsEvents.push(ev);
+        triggerNewsEvent(ev, 'HOST_REAL_NEWS');
         broadcastTick();
         return;
       }
@@ -5047,11 +5104,29 @@ app.get('/api/checkpoints', requireHostAuth, (req, res) => {
   res.json({ checkpoints: listCheckpoints() });
 });
 
+// Real-World Financial News Feeds
+app.get('/api/real-news', (req, res) => {
+  res.json(realNewsFeed.getRealWorldNews());
+});
+
+app.post('/api/real-news/sync', requireHostAuth, async (req, res) => {
+  try {
+    const updated = await realNewsFeed.fetchRealWorldNews(true);
+    res.json({ success: true, ...updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Boot Initial Scenario
 const cliMode = (process.argv[2] || '').toLowerCase();
 const initialScenario = cliMode === 'test'
   ? 'test'
   : (fs.existsSync(path.join(DATA_DIR, 'scenario_live.json')) ? 'live' : 'test');
+
+if (cliMode !== 'test') {
+  realNewsFeed.startAutoNewsSync(15);
+}
 
 let wasRestoredFromCrash = false;
 if (cliMode !== 'test' && restoreLiveGameState()) {

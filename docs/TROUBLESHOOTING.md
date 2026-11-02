@@ -1,4 +1,4 @@
-# TROUBLESHOOTING GUIDE — THE TRADING FLOOR CHAMPIONSHIP 2026
+# TROUBLESHOOTING GUIDE — THE TRADING FLOOR CHAMPIONSHIP
 
 This guide provides instant solutions for the most common technical hurdles encountered before or during a live competition.
 

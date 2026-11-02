@@ -1,4 +1,4 @@
-# ARCHITECTURAL DECISION RECORDS (ADR) — THE TRADING FLOOR CHAMPIONSHIP 2026
+# ARCHITECTURAL DECISION RECORDS (ADR) — THE TRADING FLOOR CHAMPIONSHIP
 
 This document chronicles the fundamental architectural and product design choices made during the development of The Trading Floor Championship.
 

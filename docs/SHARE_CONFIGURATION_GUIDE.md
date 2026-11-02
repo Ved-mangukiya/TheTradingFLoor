@@ -1,4 +1,4 @@
-# ORGANIZER'S GUIDE TO MARKET CONFIGURATION — THE TRADING FLOOR CHAMPIONSHIP 2026
+# ORGANIZER'S GUIDE TO MARKET CONFIGURATION — THE TRADING FLOOR CHAMPIONSHIP
 
 This practical guide assists competition directors and faculty coordinators in designing engaging stock market scenarios tailored to participant skill levels.
 

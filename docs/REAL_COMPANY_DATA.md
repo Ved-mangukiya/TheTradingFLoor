@@ -1,7 +1,7 @@
 # Real Indian Publicly Listed Companies Universe Specification
 
 ## 1. Overview
-The Trading Floor Championship 2026 operates using 20 verified Indian publicly listed companies on the National Stock Exchange (NSE) and Bombay Stock Exchange (BSE). Fictional company names have been permanently decommissioned.
+The Trading Floor Championship operates using 20 verified Indian publicly listed companies on the National Stock Exchange (NSE) and Bombay Stock Exchange (BSE). Fictional company names have been permanently decommissioned.
 
 ## 2. Company Registry (20 Official Real Companies)
 
@@ -29,6 +29,6 @@ The Trading Floor Championship 2026 operates using 20 verified Indian publicly l
 | **TITAN** | Titan Company | Consumer Discretionary & Luxury | 3,480.00 | 1.05 | 0.0026 | [1, 5, 10] |
 
 ## 3. Real Prices vs. Simulation Prices
-1. **Reference Baseline**: The simulation's starting prices (`base_price`) are derived from verified official NSE closing price benchmarks (NSE EOD reference timestamp: `2026-10-15T15:30:00Z`).
+1. **Reference Baseline**: The simulation's starting prices (`base_price`) are derived from verified official NSE closing price benchmarks (NSE EOD reference timestamp: `2025-10-15T15:30:00Z`).
 2. **Simulation Price**: Once trading starts, prices are dynamically driven by order flows, deterministic news shocks, and beta-weighted macro movements.
 3. **Disclosure Rule**: All user interfaces clearly label prices as *Simulated Trading Prices* derived from NSE reference benchmarks, strictly ensuring no misrepresentation of live real-world external feeds.

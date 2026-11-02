@@ -1,6 +1,6 @@
 {
   "name": "the-trading-floor",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Real-time LAN stock market simulation engine for The Trading Floor Championship",
   "author": "Ved Mangukiya (Surat, Gujarat, India)",
   "main": "server.js",
@@ -17,8 +17,7 @@
     "test:chunk4": "node tests/test_chunk4_action_contracts.js",
     "test:phase1": "node tests/test_phase1_simulation_and_sync.js",
     "test:ids": "node tools/find_duplicate_ids.js",
-    "lint:ids": "node tools/find_duplicate_ids.js",
-    "build:dossier": "node tools/build_master_dossier.js"
+    "lint:ids": "node tools/find_duplicate_ids.js"
   },
   "dependencies": {
     "express": "^4.19.2",

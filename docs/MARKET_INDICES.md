@@ -1,7 +1,7 @@
 # Real Market Indices & Benchmarking Engine
 
 ## 1. Overview
-The Trading Floor Championship 2026 computes 6 real-time simulated market indices derived from the authoritative prices of constituent stocks.
+The Trading Floor Championship computes 6 real-time simulated market indices derived from the authoritative prices of constituent stocks.
 
 ## 2. Calculated Indices Catalogue
 

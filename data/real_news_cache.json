@@ -1,0 +1,288 @@
+{
+  "savedAt": "2026-11-02T13:54:07.585Z",
+  "lastSyncTime": "2026-11-02T13:54:07.585Z",
+  "provider": "Google News Official Financial RSS",
+  "count": 20,
+  "articles": [
+    {
+      "id": "NEWS_779506219",
+      "headline": "Market wrap: RIL, Tata Steel, Infosys, ICICI Bank top gainers and losers on Nifty and Sensex on Monday - The Economic Times",
+      "source": "The Economic Times",
+      "publishedAt": "2026-11-02T13:04:35.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 6:34 pm",
+      "summary": "Market wrap: RIL, Tata Steel, Infosys, ICICI Bank top gainers and losers on Nifty and Sensex on Monday&nbsp;&nbsp;The Economic Times",
+      "url": "https://news.google.com/rss/articles/CBMiggJBVV95cUxNWFV1Q2tzT2NFdG9OZjUxc1ltVzlwSUZjTlhwMGJmVVJGc0stZXVpNFBnQkFFeC1QN2VsYWFrYUJnbTVzNk9IazhtNzltTGhUVUx4NmdjMmY2cWFuTlV3dnFEQmVDc1JSNTdHRm9xX2JxeDFBeGNLdTh3SmRxOG9JS3ZOc2JrblpWd0pZV0FEeW1ZNldfWDRyVWFRNzM4Z3dOWmZIUlhsTjY4TzRUel9La0wtdW1tTHBlLTFfUUtkZlRaLVYxa3BBa2FLSHhpRjJ1Y3M4S2VBdm1aaUYtRzdkbEI3Tnd5czZJNThhZ3NsaVNGakg5Skd0bkVIcEtUVTNCVmfSAYcCQVVfeXFMT1EwOFpJVUhTX0RIRU4xSVoxcFVkbFEyZGJkUmZIZncxMEhQNkZMT0J2eUVFNTRqbDN5NC1ZN1UxS3NSeUlDOThCeGJ2WTRrSjBydkZfZmY1RW9fcEd4Q1VJUWg0SlBzUEpCd25FU25SQ1JuQ2NRWE10eFhJczc1MlFsREF5RTFsaTZZclJCVTN2enZpd3hMMXZjM1llbTVKSmxVTENHX1FCcmd4eHMxWUJLeWY4V0todDBoT0UxeTRjLUlFQUlsQUh6NkU3QkpYRXJSNW1ONHhWOC1GWEFvN2xtV2hYTGVMV1hvQ2Fpc3liM1JoNEJmS0c4OE8zdHhNcG5BbEdDSEk?oc=5",
+      "matchedTickers": [
+        "RELIANCE",
+        "ICICIBANK",
+        "INFY"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.574Z"
+    },
+    {
+      "id": "NEWS_927838047",
+      "headline": "Sensex jumps 765 points during early trade on sharp rally in Reliance shares, decline in oil prices - The New Indian Express",
+      "source": "The New Indian Express",
+      "publishedAt": "2026-11-02T04:34:05.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 10:04 am",
+      "summary": "Sensex jumps 765 points during early trade on sharp rally in Reliance shares, decline in oil prices&nbsp;&nbsp;The New Indian Express",
+      "url": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxPRl9YU2EzVFNaMzliQzg3SldUeVB0SllhZEhEWWEwcFo5RlRiRkJ3LTk2NFpFYW93eDR5eFpjSzhHNVVFNF9iV1Z4ZW9lcDZqb2hsc2FSd2VCczdZamd1X0tKOTVHaTc4Mm1KbklBVEs4aGZ1bFEza1BDb2RKQTlSSmZmYTc5VEEwLVJkS0xPaklYc1BpaHJKSFZUMkVEYVNKM0FOYkdudEN0cUZCYnZSOXNmWXltSUNOVFFKMlE3WVJUcDZDRTBSRmFfcUZUc0dxc3dQSjFXN2F6WGk5M2xpMG1aUkRDMUHSAfQBQVVfeXFMTUxqeWhXclZueDVDNlZyZmxodlNrc01ORWgxa0IzRjZ0TUx5MThRZ3VxRDdJdzlDT28yZHo3ZUlTaVNVMU1PcXhYWm5VeldFMDFwY00xUkdQdVo4bkk5TjYtM203VXZkZHdwZkNxdXBybk1JUkNiTmtvX1BxNVFaVkJGOXkxNjEzRVFaOW10eFBqM3dyMXdQVkNjeGxVbTVJWW8wSms2T0JYYW9QeWFvdzFaeVV2Uk80bWRSOURsVnE0Njd5SmRtT0ZoNnlEd2M3UG9kU0JfSTdpUzd5Q3p3SjBZWm4zUTNYMEpzcDV3QWgxZEtFaQ?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.85,
+      "fetchedAt": "2026-11-02T13:54:07.576Z"
+    },
+    {
+      "id": "NEWS_2048517010",
+      "headline": "Sensex jumps 1,000 points: 3 reasons why stock market is rising today - India Today",
+      "source": "India Today",
+      "publishedAt": "2026-11-02T04:14:18.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:44 am",
+      "summary": "Sensex jumps 1,000 points: 3 reasons why stock market is rising today&nbsp;&nbsp;India Today",
+      "url": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxQSHh6UXZZZzZub2xaNVdIVlgzZHo1U1ItVEt6V0d6Q2hmY2w2eVpKYk9XMDBfNFNDRXh0U1RzajZOVkl6UkExWGFmdEQwa1ZhWWhWNzd2UzRoRDhUYWdidUdSVzd1RVc3ampOV2tYNVBIMVRycUlsV2JsRnd3Q2R0S2dDenpIYXk4bXFIVU5abms2MFNpbFNJandLc0FBR1hEMVhvYWdIVXg0VklJeEE3UkdaNnBqWU9icFR0b2RtSkk1S0o2MlBqZ1E5UTdUVkR4N1d4T1g1Mm9mS2dEZkNxODZOcy1fdmtU0gHuAUFVX3lxTE54UXg3MVQ1amhOYXlRcmpvWUZPSlUwX2JheXBCcTA1bjhIQTctWjRQaEp1NnN2YlpsaFBBamo5VVZoM0pEZTFXWm9oR2ZUMVlzZW1FOHdRQXhhR3VqT1VTRmxHNGRnNGV2SDZ0eGtHdkpza1R6cFRuQUJEU2JzZ0pHVkxfcVBCVjI5VnZ2elRkNnRGM2ttXy14TmtqLTdURUNOYWw0bVdCa0d6WmhJbVBDanJfclJBT1ZjLTBESVAtNTEwZ2xXdlA0MGVLWVVQbVZaQ1RPaVBQNWIwYmRMN1k2cXlOd3FoV0ZwaDd4M2c?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.578Z"
+    },
+    {
+      "id": "NEWS_761688314",
+      "headline": "Reliance, Tata Steel lead 1000+ point Sensex morning rally as FIIs return - The Week",
+      "source": "The Week",
+      "publishedAt": "2026-11-02T05:05:52.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 10:35 am",
+      "summary": "Reliance, Tata Steel lead 1000+ point Sensex morning rally as FIIs return&nbsp;&nbsp;The Week",
+      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOdlFmUnJGSUR4TVBzWHZ1STQyV3BwU3dRLTRQclZuM2s0ZTM0MVVPcUVwTERyVmRLTHlwQnZsVl84emthdTNhZmhtb1k2LVpYbVlzUW1SU0RqVkRxVEpRWHlkQ2R3WnlraUZCQzU3T0l1em5WUHhhS0xXRkpjcHNKSmpBVFc1R1d5YlpN0gGQAUFVX3lxTE51eGdMMTgwMm40T3J3VnpHVWdiMEZNV1RLNzExUXlTZ1lUeUFjOWRrckY0YTVuR2ZrVUhpdzlpWGRZQVZrbDlIMG80NHluOV9zTFhlZmFYdWJBYV9MX2pLeVRfYU1Id3IteTlFc2pGTTZ0TnVwZVBxMHFfMmdxT0RGbzV2S0tKSVd2S25WbjhPNQ?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.578Z"
+    },
+    {
+      "id": "NEWS_2137142050",
+      "headline": "Sensex settles 1,200 pts higher, Nifty ends near 23,450: Strong RIL Q2 results among key factors behind... - Moneycontrol.com",
+      "source": "Moneycontrol.com",
+      "publishedAt": "2026-11-02T04:05:38.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:35 am",
+      "summary": "Sensex settles 1,200 pts higher, Nifty ends near 23,450: Strong RIL Q2 results among key factors behind...&nbsp;&nbsp;Moneycontrol.com",
+      "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxNM21fUjBzU3UxS3JYcVlLNHU1cUphazN3MzhEQnQ1X3lTTld1ZTZPMGpSa3M3Vk11akNqN2k4dXRoWnpSN0RSSHpjeGUxcnphOFF0TnFHamxtNG5HeVpydERQNEtWY25YWjN1Q3hfaTdJdTFuaUVVZDVfRTl0V18yRTdjbXpKVlBidjRMaGRyTHJCYnZxY1dEVUJIT0g5RHFGVTRxLUhWVUtXT3ZQdTVtbVR2dE8tTTc2NTFsT1VkUEhsX0lnV21LMFpQWkVxbGxBMG44Z25GckZ3cndleEZqQ1RjblB1SDRyQVdjbWVEXzQ2UWvSAfgBQVVfeXFMUFZhQlM0eTlESzBFd2pvM3hMVGJ3SkZUY2Y1bUxwZXB0aEd2dEl6QXJuRUYwMmZtUnJIQlVUVDV6WnpyYkpzU0RPNWY3dWJXcHFPVkh1YW92UnlCVlE4Zlp4OXEwQ3l6MjBubVN2MUl0XzJiVDc0ZmZhVGlQY3d3cENacktTVTZYOXBUczNkdnhBMjliUXJwMmRjR1pLRnJMY0F6U196TjU4d1Z6SVhpTngxT1g3NmdkWXc3VFBST2UtejNIOHBsWWt3d2lIdWVQRWRVNVV1WENkXzFJaXp2Zk54OEJxMmstX3RIUmdKc2ZxelZFYzFXZ0s?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.578Z"
+    },
+    {
+      "id": "NEWS_323823676",
+      "headline": "Stock Markets Today: Sensex. Nifty Surge on Reliance Boost - Rediff",
+      "source": "Rediff",
+      "publishedAt": "2026-11-02T05:02:37.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 10:32 am",
+      "summary": "Stock Markets Today: Sensex. Nifty Surge on Reliance Boost&nbsp;&nbsp;Rediff",
+      "url": "https://news.google.com/rss/articles/CBMi3gFBVV95cUxPMVh2U3JxTFNDbnBCdG9KeDdvMWFMUG1UdDZYbHdZcDgweXVYbFhQSXVXWHhCYV9XWWNkbkEzNm5KN2M1NkQydjJhcmZqQUpLbmJuWlNtZW5pZGtnQmxXX2FRSW9TaTA4bjhzMkVPTGZkV1ZSdVoyY1VvU196MmtCM2hJdjgtbVNTOXBVUWNsamM1SXFtdC01cTFlcURfM2lpRW5WRGJnWDhUMXZGQ1JCTE1Obmh1TXJzLXViYjRCSFZKeUJDOGp1bkZnekhXNzVkYzB6VDVGZDNxZjJYOFHSAeABQVVfeXFMUEN3SGh0YWdUTWlpWmV1ajlEYXhlNmJwZjduc3hhMW13RlNMSjVPbmd0UnNWeUhhN3BmTUFNWWZYZ2VqeDAzd1NTV0NDRHZUTW9pMmlQbU10V2NFZ3Z1bjlYLVNiQmhnMVAyQkxMbkUwelhxNkZmTldtVmtHd3hqQVZaNDdocTh5bDJXbzdvRy1lTk9QUl9DWU1QSTNtUGxOYVVSSzRleE5PQXNiR0Q4eDl2SlBfaDNwOExrRXk0a3Bma3RRM0dkNS1NdGxzTzlMSksxV2NNSVRiUl9pTnhqRHg?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.579Z"
+    },
+    {
+      "id": "NEWS_2033565957",
+      "headline": "Stock market outlook today, 2 Nov: Sensex, Nifty prediction - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues - Livemint",
+      "source": "Livemint",
+      "publishedAt": "2026-11-02T01:22:54.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 6:52 am",
+      "summary": "Stock market outlook today, 2 Nov: Sensex, Nifty prediction - DJIA, S&P, NASDAQ, GIFT Nifty, Kospi, Nikkei, Taiwan cues&nbsp;&nbsp;Livemint",
+      "url": "https://news.google.com/rss/articles/CBMigwJBVV95cUxPTlFfOXJmNXYteGRXMGlYQkU2QWtCMlFRbWF4X0FNa05FYlFSbldpcU1xWUlEOEFBN2ZnQVgzU1BUUHRYYm5BZ0tNREpnY0d0Rk50WlktMUxIOEVVUXl0czc2UVJZcG0yeUc1U0JBZ29GS01JeW1rNkpjWk42RDFNRXNLc2x2YnVjcU5rUkpXZmdTS19pY21QdXdKb0V2X3ZraTQxT3lWT0pRSUlJWG5VRVRyc202eDJMZWhaSGw5SjBWUExkZFkwX2F5N252YUcxeWxsUTVQSVhxQndVemRBWm1MYnEtQ0xWcGVSRld6M09tY1UzQzZlUU5nR2htOUM1LWdv0gGIAkFVX3lxTE1UaV9xRDAxeW9XVEtUWW82NWRuVFpVN3gxaXktLVBtNVVoalBkX0hRMzI3OFA3RGNRMkVDT3MzdWxZX1N4Q24tWVJQMnpsRmo4ZU5OemVyNVFPeVNNbTkxdktPZFhwYU1icmtmWTlma0dzWlhjREZBeGY0djVGYWFDVHVoTFhsY1VkRXJiS01BUGRkSlFhV1N4Y2h2ZlRPRG1ZTGZZZGJRalJEVUxmc1F3NXlqaHM0N3BJRFVzLXhaQjkwa001YUxiQUZxY1VzVVp2bE5zNGQ0aERLdVJjWjdxdm5aUmVvcXdjV3pRaEl5VExpOV82d3BsNzdnY3A1c0dhd0lpWURoUQ?oc=5",
+      "matchedTickers": [],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.579Z"
+    },
+    {
+      "id": "NEWS_1274876929",
+      "headline": "Trade Setup For Nov. 2: Nifty Eyes Resistance At 23,200; Can Bulls Push Index Above 24,000? - NDTV Profit",
+      "source": "NDTV Profit",
+      "publishedAt": "2026-11-01T16:33:07.000Z",
+      "publishedAtFormatted": "1 Nov 2026, 10:03 pm",
+      "summary": "Trade Setup For Nov. 2: Nifty Eyes Resistance At 23,200; Can Bulls Push Index Above 24,000?&nbsp;&nbsp;NDTV Profit",
+      "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQRHE0TVJGZURIYkh0UXhBdHRPcktZYTNOeGxyU09OZll2RnFSeVdvWERZcXRXNGVDZ2NzSFBKbmhLbjFMU1B3TnA5WmtUazRqblJCdVVQa2N2SlU4UzNZSDJ0b2tQLVBrNFR0eVd1OUJ5NXlKeHZTZUpOZS02S3B6WXNQVlNBUndMU0FHVEIzQk10WUZEZk42OTcyMlZ5QTRUY1B2a2FDWTU0UkliQVlwbWZZaUJzRVRMdFhHUVhPemR3TFo0LTBYdml1Y9IB0wFBVV95cUxOUXdsMENaTllhLXpFOUNHczBIMEJNemxZRGJiTDFkRmRIeFF0TDBNNWJCRFpyUG1OTjhiN1FsejNOX19WZmk5c0tpdG9BNjI2VmxYemVGTmRmQTN6amNNYzdqbVdDYy1xN3hISzJLSmFZc0o5MFI3T18zRTJySmpRNTE3bW5ZaUVlU0VFcF9qOVlCRzI1QkFfZWU3cmVpNmpiRXAzOGZYTXNHTU9JOGNiX2JzUDJrZkJmdGJ1dEdCQUU5QXVPRnJ4c0NWZWxYUFhyQUhR?oc=5",
+      "matchedTickers": [],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.579Z"
+    },
+    {
+      "id": "NEWS_1824823798",
+      "headline": "Market weekly wrap: SENSEX, NIFTY50 rise 2%; NIFTY Smallcap 100 jumps 4%, Trent leads rally - Upstox",
+      "source": "Upstox",
+      "publishedAt": "2026-10-31T06:23:22.000Z",
+      "publishedAtFormatted": "31 Oct 2026, 11:53 am",
+      "summary": "Market weekly wrap: SENSEX, NIFTY50 rise 2%; NIFTY Smallcap 100 jumps 4%, Trent leads rally&nbsp;&nbsp;Upstox",
+      "url": "https://news.google.com/rss/articles/CBMi3gFBVV95cUxPeUhVNzNkY2xCWmQxM3lRRHJHcE4ybVlOUFF3WUZncExvT2YyTmlCbGlxcE5fdnZrWEhGSmpXY09DWkhIYW1Qa09ieE5hd3g3WTBFa1MtZkdQUldoaEJzSTBGM0pUdVFqWHZJSEcwa21MbmxaWGNYc0xMTWxoYzJxZko4TWg2ZWc1Zk5FZ051eUQ3eFduWU9SUm41aHFySEFFYlRvVnZ3bDVibkV6UXZOYzVWR0M2RTg1bmpQeDZmTzIzanpZYVZpaUltWFRTLVd1VEVwckRGSHpfUEY2SUE?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.85,
+      "fetchedAt": "2026-11-02T13:54:07.580Z"
+    },
+    {
+      "id": "NEWS_330553819",
+      "headline": "Sensex Today Rallies 788 Points | Nifty Above 23,250 | BSE Oil & Gas Index Up 2.12% - Equitymaster",
+      "source": "Equitymaster",
+      "publishedAt": "2026-11-02T04:51:50.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 10:21 am",
+      "summary": "Sensex Today Rallies 788 Points | Nifty Above 23,250 | BSE Oil & Gas Index Up 2.12%&nbsp;&nbsp;Equitymaster",
+      "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPVzhYLWtodXdvM29sTVNPQ1A5eEZNS0VGY1dBdFNEZ1hzVE9SU0hFbVMtZi11NXI1TTdsWHRNUWIwTXlGZzkyOURYUDRZQWlUeGxmbEhlb1Bhak00bWl3LVlyVzdPZ1JrVVFNQ2NPZ1NqLXhaR3BIVTZ4bkN3N3Jsdk9WNHI0cm1pMDRLU00xbmVmT09IUEtUREhqXzQ3MjB2T0kxWmFYcU51cXJ3dHBNWGxfcVVoVnhCV1dJUmFhNGF2ckVaUEpOeWNTRHhEd3U2THRn?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.580Z"
+    },
+    {
+      "id": "NEWS_1846441382",
+      "headline": "Sensex rallies 1,000 pts, Nifty tops 23,300; Reliance surges 6% on record Q2 - Fortune India",
+      "source": "Fortune India",
+      "publishedAt": "2026-11-02T04:45:04.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 10:15 am",
+      "summary": "Sensex rallies 1,000 pts, Nifty tops 23,300; Reliance surges 6% on record Q2&nbsp;&nbsp;Fortune India",
+      "url": "https://news.google.com/rss/articles/CBMitgFBVV95cUxOVWdVbHQ2NWpFc3Zsd3ZmRGJpRnRuQWJodzFsSEVjWHF4Y29Gd3NrdVg4bUM2dkhkYk02YjN4cWZSWWFlQVNxRDlaVkNESGowNW9icVZ5QVBBdEY3YVpfaXNDMW5YZXNaUkRSVFB3Z1pSbmc0NkUtbHBJRlppd0RkRXBuTHp3a3I1VGNpdlE3RFNnNC00bHFOQ3BkTnNub2d4R0JiY3BDNHRMVy02LS15enc4cTd1QdIBwwFBVV95cUxOT1EweFpuM1pPNGFhVHZhNk1tTlNQTVp4MXRqa0htRU9LdWtmZjNXYTNzdmcxQ3RvQVhJZ25LX01qYnJwcGtjM0xwQkRmNDlqVDJNQV9lZloxd1phSkVzUGFBdUg1WEFNQlZSaWpzMVpZaG9sRU1seEhfbGpkcTY4ZnVpbVBNRktrV2JvRGRtVE52MHdVMG1OWllhNlVJMU5iSE9JSWRnZUtVWmpGUXo5VGRTVFhJTVN0OWxfRWx1LWxsa2c?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.85,
+      "fetchedAt": "2026-11-02T13:54:07.581Z"
+    },
+    {
+      "id": "NEWS_639317288",
+      "headline": "Sensex jumps over 700 points, Nifty opens 0.73% higher amid US Yields ease and weak AI sentiments - ANI News",
+      "source": "ANI News",
+      "publishedAt": "2026-11-02T04:04:00.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:34 am",
+      "summary": "Sensex jumps over 700 points, Nifty opens 0.73% higher amid US Yields ease and weak AI sentiments&nbsp;&nbsp;ANI News",
+      "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxOVnZfY1VUSlRyZHFxRWhwY1F4YkVaQnBWZ1JrRk9BV19jMDAtXzdCcnE4cm00a0JKRDN4UU9qeDJKYzM4NGp3TDFMSmdJY21QY0NBYUFNUHhaY3htQlJZR0dsMGpJM1VveXZCNGFVME1vYkFta1RrcXdFVEpxQ0VTNFZfMEQ5NWJCcmhSSlhPYXFEZW0zLWtfX0lmTlFUbnZHdmEzajMtdC1JbXVKa0swcW1FanZEbmJ0cTNOWTNZRVFtMmNaaDJRZzJPR1I1VUMxVjk5WVJHdXd6OHpwQmRlT1NB?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.581Z"
+    },
+    {
+      "id": "NEWS_1359843551",
+      "headline": "Sensex soars 1,233 points; Nifty nears 23,450 as markets extend rally for third straight session - Business Today",
+      "source": "Business Today",
+      "publishedAt": "2026-11-02T12:21:43.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 5:51 pm",
+      "summary": "Sensex soars 1,233 points; Nifty nears 23,450 as markets extend rally for third straight session&nbsp;&nbsp;Business Today",
+      "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxQbWt1bDNIVWFETWJLVVRmTTg2aFI1NWtHdHN6X0NmNnBEN1RsWHpMVzRENTE1anFpU0lNaWtwdllZZ0dyYXQ0bzZyQWZ0QzJEMGVIYTZqa210UUhFUVB0aGxMZjN6eklkNEdyaEpVWklKMmIyY2tkYXR4VTg3M1FkN2hkWWRGOWJtTlNTTWU3UTgwT181OFA1eng4a2RDZjI5cEtfQjNxdEp5YThOMEk2U2RzTGRQN3JqS093NngtSDNoWk53OGdwWC01bkhSbUhVdGhKU0VFS2Q1eF9YUTd2Mk1wWDBFTk5uWmg2Z0xzOEFvYW_SAfgBQVVfeXFMTUhMZkF4WUZURkpSTllzRzJlbXF6XzRfUS15UXliNEtPUmoyZEZKZS1IaFNfT2lRLWxvVzdVbGFhZTlXVFFGcnZWS2YyWmpObXY3ZVVnUFNwWjVWSXlBTzl6WnhhMmxQazRHRGF1SldCWXltZjBxUWVvMXAwZVdnWEtyS0hDY3c3NnFqZk54dkxGSmhYMG9VYkV6amFoQlNERGhjcGtzdkwtakEzd1VxQmpJM0wxZXI2WGJIN2hZVzZ0REp6a0FLZjNOQW5UU0kxbGFRMjNqVy0yUWZNM0d5RDFHVVprVW5MVmNpT2J5MEs4T1l6RS1wdzU?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.85,
+      "fetchedAt": "2026-11-02T13:54:07.582Z"
+    },
+    {
+      "id": "NEWS_249707629",
+      "headline": "Why Is Share Market Rising Today? Know Key Reasons Behind Sensex, Nifty Rally On November 2 - News18",
+      "source": "News18",
+      "publishedAt": "2026-11-02T04:11:58.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:41 am",
+      "summary": "Why Is Share Market Rising Today? Know Key Reasons Behind Sensex, Nifty Rally On November 2&nbsp;&nbsp;News18",
+      "url": "https://news.google.com/rss/articles/CBMi2wFBVV95cUxPakJZZlI0LXFXaFdYQVpWWlJaekZuQlVTQmdXTXpvNUZjeGtQWUttU3FBSGZjRXB0S0RFdGl6eEFRR2hhWmhZLUV3LWpsa3JXV19DdGtoRDZmMWUyanRxbzlrSUhtUDd6V3JVcW5XT1NYd2ZqRXdYeHpQbDFyS1U0Z2FQNVYzbGdTVF9PMWhfLXBteTg3OC1jeEs4UU5ONU5LQ3ZXLTdBVWpXSlBrYTIwZmFMTXBWaFEwMlNNSXlmaVFiNFpCaHNHQkk5ay1LaTFRNTNHQUpzcnIyTTjSAeABQVVfeXFMTXp5YVlsd1RBVjg3aVlwRDVhM1E4aV94TGRoc0U5ZWJydmR0bUxtS2xUVVIzckFuVWNkeUtvNTNBYzZJTHlvOHpPYjFUbjJMQ2RNa3ZKYjg4SmdfZFVEME91bzZ1Vy13MEY5VHd5SVJGSU5EREl3ZzljWEpIVHRneXA5MklkR21MQ1ZEWHJhbTRiSDNEcHFBYWVaa1FIRUdqZkJzNWxxUnN2N2xFR1NlR0QtN015THNvM3hhWXhpYXNqY21oUW13em5nY0xtSFBjdV9QMFVRZkxRMkJnSzl1dHY?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.582Z"
+    },
+    {
+      "id": "NEWS_1785121049",
+      "headline": "Sensex, Nifty rally over 1.6% on Q2 earnings, foreign investor buying - The Tribune",
+      "source": "The Tribune",
+      "publishedAt": "2026-11-02T10:27:33.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 3:57 pm",
+      "summary": "Sensex, Nifty rally over 1.6% on Q2 earnings, foreign investor buying&nbsp;&nbsp;The Tribune",
+      "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxQbkc3T0NlalFfTEdfeVRKYlNEVGhOVU1ZN2JRbjJjZjFKVFNkeG1vT29zeWc1bkhGY1pxY2hCVTB0aGN2YTgycXZhSFZ0WUd6em1LYldzREhtNjBXaTRmUFdVanFacy02UWNBTnBNV1l1Ul9GcVZYU09keEZNdWV3STYxNUFKMXhZZXR2QlR1YWp4UGJqNmUtV2czd1pXTXZfbm1SUkNHWE9DZVFOQVFF0gGzAUFVX3lxTFBkMWc2cUlLR3FEanY1VmRpYklfaXZuQUN4djZpQlJaT1VlY3VPWlJPN0VwRl9yM3B1MlhyeUctOXhWcTFVUElMY3kxWDZxRzRDcktmRTVQZlFWeVpxcVZGQWhaejE5anZwWWlwQ01JM0ljcndLNlpzbUVPd0VybGdsYlZ0b0RMREhaTlRMSmRtZ0E4SG12QWs5ZXBuTk5XcE1iWUJwY3ZkblBDZUVUTGhldkRZ?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.582Z"
+    },
+    {
+      "id": "NEWS_430635484",
+      "headline": "RIL’s 11.6% surge on strong Q2 show lifts Sensex and Nifty - The New Indian Express",
+      "source": "The New Indian Express",
+      "publishedAt": "2026-11-02T12:43:54.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 6:13 pm",
+      "summary": "RIL’s 11.6% surge on strong Q2 show lifts Sensex and Nifty&nbsp;&nbsp;The New Indian Express",
+      "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQbFRoWmVWTjd2SjJuOWgta01rSHlQQk1oYUNiaU0xbjhoZE8yT1VCOENjRHU4Z1N4ak5nWWdQZWY4MF9zVGg5TUxxaUdVeEg0Ni1RbG5hbnRMV2RrWXdvLXZ6SXBoLWFNc3ZKTWVyRXlLQ1k0YmhfSmtEeTJpNUZzaThlaDNMdDFXdTBPbWNFT3NPTEw4N1pUb19CSGlqd1pmTGFyZWhYQ3hBWm80MFHSAbsBQVVfeXFMTi1aR0txdFhHdTBuRjUwcEkyZUZ4NUViRXg5MjRVQVlTY3pYVDR1ZVdGcms4UzVsc3ZPbzU0UzRRVHlJZkFmTFgzV3l0Zk02bVpnYkJLZ0Q1dTh2NWlSQmRCaGw3YXlPdEZuQkNfUV8wY2hCaW9pTkpLZl9Zb0lNdGR1QkdxdXJyNmtCU0ZRQkZxOC1FUjd2aHdWWjJOanV1R3laUDJuRGtmV3dhbDJLcF9WSlZibHdlME9kVQ?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.583Z"
+    },
+    {
+      "id": "NEWS_310576756",
+      "headline": "Why is market rallying today? Sensex soars 1,000 pts, Nifty above 23,300. 7 factors driving Rs 6 lakh cror - The Economic Times",
+      "source": "The Economic Times",
+      "publishedAt": "2026-11-02T04:13:11.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:43 am",
+      "summary": "Why is market rallying today? Sensex soars 1,000 pts, Nifty above 23,300. 7 factors driving Rs 6 lakh cror&nbsp;&nbsp;The Economic Times",
+      "url": "https://news.google.com/rss/articles/CBMiogJBVV95cUxQdmoxcy1yaVF0ZEUtSzgzbWxyWHkzWHFtMFZzXzB1dTI0T2J6NVNFTmg1WnVaRXQ5VW53bGlQNVNJdzVfRTVmMlhUQmtYM1FfY2w3YUpLQlFySFFaZVh4ZW5Ha3hzaWVCX0poemVKYXV4azc0SFpud192SGpacm9LeTJBVjZtUlZmeUROR1V1dlhDdUxWU29UZkxVVU1lZXJyRHVWOUJ4azFlMFdCdUk5MTA4bDNnQkxEdzZ1ZE1uWWlMbjBnN09SU0lWLWE3UENSbG9PTTRuTjVaSTZnRmVqVEREOHBCYXFsYzRWX1Q1OHpxV2k5U29SOU5LWE9mSEdFXzZrQ0tDSkc2bXlpVV94WThyanUydERRNExVT2Q4bUhUQdIBpwJBVV95cUxOZU0wTHNSckJ0MVNBM1d6cG9hNExUYmd3V1B3UUlrNElkZ3B3UEFYZjgyNS1uaWdjY2kxSWcwd0ItRGhxd0JrQ2JHVjY4ZUJGV3VEYlRlWDBMeHZ5N2laUUFvMWdUVjlGR01hUmlvUXJWZ3VVTm1hRGhoWmJQSEpkcW5ZN2laZDBXMHBpY0d5M2xQYzUyNjA2YzZPM3NmUm13dVhPOXZjeUdhcmhSU3B0UHd0RXBSa19qcVhEWjgtODFUNFNURXc4dEtfeTlMbUVlOEFIUnYyLUs5M1NoUGpvcjIwU1M4X0JNZ1ZpdlpBenY2NkI4bHdZTmR0OGZvNklONWZxQjZQTThSU0xjemhxVFhYMm9lM05kTHNUbXlTYkJrWHpUbFU0?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.85,
+      "fetchedAt": "2026-11-02T13:54:07.583Z"
+    },
+    {
+      "id": "NEWS_974388865",
+      "headline": "Stock Market Today: Sensex Jumps 850 Points, Nifty 50 Near 23,300; RIL Gains 8%, Tata Steel 5%; ITC Q2 Eyed - NDTV Profit",
+      "source": "NDTV Profit",
+      "publishedAt": "2026-11-02T03:45:17.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:15 am",
+      "summary": "Stock Market Today: Sensex Jumps 850 Points, Nifty 50 Near 23,300; RIL Gains 8%, Tata Steel 5%; ITC Q2 Eyed&nbsp;&nbsp;NDTV Profit",
+      "url": "https://news.google.com/rss/articles/CBMihgJBVV95cUxQLW8zY2dON082ZlJPQmthT3pQZVkzWVlzVEJCOUpLWFZPSm1sTGpXWjVoYlBaVWFRSDkxd1dra1pTcVJyVmsxWU44cmxGODBEN1JCMnBHOFBNNzFlaGpvNlBXLS1QdWxSV25SLXpBSTdqVE50cjN2VnkyTWdobUhWdlZXRTd0bHYyT2xtRlZlOGNjVzVXNDZwZjQwRUdLZG5ndDVLSDdKSjJkQkl4aW1SZ1lJTFVUMWh0SmUtbV9sc3U5SDM4cTVPdG1uNkxfclMxakVNNWRzNjVBUVNVSnhCTkVEVldXVVU4b3JITlNmZHVDWHJfZ2pMaHgxb24zT0tRbUpxTjNB0gGOAkFVX3lxTE1PRGw2dlFCRXA0ejh4RnJqSlB2SXlfT3RJb2UzYVNFSVBZbVVCSVZwYTVKdmlNT3hBbjNpTTFRbTFYejNJVW9rT1l4SzdOREpaSkVmLUtUNlkzWi1VU1RwTlN3YV95XzZIRklDaUpkcThUc1lJal91dG1yY29RVTVJVXpoazdNLUprSHAxTGZEdVdmVFNWcExPd3lPQVAyanpaLS1GMEZ1VXRQZUppeGZmWnA3aDdJcXRwaXdXRmVQSTNyN2lDdFRyTWEwTEZWRTFKSy1QQ2RIbTZVY3dKcXRvUEo3blFTUTB1MUFXaVlzMFFPZVdMNlZNbGpYMU1yTE1LQTZKUHFyT2FKWEU0UQ?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
+      ],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-02T13:54:07.584Z"
+    },
+    {
+      "id": "NEWS_1796986452",
+      "headline": "Q2 Results This Week: ITC, Bharti Airtel, NSE, BSE, LIC, among 350 companies report numbers - CNBC TV18",
+      "source": "CNBC TV18",
+      "publishedAt": "2026-11-01T12:56:51.000Z",
+      "publishedAtFormatted": "1 Nov 2026, 6:26 pm",
+      "summary": "Q2 Results This Week: ITC, Bharti Airtel, NSE, BSE, LIC, among 350 companies report numbers&nbsp;&nbsp;CNBC TV18",
+      "url": "https://news.google.com/rss/articles/CBMi4gFBVV95cUxPNW5FcWNUYmtSVWFuaEx1cVBHOWVEcEJiY3EtVlJUcVpmQXhRbVgwOWJiS2NBNUppc054UDJ0NEk1VmV4WEJtMTFrUzlOdUdrWk5zX21DRWRkUExrODdUajY2ZFpuR19xTXRpdkpYV3JMS0tRUFk2VGlYamFuUHdXcHVRc2liS3NmQVRERC1GT0I0WHVIZ0ZZZHVidDBjRFJhanJJcjJ0blp5MmdfcjFwSmZWQXBBeHBQN2N3T3BnaTBGbEhpNmFRQk1pNHgwNUNlckwxUm9xQnZmb3A2OWdYU21R0gHnAUFVX3lxTE9XXzVhekpEbVZuMTg1aFlWbEZRRXJ2NzF0RE13Z2VWbWNlT2trbVhPeU5iMEpob0pqbmt5b2pZeTU3SnVBV3h4djNUNEV6NFZZNzRMdFBOSlZxQ01WcEpSaWxYZ1pLUmJkVEhIcFI5VmF2bEZPc29nTGdDZ0dlN0o3RUphejA2aG5TLUtPZHp2Slh0VXlicnR5cllxRmxpVEszakdEQVR5SHo0blNoWlppVUMtNUZyd0x2QjFuWjBfRzJSSnhNMVNTSDBmMkdDazd1M3Uwb2d5VGY5WV9nbGRUQWcyOTZyNA?oc=5",
+      "matchedTickers": [
+        "AIRTEL"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.584Z"
+    },
+    {
+      "id": "NEWS_132824110",
+      "headline": "EAAA India Alternatives Share Price: Stock makes flat debut on NSE, BSE - Check listing price - ET Now",
+      "source": "ET Now",
+      "publishedAt": "2026-11-02T04:28:37.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:58 am",
+      "summary": "EAAA India Alternatives Share Price: Stock makes flat debut on NSE, BSE - Check listing price&nbsp;&nbsp;ET Now",
+      "url": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxQSm5aUE1PaloyV0pSWV9RN0RKNC1yUEdMZW9kQVZiWHZuVU9CLU9Gemhic2loNXZ1eS04NUFNTWgzaHVZVlFBVDdTTGN5SU9JdlM5aURzQUpqM0NYaU1wdDh1OWhtNEJkZk9nOW5zQ09ZZk5GNnlKUDNDTmQ5THdER0R2UDYyWFRrd082cVFJdjNZZU5tVUVvcHB4cHBobWdDZDlkN2J1UHg4eF9YZWI5M1JqZTlpc2g2eFdzdV9ZNEhPWXhLQkFoTHY0YXRVNnduMldwUUVDSXTSAd4BQVVfeXFMUDhMMURYSnZLMkk1anU4d0QxTUJiTGxkUFZWQkJjbm1aX1Z2cm9LX3RsaHVfbTQ0TU5GcTJCMzRHUi15OUkzbzI3U3VOZTcxOU1wUHJTVHZLSjl6akMyd0QxLVp5bFM3Y3ZXQmxmNGlmaHNlQWNyR2Itbm9hakdBY3NIeGt3c3I4X2JIS0J6UVhreFBfaHR1X1NXbjNRSnRXbUw1bW1nZkgxYVhhR2VnUDFWRC1aMDNuY2xXNlVpYWRXeHZPSGJSVm93ZFJrczZHRGYwaVUyNEVIdklRVE9n?oc=5",
+      "matchedTickers": [],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-02T13:54:07.584Z"
+    }
+  ]
+}

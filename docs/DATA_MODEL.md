@@ -1,4 +1,4 @@
-# DATA MODEL SPECIFICATION — THE TRADING FLOOR CHAMPIONSHIP 2026
+# DATA MODEL SPECIFICATION — THE TRADING FLOOR CHAMPIONSHIP
 
 This document defines the complete TypeScript-style schemas and JSON data structures utilized across the server engine, WebSocket contracts, and persistent disk files.
 
@@ -113,7 +113,7 @@ interface TradeRecord {
   tradeId: string;        // "TRD_104"
   seq: number;            // 104
   timestamp: string;      // "10:14:22 AM"
-  exactIso: string;       // "2026-10-15T04:44:22.104Z"
+  exactIso: string;       // "2025-10-15T04:44:22.104Z"
   day: number;            // Current competition day (1, 2, or 3)
   second: number;         // Elapsed second in day (e.g. 842)
   teamId: string;         // "team_3"
@@ -159,7 +159,7 @@ interface NewsEvent {
 
 ```typescript
 interface GameState {
-  title: string;                      // "The Trading Floor Championship 2026"
+  title: string;                      // "The Trading Floor Championship"
   currentDay: number;                 // 1, 2, or 3
   totalDays: number;                  // Default 3
   dayDurationSeconds: number;         // Default 1800 (30 mins)

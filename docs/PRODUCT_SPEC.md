@@ -1,7 +1,7 @@
-# PRODUCT SPECIFICATION — THE TRADING FLOOR CHAMPIONSHIP 2026
+# PRODUCT SPECIFICATION — THE TRADING FLOOR CHAMPIONSHIP
 
 ## 1. Executive Summary & Vision
-**The Trading Floor Championship 2026** is an institutional-grade, real-time stock market simulation platform engineered specifically for collegiate competitions, business school conclaves, and finance festivals. 
+**The Trading Floor Championship** is an institutional-grade, real-time stock market simulation platform engineered specifically for collegiate competitions, business school conclaves, and finance festivals. 
 
 Operating on a local area network (LAN) with zero external internet dependencies, it bridges the gap between theoretical classroom finance and fast-paced trading floor execution. The system provides an authentic simulation of the Indian stock market (BSE/NSE mechanics), featuring 20 blue-chip Indian equities across major economic sectors, dynamic order book execution, directional circuit breaker halts, macroeconomic news shocks, and automated audited performance rankings.
 

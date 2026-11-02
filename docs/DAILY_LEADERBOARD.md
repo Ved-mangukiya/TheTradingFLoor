@@ -1,7 +1,7 @@
 # DAILY LEADERBOARD & MULTI-DAY SNAPSHOT MECHANICS
 
 ## 1. Overview
-The Trading Floor Championship 2026 operates as a multi-day championship (default 3 days). At the end of each competition day, the market is closed, official closing prices are frozen, and an immutable daily snapshot is finalized.
+The Trading Floor Championship operates as a multi-day championship (default 3 days). At the end of each competition day, the market is closed, official closing prices are frozen, and an immutable daily snapshot is finalized.
 
 ---
 

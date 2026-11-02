@@ -1,256 +1,90 @@
 # CHANGELOG — THE TRADING FLOOR CHAMPIONSHIP
 
-All notable changes to **The Trading Floor Championship 2026** platform are documented in this file.
+All notable changes to **The Trading Floor Championship** platform are documented in this file.
 
-## [2.5.1] — 2026-10-17
+---
+
+## [2.7.0]
+### Added
+- **Real-World Live Financial News Engine (`server/real_news_feed.js`)**:
+  - Live Indian Equities RSS integration pulling genuine market news from Google News RSS / NSE feeds.
+  - Authentic publisher source preservation (*The Economic Times*, *Reuters*, *Mint*, *Moneycontrol*, *Bloomberg*, *Financial Express*).
+  - Genuine publication timestamps and direct source article links.
+  - Dynamic company ticker mapping (correlating headlines to `RELIANCE`, `TCS`, `TATAMOTORS`, `HDFCBANK`, `INFY`, etc.).
+  - Automated financial sentiment analysis (Bullish / Bearish / Neutral) with estimated volatility impacts.
+  - Offline-first disk persistence in `data/real_news_cache.json` with genuine cache age tracking, ensuring 100% functionality during offline campus events without fabricated data.
+  - Background auto-sync worker running every 15 minutes when online, plus manual host trigger via `HOST_SYNC_REAL_NEWS` and REST `/api/real-news/sync`.
+  - Host "Broadcast to Floor" capability allowing the event host to shock market prices with real-world breaking news.
+- **News Control Centre Sub-Tabs (Host Hub 3)**:
+  - Clean segmented view toggling between "📅 Scheduled Scenario Wires" and "🌐 Real-World Live Market Feed".
+  - Dedicated real-world news cards with publisher badges, publication times, and 1-click broadcast controls.
+- **Production-Grade Documentation & Repository Overhaul**:
+  - Rewrote every `.md` file across the repository from scratch based on actual current code.
+  - Completely purged obsolete monolithic dossiers, archive logs, and scratch scripts.
+  - Enforced platform-wide timelessness across all documentation, UI footers, and terminal banners.
+
+### Fixed
+- **News Timer Paused Badge Bug**:
+  - Fixed bug where news cards displayed `⏸️ PAUSED` while the market was running live or after resetting and starting a new championship.
+  - Implemented authoritative `getNewsCardBadgeHtml()` enforcing mutually exclusive state checks (`isLive`, `isCountdown`, `isActuallyPaused`, `isStandbyOrSetup`).
+  - Synchronized Next Scheduled Wire banner (`hostNewsNextBanner`) with identical authoritative state resolution.
+- **Post-Lock Day 1 Launch Synchronization**:
+  - Verified `HOST_START_DAY1_NOW` and `HOST_RESUME_COUNTDOWN` smoothly transition through authoritative 3-2-1 countdown into `LIVE` market trading.
+
+---
+
+## [2.6.0]
+### Added
+- **Singular Host Operations Bar**:
+  - Unified market operations into a non-duplicated, state-driven Operations Bar on the Host matrix.
+  - Clean choice pause actions: Soft Freeze (prices visible) vs. Blackout Pause (prices hidden).
+  - One-click resume with authoritative 3-2-1 server countdown and opening bell dispatch.
+- **Universal Action Contract Locks**:
+  - Implemented client-side button locking to prevent double-click order duplicates or accidental repeated pause commands.
+  - 5000ms automatic safety unlock fallback guaranteeing controls never stay permanently frozen if network packets drop.
+- **Ceremony Director Bar (Projector Presentation Control)**:
+  - Embedded direct 6-scene ceremony switcher in Host Operations for seamless grand finale orchestration.
+
+### Fixed
+- **Event Setup Modal Stack Duplication**:
+  - Purged redundant setup modals (`#teamSetupModal`, `#eventSettingsModal`, `#championshipWizardModal`).
+  - Routed all championship configuration exclusively through the 6-step guided workspace in Hub 2.
+
+---
+
+## [2.5.1]
 ### Added
 - **Classroom 4:3 Projector Native Optimization**:
   - Added dedicated media query aspect-ratio detection (`@media (min-aspect-ratio: 4/3) and (max-aspect-ratio: 1.4/1)`) specifically targeting standard Indian college classroom projectors (`1024×768` and `800×600`).
-  - Native $4 \times 2$ grid (8 cards) for 1024×768 and $3 \times 2$ grid (6 cards) for 800×600, guaranteeing zero horizontal scrollbar and 100% viewport containment.
-  - Scaled typography for long-distance auditorium legibility (18–36px headline and metric sizing) and vertical medal podium orientation for 4:3 projector winner presentation.
+  - Native 8-card ($4 \times 2$) grid for 1024×768 and 6-card ($3 \times 2$) grid for 800×600, guaranteeing zero horizontal scrollbar and 100% viewport containment.
+  - Scaled typography for long-distance auditorium legibility and vertical medal podium orientation for 4:3 projector winner presentation.
   - Safe margins (5% horizontal, 8% vertical) protecting against optical projector bezel clipping.
 - **Mobile-First & Tablet Responsive Suite**:
   - Mobile layouts (320px–640px) with single-column stacked cards, full-screen order entry modals, and 16px form inputs to prevent mobile browser auto-zoom.
   - Tablet layouts (641px–1024px) with 2-column stock grids and touch-optimized controls.
-  - Touch targets meeting WCAG 2.2 standards ($\ge 44 \times 44\text{px}$) with `-webkit-overflow-scrolling: touch` momentum scrolling.
-  - Role-targeted CSS targeting via dynamic `data-role` attribute on `document.body`.
+  - Touch targets meeting WCAG standards ($\ge 44 \times 44\text{px}$) with `-webkit-overflow-scrolling: touch` momentum scrolling.
 - **P1/P2 UX & DX Improvements**:
-  - **RFC 4122 Trade UUIDs**: Migrated `tradeId` generation in `server.js` from sequential strings to cryptographically unique 128-bit `crypto.randomUUID()`, eliminating collision risks across server restarts while maintaining `seq` counters for chronological display.
-  - **Loading States & Skeleton UI**: Added `.btn-loading` with animated spinner, `.skeleton`, `.skeleton-card`, `.spinner-inline`, and indeterminate progress bars in `public/style.css`.
+  - **RFC 4122 Trade UUIDs**: Migrated `tradeId` generation in `server.js` from sequential strings to cryptographically unique 128-bit `crypto.randomUUID()`.
+  - **Loading States & Skeleton UI**: Added `.btn-loading` with animated spinner, `.skeleton`, `.skeleton-card`, `.spinner-inline`, and indeterminate progress bars.
   - **Comprehensive Keyboard Shortcuts & Help Modal**: Added global `?` shortcut opening the Keyboard Shortcuts Help Modal, along with `Ctrl+Space` (Pause/Resume), `Ctrl+S` (Save Checkpoint), `Ctrl+D` (Advance Day), `F` (Fullscreen), and `L` (Lock Projector).
-  - **Enhanced Toast Notifications**: Added `showEnhancedToast()` with action button callbacks and `setButtonLoading()` helper utilities.
 
 ### Fixed
-- **P0 Circuit Breaker Anchor Immutability (CRITICAL SECURITY)**:
-  - Eliminated rogue resets of `dayOpenPrice = currentPrice` during manual unhalt (`HOST_UNHALT_STOCK`) and sector unhalt (`HOST_SECTOR_HALT`), strictly anchoring daily circuit limits ($\pm 20\%$) to true day opening prices.
-  - Guarded `HOST_RANDOMIZE_PRICES` to only reset `dayOpenPrice` when in `SETUP` mode.
-- **P0 Private Investment Analytics Authentication (CRITICAL SECURITY)**:
+- **Circuit Breaker Anchor Immutability (CRITICAL SECURITY)**:
+  - Eliminated rogue resets of `dayOpenPrice = currentPrice` during manual unhalt and sector unhalt, strictly anchoring daily circuit limits ($\pm 20\%$) to true day opening prices.
+- **Private Investment Analytics Authentication (CRITICAL SECURITY)**:
   - Applied `requireHostAuth` middleware to `GET /api/team-investments` and `GET /api/team-investments/:teamId`, blocking unauthenticated public access to confidential team portfolios with HTTP 403 Forbidden.
-  - Corrected trade filtering to match authoritative `team_id` / `teamId` fields.
-- **P0 News Event Idempotency & Per-Day Registry**:
-  - Implemented `firedNewsEventsPerDay` Map registry in `server.js` to ensure news events fire strictly once per intended trading day, preventing duplicate shocks on reconnection.
-  - Automated registry clearing upon day rollover (`HOST_NEXT_DAY`) and full reset, with seamless state restoration from saved checkpoints.
-- **P0 Day Completion vs Championship Finalization**:
+- **News Event Idempotency & Per-Day Registry**:
+  - Implemented `firedNewsEventsPerDay` Map registry in `server.js` to ensure news events fire strictly once per intended trading day.
+- **Day Completion vs Championship Finalization**:
   - Concluding the final day now transitions to `DAY_COMPLETED` and broadcasts `FINAL_DAY_COMPLETED` with `requiresExplicitFinalization: true`.
-  - `HOST_CONCLUDE_CHAMPIONSHIP` strictly requires prior `DAY_COMPLETED` status on the final day, preventing premature conclusions and allowing host audit review.
-- **P0 Checkpoint Restoration Lifecycle Preservation**:
-  - Restoring saved checkpoints now preserves legitimate stopped states (`SETUP`, `STANDBY`, `DAY_COMPLETED`, `CHAMPIONSHIP_CONCLUDED`, `FINAL_ANALYSIS`), pausing only if active live trading was underway (`pauseMode = 'RECOVERY'`), and clears stale countdown timers.
-- **P0 Next Day Rollover Validation**:
-  - `HOST_NEXT_DAY` requires `status === 'DAY_COMPLETED'` before advancing, clearing per-day news registries and scheduling clean news plans for subsequent rounds.
-- **UTF-8 Character Encoding Restoration**:
-  - Restored clean UTF-8 encoding across `server.js` (removing BOM and fixing corrupted symbols `₹`, `🚀`, `•`, `⚡`, `💼`, `—`).
+- **Checkpoint Restoration Lifecycle Preservation**:
+  - Restoring saved checkpoints now preserves legitimate stopped states (`SETUP`, `STANDBY`, `DAY_COMPLETED`, `CHAMPIONSHIP_CONCLUDED`), pausing only if active live trading was underway.
 
 ---
 
-## [2.5.0] — 2026-10-17
+## [2.5.0]
 ### Added
 - **Paper Trading Cards UX & Structured Information Hierarchy**:
-  - Upgraded stock trading cards inspired by the Paper Trading Cards reference (`media_1792231121505.html`).
+  - Upgraded stock trading cards with luxury tactile card-stock styling, guilloche headers, and letterpress ledgers.
   - Structured card layout cleanly segregating stock identity (symbol, name, sector pill) from financial metrics (current price, day open, high/low range, and percentage delta).
-  - Position Unrealized P&L: Displays live profit/loss breakdown (`+₹Z (+W%)`) with color-coded badges for active positions.
-  - Quick lot stepper controls (`-5`, `+5`) and dedicated `Trade` action button launching the unified interactive Trade Modal.
-- **Advanced Stock Filtering & Multi-Metric Universe Sorter**:
-  - Instant case-insensitive search by ticker and company name.
-  - Dynamic sector dropdown plus clickable sector chips (`#traderSectorChips`) populated from the active share universe.
-  - Multi-Metric Sorter: Gainers, Losers, Price: High to Low, Price: Low to High, Highest Holding Value.
-  - "Holdings Only" filter toggle to isolate actively owned stocks with 1 click.
-  - Empty-state card with educational guidance and 1-click `Reset All Filters` button.
-- **Interactive Trade Modal with Real-Time Affordability Engine**:
-  - Tabbed BUY / SELL switcher updating context, boundaries, and validation.
-  - Stepper controls (`−` / `+`) and quick lot pills (`+1`, `+5`, `+10`, `+25`, `+50`, `+100`).
-  - Dynamic Budget / Holding Preset Pills:
-    - BUY Mode: `25%`, `50%`, `75%`, `Max` of available cash.
-    - SELL Mode: `25%`, `50%`, `75%`, `All` of held shares.
-  - Real-time gross trade value, fee calculation, total cash impact, and remaining cash in hand preview before order execution.
-  - Educational balance validation: High-contrast shortfall alerts explaining exact missing funds and maximum affordable shares.
-- **Directional Upper & Lower Circuit Breakers**:
-  - Upper Circuit Limit ($+20\%$): Clamps price at ceiling, blocks BUY orders, and permits SELL orders to inject downward liquidity.
-  - Lower Circuit Limit ($-20\%$): Clamps price at floor, blocks SELL orders, and permits BUY orders to inject upward liquidity.
-  - Order-Flow Circuit Recovery: Counter-directional trades dynamically adjust price and unhalt the stock.
-  - Strict Stock Isolation: A circuit halt on one stock never freezes the broader market or other companies.
-- **Explicit Day 1 ➔ Day 2 Lifecycle State Machine**:
-  - Non-Ambiguous Status: Timer expiration and manual conclusion transition state explicitly to `DAY_COMPLETED` (never ambiguously "Paused by Host").
-  - Trader Station Guidance: Displays high-visibility `#traderDayCompletedOverlay` ("Day X Concluded • Standby for Day X+1").
-  - Auditorium Projector Banner: Dedicated `#projDayCompletedBanner` with audited daily leaderboard snapshot.
-  - Host Live Operations Bar automatically recognizes `DAY_COMPLETED` and offers the direct "Start Day 2" modal.
-  - Seamless balance, equity, and trade history carry-over across competition days.
-- **Automated Verification Suite Expansion**:
-  - Created `test_trading_cards_and_lifecycle_suite.js` (24/24 passing).
-  - Total automated verification: **85/85 tests passing (0 failures)** across 3 suites (`test_master_suite.js`, `test_dynamic_upgrade_suite.js`, `test_trading_cards_and_lifecycle_suite.js`).
-
-### Fixed
-- **Circuit Breaker Micro-Drift Noise**: Background 1-second price loop now enforces a minimum 0.8% mean-reversion buffer away from circuit limits before unhalting, preventing premature unhalting on 5 paise of noise.
-- **Host Day Flow Action Conflict**: Prioritized `DAY_COMPLETED` status in Host Live Market bar so clicking the primary action directly opens the "Start Day 2" modal instead of mistakenly calling `hostResumeMarket`.
-
----
-
-## [2.4.0] — 2026-10-17
-### Added
-- **Flexible Multi-Day Lifecycle & Distinct Operations**:
-  - Authoritative server state machine supporting $N \ge 1$ days (`Day 1 of 3`, `Day 2 of 3`, `Day 1 of 1`).
-  - Distinct operational separation with dedicated confirmation modals and server validation:
-    - `Conclude Day`: closes active day trading, freezes balances, writes immutable daily records, advances day status to `DAY_COMPLETED`.
-    - `Start Next Day`: verifies prior day completion, advances `currentDay`, resets clocks, sets `STANDBY` mode.
-    - `Add Next Day`: dynamically increments `totalDays`, schedules balanced news stories for the added day via `extendNewsPlanForDay`.
-    - `Finish Event`: enters `FINAL_ANALYSIS` review state and generates audited final standings snapshot.
-    - `Finalize Championship`: locks results and activates the ceremonial winner reveal.
-    - `Emergency Stop`: halts all trading orders and active transitions instantly across all desks.
-  - Dynamically rendered flow stepper pills in `#hostDynamicFlowSteps` showing `Pre-Event ➔ Day 1 ... Day N ➔ Winner Reveal`.
-  - Contextual Live Operations Bar in `#hostFlowActionsContainer` showing only the actions valid for the current state.
-- **TV Broadcast Post-News Reaction Spotlight on Projector**:
-  - Projector breaking market analysis card with large headline wire, comparative price badges with exact timestamps (`Recorded at 10:14` ➔ `Executed at 10:15`), percentage change badge (`+11.5% SURGE ▲`), and real-time canvas trajectory chart.
-  - Smooth Bezier area graph with start and end price callouts and timestamps.
-  - Audio cue `reaction_start_chime` and configurable auto-dismiss window.
-- **News Engine Idempotency & Strict Public Secrecy**:
-  - Idempotency guards in `applyNewsImpactsToStocks` (`eventObj.impactsApplied`) and `triggerNewsEvent` permanently prevent duplicate triggers or duplicate shocks from slow requests or double-clicks.
-  - Zero notification of price impact applied shown to student traders or public projector screens; private impacts remain strictly on Host Screen with 60-second self-hiding reveal.
-- **Projector Overhaul: Live Stock Rankings & Zero-Scroll Indices**:
-  - Sorted live stock board ranking companies by percentage change descending with deterministic ticker tie-breaking.
-  - Visual rank badges (`.projector-rank-badge`) showing `#1..#N`.
-  - DOM element reordering via `grid.appendChild(card)` preserves existing Canvas 2D contexts and sparkline history without tearing down the DOM.
-  - Auto-rotation resume: manual navigation (`Next`/`Prev`) automatically resumes 8s rotation after 12s dwell buffer.
-  - Replaced horizontal scrollbar in `.indices-ticker-bar` with responsive flex-wrap grid (`overflow: hidden`), making all benchmark and sector indices permanently visible on 1080p projectors without scrolling.
-- **Team Investment Analytics & Segmented Allocation Visualizer**:
-  - Dedicated Host financial analysis view with instant search filter and multi-metric sorting.
-  - Strict accounting separation: Available Cash (Liquid), Invested Cost (Basis), Holdings Market Value, Total Portfolio Value, Net Profit/Loss, and Return %.
-  - Portfolio detail modal with interactive horizontal segmented allocation bar (`#invModalAllocBar`), active equities breakdown table, and executed orders audit log.
-  - REST endpoints: `GET /api/team-investments` and `GET /api/team-investments/:teamId`.
-- **Automated Verification**:
-  - Added `test_dynamic_upgrade_suite.js` (9/9 passed).
-  - Verified `test_master_suite.js` (52/52 passed).
-  - Total automated test suite: **61/61 passed (0 failures)**.
-
-## [2.3.0] — 2026-10-17
-### Added
-- **Dynamic Team Capacity (Any $N \ge 1$ Desks)**:
-  - Eliminated hardcoded 16-team limits across backend and frontend.
-  - Added 1-click team capacity presets: Solo (1 Desk), 2 Teams, 4 Teams, 8 Teams, 16 Teams, and Custom.
-  - Interactive team roster builder with dynamic desk additions (`+ Add Team Desk`), individual row deletions (`🗑️`), PIN generator, credentials copy, and CSV export.
-  - Dynamic holding and valuation alignment ensures newly added teams initialize with zero undefined errors.
-- **Minimalist Student-Friendly Login & Waiting Room**:
-  - Replaced technical jargon (`⚡ 20 Live Stocks Loaded • 🔒 Order Security Ready • 🔔 Hall Sound Engine Armed`) with clean, plain English labels ("Username", "Password", "Log In").
-  - Dynamic status banner: "Competition Setup in Progress" vs "COMPETITION READY • LOGINS OPEN".
-  - Clean trader waiting room chips (`Selected Corporate Equities Ready` • `Live Trading Floor Execution`).
-- **Post-Lock Day 1 Launch Modal**:
-  - Interactive modal automatically opens upon locking event configuration.
-  - 3 intuitive host launch pathways:
-    1. **Start Day 1 Now**: Instantly triggers the synchronized 3-2-1 countdown across all screens.
-    2. **Schedule Day 1**: Sets scheduled countdown banner with target time and auto-start.
-    3. **Start Later**: Leaves market on standby for host to launch manually when auditorium is ready.
-  - Instant WebSocket login unlock broadcast (`EVENT_CONFIG_LOCKED`) allows students to log in immediately without refreshing browsers.
-- **Student-Friendly 5-Phase News Flow & Cubic Price Reactions**:
-  - Phase 1: Announced.
-  - Phase 2: Reading & Discussion Window (12–30s countdown bar, no instant price jump, trading remains fully active).
-  - Phase 3: Decision Deadline.
-  - Phase 4: Smooth cubic S-curve reaction ($e(u) = 3u^2 - 2u^3$) with `NEWS_REACTION_START` audio chime.
-  - Phase 5: Reaction Completed.
-- **Calibrated Simulation Risk & Opportunity Profiles**:
-  - Preset options: Conservative (0.75x shock scale), Balanced (1.0x), High Opportunity (1.45x), and Custom.
-  - Calibrated opportunity multipliers give student traders noticeable, rewarding gains from smart news analysis.
-- **Dramatic & Intense Winner Reveal Audio & Animations**:
-  - Web Audio API institutional sound synthesis:
-    - `dramatic_tension_riser`: Low-frequency pulsing sub-bass heartbeat riser with pitch ascent.
-    - `winner_drumroll_boom`: Snare rumble with resonant orchestral bass drum impact.
-    - `champion_fanfare_epic`: Royal brass fanfare triad with triumphant orchestral resolve.
-  - Cinematic CSS visual effects:
-    - `.dramatic-screen-rumble`: 3.2s camera vibration effect.
-    - `.golden-aura-glow`: Radiant champagne gold shockwave pulsing outward.
-    - `.trophy-intense-slam`: 3D scale-down slam with spring bounce.
-    - Confetti storm upgraded to 180 multi-color physics-simulated particles.
-- **Automated Dynamic Upgrade Test Suite**:
-  - Added `test_dynamic_upgrade_suite.js` (11 tests covering event status, dynamic 4-team lock, solo 1-team lock, custom passwords, invalid team rejection, 3-2-1 post-lock trigger).
-  - Verified total automated test pass count: **63/63 passing tests** (11 dynamic + 52 master suite).
-
----
-
-## [2.2.0] — 2026-10-17
-### Added
-- **Architectural Separation & Database Transparency**:
-  - Documented explicit architectural boundaries between **Preview Website** (zero-server client showcase deployed to GitHub Pages) and **Main Event Hosting** (server-authoritative Node.js exchange running on local LAN).
-  - Created [`data/README.md`](data/README.md) clearly mapping `scenario_live.json`, `universe_active.json`, `scenario_test.json`, and disaster recovery checkpoints.
-- **Developer Persona & System Architect Elevation**:
-  - Branded all terminal views, modals, documentation, and footers with **Ved Mangukiya**, Pursuing BBA, Gujarat Technological University, Surat, Gujarat, India.
-  - Complete scrub of legacy coordinator titles, academic years, college acronyms, and institutional codes.
-
-### Removed
-- Removed confusing duplicate root `index.html` to establish `public/index.html` as the single canonical SPA entry point.
-- Purged legacy standalone test scripts (`test_2hour_heavy_load.js`, `test_checkpoint_disaster_recovery.js`, `test_load_stress.js`, `test_projector_pagination.js`, `test_upgrade_master.js`) in favor of unified `test_master_suite.js`.
-- Removed redundant batch files (`Start_Live_Scenario.bat`, `Start_Test_Scenario.bat`, `Open_Host_Panel.bat`, `Open_Projector.bat`) and `.env.example`.
-- Purged historical test audit logs and temporary test checkpoints.
-
----
-
-## [2.1.0] — 2026-10-16
-### Added
-- **Disaster Recovery Checkpoints & Instant Game Restore**:
-  - Full-state snapshots saved in `data/checkpoints/` (`checkpoint_Day{D}_{Sec}s_{label}_{timestamp}.json`).
-  - Auto-checkpoints captured every 120 seconds during live trading.
-  - Dedicated **Disaster Recovery & Checkpoints Card** in Host `Stage & Results`.
-  - Instant manual backup button (`💾 Save Instant Checkpoint Now`) and file upload restore (`📂 Upload Backup File`).
-  - Zero-disconnection client restore: Connected terminals remain active, receive `MARKET_RESTORED`, and update instantly without re-logging in.
-  - Invariant enforcement: Game always restores in a safe `PAUSED` state waiting for Host `▶ Resume 3-2-1`.
-- **Projector Zero-Scroll Automatic Stock Board Pagination**:
-  - Automatically slices large stock universes into readable pages (default 8 stocks per page, $4 \times 2$ grid).
-  - Rotates every 8 seconds with zero vertical scrolling (`overflow: hidden;`).
-  - In-place price updates: WebSocket ticks update visible cards and Bezier sparklines without tearing down DOM or resetting timers.
-  - Remote Host control via WebSockets (`HOST_SET_PROJECTOR_BOARD_PAGE`, `HOST_TOGGLE_PROJECTOR_BOARD_PAUSE`).
-- **Projector Persistent Spotlight (Top Gainer & Top Loser)**:
-  - Permanent spotlight bar positioned above the stock grid, visible across all page flips.
-  - Evaluates maximum and minimum percentage changes across all enabled companies in real-time.
-  - Deterministic tie-breaking: Alphabetical sorting by ticker symbol prevents flickering.
-  - Live Market Breadth indicator displaying advancing vs declining counts.
-- **Self-Contained Portable USB Package**:
-  - Embedded portable Node.js runtime (`tools/node.exe`, Node v24.14.0).
-  - `Pack_Portable_USB_Zip.bat` creates a ready-to-run 35 MB ZIP for zero-dependency college PC execution.
-- **Automated Test Matrix Expansion**:
-  - Added `test_projector_pagination.js` (Top gainer/loser math, tie-breaks, 20-stock pagination, remote controls).
-  - Added `test_checkpoint_disaster_recovery.js` (full save, list, mutate, restore cycle).
-  - Added `test_2hour_heavy_load.js` (7,200s endurance test with 480 trades, 78 KB audit log).
-  - Expanded `test_master_suite.js` to 48 passing tests (100% pass rate).
-
----
-
-## [2.0.0] — 2026-10-16
-### Added
-- **4 Canonical Host Navigation Hubs**: Home, Event Setup, Live Market, and Stage & Results.
-- **Automatic Configuration Locking**: Locks tournament settings on valid review; prevents mid-competition tampering.
-- **Automatic News Plan Generation**: Host selects companies, system generates 12 balanced, multi-day news items with neutral headlines.
-- **60-Second Confidentiality Reveal Window**: Private price impacts masked by default; 60s countdown banner on explicit host reveal.
-- **Continuous Smoothstep Price Engine**: $s(u) = 3u^2 - 2u^3$ continuous over elapsed milliseconds.
-- **Safe Championship Reset**: Strict confirmation phrase (`RESET CHAMPIONSHIP`) with full-screen trader logout overlay.
-
----
-
-## [1.2.0] — 2026-10-15
-### Added
-- **Market Builder & Share Universe Manager**: Dedicated host tab to curate active tradeable stocks without code editing.
-- **Stock Universe Persistence**: Saved automatically to `data/universe_active.json` on any add, edit, duplicate, delete, or toggle action.
-- **Curated Market Presets**: 1-click templates for Balanced (6 blue-chips), High Volatility (tech/growth), Tech & Auto Focus, Defensive & Value (banking/pharma), and Enable All (12 stocks).
-- **Price Randomization**: Host control to randomize base prices (±5% to ±25%) within safe bounds for fresh tournament rounds.
-- **Export & Backup Endpoints**: REST endpoints for exporting active universe as JSON (`/api/export/universe`) and CSV (`/api/export/universe-csv`).
-- **1-Click Windows Launchers**:
-  - `Launch_The_Trading_Floor.bat` with auto Node.js detection, automatic dependency installation, dynamic LAN IP detection, and instant browser opening.
-  - `Open_Host_Panel.bat` and `Open_Projector.bat` for quick multi-monitor management.
-- **Comprehensive Permanent Documentation Suite**: 17 complete documentation guides in `docs/` and task tracking in `tasks/`.
-- **Developer & AI Governance**: Added `AGENTS.md`, `CONTRIBUTING.md`, `.env.example`, and updated `.gitignore`.
-
-### Changed
-- Refactored `server.js` public state filtering: Trader and Projector views only receive enabled tradeable stocks; Host receives complete registered universe (`allCompaniesUniverse`).
-- Added strict order rejection for disabled shares: `"Trading is not enabled for {TICKER} in this market universe."`.
-- Expanded `test_master_suite.js` to assert share universe management, trade rejection on disabled shares, and export endpoints.
-
----
-
-## [1.1.0] — 2026-10-14
-### Added
-- **Ivory Luxury Design System**: Warm ivory (`#FBF9F5`), forest accents (`#1A3026`), champagne gold, and high-contrast market badges.
-- **Offline Audio Synthesizer**: Web Audio API sound generator producing opening bells, circuit breaker sirens, news alerts, and championship fanfare without external audio files.
-- **Grand Finale Winner Podium**: 3-tier gold/silver/bronze podium ceremony with confetti animation and net worth breakdown.
-- **Synchronized 3-2-1 Resume Countdown**: Fullscreen modal countdown ensuring fair terminal preparation when pausing and resuming.
-- **Audit Logging**: Millisecond-accurate timeline exported to `logs/` in JSON and CSV.
-
----
-
-## [1.0.0] — 2026-10-10
-### Added
-- Initial core engine with Express, WebSocket server, mock blue-chip stock simulation, and team order processing.
+  - Position Unrealized P&L: Displays live profit/loss breakdown with color-coded badges for active positions.

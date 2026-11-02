@@ -1,6 +1,6 @@
 # THE TRADING FLOOR — DATABASE ARCHITECTURE & STATE PERSISTENCE
 
-This directory (`data/`) contains the authoritative JSON datasets, schemas, and live persistence states for **The Trading Floor Championship 2026**.
+This directory (`data/`) contains the authoritative JSON datasets, schemas, and live persistence states for **The Trading Floor Championship**.
 
 ---
 

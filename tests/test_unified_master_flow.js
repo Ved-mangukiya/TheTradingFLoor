@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP
  * UNIFIED SINGLE-FLOW MASTER VERIFICATION SUITE (test_unified_master_flow.js)
  *
  * Executes all 11 lifecycle phases in a single chronological state-machine flow
@@ -186,7 +186,7 @@ async function runUnifiedMasterFlow() {
     pass('Trader login strictly blocked before Host locks event configuration');
 
     // 2.3 Valid Host Login & Private Parameter Visibility
-    const hostLogin = await sendAndAwait(wsHost, { action: 'LOGIN', username: 'host', password: 'host2026' }, 'LOGIN_SUCCESS');
+    const hostLogin = await sendAndAwait(wsHost, { action: 'LOGIN', username: 'host', password: 'host' }, 'LOGIN_SUCCESS');
     const hostToken = hostLogin.session_token;
     assert.strictEqual(hostLogin.role, 'HOST');
     assert.ok(hostToken, 'Expected host session token');
@@ -265,7 +265,7 @@ async function runUnifiedMasterFlow() {
     const lockRes = await sendAndAwait(wsHost, {
       action: 'HOST_SET_EVENT_LOCK',
       session_token: hostToken,
-      eventTitle: 'The Trading Floor Championship 2026',
+      eventTitle: 'The Trading Floor Championship',
       institution: 'Gujarat Technological University',
       startingCash: 500000,
       totalDays: 2,
@@ -324,8 +324,8 @@ async function runUnifiedMasterFlow() {
     // 3.2 Login Traders, Projector & Sound Console + Verify Security Stripping
     const t1Login = await sendAndAwait(wsTeam1, { action: 'LOGIN', username: 'team1', password: 'trade100' }, 'LOGIN_SUCCESS');
     const t2Login = await sendAndAwait(wsTeam2, { action: 'LOGIN', username: 'team2', password: 'trade200' }, 'LOGIN_SUCCESS');
-    const projLogin = await sendAndAwait(wsProj, { action: 'LOGIN', username: 'projector', password: 'screen2026' }, 'LOGIN_SUCCESS');
-    const soundLogin = await sendAndAwait(wsSound, { action: 'LOGIN', username: 'sound', password: 'sound2026' }, 'LOGIN_SUCCESS');
+    const projLogin = await sendAndAwait(wsProj, { action: 'LOGIN', username: 'projector', password: 'screen' }, 'LOGIN_SUCCESS');
+    const soundLogin = await sendAndAwait(wsSound, { action: 'LOGIN', username: 'sound', password: 'sound' }, 'LOGIN_SUCCESS');
 
     const t1Token = t1Login.session_token;
     const t2Token = t2Login.session_token;
@@ -842,7 +842,7 @@ async function runUnifiedMasterFlow() {
       action: 'HOST_INITIALIZE_NEW_CHAMPIONSHIP',
       session_token: hostToken,
       config: {
-        title: 'Fresh Tournament Beta 2026',
+        title: 'Fresh Tournament Beta',
         startingCash: 750000,
         totalDays: 2,
         dayDurationSeconds: 1200,
@@ -855,9 +855,9 @@ async function runUnifiedMasterFlow() {
 
     const wsProjReconn = await createTrackedWs();
     openSockets.push(wsProjReconn);
-    const reconnLogin = await sendAndAwait(wsProjReconn, { action: 'LOGIN', username: 'projector', password: 'screen2026' }, 'LOGIN_SUCCESS');
+    const reconnLogin = await sendAndAwait(wsProjReconn, { action: 'LOGIN', username: 'projector', password: 'screen' }, 'LOGIN_SUCCESS');
     const newGs = reconnLogin.initialState.gameState;
-    assert.strictEqual(newGs.title, 'Fresh Tournament Beta 2026');
+    assert.strictEqual(newGs.title, 'Fresh Tournament Beta');
     assert.strictEqual(newGs.currentDay, 1);
     assert.strictEqual(newGs.elapsedSeconds, 0);
     assert.notStrictEqual(newGs.eventId, initialEventId);

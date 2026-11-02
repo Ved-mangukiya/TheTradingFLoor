@@ -159,10 +159,10 @@ To permanently prevent stuck overlays and invisible blocking layers:
 
 1. **Permanent Product Brand**:
    - Always refer to the platform canonically as **The Trading Floor**.
-   - NEVER hardcode a specific year (e.g. "Championship 2026") into static logos, headings, or core templates.
+   - NEVER hardcode a specific year (e.g. "Championship Edition") into static logos, headings, or core templates.
 2. **Dynamic Event Titles**:
    - The active event title is dynamic: `gameState.title || 'The Trading Floor Championship'`.
-   - Host event configuration in Step 1 allows hosts to name their tournament for 2026, 2027, 2030, etc.
+   - Host event configuration in Step 1 allows hosts to name their tournament for any academic year or edition.
 3. **Dynamic Dates & Timers**:
    - Daily clocks and schedules calculate dynamically from `gameState.scheduledStartTime` and `gameState.elapsedSeconds`.
 4. **Dynamic Copyright**:

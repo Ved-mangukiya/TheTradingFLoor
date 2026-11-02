@@ -1,7 +1,7 @@
 # Intelligent Projector Presentation Cycle, Automatic Pagination & Winner Reveal
 
 ## 1. Overview
-The stage projector terminal (`/?role=projector&pass=screen2026`) is engineered specifically for large-screen auditorium displays (1920×1080 and 4K displays). It operates in pure offline-first mode over WebSockets, synchronized in real-time with the authoritative Node.js server.
+The stage projector terminal (`/?role=projector&pass=screen`) is engineered specifically for large-screen auditorium displays (1920×1080 and 4K displays). It operates in pure offline-first mode over WebSockets, synchronized in real-time with the authoritative Node.js server.
 
 ---
 

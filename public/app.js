@@ -2144,6 +2144,14 @@ function attachWebSocketEvents(onOpenHook) {
       return;
     }
 
+    if (msg.type === 'REAL_NEWS_UPDATE') {
+      cachedRealNewsData = msg;
+      if (typeof renderRealNewsFeed === 'function') {
+        renderRealNewsFeed(msg);
+      }
+      return;
+    }
+
     if (msg.type === 'NEWS_FLASH') {
       if (!isLoggedIn || currentRole === null) return;
       playInstitutionalSound('heavy_news_boom');
@@ -11654,6 +11662,167 @@ document.addEventListener('visibilitychange', () => {
 // ==========================================
 // NEWS CONTROL CENTRE (HOST CONTROLLERS)
 // ==========================================
+
+let currentHostNewsSubTab = 'scheduled';
+let cachedRealNewsData = null;
+
+function switchHostNewsTab(tab) {
+  currentHostNewsSubTab = tab;
+  const btnSched = document.getElementById('btnNewsTabScheduled');
+  const btnReal = document.getElementById('btnNewsTabReal');
+  const schedContainer = document.getElementById('hostScheduledNewsContainer');
+  const realContainer = document.getElementById('hostRealNewsContainer');
+  const syncBar = document.getElementById('realNewsSyncBar');
+
+  if (btnSched) btnSched.className = tab === 'scheduled' ? 'btn btn-sage' : 'btn btn-outline';
+  if (btnReal) btnReal.className = tab === 'real' ? 'btn btn-sage' : 'btn btn-outline';
+
+  if (tab === 'scheduled') {
+    if (schedContainer) schedContainer.classList.remove('hidden');
+    if (realContainer) realContainer.classList.add('hidden');
+    if (syncBar) syncBar.classList.add('hidden');
+  } else {
+    if (schedContainer) schedContainer.classList.add('hidden');
+    if (realContainer) realContainer.classList.remove('hidden');
+    if (syncBar) syncBar.classList.remove('hidden');
+    loadRealNewsFeed();
+  }
+}
+window.switchHostNewsTab = switchHostNewsTab;
+
+async function loadRealNewsFeed(forceRefresh = false) {
+  const container = document.getElementById('hostRealNewsList');
+  const badgeEl = document.getElementById('realNewsFeedBadge');
+  if (badgeEl) badgeEl.textContent = '📡 Contacting Financial News Wire...';
+
+  try {
+    const url = forceRefresh ? '/api/real-news/sync' : '/api/real-news';
+    const method = forceRefresh ? 'POST' : 'GET';
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: forceRefresh ? JSON.stringify({ session_token: sessionToken }) : undefined
+    });
+    const data = await res.json();
+    cachedRealNewsData = data;
+    renderRealNewsFeed(data);
+  } catch (err) {
+    if (container) {
+      container.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--price-down);">Error fetching live news feed: ' + escapeHtml(err.message) + '</div>';
+    }
+  }
+}
+window.loadRealNewsFeed = loadRealNewsFeed;
+
+function renderRealNewsFeed(data) {
+  const container = document.getElementById('hostRealNewsList');
+  const badgeEl = document.getElementById('realNewsFeedBadge');
+  if (!data || !container) return;
+
+  const articles = data.articles || [];
+  const isOnline = data.isOnline !== false;
+  const isCached = !!data.isOfflineCached;
+  const lastSync = data.lastSyncFormatted || (data.cachedAt ? new Date(data.cachedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : 'Active');
+
+  if (badgeEl) {
+    badgeEl.className = isCached ? 'badge badge-champagne' : 'badge badge-active';
+    badgeEl.innerHTML = isCached
+      ? '💾 Cached Feed (' + (data.cacheAgeFormatted || 'Offline Mode') + ' • ' + articles.length + ' stories)'
+      : '🟢 Live Feed (' + lastSync + ' • ' + articles.length + ' stories)';
+  }
+
+  if (articles.length === 0) {
+    container.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No real-world financial articles found. Click "Sync Live News Now" to pull latest headlines.</div>';
+    return;
+  }
+
+  container.innerHTML = articles.map((a) => {
+    const isBull = a.sentiment === 'BULLISH';
+    const isBear = a.sentiment === 'BEARISH';
+    const sentColor = isBull ? 'var(--price-up)' : (isBear ? 'var(--price-down)' : '#6B7280');
+    const sentBg = isBull ? 'rgba(33, 134, 83, 0.1)' : (isBear ? 'rgba(220, 38, 38, 0.1)' : 'rgba(107, 114, 128, 0.1)');
+    const sentBorder = isBull ? 'rgba(33, 134, 83, 0.25)' : (isBear ? 'rgba(220, 38, 38, 0.25)' : 'rgba(107, 114, 128, 0.25)');
+    const target = a.matchedTicker || 'Broad Market';
+    const pubTime = a.publishedAtFormatted || (a.publishedAt ? new Date(a.publishedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');
+
+    return `
+      <div class="cream-panel" style="padding: 16px; border: 1px solid var(--champagne-accent); display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">${escapeHtml(a.source || 'Financial Wire')}</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">${pubTime}</span>
+            </div>
+            <span class="badge" style="background: ${sentBg}; color: ${sentColor}; border: 1px solid ${sentBorder}; font-weight: 800; font-size: 10px;">
+              ${isBull ? '▲ BULLISH' : (isBear ? '▼ BEARISH' : '● NEUTRAL')}
+            </span>
+          </div>
+
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--text-forest); margin: 0 0 8px 0; line-height: 1.35;">
+            ${escapeHtml(a.title)}
+          </h4>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;">
+            ${escapeHtml(a.snippet || a.summary || '')}
+          </p>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <span style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Mapped Target:</span>
+            <span class="stock-ticker-pill" style="font-size: 11px;">${escapeHtml(target)}</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px;">
+          <a href="${escapeHtml(a.url || '#')}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px; text-decoration: none;">
+            🔗 View Source
+          </a>
+          <button type="button" onclick="broadcastRealNewsArticle('${escapeHtml(a.id)}')" class="btn btn-primary" style="font-size: 11px; padding: 5px 12px;">
+            ⚡ Broadcast to Floor
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderRealNewsFeed = renderRealNewsFeed;
+
+function syncRealNewsNow() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    loadRealNewsFeed(true);
+    return;
+  }
+  showOrderToast('🔄 Syncing live financial news from market feeds...', true);
+  ws.send(JSON.stringify({
+    action: 'HOST_SYNC_REAL_NEWS',
+    session_token: sessionToken
+  }));
+}
+window.syncRealNewsNow = syncRealNewsNow;
+
+function broadcastRealNewsArticle(articleId) {
+  if (!ws || !sessionToken) return;
+  const articles = (cachedRealNewsData && cachedRealNewsData.articles) || [];
+  const article = articles.find((a) => a.id === articleId);
+  if (!article) return;
+
+  const ticker = article.matchedTicker || 'RELIANCE';
+  const defaultShock = article.sentiment === 'BEARISH' ? -4.5 : 5.0;
+  const promptShock = prompt('Broadcast "' + article.title.slice(0, 40) + '..." as Breaking News Flash?\n\nEnter target price shock % for ' + ticker + ':', defaultShock);
+  if (promptShock === null) return;
+  const shockPct = parseFloat(promptShock) || defaultShock;
+
+  ws.send(JSON.stringify({
+    action: 'HOST_BROADCAST_REAL_NEWS',
+    session_token: sessionToken,
+    articleId,
+    article,
+    targetTicker: ticker,
+    shockPct,
+    durationSec: 45
+  }));
+  showOrderToast('⚡ Broadcasting real-world story to floor! Impacting ' + ticker + ' by ' + (shockPct > 0 ? '+' : '') + shockPct + '%', true);
+}
+window.broadcastRealNewsArticle = broadcastRealNewsArticle;
+
 let currentHostNewsDayFilter = 'ALL';
 let hostNewsLiveTickerHandle = null;
 
@@ -11768,9 +11937,13 @@ function updateHostNewsLiveTimers(state) {
 
     if (upcoming) {
       const rem = Math.max(0, (upcoming.trigger_second || 0) - elapsed);
-      if (gs.status === 'PAUSED') {
+      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING' || (!gs.isPaused && elapsed > 0)) && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isCountdown = gs.status === 'COUNTDOWN' || (gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'VISIBLE_FROZEN' || gs.pauseMode === 'EMERGENCY_HALT') && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+
+      if (isActuallyPaused) {
         bannerEl.innerHTML = `<span style="color:#B45309;">⏸️ Market Paused:</span> <span style="color:var(--text-forest); font-weight:700;">${escapeHtml(upcoming.headline.slice(0, 50))}...</span> (<strong style="color:var(--text-forest);">${formatMMSS(rem)}</strong> remaining after resume)`;
-      } else if (gs.status === 'COUNTDOWN') {
+      } else if (isCountdown) {
         bannerEl.innerHTML = `<span style="color:var(--price-up);">🔔 Market Starting:</span> <span style="color:var(--text-forest); font-weight:700;">${escapeHtml(upcoming.headline.slice(0, 50))}...</span> triggers at <strong>${formatMMSS(upcoming.trigger_second || 0)}</strong>`;
       } else if (gs.status === 'STANDBY') {
         bannerEl.innerHTML = `<span style="color:var(--text-forest);">⏳ Day ${currentDay} Standby:</span> First news wire <span style="color:var(--price-up); font-weight:700;">⚡ ${escapeHtml(upcoming.headline.slice(0, 50))}...</span> scheduled at <strong>${formatMMSS(upcoming.trigger_second || 0)}</strong> (starts on market open)`;
@@ -11813,7 +11986,11 @@ function updateHostNewsLiveTimers(state) {
       badgeEl.innerHTML = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(ev.trigger_second || 0)}</span>`;
     } else {
       const remSec = Math.max(0, (ev.trigger_second || 0) - elapsed);
-      if (gs.status === 'RUNNING' || gs.status === 'LIVE') {
+      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING' || (!gs.isPaused && elapsed > 0)) && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isCountdown = gs.status === 'COUNTDOWN' || (gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'VISIBLE_FROZEN' || gs.pauseMode === 'EMERGENCY_HALT') && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+
+      if (isLive) {
         if (remSec === 0) {
           badgeEl.innerHTML = `<span class="badge" style="background:#DCFCE7; color:#166534; font-weight:800;">⚡ TRIGGERING NOW...</span>`;
         } else if (remSec <= 60) {
@@ -11821,9 +11998,9 @@ function updateHostNewsLiveTimers(state) {
         } else {
           badgeEl.innerHTML = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ Triggers in ${formatMMSS(remSec)}</span>`;
         }
-      } else if (gs.status === 'COUNTDOWN') {
+      } else if (isCountdown) {
         badgeEl.innerHTML = `<span class="badge badge-active" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC; font-weight:800; animation: pulse 1s infinite;">🔔 STARTING (3-2-1)...</span>`;
-      } else if (gs.status === 'PAUSED') {
+      } else if (isActuallyPaused) {
         badgeEl.innerHTML = `<span class="badge badge-paused">⏸️ PAUSED (${formatMMSS(remSec)} rem)</span>`;
       } else if (gs.status === 'STANDBY') {
         badgeEl.innerHTML = `<span class="badge badge-champagne" style="font-weight:700;">⏳ AT ${formatMMSS(ev.trigger_second || 0)} (Day ${evDay})</span>`;
@@ -11873,7 +12050,11 @@ function renderHostNews(state) {
       initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(triggerSec)}</span>`;
     } else {
       const gsStatus = (state.gameState && state.gameState.status) || 'STANDBY';
-      if (gsStatus === 'LIVE' || gsStatus === 'RUNNING') {
+      const isLive = (gsStatus === 'LIVE' || gsStatus === 'RUNNING' || (state.gameState && !state.gameState.isPaused && elapsedSec > 0)) && gsStatus !== 'STANDBY' && gsStatus !== 'SETUP' && gsStatus !== 'RESET';
+      const isCountdown = gsStatus === 'COUNTDOWN' || (state.gameState && state.gameState.activeCountdown && (state.gameState.activeCountdown.type === 'RESUME' || state.gameState.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gsStatus === 'PAUSED' || (state.gameState && (state.gameState.pauseMode === 'BLACKOUT' || state.gameState.pauseMode === 'VISIBLE_FROZEN' || state.gameState.pauseMode === 'EMERGENCY_HALT'))) && gsStatus !== 'STANDBY' && gsStatus !== 'SETUP' && gsStatus !== 'RESET';
+
+      if (isLive) {
         const estTimeStr = ev.estimatedWallClock || (remSec > 0 ? new Date(Date.now() + remSec * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');
         if (remSec === 0) {
           initialBadge = `<span class="badge" style="background:#DCFCE7; color:#166534; font-weight:800;">⚡ TRIGGERING NOW...</span>`;
@@ -11882,9 +12063,9 @@ function renderHostNews(state) {
         } else {
           initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">⏱️ Triggers in ${formatMMSS(remSec)}</span>`;
         }
-      } else if (gsStatus === 'COUNTDOWN') {
+      } else if (isCountdown) {
         initialBadge = `<span class="badge badge-active" style="background:#DCFCE7; color:#166534; border:1px solid #86EFAC; font-weight:800; animation: pulse 1s infinite;">🔔 STARTING (3-2-1)...</span>`;
-      } else if (gsStatus === 'PAUSED') {
+      } else if (isActuallyPaused) {
         initialBadge = `<span class="badge badge-paused">⏸️ PAUSED (${formatMMSS(remSec)} rem)</span>`;
       } else if (gsStatus === 'STANDBY') {
         initialBadge = `<span class="badge badge-champagne" style="font-weight:700;">⏳ AT ${formatMMSS(triggerSec)} (Day ${evDay})</span>`;

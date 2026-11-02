@@ -1,4 +1,4 @@
-# DEVELOPMENT & OPERATIONAL TOOLS — THE TRADING FLOOR CHAMPIONSHIP 2026
+# DEVELOPMENT & OPERATIONAL TOOLS — THE TRADING FLOOR CHAMPIONSHIP
 
 This guide covers the system requirements, development tools, browser support, and testing utilities.
 

@@ -1,4 +1,4 @@
-# KNOWN ISSUES & SYSTEM BOUNDARIES — THE TRADING FLOOR CHAMPIONSHIP 2026
+# KNOWN ISSUES & SYSTEM BOUNDARIES — THE TRADING FLOOR CHAMPIONSHIP
 
 This document honestly outlines verified system boundaries, operational limitations, and documented workarounds.
 

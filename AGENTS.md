@@ -18,20 +18,21 @@
 
 2. **Inspect the Real Working Code**:
    - Never assume previous sessions finished or left tasks in a working state without checking the actual filesystem.
-   - Inspect `server.js`, `public/index.html`, `public/app.js`, and `data/` before proposing or generating changes.
+   - Inspect `server.js`, `server/real_news_feed.js`, `server/state_machine.js`, `public/index.html`, `public/app.js`, and `data/` before proposing or generating changes.
 
 3. **Preserve Established Working Invariants**:
-   - **Offline-First Zero-CDN Invariant**: Local college LAN events often run with zero internet connection. All styling, SVG icons, fonts, and the Web Audio API institutional sound synthesizer MUST operate locally without remote CDN script or link tags.
+   - **Offline-First Zero-CDN Invariant**: Local college LAN events run with zero internet connection. All styling, SVG icons, fonts, and the Web Audio API institutional sound synthesizer MUST operate locally without remote CDN script or link tags.
    - **Authoritative Server Math**: All prices, orders, cash deductions, fee calculations, holdings, circuit breaker halts, and rankings are calculated and enforced strictly on the Node.js server. The client is a reactive view only.
    - **Rate Limiting & Anti-Spam**: A 200ms debounce per team session prevents double-click spam.
    - **Formula Injection Protection**: In all CSV exports, any value starting with `=`, `+`, `-`, or `@` is prepended with `'` to prevent spreadsheet formula execution.
+   - **Timelessness Invariant**: Never hardcode specific calendar years into UI headers, footers, documentation titles, or terminal outputs. The software must remain timeless across all academic years.
 
 ---
 
 ## 2. STRICT OPERATIONAL RULES FOR AI AGENTS
 
 1. **Never Claim a Feature Works Without Testing It**:
-   - You MUST run `npm test` (or `node tests/test_unified_master_flow.js`) and `node -c` to verify changes.
+   - You MUST run `npm test` and `npm run test:all` (195 verified assertions) and `node -c` to verify changes.
    - Never report tests or features as "passing" or "complete" without executing them in the terminal.
 
 2. **No Unnecessary Rewrites or Duplications**:
@@ -55,10 +56,11 @@
 3. **Disaster Recovery & Safe Checkpoint Restoring**: State restorations (crash recovery or manual checkpoint restore) MUST ALWAYS initialize `gameState.isPaused = true` so the market waits safely for the Host to hit `▶ Resume 3-2-1`.
 4. **Projector Zero-Scroll Pagination**: The stock board divides into readable pages (default 8 per page, $4 \times 2$ grid) rotating every 8s. Cards on the active page update in-place without resetting rotation timers. Top Gainer and Top Loser spotlight cards evaluate across all active companies and stay permanently visible.
 5. **News Secrecy & 60-Second Reveal**: News impacts are masked by default (`[🔒 Private Price Impact Details Hidden]`). When revealed by the host, they automatically hide after 60s or upon tab navigation. Trader and projector terminals NEVER receive private impact percentages.
-6. **Rate Limiting & Anti-Spam**: A 200ms debounce per team session prevents double-click spam.
-7. **Formula Injection Protection**: In all CSV exports, any value starting with `=`, `+`, `-`, or `@` is prepended with `'` to prevent spreadsheet formula execution.
-8. **Directional Circuit Breakers & Stock Isolation**: Upper circuit (+20%) restricts BUY and permits SELL; Lower circuit (-20%) restricts SELL and permits BUY; counter-directional order flow injects recovery liquidity; background price loop requires 0.8% buffer before mean-reversion unhalt. A stock-level halt NEVER freezes the wider market.
-9. **Explicit Day State Machine**: Day conclusion sets `status = 'DAY_COMPLETED'`, shows `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily snapshot, and never displays ambiguous "Paused by Host" banners. Balances and holdings carry over into subsequent days.
+6. **Real-World Live News Integrity**: Real news feeds preserve authentic publishers, timestamps, and article URLs. When offline, disk cache `data/real_news_cache.json` is served with transparent cache age, never fabricating mock timestamps.
+7. **Rate Limiting & Anti-Spam**: A 200ms debounce per team session prevents double-click spam.
+8. **Formula Injection Protection**: In all CSV exports, any value starting with `=`, `+`, `-`, or `@` is prepended with `'` to prevent spreadsheet formula execution.
+9. **Directional Circuit Breakers & Stock Isolation**: Upper circuit (+20%) restricts BUY and permits SELL; Lower circuit (-20%) restricts SELL and permits BUY; counter-directional order flow injects recovery liquidity; background price loop requires 0.8% buffer before mean-reversion unhalt. A stock-level halt NEVER freezes the wider market.
+10. **Explicit Day State Machine**: Day conclusion sets `status = 'DAY_COMPLETED'`, shows `#traderDayCompletedOverlay` and `#projDayCompletedBanner` with audited daily snapshot, and never displays ambiguous "Paused by Host" banners. Balances and holdings carry over into subsequent days.
 
 ---
 
@@ -68,4 +70,4 @@
 - **Enabled Stocks Filtering**: Traders and projectors only receive stocks where `isEnabled !== false`. Hosts receive `allCompaniesUniverse` so they can manage disabled/excluded stocks.
 - **Projector DOM Stability**: Do NOT rebuild projector card DOM nodes on every tick. Rebuilding destroys canvas contexts and causes visual flickering. Only rebuild when the page flips or when active tickers change.
 - **Batch Files & Non-Technical Users**: The primary users are college professors, organizers, and student coordinators. Launchers (`Launch_The_Trading_Floor.bat`) must provide clear, human-readable terminal output, auto-detect `%~dp0tools\node.exe`, and support zero-config startup.
-- **Full Verification Before Commits**: Always run `npm run test:all` (or `npm test`) to ensure all 85 test scenarios pass before reporting work as complete.
+- **Full Verification Before Commits**: Always run `npm run test:all` (or `npm test`) to ensure all 195 test assertions across the 4 suites pass before reporting work as complete.

@@ -1,5 +1,5 @@
 /**
- * THE TRADING FLOOR CHAMPIONSHIP 2026
+ * THE TRADING FLOOR CHAMPIONSHIP
  * CHUNK 2 STATE MACHINE & INVARIANTS VERIFICATION SUITE (test_chunk2_state_machine.js)
  *
  * Verifies the 5 authoritative state machine and monotonic versioning tests:
@@ -143,14 +143,14 @@ async function runChunk2Tests() {
 
     const wsHost = await createTrackedWs();
     openSockets.push(wsHost);
-    const hostLogin = await sendAndAwait(wsHost, { action: 'LOGIN', username: 'host', password: 'host2026' }, 'LOGIN_SUCCESS');
+    const hostLogin = await sendAndAwait(wsHost, { action: 'LOGIN', username: 'host', password: 'host' }, 'LOGIN_SUCCESS');
     const hostToken = hostLogin.session_token;
 
     // Lock setup for Day 1
     await sendAndAwait(wsHost, {
       action: 'HOST_SET_EVENT_LOCK',
       session_token: hostToken,
-      title: 'State Machine Certification 2026',
+      title: 'State Machine Certification',
       startingCash: 500000,
       totalDays: 2,
       dayDurationSeconds: 1800,
@@ -258,7 +258,7 @@ async function runChunk2Tests() {
       action: 'HOST_INITIALIZE_NEW_CHAMPIONSHIP',
       session_token: hostToken,
       config: {
-        title: 'Fresh Post-Reset Championship 2026',
+        title: 'Fresh Post-Reset Championship',
         startingCash: 600000,
         totalDays: 2,
         dayDurationSeconds: 1200

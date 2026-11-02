@@ -1,4 +1,4 @@
-# RESEARCH LOG & TECHNICAL REFERENCES — THE TRADING FLOOR CHAMPIONSHIP 2026
+# RESEARCH LOG & TECHNICAL REFERENCES — THE TRADING FLOOR CHAMPIONSHIP
 
 This document records the mathematical models, institutional financial standards, and technical references integrated into The Trading Floor Championship.
 

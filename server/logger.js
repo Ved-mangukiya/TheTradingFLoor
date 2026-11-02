@@ -77,3 +77,4 @@ module.exports = {
   error: (badge, whatHappened, actionNeeded = null, err = null) => logTerminal('ERROR', badge, whatHappened, actionNeeded, err),
   writeDebugFile
 };
+
