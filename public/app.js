@@ -2470,6 +2470,7 @@ function attachWebSocketEvents(onOpenHook) {
     }
 
     if (msg.type === 'CHAMPIONSHIP_RESET') {
+      window.podiumDismissedByUser = false;
       playInstitutionalSound('bell_close');
       cancelAuthoritativeCountdown();
       // Safely close all active dialogs & modals across desks
@@ -2587,6 +2588,7 @@ function attachWebSocketEvents(onOpenHook) {
     }
 
     if (msg.type === 'CHAMPIONSHIP_CONCLUDED') {
+      window.podiumDismissedByUser = false;
       releaseActionLockById('btnMarketCloseSession');
       releaseActionLockById('btnConfirmFinishEvent');
       playInstitutionalSound('championship_fanfare');
@@ -2595,7 +2597,9 @@ function attachWebSocketEvents(onOpenHook) {
     }
 
     if (msg.type === 'PODIUM_DISMISSED') {
-      document.getElementById('winnerPodiumModal').classList.add('hidden');
+      window.podiumDismissedByUser = true;
+      const modal = document.getElementById('winnerPodiumModal');
+      if (modal) modal.classList.add('hidden');
       return;
     }
 
@@ -2849,6 +2853,11 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
 window.addEventListener('keydown', (e) => {
   // ESC key handler
   if (e.key === 'Escape') {
+    const podiumModal = document.getElementById('winnerPodiumModal');
+    if (podiumModal && !podiumModal.classList.contains('hidden')) {
+      dismissPodiumCeremony();
+      return;
+    }
     if (currentTradeModalTicker) {
       closeTradeModal();
       return;
@@ -3160,8 +3169,9 @@ function handleStateUpdate(state) {
   // Deterministic Role Overlay Resolution (FLOW-001)
   syncRoleOverlays(currentRole, state.gameState);
 
-  // Check if championship concluded and show podium
-  if (state.gameState && state.gameState.isConcluded && state.gameState.winnerData) {
+  // Check if championship concluded and show podium (only if not dismissed by user or by server)
+  const isPodiumDismissed = !!(window.podiumDismissedByUser || (state.gameState && state.gameState.podiumDismissed));
+  if (state.gameState && state.gameState.isConcluded && state.gameState.winnerData && !isPodiumDismissed) {
     showWinnerPodium(state.gameState.winnerData, state.gameState.title);
   }
 
@@ -11020,11 +11030,22 @@ function downloadUniverseExport(format = 'json') {
 }
 
 function dismissPodiumCeremony() {
-  document.getElementById('winnerPodiumModal').classList.add('hidden');
+  window.podiumDismissedByUser = true;
+  const modal = document.getElementById('winnerPodiumModal');
+  if (modal) modal.classList.add('hidden');
   if (currentRole === 'HOST' && ws && sessionToken) {
     ws.send(JSON.stringify({ action: 'HOST_DISMISS_PODIUM', session_token: sessionToken }));
   }
 }
+window.dismissPodiumCeremony = dismissPodiumCeremony;
+
+function openWinnerPodium() {
+  window.podiumDismissedByUser = false;
+  if (latestState && latestState.gameState && latestState.gameState.winnerData) {
+    showWinnerPodium(latestState.gameState.winnerData, latestState.gameState.title);
+  }
+}
+window.openWinnerPodium = openWinnerPodium;
 
 function downloadReport(type) {
   if (!sessionToken) return;

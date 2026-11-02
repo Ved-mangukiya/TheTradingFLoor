@@ -228,6 +228,7 @@ let gameState = {
   activeNewsFlash: null,
   newsHistory: [],
   isConcluded: false,
+  podiumDismissed: false,
   winnerData: null,
   activeCountdown: null,
   finalResultsSnapshot: null,
@@ -1864,6 +1865,7 @@ function getSanitizedPublicState(role, teamId) {
       transactionFeeBps: gameState.transactionFeeBps,
       newsHistory: sanitizedNewsHistory,
       isConcluded: gameState.isConcluded,
+      podiumDismissed: !!gameState.podiumDismissed,
       winnerData: gameState.winnerData,
       activeCountdown: gameState.activeCountdown,
       audioSettings: gameState.audioSettings,
@@ -3317,6 +3319,7 @@ wss.on('connection', (ws) => {
         gameState.configLocked = true;
         gameState.isPaused = true;
         gameState.isConcluded = false;
+        gameState.podiumDismissed = false;
         gameState.winnerData = null;
         gameState.elapsedSeconds = 0;
         if (data.durationSec || data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.durationSec || data.dayDurationSeconds, 10);
@@ -3881,6 +3884,7 @@ wss.on('connection', (ws) => {
         const snapshot = generateOfficialResultsSnapshot();
         gameState.isPaused = true;
         gameState.isConcluded = true;
+        gameState.podiumDismissed = false;
         gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         gameState.winnerData = winnerData;
         gameState.finalResultsSnapshot = snapshot;
@@ -4404,6 +4408,7 @@ wss.on('connection', (ws) => {
         
         gameState.isPaused = true;
         gameState.isConcluded = true;
+        gameState.podiumDismissed = false;
         gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         gameState.winnerData = winnerData;
         gameState.finalResultsSnapshot = snapshot;
@@ -4439,6 +4444,7 @@ wss.on('connection', (ws) => {
         if (gameState.status === 'WINNER_ANNOUNCEMENT') {
           gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         }
+        gameState.podiumDismissed = true;
         syncDerivedStateFlags(gameState);
         recordAuditEvent('PODIUM_DISMISSED', {});
         broadcastAll({ type: 'PODIUM_DISMISSED' });
