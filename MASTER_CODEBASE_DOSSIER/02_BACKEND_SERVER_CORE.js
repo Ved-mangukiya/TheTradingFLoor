@@ -31,6 +31,23 @@ const {
   computeMultiFactorStep,
   calculateOrderFlowImpact
 } = require('./server/market_engine');
+const {
+  calculateLeaderboard: calculateLeaderboardEngine,
+  calculateTeamInvestments: calculateTeamInvestmentsEngine,
+  calculateMarketIndices: calculateMarketIndicesEngine,
+  calculateTeamSectorAllocations: calculateTeamSectorAllocationsEngine
+} = require('./server/accounting');
+const {
+  getReadingWindowForDuration,
+  validateScheduleFeasibility
+} = require('./server/news_scheduler');
+const {
+  serializeSessions,
+  restoreSessions
+} = require('./server/persistence');
+const {
+  sanitizeCsvCell
+} = require('./server/sanitizer');
 
 let simulationSeed = generateCryptoSeed();
 let simulationRng = createSeededRng(simulationSeed);
@@ -124,16 +141,7 @@ function flushAuditLogToDisk() {
 }
 setInterval(flushAuditLogToDisk, 5000);
 
-// Helper to escape values for CSV and guard against spreadsheet formula injection
-function sanitizeCsvCell(val) {
-  if (val === null || val === undefined) return '""';
-  let str = String(val);
-  if (/^[=+\-@\t\r]/.test(str)) {
-    str = `'` + str;
-  }
-  str = str.replace(/"/g, '""');
-  return `"${str}"`;
-}
+// Note: sanitizeCsvCell imported from ./server/sanitizer
 
 // ==========================================
 // 3. SCENARIO & SHARE UNIVERSE INITIALIZATION
@@ -269,12 +277,14 @@ if (!fs.existsSync(CHECKPOINTS_DIR)) {
 }
 
 function saveUniverseToDisk() {
-  if (activeScenarioMode === 'test') return;
+  if (activeScenarioMode === 'test' || process.env.NODE_ENV === 'test') return;
   try {
     const dataToSave = companies.map((c) => ({
       ticker: c.ticker,
       name: c.name,
       sector: c.sector,
+      exchange: c.exchange || 'NSE',
+      currency: c.currency || 'INR',
       base_price: c.base_price,
       lot_presets: c.lot_presets,
       beta: c.beta,
@@ -282,6 +292,8 @@ function saveUniverseToDisk() {
       min_price: c.min_price || 1,
       max_price: c.max_price || 50000,
       isEnabled: c.isEnabled !== false,
+      reference_source: c.reference_source || 'NSE',
+      reference_timestamp: c.reference_timestamp || null,
       fundamentals: c.fundamentals || {}
     }));
     fs.writeFileSync(ACTIVE_UNIVERSE_FILE, JSON.stringify(dataToSave, null, 2));
@@ -290,23 +302,18 @@ function saveUniverseToDisk() {
   }
 }
 
-function saveLiveGameState() {
-  if (activeScenarioMode === 'test') return;
+let isSavingLiveState = false;
+async function saveLiveGameState() {
+  if (activeScenarioMode === 'test' || process.env.NODE_ENV === 'test') return;
+  if (isSavingLiveState) return;
+  isSavingLiveState = true;
   try {
     const traderUsers = {};
     Object.keys(USERS).forEach((k) => {
       if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
     });
 
-    const activeSessions = Array.from(sessions.entries()).map(([tok, s]) => ({
-      token: tok,
-      role: s.role,
-      id: s.id,
-      name: s.name,
-      username: s.username,
-      members: s.members || '',
-      lastOrderAt: s.lastOrderAt || 0
-    }));
+    const activeSessions = serializeSessions(sessions);
 
     const stateToSave = {
       savedAt: new Date().toISOString(),
@@ -320,9 +327,13 @@ function saveLiveGameState() {
       traderUsers,
       activeSessions
     };
-    fs.writeFileSync(LIVE_STATE_FILE, JSON.stringify(stateToSave, null, 2));
+    const tmpFile = LIVE_STATE_FILE + '.tmp';
+    await fs.promises.writeFile(tmpFile, JSON.stringify(stateToSave, null, 2), 'utf8');
+    await fs.promises.rename(tmpFile, LIVE_STATE_FILE);
   } catch (err) {
     console.error('[LIVE STATE SAVE ERROR]', err.message);
+  } finally {
+    isSavingLiveState = false;
   }
 }
 
@@ -333,15 +344,7 @@ function createCheckpoint(label = 'manual') {
       if (USERS[k].role === 'TRADER') traderUsers[k] = USERS[k];
     });
 
-    const activeSessions = Array.from(sessions.entries()).map(([tok, s]) => ({
-      token: tok,
-      role: s.role,
-      id: s.id,
-      name: s.name,
-      username: s.username,
-      members: s.members || '',
-      lastOrderAt: s.lastOrderAt || 0
-    }));
+    const activeSessions = serializeSessions(sessions);
 
     const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `checkpoint_Day${gameState ? gameState.currentDay : 1}_${gameState ? gameState.elapsedSeconds : 0}s_${label}_${timestampStr}.json`;
@@ -475,12 +478,15 @@ function restoreFromCheckpointData(data, sourceLabel = 'manual') {
 
     if (Array.isArray(data.activeSessions)) {
       sessions.clear();
-      data.activeSessions.forEach((s) => {
-        if (s && s.token) {
-          sessions.set(s.token, s);
-        }
-      });
+      restoreSessions(data.activeSessions, sessions);
     }
+
+    // Preserve currently connected wss.clients sessions in sessions Map (Item 10)
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN && client.session && client.session.token) {
+        sessions.set(client.session.token, client.session);
+      }
+    });
 
     // Rebuild per-day fired news events registry from restored events
     firedNewsEventsPerDay.clear();
@@ -691,13 +697,7 @@ function loadScenario(mode = 'live', forceBaseline = false) {
   restartEngineInterval();
 }
 
-// Box-Muller transform for standard normal Gaussian distribution
-function gaussianRandom() {
-  let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
+// Note: randomGaussian imported from ./server/market_engine
 
 // ==========================================
 // 4. NEWS & CIRCUIT BREAKER HANDLERS
@@ -950,57 +950,7 @@ function generateAutoNewsPlan(selectedTickers, totalDays = 3, dayDurationSeconds
   return generatedEvents;
 }
 
-function getReadingWindowForDuration(durationSec) {
-  if (durationSec <= 300) return 12;
-  if (durationSec <= 600) return 18;
-  if (durationSec <= 1200) return 22;
-  return 25;
-}
-
-// Validates schedule feasibility under competition constraints
-function validateScheduleFeasibility(events, dayDurationSeconds) {
-  if (!Array.isArray(events) || events.length === 0) {
-    return { valid: true, issues: [], summary: 'No events scheduled' };
-  }
-  const minSeparationSec = 60;
-  const issues = [];
-  const eventsByDay = {};
-
-  events.forEach((ev) => {
-    const d = ev.day || 1;
-    if (!eventsByDay[d]) eventsByDay[d] = [];
-    eventsByDay[d].push(ev);
-  });
-
-  Object.entries(eventsByDay).forEach(([day, dayEvents]) => {
-    dayEvents.sort((a, b) => (a.trigger_second || 0) - (b.trigger_second || 0));
-    for (let i = 0; i < dayEvents.length; i++) {
-      const cur = dayEvents[i];
-      const trig = cur.trigger_second || 0;
-      const readSec = cur.reading_duration_sec || 20;
-
-      if (trig <= 0) {
-        issues.push(`Day ${day} event "${cur.event_id}" scheduled before trading starts (${trig}s).`);
-      }
-      if (trig + readSec + 25 > dayDurationSeconds) {
-        issues.push(`Day ${day} event "${cur.event_id}" expires after trading day closes (${trig + readSec + 25}s > ${dayDurationSeconds}s).`);
-      }
-      if (i > 0) {
-        const prev = dayEvents[i - 1];
-        const gap = trig - (prev.trigger_second || 0);
-        if (gap < minSeparationSec) {
-          issues.push(`Day ${day} events "${prev.event_id}" and "${cur.event_id}" overlap or have insufficient reading separation (${gap}s < ${minSeparationSec}s).`);
-        }
-      }
-    }
-  });
-
-  return {
-    valid: issues.length === 0,
-    issues,
-    summary: issues.length === 0 ? '✓ Schedule feasible: all events fit with valid reading windows and separation' : issues.join('; ')
-  };
-}
+// Note: getReadingWindowForDuration & validateScheduleFeasibility imported from ./server/news_scheduler
 
 // Recalculates news publication offsets dynamically using proportional ratios: t_i = round(D * p_i)
 function recalculateNewsScheduleForDuration(newDurationSeconds) {
@@ -1401,6 +1351,7 @@ function concludeCurrentDay(isAutoClose = false) {
     activeCountdownTimer = null;
   }
   gameState.activeCountdown = null;
+  syncDerivedStateFlags(gameState);
 
   const conclusionReason = isAutoClose ? 'TIMER_EXPIRY' : 'MANUAL_HOST_ACTION';
   recordAuditEvent('DAY_CONCLUDED', { day, teamsCount: dailyRankings.length, isAutomaticEnd: isAutoClose, reason: conclusionReason });
@@ -1550,33 +1501,13 @@ function restartEngineInterval() {
       const lowerLimit = +(stock.dayOpenPrice * (1 - gameState.circuitBreakerPercent / 100)).toFixed(2);
 
       if (stock.isHalted) {
-        // While at UPPER circuit limit: upward drift is clamped.
-        // Background drift requires at least 0.8% buffer away from ceiling before unhalting (or active counter-order execution)
-        const unhaltUpperThreshold = +(upperLimit - (stock.dayOpenPrice * 0.008)).toFixed(2);
-        const unhaltLowerThreshold = +(lowerLimit + (stock.dayOpenPrice * 0.008)).toFixed(2);
-
+        // Strict boundary clamping during background loop (Item 9):
+        // Circuit breakers remain anchored at upper/lower limit until counter-directional order flow,
+        // active counter-shock news transition, or explicit Host unhalt releases it.
         if (stock.haltDirection === 'UPPER') {
-          const meanReversion = -0.0004 * (stock.currentPrice - stock.dayOpenPrice);
-          const randDrift = (simulationRng() - 0.58) * stock.volatility_factor * stock.currentPrice * 0.2;
-          const downwardPull = Math.min(0, meanReversion + randDrift);
-          if (downwardPull < -0.02) {
-            stock.currentPrice = Math.min(upperLimit, +(stock.currentPrice + downwardPull).toFixed(2));
-            if (stock.currentPrice <= unhaltUpperThreshold) {
-              releaseCircuitBreaker(stock);
-            }
-          }
+          stock.currentPrice = upperLimit;
         } else if (stock.haltDirection === 'LOWER') {
-          // While at LOWER circuit limit: downward drift is clamped.
-          // Background drift requires at least 0.8% buffer away from floor before unhalting (or active counter-order execution)
-          const meanReversion = -0.0004 * (stock.currentPrice - stock.dayOpenPrice);
-          const randDrift = (simulationRng() - 0.42) * stock.volatility_factor * stock.currentPrice * 0.2;
-          const upwardPull = Math.max(0, meanReversion + randDrift);
-          if (upwardPull > 0.02) {
-            stock.currentPrice = Math.max(lowerLimit, +(stock.currentPrice + upwardPull).toFixed(2));
-            if (stock.currentPrice >= unhaltLowerThreshold) {
-              releaseCircuitBreaker(stock);
-            }
-          }
+          stock.currentPrice = lowerLimit;
         }
         recordStockHistoryPoint(stock);
         return;
@@ -1708,109 +1639,11 @@ function appendSecondLog() {
 // 6. WEBSOCKET & STATE BROADCASTERS
 // ==========================================
 function calculateLeaderboard() {
-  return Object.values(teams).map((t) => {
-    let holdingsValue = 0;
-    let unrealizedPnl = 0;
-    companies.forEach((c) => {
-      const qty = t.holdings[c.ticker] || 0;
-      const cost = t.avgBuyPrice[c.ticker] || 0;
-      holdingsValue += qty * c.currentPrice;
-      if (qty > 0) {
-        unrealizedPnl += qty * (c.currentPrice - cost);
-      }
-    });
-    const netWorth = +(t.cash + holdingsValue).toFixed(2);
-    const pnlPct = +(((netWorth - t.startingCash) / t.startingCash) * 100).toFixed(2);
-    const totalPnl = +(netWorth - t.startingCash).toFixed(2);
-    return {
-      id: t.id,
-      username: t.username || t.id.replace('_', ''),
-      name: t.name,
-      members: t.members || '',
-      cash: +t.cash.toFixed(2),
-      holdingsValue: +holdingsValue.toFixed(2),
-      netWorth,
-      totalPnl,
-      pnlPct,
-      realizedPnl: +(t.realizedPnl || 0).toFixed(2),
-      unrealizedPnl: +unrealizedPnl.toFixed(2),
-      tradeCount: t.tradeCount,
-      holdings: t.holdings
-    };
-  }).sort((a, b) => {
-    if (b.netWorth !== a.netWorth) return b.netWorth - a.netWorth;
-    if (b.pnlPct !== a.pnlPct) return b.pnlPct - a.pnlPct;
-    if (b.cash !== a.cash) return b.cash - a.cash;
-    return a.tradeCount - b.tradeCount;
-  });
+  return calculateLeaderboardEngine(teams, companies);
 }
 
 function calculateTeamInvestments() {
-  return Object.values(teams).map((t) => {
-    let investedCost = 0;
-    let holdingsMarketValue = 0;
-    let distinctHoldingsCount = 0;
-    const holdingsDetail = [];
-
-    companies.forEach((c) => {
-      const qty = t.holdings[c.ticker] || 0;
-      if (qty > 0) {
-        distinctHoldingsCount++;
-        const avgPrice = t.avgBuyPrice[c.ticker] || 0;
-        const cost = +(qty * avgPrice).toFixed(2);
-        const mktVal = +(qty * c.currentPrice).toFixed(2);
-        const unPnl = +(mktVal - cost).toFixed(2);
-        const retPct = cost > 0 ? +((unPnl / cost) * 100).toFixed(2) : 0;
-
-        investedCost += cost;
-        holdingsMarketValue += mktVal;
-
-        holdingsDetail.push({
-          ticker: c.ticker,
-          name: c.name,
-          sector: c.sector || 'General',
-          quantity: qty,
-          avgBuyPrice: +avgPrice.toFixed(2),
-          investedCost: cost,
-          currentPrice: +c.currentPrice.toFixed(2),
-          marketValue: mktVal,
-          unrealizedPnl: unPnl,
-          returnPct: retPct
-        });
-      }
-    });
-
-    const startingCapital = t.startingCash || gameState.startingCash || 500000;
-    const availableCash = +t.cash.toFixed(2);
-    investedCost = +investedCost.toFixed(2);
-    holdingsMarketValue = +holdingsMarketValue.toFixed(2);
-    const portfolioValue = +(availableCash + holdingsMarketValue).toFixed(2);
-    const netPnl = +(portfolioValue - startingCapital).toFixed(2);
-    const returnPct = startingCapital > 0 ? +((netPnl / startingCapital) * 100).toFixed(2) : 0;
-
-    return {
-      id: t.id,
-      teamId: t.id,
-      name: t.name,
-      teamName: t.name,
-      username: t.username || t.id.replace('_', ''),
-      members: t.members || '',
-      startingCapital,
-      startingCash: startingCapital,
-      availableCash,
-      investedCost,
-      holdingsMarketValue,
-      portfolioValue,
-      netPnl,
-      returnPct,
-      distinctHoldingsCount,
-      distinctHoldings: distinctHoldingsCount,
-      tradeCount: t.tradeCount || 0,
-      holdingsDetail,
-      lastTradeTime: t.lastTradeTime || '—',
-      connected: t.connected || false
-    };
-  });
+  return calculateTeamInvestmentsEngine(teams, companies, gameState ? gameState.startingCash : 500000);
 }
 
 function getConcludedLeaderboard() {
@@ -1825,107 +1658,11 @@ function getConcludedLeaderboard() {
 }
 
 function calculateMarketIndices() {
-  const enabled = companies.filter((c) => c.isEnabled !== false);
-  if (enabled.length === 0) return [];
-
-  const broadBase = 25000;
-  const avgRatio = enabled.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / enabled.length;
-  const broadVal = +(broadBase * avgRatio).toFixed(2);
-  const broadChg = +(broadVal - broadBase).toFixed(2);
-  const broadPct = +(((broadVal - broadBase) / broadBase) * 100).toFixed(2);
-
-  function calcSubIndex(id, name, sectorName, base, tickers) {
-    const subs = enabled.filter((c) => tickers.includes(c.ticker));
-    if (subs.length === 0) return null;
-    const ratio = subs.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / subs.length;
-    const val = +(base * ratio).toFixed(2);
-    const chg = +(val - base).toFixed(2);
-    const chgPct = +(((val - base) / base) * 100).toFixed(2);
-    return {
-      id,
-      name,
-      sector: sectorName,
-      baseValue: base,
-      currentValue: val,
-      value: val,
-      change: chg,
-      changePoints: chg,
-      changePct: chgPct,
-      constituents: subs.map((s) => s.ticker),
-      tickers: subs.map((s) => s.ticker),
-      constituentsCount: subs.length,
-      weighting: 'Equal-Weighted'
-    };
-  }
-
-  const list = [
-    {
-      id: 'NIFTY_TF20',
-      name: 'TTF NIFTY 20 (Benchmark)',
-      sector: 'MARKET BENCHMARK',
-      baseValue: broadBase,
-      currentValue: broadVal,
-      value: broadVal,
-      change: broadChg,
-      changePoints: broadChg,
-      changePct: broadPct,
-      constituents: enabled.map((s) => s.ticker),
-      tickers: enabled.map((s) => s.ticker),
-      constituentsCount: enabled.length,
-      weighting: 'Equal-Weighted'
-    },
-    calcSubIndex('BANK_TF', 'TTF BANK NIFTY', 'BANKING & FINANCE', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
-    calcSubIndex('IT_TF', 'TTF IT (Tech)', 'INFORMATION TECH', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
-    calcSubIndex('AUTO_TF', 'TTF AUTO (Mobility)', 'AUTOMOBILE', 22000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
-    calcSubIndex('ENERGY_TF', 'TTF ENERGY & POWER', 'ENERGY & POWER', 18000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
-    calcSubIndex('METALS_TF', 'TTF METALS & INFRA', 'METALS & INFRA', 12000, ['LT', 'TATASTEEL', 'JSWSTEEL']),
-    calcSubIndex('CONSUMER_TF', 'TTF CONSUMER & PHARMA', 'CONSUMER & PHARMA', 16000, ['ITC', 'HINDUNILVR', 'SUNPHARMA', 'TITAN'])
-  ].filter(Boolean);
-
-  return list;
+  return calculateMarketIndicesEngine(companies);
 }
 
 function calculateTeamSectorAllocations() {
-  const standings = calculateLeaderboard();
-  return standings.map((item) => {
-    const t = teams[item.id];
-    if (!t) return null;
-    const cash = t.cash || 0;
-    let totalHoldingsVal = 0;
-    const sectorValues = {};
-
-    companies.forEach((c) => {
-      const qty = t.holdings[c.ticker] || 0;
-      const val = qty * c.currentPrice;
-      if (val > 0) {
-        totalHoldingsVal += val;
-        const sec = c.sector || 'General';
-        sectorValues[sec] = (sectorValues[sec] || 0) + val;
-      }
-    });
-
-    const totalPortfolio = Math.max(1, cash + totalHoldingsVal);
-    const cashPct = +((cash / totalPortfolio) * 100).toFixed(1);
-    const sectorPcts = {};
-    Object.keys(sectorValues).forEach((sec) => {
-      sectorPcts[sec] = +((sectorValues[sec] / totalPortfolio) * 100).toFixed(1);
-    });
-
-    // Sort sectors by percentage descending
-    const sortedSectors = Object.entries(sectorPcts)
-      .sort((a, b) => b[1] - a[1])
-      .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {});
-
-    return {
-      teamId: t.id,
-      teamName: t.name,
-      rank: standings.findIndex((s) => s.id === t.id) + 1,
-      netWorth: item.netWorth,
-      cashPct,
-      cashAmount: +cash.toFixed(2),
-      sectorPcts: sortedSectors
-    };
-  }).filter(Boolean);
+  return calculateTeamSectorAllocationsEngine(teams, companies);
 }
 
 function generateAnchorCommentary() {
@@ -2332,6 +2069,15 @@ function startResumeCountdown(triggeredBy = 'HOST') {
     if (gameState.status === 'DAY_COMPLETED' || gameState.isConcluded) {
       return;
     }
+    const pausedMs = gameState.pauseStartedAt ? (Date.now() - gameState.pauseStartedAt) : 0;
+    if (pausedMs > 0) {
+      companies.forEach((c) => {
+        if (c.activeTransition && c.activeTransition.startTimeMs) {
+          c.activeTransition.startTimeMs += pausedMs;
+        }
+      });
+    }
+
     gameState.activeCountdown = null;
     gameState.status = 'LIVE';
     gameState.pauseMode = 'NONE';
@@ -3259,6 +3005,7 @@ wss.on('connection', (ws) => {
               members,
               cash: gameState.startingCash,
               startingCash: gameState.startingCash,
+              dayOpeningPortfolioValue: gameState.startingCash,
               holdings,
               avgBuyPrice,
               realizedPnl: 0,
@@ -3426,6 +3173,7 @@ wss.on('connection', (ws) => {
         gameState.pauseMode = mode;
         gameState.status = 'PAUSED'; // Always canonical PAUSED; pauseMode distinguishes BLACKOUT vs VISIBLE_FROZEN
         gameState.pauseStartedAt = Date.now();
+        syncDerivedStateFlags(gameState);
         recordAuditEvent('EMERGENCY_PAUSE', { triggered_by: 'HOST', pauseMode: mode, shift_offset_applied_seconds: gameState.totalShiftOffsetSeconds });
         if (cancelledCountdownId) {
           broadcastAll({ type: 'COUNTDOWN_CANCELLED', countdownId: cancelledCountdownId });
@@ -3460,6 +3208,7 @@ wss.on('connection', (ws) => {
         if (data.durationSec || data.dayDurationSeconds) gameState.dayDurationSeconds = parseInt(data.durationSec || data.dayDurationSeconds, 10);
         if (data.eventTitle) gameState.title = data.eventTitle;
         if (data.institution) gameState.institution = data.institution;
+        syncDerivedStateFlags(gameState);
         recordAuditEvent('EVENT_SCHEDULED', { scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, title: gameState.title });
         broadcastAll({ type: 'EVENT_SCHEDULED', scheduledStartTime: data.scheduledStartTime, pausePolicy: gameState.pausePolicy, gameState });
         broadcastTick();
@@ -3472,6 +3221,7 @@ wss.on('connection', (ws) => {
         gameState.scheduledStartTime = null;
         gameState.startMode = 'MANUAL';
         gameState.isPaused = true;
+        syncDerivedStateFlags(gameState);
         recordAuditEvent('SCHEDULE_CANCELLED', { triggered_by: 'HOST' });
         broadcastAll({ type: 'SCHEDULE_CANCELLED', gameState });
         broadcastTick();
@@ -3501,6 +3251,15 @@ wss.on('connection', (ws) => {
         if (wasPreOpen) {
           gameState.elapsedSeconds = 0;
         }
+        const pausedMs = gameState.pauseStartedAt ? (Date.now() - gameState.pauseStartedAt) : 0;
+        if (pausedMs > 0) {
+          companies.forEach((c) => {
+            if (c.activeTransition && c.activeTransition.startTimeMs) {
+              c.activeTransition.startTimeMs += pausedMs;
+            }
+          });
+        }
+
         gameState.startMode = 'IMMEDIATE';
         gameState.status = 'LIVE';
         gameState.scheduledStartTime = null;
@@ -3660,6 +3419,7 @@ wss.on('connection', (ws) => {
         gameState.isPaused = true;
         gameState.isConcluded = true;
         gameState.status = 'WINNER_ANNOUNCEMENT';
+        syncDerivedStateFlags(gameState);
         if (!gameState.projectorState) gameState.projectorState = {};
         gameState.projectorState.isWinnerActive = true;
         gameState.projectorState.winnerScene = 'SCENE_INTRO';
@@ -3691,6 +3451,10 @@ wss.on('connection', (ws) => {
         if (!gameState.projectorState) gameState.projectorState = {};
         gameState.projectorState.isWinnerActive = false;
         if (gameState.presentationState) gameState.presentationState.active = false;
+        if (gameState.status === 'WINNER_ANNOUNCEMENT') {
+          gameState.status = 'CHAMPIONSHIP_CONCLUDED';
+          syncDerivedStateFlags(gameState);
+        }
         recordAuditEvent('WINNER_PRESENTATION_EXITED', {});
         broadcastAll({
           type: 'PROJECTOR_STATE_UPDATE',
@@ -3947,9 +3711,10 @@ wss.on('connection', (ws) => {
         const snapshot = generateOfficialResultsSnapshot();
         gameState.isPaused = true;
         gameState.isConcluded = true;
-        gameState.status = 'FINAL_ANALYSIS';
+        gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         gameState.winnerData = winnerData;
         gameState.finalResultsSnapshot = snapshot;
+        syncDerivedStateFlags(gameState);
 
         recordAuditEvent('CHAMPIONSHIP_FINISHED', { totalDays: gameState.totalDays, winners: winnerData });
         broadcastAll({
@@ -4175,14 +3940,24 @@ wss.on('connection', (ws) => {
         if (stock) {
           if (data.name) stock.name = data.name.trim();
           if (data.sector) stock.sector = data.sector.trim();
-          if (data.beta && !isNaN(data.beta)) stock.beta = parseFloat(data.beta);
-          if (data.volatility_factor && !isNaN(data.volatility_factor)) stock.volatility_factor = parseFloat(data.volatility_factor);
-          if (data.summary) stock.fundamentals.summary = data.summary.trim();
-          if (data.base_price && !isNaN(data.base_price)) {
+          if (data.beta !== undefined && !isNaN(data.beta)) {
+            const b = parseFloat(data.beta);
+            if (b >= 0.1 && b <= 3.0) stock.beta = b;
+          }
+          if (data.volatility_factor !== undefined && !isNaN(data.volatility_factor)) {
+            const v = parseFloat(data.volatility_factor);
+            if (v >= 0.0005 && v <= 0.05) stock.volatility_factor = v;
+          }
+          if (data.summary && stock.fundamentals) stock.fundamentals.summary = data.summary.trim();
+          if (data.base_price !== undefined && !isNaN(data.base_price) && parseFloat(data.base_price) > 0) {
             stock.base_price = parseFloat(data.base_price);
-            if (gameState.elapsedSeconds === 0) {
+            if (gameState.elapsedSeconds === 0 && gameState.currentDay === 1) {
               stock.currentPrice = stock.base_price;
               stock.dayOpenPrice = stock.base_price;
+              stock.previousClosePrice = stock.base_price;
+              stock.dayHigh = stock.base_price;
+              stock.dayLow = stock.base_price;
+              stock.history = [{ time: 0, day: 1, price: stock.base_price }];
             }
           }
 
@@ -4281,6 +4056,13 @@ wss.on('connection', (ws) => {
 
       // 5.14 Randomize Eligible Starting Prices (±5% or ±10%)
       if (data.action === 'HOST_RANDOMIZE_PRICES') {
+        if (gameState.configLocked || gameState.status === 'LIVE' || gameState.elapsedSeconds > 0) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot randomize stock prices while event setup is locked or trading is active.'
+          }));
+          return;
+        }
         const variance = Math.max(1, Math.min(25, parseFloat(data.variancePct) || 5));
         companies.forEach((stock) => {
           if (!stock.isEnabled) return;
@@ -4305,6 +4087,13 @@ wss.on('connection', (ws) => {
 
       // 5.15 Apply Predefined Market Universe Template
       if (data.action === 'HOST_APPLY_MARKET_TEMPLATE') {
+        if (gameState.configLocked || gameState.status === 'LIVE' || gameState.elapsedSeconds > 0) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot apply market universe templates while event setup is locked or trading is active.'
+          }));
+          return;
+        }
         const template = data.templateId; // 'all_active', 'tech_auto_focus', 'high_volatility', 'banking_defensive'
 
         if (template === 'all_active') {
@@ -4333,6 +4122,13 @@ wss.on('connection', (ws) => {
 
       // 5.16 Reset Universe to Clean Factory Baseline
       if (data.action === 'HOST_RESET_UNIVERSE_BASELINE') {
+        if (gameState.configLocked || gameState.status === 'LIVE' || gameState.elapsedSeconds > 0) {
+          ws.send(JSON.stringify({
+            type: 'ACTION_REJECTED',
+            reason: 'Cannot reset universe baseline while event setup is locked or trading is active.'
+          }));
+          return;
+        }
         if (fs.existsSync(ACTIVE_UNIVERSE_FILE)) {
           fs.unlinkSync(ACTIVE_UNIVERSE_FILE);
         }
@@ -4441,6 +4237,7 @@ wss.on('connection', (ws) => {
         gameState.status = 'CHAMPIONSHIP_CONCLUDED';
         gameState.winnerData = winnerData;
         gameState.finalResultsSnapshot = snapshot;
+        syncDerivedStateFlags(gameState);
 
         recordAuditEvent('CHAMPIONSHIP_FINALIZED', { winners: winnerData, totalDays: gameState.currentDay });
         

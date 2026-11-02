@@ -16,6 +16,8 @@
     "test:chunk3": "node tests/test_chunk3_ui_and_overlays.js",
     "test:chunk4": "node tests/test_chunk4_action_contracts.js",
     "test:phase1": "node tests/test_phase1_simulation_and_sync.js",
+    "test:ids": "node tools/find_duplicate_ids.js",
+    "lint:ids": "node tools/find_duplicate_ids.js",
     "build:dossier": "node tools/build_master_dossier.js"
   },
   "dependencies": {

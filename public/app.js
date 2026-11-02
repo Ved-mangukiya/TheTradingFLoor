@@ -1332,9 +1332,10 @@ class MockEngine {
         id: 'team' + (idx + 1),
         username: 'team' + (idx + 1),
         name: name,
-        cash: 1000000,
-        portfolioValue: 1000000,
-        netWorth: 1000000,
+        startingCash: 500000,
+        cash: 500000,
+        portfolioValue: 500000,
+        netWorth: 500000,
         holdings: idx === 0 ? { TATAMOTORS: 30, TCS: 10 } : {},
         avgBuyPrice: idx === 0 ? { TATAMOTORS: 975, TCS: 4120 } : {},
         realizedPnL: 0,
@@ -1357,13 +1358,14 @@ class MockEngine {
       configLocked: true,
       isEventLocked: true,
       currentDay: 1,
-      totalDays: 2,
+      totalDays: 3,
       day: 1,
       round: 1,
       elapsedSeconds: 340,
+      dayDurationSeconds: 1800,
       roundDurationSeconds: 1800,
       currentEventIndex: 0,
-      startingCash: 1000000,
+      startingCash: 500000,
       transactionFeeBps: 10,
       circuitBreakerPercent: 20,
       riskProfile: 'BALANCED',
@@ -1834,7 +1836,9 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
   });
 }
 
-function activateDemoShowcaseMode(preselectedRole) { return; // Purged
+function activateDemoShowcaseMode(preselectedRole) {
+  const isGhPages = typeof location !== 'undefined' && (location.hostname.includes('github.io') || new URLSearchParams(location.search).get('demo') === '1');
+  if (!isGhPages) return;
   if (!mockEngineInstance) {
     mockEngineInstance = new MockEngine();
   }
@@ -2245,8 +2249,10 @@ function attachWebSocketEvents(onOpenHook) {
         latestState.gameState.pauseMode = pauseMode;
         latestState.gameState.status = 'PAUSED';
       }
-      if (currentRole === 'HOST' && typeof syncHostSingularActionBar === 'function') {
-        syncHostSingularActionBar(latestState);
+      if (currentRole === 'HOST') {
+        if (typeof syncHostSingularActionBar === 'function') syncHostSingularActionBar(latestState);
+        if (typeof renderHostNews === 'function' && latestState) renderHostNews(latestState);
+        if (typeof updateHostNewsLiveTimers === 'function' && latestState) updateHostNewsLiveTimers(latestState);
       }
       showOrderToast(
         isBlackout
@@ -2271,6 +2277,10 @@ function attachWebSocketEvents(onOpenHook) {
         latestState.gameState.pauseMode = 'NONE';
         latestState.gameState.status = 'LIVE';
         handleStateUpdate(latestState);
+        if (currentRole === 'HOST') {
+          if (typeof renderHostNews === 'function') renderHostNews(latestState);
+          if (typeof updateHostNewsLiveTimers === 'function') updateHostNewsLiveTimers(latestState);
+        }
       }
       if (currentRole === 'HOST' && typeof syncHostSingularActionBar === 'function') {
         syncHostSingularActionBar(latestState);
@@ -2348,6 +2358,8 @@ function attachWebSocketEvents(onOpenHook) {
         if (latestState) {
           try {
             renderHostView(latestState);
+            if (typeof renderHostNews === 'function') renderHostNews(latestState);
+            if (typeof updateHostNewsLiveTimers === 'function') updateHostNewsLiveTimers(latestState);
           } catch (renderErr) {
             console.error('[RENDER HOST VIEW ERROR]', renderErr);
           }
@@ -2377,7 +2389,7 @@ function attachWebSocketEvents(onOpenHook) {
 
     if (msg.type === 'NEWS_REACTION_SPOTLIGHT') {
       if (!isLoggedIn || currentRole === null) return;
-      handleNewsReactionSpotlight(msg.data);
+      handleNewsReactionSpotlight(msg.reaction || msg.data);
       return;
     }
 
@@ -2478,6 +2490,18 @@ function attachWebSocketEvents(onOpenHook) {
       latestState.newsEvents = [];
       setupInitialized = false;
       try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
+      const hostNewsListReset = document.getElementById('hostNewsList');
+      if (hostNewsListReset) {
+        hostNewsListReset.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No breaking news scheduled for this session. Complete event setup to configure news timeline.</div>';
+      }
+      const hostNextBannerReset = document.getElementById('hostNewsNextBanner');
+      if (hostNextBannerReset) {
+        hostNextBannerReset.innerHTML = '🛠️ Event Configuration: News timeline will arm once event setup is locked.';
+      }
+      const setupNewsListReset = document.getElementById('setupNewsPreviewList');
+      if (setupNewsListReset) setupNewsListReset.innerHTML = '';
+      const setupSummaryReset = document.getElementById('setupNewsSummaryBar');
+      if (setupSummaryReset) setupSummaryReset.innerHTML = '';
       updateLoginEventStatusBanner(latestState);
 
       if (currentRole === 'TRADER') {
@@ -2486,6 +2510,9 @@ function attachWebSocketEvents(onOpenHook) {
         if (textEl) textEl.textContent = resetMsg;
         if (modal) modal.classList.remove('hidden');
         sessionToken = null;
+        sessionStorage.removeItem('ttf_session_token');
+        sessionStorage.removeItem('tf_session_token');
+        localStorage.removeItem('ttf_session_token');
         localStorage.removeItem('tf_session_token');
       } else if (currentRole === 'HOST') {
         showOrderToast('🔄 Championship reset complete. Returned to Day 1 Standby.', true);
@@ -2520,6 +2547,18 @@ function attachWebSocketEvents(onOpenHook) {
       latestState.newsEvents = [];
       setupInitialized = false;
       try { localStorage.removeItem('ttf_setup_draft'); } catch (e) {}
+      const hostNewsListAck = document.getElementById('hostNewsList');
+      if (hostNewsListAck) {
+        hostNewsListAck.innerHTML = '<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); font-style: italic;">No breaking news scheduled for this session. Complete event setup to configure news timeline.</div>';
+      }
+      const hostNextBannerAck = document.getElementById('hostNewsNextBanner');
+      if (hostNextBannerAck) {
+        hostNextBannerAck.innerHTML = '🛠️ Event Configuration: News timeline will arm once event setup is locked.';
+      }
+      const setupNewsListAck = document.getElementById('setupNewsPreviewList');
+      if (setupNewsListAck) setupNewsListAck.innerHTML = '';
+      const setupSummaryAck = document.getElementById('setupNewsSummaryBar');
+      if (setupSummaryAck) setupSummaryAck.innerHTML = '';
       updateLoginEventStatusBanner(latestState);
       if (currentRole === 'HOST') {
         showOrderToast('Championship successfully reset. Setup is unlocked and ready for new configuration.', true);
@@ -2540,6 +2579,8 @@ function attachWebSocketEvents(onOpenHook) {
     }
 
     if (msg.type === 'CHAMPIONSHIP_CONCLUDED') {
+      releaseActionLockById('btnMarketCloseSession');
+      releaseActionLockById('btnConfirmFinishEvent');
       playInstitutionalSound('championship_fanfare');
       showWinnerPodium(msg.winnerData, msg.title);
       return;
@@ -2759,7 +2800,7 @@ function logoutTerminal() {
   currentRole = null;
   isLoggedIn = false;
   teamEquityHistory = [];
-  ['softPauseOverlay', 'blackoutOverlay', 'countdownOverlay', 'traderDayCompletedOverlay', 'waitingRoomOverlay', 'tradeModal', 'detailsModal', 'fullChartModal', 'liquidateConfirmModal', 'newsFlashModal', 'winnerPodiumModal', 'circuitBreakerAlertBanner'].forEach((id) => {
+  ['softPauseOverlay', 'blackoutOverlay', 'countdownOverlay', 'traderDayCompletedOverlay', 'traderWaitingRoomOverlay', 'waitingRoomOverlay', 'tradeModal', 'detailsModal', 'fullChartModal', 'liquidateConfirmModal', 'newsFlashModal', 'winnerPodiumModal', 'circuitBreakerAlertBanner'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -4253,12 +4294,6 @@ function setTradeHoldingPreset(pct) {
   recalculateTradeModal();
 }
 
-function setTradeHoldingPreset(pct) {
-  activeTradeHoldingPresetPct = pct;
-  activeTradeBudgetPresetPct = null;
-  recalculateTradeModal();
-}
-
 function setTradeLot(qty) {
   if (qty === 'MAX_BUY') setTradeBudgetPreset(100);
   else if (qty === 'SELL_ALL' || qty === 'MAX_SELL') setTradeHoldingPreset(100);
@@ -5663,20 +5698,22 @@ function handleNewsReactionSpotlight(data) {
 
   const secEl = document.getElementById('projReactionSector');
   const hEl = document.getElementById('projReactionHeadline');
-  const nameEl = document.getElementById('projReactionStockName');
-  const oldPriceEl = document.getElementById('projReactionOldPrice');
+  const tickerEl = document.getElementById('projReactionTicker');
+  const nameEl = document.getElementById('projReactionName') || document.getElementById('projReactionStockName');
+  const oldPriceEl = document.getElementById('projReactionStartPrice') || document.getElementById('projReactionOldPrice');
   const startTimeEl = document.getElementById('projReactionStartTime');
-  const newPriceEl = document.getElementById('projReactionNewPrice');
+  const newPriceEl = document.getElementById('projReactionEndPrice') || document.getElementById('projReactionNewPrice');
   const endTimeEl = document.getElementById('projReactionEndTime');
   const deltaBadgeEl = document.getElementById('projReactionDeltaBadge');
 
   if (secEl) secEl.textContent = `${data.sector || 'EQUITIES'} • ${data.ticker}`;
-  if (hEl) hEl.textContent = `"${data.headline}"`;
+  if (hEl) hEl.textContent = `"${data.headline || data.title || ''}"`;
+  if (tickerEl) tickerEl.textContent = data.ticker || '—';
   if (nameEl) nameEl.textContent = `${data.name || data.ticker} (${data.ticker})`;
-  if (oldPriceEl) oldPriceEl.textContent = `₹${(data.startPrice || 0).toFixed(2)}`;
-  if (startTimeEl) startTimeEl.textContent = `Pre-Reaction Price • ${data.startTimeStr || '10:00'}`;
-  if (newPriceEl) newPriceEl.textContent = `₹${(data.endPrice || 0).toFixed(2)}`;
-  if (endTimeEl) endTimeEl.textContent = `Post-Reaction Price • ${data.endTimeStr || '10:01'}`;
+  if (oldPriceEl) oldPriceEl.textContent = `₹${(data.startPrice || data.oldPrice || 0).toFixed(2)}`;
+  if (startTimeEl) startTimeEl.textContent = data.startTimeStr || '00:00';
+  if (newPriceEl) newPriceEl.textContent = `₹${(data.endPrice || data.newPrice || 0).toFixed(2)}`;
+  if (endTimeEl) endTimeEl.textContent = data.endTimeStr || '00:00';
 
   const isUp = data.isUp !== undefined ? data.isUp : (data.endPrice >= data.startPrice);
   if (deltaBadgeEl) {
@@ -5700,6 +5737,8 @@ function dismissNewsReactionSpotlight() {
   const overlay = document.getElementById('projNewsReactionSpotlightOverlay');
   if (overlay) overlay.classList.add('hidden');
 }
+window.dismissNewsReactionSpotlight = dismissNewsReactionSpotlight;
+window.dismissProjectorReactionSpotlight = dismissNewsReactionSpotlight;
 
 function drawNewsReactionTrajectory(canvasId, history, startPrice, endPrice, isUp, startTimeStr, endTimeStr) {
   const canvas = document.getElementById(canvasId);
@@ -7939,6 +7978,10 @@ function switchHostMarketSubTab(subTab) {
   if (latestState && typeof renderHostView === 'function') {
     renderHostView(latestState);
   }
+  if (latestState && (activeHostMarketSubTab === 'all' || activeHostMarketSubTab === 'news')) {
+    renderHostNews(latestState);
+    updateHostNewsLiveTimers(latestState);
+  }
 }
 
 let activeHostStageSubTab = 'projector';
@@ -8348,7 +8391,7 @@ function saveSetupDraft() {
 
   updateReviewStats();
 
-  if (ws && ws.readyState === WebSocket.OPEN && sessionToken && userRole === 'HOST' && latestState && latestState.gameState && !latestState.gameState.configLocked) {
+  if (ws && ws.readyState === WebSocket.OPEN && sessionToken && currentRole === 'HOST' && latestState && latestState.gameState && !latestState.gameState.configLocked) {
     ws.send(JSON.stringify({
       action: 'HOST_RECALCULATE_SCHEDULE',
       session_token: sessionToken,
@@ -9272,6 +9315,9 @@ function acknowledgeClientResetAndLogout() {
   const modal = document.getElementById('clientResetModal');
   if (modal) modal.classList.add('hidden');
   sessionToken = null;
+  sessionStorage.removeItem('ttf_session_token');
+  sessionStorage.removeItem('tf_session_token');
+  localStorage.removeItem('ttf_session_token');
   localStorage.removeItem('tf_session_token');
   localStorage.removeItem('tf_current_role');
   localStorage.removeItem('tf_current_username');
@@ -9456,34 +9502,110 @@ function renderSetupSections(state) {
 
   // Update Section 5 News Plan Preview in Setup
   const setupNewsList = document.getElementById('setupNewsPreviewList');
+  const summaryContainer = document.getElementById('setupNewsSummaryBar');
   if (setupNewsList && newsEvents && newsEvents.length > 0) {
-    setupNewsList.innerHTML = newsEvents.map((ev) => {
-      const impacts = ev.impacts || {};
-      const impactPills = Object.entries(impacts).map(([ticker, val]) => {
-        const delta = val.delta_pct || val.base_pct || 0;
-        const isUp = delta >= 0;
-        return `<span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10px; margin-right: 4px;">${ticker} ${isUp ? '+' : ''}${delta}%</span>`;
-      }).join(' ');
+    if (!gs.configLocked) {
+      // In unlocked draft setup, keep the dynamic live preview in sync with selection
+      updateNewsPreviewFromSelection();
+    } else {
+      // In locked configuration, render the locked authoritative schedule cleanly grouped by day
+      const durationMins = Math.round((gs.dayDurationSeconds || 1800) / 60);
+      const totalDays = gs.totalDays || 3;
+      if (summaryContainer) {
+        summaryContainer.innerHTML = `
+          <div class="cream-panel" style="padding: 16px 20px; border-left: 4px solid var(--champagne-accent, #B88728); background: #FAF9F6; border-radius: 12px; box-shadow: 0 2px 8px rgba(10, 18, 30, 0.04); margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="color: var(--text-forest); font-size: 14px;">⏱️ Locked Championship Schedule: ${durationMins} Minutes per Day (${(gs.dayDurationSeconds || 1800).toLocaleString()}s)</strong>
+                  <span class="badge badge-active" style="font-size: 10.5px; font-weight: 800;">🔒 Event Schedule Locked</span>
+                </div>
+                <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+                  ${newsEvents.length} authoritative scheduled stories across ${totalDays} days &bull; Min separation: 60s
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
 
-      return `
-        <div class="cream-panel" style="padding: 14px; border: 1px solid var(--subtle-border); position: relative;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span class="badge badge-champagne" style="font-size: 10px; font-weight: 800;">DAY ${ev.day || 1} &bull; AT ${formatMMSS(ev.trigger_second || 0)}</span>
-            <span class="badge badge-sage" style="font-size: 10px;">SCHEDULED STORY</span>
+      const eventsByDay = {};
+      for (let d = 1; d <= totalDays; d++) {
+        eventsByDay[d] = [];
+      }
+      newsEvents.forEach(ev => {
+        const d = ev.day || 1;
+        if (!eventsByDay[d]) eventsByDay[d] = [];
+        eventsByDay[d].push(ev);
+      });
+
+      let daysHtml = '';
+      for (let d = 1; d <= totalDays; d++) {
+        const dayEvs = eventsByDay[d] || [];
+        const dayCards = dayEvs.map(ev => {
+          const impacts = ev.impacts || {};
+          const impactPills = Object.entries(impacts).map(([ticker, val]) => {
+            const delta = val.delta_pct || val.base_pct || 0;
+            const isUp = delta >= 0;
+            return `<span class="badge ${isUp ? 'badge-active' : 'badge-paused'}" style="font-size: 10.5px; font-weight: 800; white-space: nowrap; flex-shrink: 0;">${ticker} ${isUp ? '+' : ''}${delta}%</span>`;
+          }).join(' ');
+
+          const isTriggered = ev.triggered || ev.status === 'PUBLISHED';
+          const triggerSec = ev.trigger_second || 0;
+
+          return `
+            <div class="cream-panel" style="padding: 16px; border: 1.5px solid var(--subtle-border); border-radius: 12px; background: #FFFFFF; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 8px rgba(10, 18, 30, 0.04); min-width: 0; overflow: hidden;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px;">
+                  <span class="badge badge-champagne" style="font-size: 10.5px; font-weight: 800; white-space: nowrap;">
+                    DAY ${ev.day || d} &bull; @ ${formatMMSS(triggerSec)}
+                  </span>
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap;">${impactPills}</div>
+                </div>
+
+                <h4 style="font-weight: 800; font-size: 13.5px; color: var(--text-forest); margin: 0 0 6px 0; line-height: 1.35; word-break: break-word;">
+                  ${escapeHtml(ev.headline)}
+                </h4>
+                <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.45; margin: 0 0 10px 0; word-break: break-word;">
+                  ${escapeHtml(ev.simple_explanation || '')}
+                </p>
+              </div>
+
+              <div style="padding-top: 8px; border-top: 1px dashed var(--subtle-border); margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 700;">
+                  ${isTriggered ? '🟢 Published' : '⏱️ Pre-Scheduled Story'}
+                </span>
+                <span style="font-size: 10.5px; color: var(--gold-dark, #78530D); font-weight: 700;">
+                  🔒 Locked
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        daysHtml += `
+          <div class="setup-day-timeline-group" style="margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--champagne-light, #F1ECE1);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-champagne" style="font-size: 11px; font-weight: 900; letter-spacing: 0.05em; padding: 4px 10px;">
+                  DAY ${d} TIMELINE
+                </span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-forest);">
+                  ${dayEvs.length} Automated News Dispatch${dayEvs.length === 1 ? '' : 'es'}
+                </span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); font-weight: 600;">
+                Evenly spaced across session
+              </span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;">
+              ${dayCards}
+            </div>
           </div>
-          <div style="font-weight: 800; font-size: 13px; color: var(--text-forest); margin-bottom: 6px; line-height: 1.4;">
-            ${escapeHtml(ev.headline)}
-          </div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
-            ${escapeHtml(ev.simple_explanation || '')}
-          </div>
-          <div style="border-top: 1px dashed var(--subtle-border); padding-top: 6px;">
-            <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Host Price Impacts Preview:</span>
-            <div style="margin-top: 4px;">${impactPills || '<span style="font-size: 10px; color: var(--text-muted);">None</span>'}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }
+      setupNewsList.innerHTML = daysHtml;
+    }
   }
 
   // Update Section 6 Review Stats
@@ -9750,7 +9872,7 @@ function renderHostView(state) {
     renderHostAnalysis(state);
   } else if (activeHostTab === 'sound') {
     renderHostSoundTab(state);
-  } else if (activeHostTab === 'news' || activeHostTab === 'floor') {
+  } else if (activeHostTab === 'news' || activeHostTab === 'floor' || activeHostTab === 'market' || activeHostTab === 'stocks' || HOST_TAB_ALIASES[activeHostTab] === 'market') {
     renderHostNews(state);
   }
 
@@ -11490,6 +11612,10 @@ document.addEventListener('visibilitychange', () => {
     if (latestState.gameState.activeCountdown) {
       syncAuthoritativeCountdown(latestState.gameState.activeCountdown);
     }
+    if (currentRole === 'HOST') {
+      if (typeof renderHostNews === 'function') renderHostNews(latestState);
+      if (typeof updateHostNewsLiveTimers === 'function') updateHostNewsLiveTimers(latestState);
+    }
   }
 });
 
@@ -11519,7 +11645,9 @@ function filterHostNewsDay(day) {
 function ensureHostNewsTicker() {
   if (hostNewsLiveTickerHandle) return;
   hostNewsLiveTickerHandle = setInterval(() => {
-    if (activeHostTab === 'news' && latestState) {
+    const isMarketHub = activeHostTab === 'market' || activeHostTab === 'news' || activeHostTab === 'floor' || activeHostTab === 'stocks' || (typeof HOST_TAB_ALIASES !== 'undefined' && HOST_TAB_ALIASES[activeHostTab] === 'market');
+    const newsContainer = document.getElementById('hostNewsList');
+    if ((isMarketHub || (newsContainer && newsContainer.children.length > 0)) && latestState) {
       updateHostNewsLiveTimers(latestState);
     }
   }, 1000);

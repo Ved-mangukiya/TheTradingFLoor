@@ -1,12 +1,14 @@
 # NEXT SESSION TASKS — THE TRADING FLOOR CHAMPIONSHIP
 
-**Current Baseline**: Version 2.7.0 (News State-Machine Bug Fix, Reset Sanitization & Zero-2026 Timeless Architecture Verified)  
+**Current Baseline**: Version 2.8.1 (Full Audit Verification • UI Alignment & Host Live News Sync Parity)  
 **Authoritative Multi-Suite Verification**:
 - `npm test` / `node tests/test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
 - `npm run test:all`: **194/194 passing (100%)** across all 4 chunks (`test_unified_master_flow.js`, `test_chunk2_state_machine.js`, `test_chunk3_ui_and_overlays.js`, `test_chunk4_action_contracts.js`).
 - `npm run test:phase1`: **5/5 passing (100%)** across deterministic seed reproducibility, stochastic phase diversity, boundary clamping, symmetric order-flow impact, and lifecycle eligibility.
-- DOM ID Integrity: **0 duplicate IDs** across all 738 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
-- Host Live Market Population: Leaderboard fallback to registered teams with starting capital + trade stream fallback + subtab auto-render.
+- DOM ID Integrity: **0 duplicate IDs** across all 748 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
+- Host Live Market News Parity: Immediate synchronization upon `MARKET_RESUMED`, `MARKET_PAUSED`, `EVENT_CONFIG_LOCKED`, sub-tab navigation, and window focus/visibility change.
+- Host News Reset Purge: Clean DOM element evacuation on championship reset eliminating ghost badges.
+- Setup Section 5 News Plan Preview: Synchronized day-by-day grouped timeline cards with full-width summary header and zero clipping.
 - Projector Indices Elevation: Squeezing top ticker bar hidden (`display: none !important;`); dedicated full-screen indices scene (`SCENE_INDICES`) with Vanilla Canvas trendlines, baseline guide, and gradient fill.
 - Child-Friendly Strategy Scene: `SCENE_STRATEGY` with floor macro liquidity bar, strategy archetype badges, and "Piggy Bank vs Market" visual dual progress scales.
 - Real Windows Wall-Clock News Wires: Indian Standard Time format (e.g. `03:40:12 PM IST`) stamped server-side and rendered dynamically across Host, Trader, Projector, and Breaking News Flash modals.

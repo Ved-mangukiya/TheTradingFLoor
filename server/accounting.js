@@ -37,7 +37,7 @@ function calculateLeaderboard(teams, companies) {
 
     return {
       id: t.id,
-      username: t.username || t.id.replace('_', ''),
+      username: t.username || (t.id ? t.id.replace('_', '') : ''),
       name: t.name,
       members: t.members || '',
       cash: +t.cash.toFixed(2),
@@ -55,14 +55,14 @@ function calculateLeaderboard(teams, companies) {
     if (b.pnlPct !== a.pnlPct) return b.pnlPct - a.pnlPct;
     if (b.cash !== a.cash) return b.cash - a.cash;
     if (a.tradeCount !== b.tradeCount) return a.tradeCount - b.tradeCount;
-    return a.id.localeCompare(b.id);
+    return (a.id || '').localeCompare(b.id || '');
   });
 }
 
 /**
  * Calculates detailed investment analytics per team.
  */
-function calculateTeamInvestments(teams, companies) {
+function calculateTeamInvestments(teams, companies, defaultStartingCash = 500000) {
   return Object.values(teams || {}).map((t) => {
     let investedCost = 0;
     let holdingsMarketValue = 0;
@@ -85,11 +85,11 @@ function calculateTeamInvestments(teams, companies) {
         holdingsDetail.push({
           ticker: c.ticker,
           name: c.name,
-          sector: c.sector,
+          sector: c.sector || 'General',
           quantity: qty,
-          avgBuyPrice: avgPrice,
-          currentPrice: c.currentPrice,
-          totalCost: cost,
+          avgBuyPrice: +avgPrice.toFixed(2),
+          investedCost: cost,
+          currentPrice: +c.currentPrice.toFixed(2),
           marketValue: mktVal,
           unrealizedPnl: unPnl,
           returnPct: retPct
@@ -97,122 +97,145 @@ function calculateTeamInvestments(teams, companies) {
       }
     });
 
-    const netWorth = +(t.cash + holdingsMarketValue).toFixed(2);
-    const startingCash = t.startingCash || 500000;
-    const netPnl = +(netWorth - startingCash).toFixed(2);
-    const returnPct = +(((netWorth - startingCash) / startingCash) * 100).toFixed(2);
+    const startingCapital = t.startingCash || defaultStartingCash || 500000;
+    const availableCash = +t.cash.toFixed(2);
+    investedCost = +investedCost.toFixed(2);
+    holdingsMarketValue = +holdingsMarketValue.toFixed(2);
+    const portfolioValue = +(availableCash + holdingsMarketValue).toFixed(2);
+    const netPnl = +(portfolioValue - startingCapital).toFixed(2);
+    const returnPct = startingCapital > 0 ? +((netPnl / startingCapital) * 100).toFixed(2) : 0;
 
     return {
       id: t.id,
       teamId: t.id,
       name: t.name,
-      username: t.username || t.id.replace('_', ''),
+      teamName: t.name,
+      username: t.username || (t.id ? t.id.replace('_', '') : ''),
       members: t.members || '',
-      cash: +t.cash.toFixed(2),
-      investedCost: +investedCost.toFixed(2),
-      holdingsMarketValue: +holdingsMarketValue.toFixed(2),
-      netWorth,
+      startingCapital,
+      startingCash: startingCapital,
+      availableCash,
+      investedCost,
+      holdingsMarketValue,
+      portfolioValue,
       netPnl,
       returnPct,
-      tradeCount: t.tradeCount || 0,
       distinctHoldingsCount,
-      realizedPnl: +(t.realizedPnl || 0).toFixed(2),
-      holdings: holdingsDetail
+      distinctHoldings: distinctHoldingsCount,
+      tradeCount: t.tradeCount || 0,
+      holdingsDetail,
+      lastTradeTime: t.lastTradeTime || '—',
+      connected: !!t.connected
     };
   });
 }
 
 /**
- * Calculates market indices (NIFTY_CAMPUS, AUTO_INDEX, IT_INDEX, etc.)
+ * Calculates market indices (NIFTY_TF20 benchmark + 6 sector indices).
  */
 function calculateMarketIndices(companies) {
   const enabled = (companies || []).filter((c) => c.isEnabled !== false);
   if (enabled.length === 0) return [];
 
-  let totalCur = 0;
-  let totalOpen = 0;
-  const sectors = {};
+  const broadBase = 25000;
+  const avgRatio = enabled.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / enabled.length;
+  const broadVal = +(broadBase * avgRatio).toFixed(2);
+  const broadChg = +(broadVal - broadBase).toFixed(2);
+  const broadPct = +(((broadVal - broadBase) / broadBase) * 100).toFixed(2);
 
-  enabled.forEach((c) => {
-    const cur = c.currentPrice || c.base_price;
-    const opn = c.dayOpenPrice || c.base_price;
-    totalCur += cur;
-    totalOpen += opn;
+  function calcSubIndex(id, name, sectorName, base, tickers) {
+    const subs = enabled.filter((c) => tickers.includes(c.ticker));
+    if (subs.length === 0) return null;
+    const ratio = subs.reduce((acc, c) => acc + (c.currentPrice / (c.base_price || 100)), 0) / subs.length;
+    const val = +(base * ratio).toFixed(2);
+    const chg = +(val - base).toFixed(2);
+    const chgPct = +(((val - base) / base) * 100).toFixed(2);
+    return {
+      id,
+      name,
+      sector: sectorName,
+      baseValue: base,
+      currentValue: val,
+      value: val,
+      change: chg,
+      changePoints: chg,
+      changePct: chgPct,
+      constituents: subs.map((s) => s.ticker),
+      tickers: subs.map((s) => s.ticker),
+      constituentsCount: subs.length,
+      weighting: 'Equal-Weighted'
+    };
+  }
 
-    const sec = c.sector || 'General';
-    if (!sectors[sec]) sectors[sec] = { cur: 0, opn: 0, count: 0 };
-    sectors[sec].cur += cur;
-    sectors[sec].opn += opn;
-    sectors[sec].count++;
-  });
-
-  const campusBase = 10000;
-  const broadChangePct = totalOpen > 0 ? +(((totalCur - totalOpen) / totalOpen) * 100).toFixed(2) : 0;
-  const campusValue = +(campusBase * (1 + broadChangePct / 100)).toFixed(2);
-
-  const indices = [
+  return [
     {
-      id: 'NIFTY_CAMPUS',
-      name: 'NIFTY Campus 20',
-      value: campusValue,
-      baseValue: campusBase,
-      changePct: broadChangePct,
-      changeValue: +(campusValue - campusBase).toFixed(2),
-      direction: broadChangePct >= 0 ? 'UP' : 'DOWN'
-    }
-  ];
-
-  Object.entries(sectors).forEach(([secName, data]) => {
-    const sChangePct = data.opn > 0 ? +(((data.cur - data.opn) / data.opn) * 100).toFixed(2) : 0;
-    const sValue = +(5000 * (1 + sChangePct / 100)).toFixed(2);
-    indices.push({
-      id: `SECTOR_${secName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`,
-      name: `${secName} Index`,
-      value: sValue,
-      baseValue: 5000,
-      changePct: sChangePct,
-      changeValue: +(sValue - 5000).toFixed(2),
-      direction: sChangePct >= 0 ? 'UP' : 'DOWN'
-    });
-  });
-
-  return indices;
+      id: 'NIFTY_TF20',
+      name: 'TTF NIFTY 20 (Benchmark)',
+      sector: 'MARKET BENCHMARK',
+      baseValue: broadBase,
+      currentValue: broadVal,
+      value: broadVal,
+      change: broadChg,
+      changePoints: broadChg,
+      changePct: broadPct,
+      constituents: enabled.map((s) => s.ticker),
+      tickers: enabled.map((s) => s.ticker),
+      constituentsCount: enabled.length,
+      weighting: 'Equal-Weighted'
+    },
+    calcSubIndex('BANK_TF', 'TTF BANK NIFTY', 'BANKING & FINANCE', 50000, ['HDFCBANK', 'ICICIBANK', 'SBIN', 'BAJFINANCE', 'CROWNBNK']),
+    calcSubIndex('IT_TF', 'TTF IT (Tech)', 'INFORMATION TECH', 35000, ['TCS', 'INFY', 'NEXUSTECH', 'CYBERINF']),
+    calcSubIndex('AUTO_TF', 'TTF AUTO (Mobility)', 'AUTOMOBILE', 22000, ['TATAMOTORS', 'MARUTI', 'M&M', 'APEXAUTO', 'VELOCAR']),
+    calcSubIndex('ENERGY_TF', 'TTF ENERGY & POWER', 'ENERGY & POWER', 18000, ['RELIANCE', 'NTPC', 'POWERGRID', 'ADANIGREEN']),
+    calcSubIndex('METALS_TF', 'TTF METALS & INFRA', 'METALS & INFRA', 12000, ['LT', 'TATASTEEL', 'JSWSTEEL']),
+    calcSubIndex('CONSUMER_TF', 'TTF CONSUMER & PHARMA', 'CONSUMER & PHARMA', 16000, ['ITC', 'HINDUNILVR', 'SUNPHARMA', 'TITAN'])
+  ].filter(Boolean);
 }
 
 /**
  * Calculates privacy-safe macro sector allocations per team.
  */
 function calculateTeamSectorAllocations(teams, companies) {
-  return Object.values(teams || {}).map((t) => {
-    let holdingsValue = 0;
+  const standings = calculateLeaderboard(teams, companies);
+  return standings.map((item) => {
+    const t = teams ? teams[item.id] : null;
+    if (!t) return null;
+    const cash = t.cash || 0;
+    let totalHoldingsVal = 0;
     const sectorValues = {};
 
     (companies || []).forEach((c) => {
       const qty = (t.holdings && t.holdings[c.ticker]) || 0;
-      if (qty > 0) {
-        const val = qty * c.currentPrice;
-        holdingsValue += val;
-        const sec = c.sector || 'Other';
+      const val = qty * c.currentPrice;
+      if (val > 0) {
+        totalHoldingsVal += val;
+        const sec = c.sector || 'General';
         sectorValues[sec] = (sectorValues[sec] || 0) + val;
       }
     });
 
-    const netWorth = t.cash + holdingsValue;
-    const cashPct = netWorth > 0 ? +((t.cash / netWorth) * 100).toFixed(1) : 100;
+    const totalPortfolio = Math.max(1, cash + totalHoldingsVal);
+    const cashPct = +((cash / totalPortfolio) * 100).toFixed(1);
     const sectorPcts = {};
-
-    Object.entries(sectorValues).forEach(([sec, val]) => {
-      sectorPcts[sec] = netWorth > 0 ? +((val / netWorth) * 100).toFixed(1) : 0;
+    Object.keys(sectorValues).forEach((sec) => {
+      sectorPcts[sec] = +((sectorValues[sec] / totalPortfolio) * 100).toFixed(1);
     });
+
+    // Sort sectors by percentage descending
+    const sortedSectors = Object.entries(sectorPcts)
+      .sort((a, b) => b[1] - a[1])
+      .reduce((obj, [k, v]) => { obj[k] = v; return obj; }, {});
 
     return {
       teamId: t.id,
       teamName: t.name,
+      rank: standings.findIndex((s) => s.id === t.id) + 1,
+      netWorth: item.netWorth,
       cashPct,
-      holdingsPct: +(100 - cashPct).toFixed(1),
-      sectorPcts
+      cashAmount: +cash.toFixed(2),
+      sectorPcts: sortedSectors
     };
-  });
+  }).filter(Boolean);
 }
 
 module.exports = {

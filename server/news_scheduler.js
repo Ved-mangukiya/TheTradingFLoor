@@ -10,17 +10,17 @@
 
 /**
  * Calculates adaptive cognitive reading window W(D) based on day duration D.
- * Scale:
- *   D <= 600s (10m)  -> 15s
- *   D <= 1200s (20m) -> 20s
- *   D <= 1800s (30m) -> 30s
- *   D > 1800s        -> 45s
+ * Canonical Scale:
+ *   D <= 300s (5m)   -> 12s
+ *   D <= 600s (10m)  -> 18s
+ *   D <= 1200s (20m) -> 22s
+ *   D > 1200s        -> 25s
  */
 function getReadingWindowForDuration(durationSeconds) {
-  if (durationSeconds <= 600) return 15;
-  if (durationSeconds <= 1200) return 20;
-  if (durationSeconds <= 1800) return 30;
-  return 45;
+  if (durationSeconds <= 300) return 12;
+  if (durationSeconds <= 600) return 18;
+  if (durationSeconds <= 1200) return 22;
+  return 25;
 }
 
 /**
@@ -28,10 +28,13 @@ function getReadingWindowForDuration(durationSeconds) {
  * complete reading windows before close, and maintain >= 60s separation.
  */
 function validateScheduleFeasibility(newsEvents, dayDurationSeconds, minSeparationSec = 60) {
+  if (!Array.isArray(newsEvents) || newsEvents.length === 0) {
+    return { valid: true, issues: [], summary: 'No events scheduled' };
+  }
   const issues = [];
   const eventsByDay = {};
 
-  (newsEvents || []).forEach((ev) => {
+  newsEvents.forEach((ev) => {
     const d = ev.day || 1;
     if (!eventsByDay[d]) eventsByDay[d] = [];
     eventsByDay[d].push(ev);

@@ -916,19 +916,6 @@ textarea.form-input {
   min-width: 0;
 }
 
-.projector-rank-badge {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 900;
-  color: #1E40AF;
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  padding: 3px 8px;
-  border-radius: 6px;
-  display: inline-block;
-  line-height: 1;
-}
-
 .projector-ticker {
   font-size: clamp(18px, 1.55vw, 24px);
   font-weight: 900;
@@ -2473,17 +2460,6 @@ th.th-wrap {
   box-shadow: var(--shadow-sm);
 }
 
-.projector-rank-badge {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: var(--surface-cream);
-  color: var(--text-forest);
-  border: 1px solid var(--subtle-border);
-  font-family: var(--font-mono);
-}
-
 /* TV Broadcast Post-News Reaction Spotlight Overlay */
 .proj-reaction-spotlight-overlay {
   position: fixed;
@@ -2895,26 +2871,10 @@ th.th-wrap {
   border-color: var(--champagne-accent);
 }
 
-/* Reduced motion accessibility */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Demo showcase CSS purged */
-
 /* Projector: large, high-contrast variant (50 ft viewing) */
 .tf-projector .tf-stock-card { padding: 18px 20px; }
 .tf-projector .tf-stock-card canvas { height: 110px; }
 .tf-projector .tf-price { font-size: 2rem; }
-
-@media (prefers-reduced-motion: reduce) {
-  .tf-stock-card, .tf-chip--halted { transition: none; animation: none; }
-}
 
 /* ==========================================================================
    PAPER TRADING CARDS INSPIRATION & ADVANCED TRADER FILTERS (PLATFORM UPGRADE)
@@ -4321,7 +4281,8 @@ th.th-wrap {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  overflow: hidden !important; /* Strict Zero-Scroll Enforcement */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding: 20px 24px !important;
   animation: modalSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -5384,7 +5345,7 @@ th.th-wrap {
   white-space: nowrap;
 }
 .v4-line .op {
-  width: 12px;
+  width: 14px;
   color: var(--gold-ink);
   font-weight: 800;
   font-family: var(--font-mono);
@@ -5396,22 +5357,10 @@ th.th-wrap {
   border-bottom: 2px dotted rgba(10, 18, 30, 0.34);
 }
 .v4-line b {
-  font: 700 13px var(--font-mono);
+  font: 700 14px var(--font-mono);
   color: var(--ink);
   white-space: nowrap;
   flex-shrink: 0;
-}
-
-.v4-line .op {
-  width: 14px;
-  color: var(--gold-ink);
-  font-weight: 800;
-  font-family: var(--font-mono);
-}
-
-.v4-line .dots {
-  flex: 1;
-  border-bottom: 2px dotted rgba(10, 18, 30, 0.34);
 }
 
 .luxury-card-stock.obsidian .v4-line {
@@ -5420,11 +5369,6 @@ th.th-wrap {
 
 .luxury-card-stock.obsidian .v4-line .dots {
   border-bottom-color: rgba(245, 227, 166, 0.35);
-}
-
-.v4-line b {
-  font: 700 14px var(--font-mono);
-  color: var(--ink);
 }
 
 .luxury-card-stock.obsidian .v4-line b {
@@ -5626,6 +5570,13 @@ th.th-wrap {
 #projectorView *,
 .projector-container * {
   cursor: none !important;
+}
+
+#projectorView .projector-header,
+#projectorView .projector-header *,
+.projector-container .projector-header,
+.projector-container .projector-header * {
+  cursor: auto !important;
 }
 
 .projector-grid {

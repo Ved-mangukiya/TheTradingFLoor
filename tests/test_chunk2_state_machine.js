@@ -76,6 +76,21 @@ async function sendAndAwait(ws, payload, predicateOrTypes, timeoutMs = 6000) {
   return waitForWs(ws, pred, timeoutMs, label);
 }
 
+function checkHealth(port) {
+  return new Promise((resolve) => {
+    http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        try {
+          const body = JSON.parse(data);
+          resolve(res.statusCode === 200 && body.status === 'ONLINE');
+        } catch (e) { resolve(false); }
+      });
+    }).on('error', () => resolve(false));
+  });
+}
+
 async function runChunk2Tests() {
   console.log('\n======================================================================');
   console.log(' 🧪 RUNNING CHUNK 2 STATE MACHINE VERIFICATION SUITE (PORT 3102)');
@@ -116,16 +131,15 @@ async function runChunk2Tests() {
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Server spawn timeout')), 10000);
-      serverProcess.stdout.on('data', (d) => {
-        if (d.toString().includes('THE TRADING FLOOR ENGINE ONLINE')) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-      serverProcess.on('error', reject);
-    });
+    let booted = false;
+    for (let i = 0; i < 35; i++) {
+      if (await checkHealth(TEST_PORT)) {
+        booted = true;
+        break;
+      }
+      await delay(200);
+    }
+    assert.ok(booted, `Server failed to boot on port ${TEST_PORT}`);
 
     const wsHost = await createTrackedWs();
     openSockets.push(wsHost);

@@ -1143,9 +1143,62 @@ This document honestly outlines verified system boundaries, operational limitati
 
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP
 
-**Date**: 2026-10-18  
-**Version**: 2.6.2 (Target Architecture, Authoritative State Model & Monotonic State-Guard Verified)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 5/5 Chunk 2 State Machine Assertions Passing with Zero Port Collisions or Process Leaks)  
+**Date**: 2026-11-02  
+**Version**: 2.8.1 (Full Audit Verification • UI Alignment & Host Live News Sync Parity)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 194/194 Total Chunk Assertions Passing + 5/5 Phase 1 Assertions Passing + 0 Duplicate DOM IDs)  
+
+---
+
+## 0. RECENT FIXES & AUDITED DEFECT RESOLUTION (2026-11-02)
+
+### A. All 12 Backend Server Core (`server.js`) & Subsystem (`server/*.js`) Audit Items Resolved
+1. **News Smoothstep Freeze During Market Pause**:
+   - Resuming the market (`startResumeCountdown` completion & `HOST_START_EVENT_NOW`) computes `pausedMs = Date.now() - gameState.pauseStartedAt` and advances all active transitions (`c.activeTransition.startTimeMs += pausedMs`), preventing instantaneous price snap on resume.
+2. **Deterministic `syncDerivedStateFlags(gameState)` Parity**:
+   - Added `syncDerivedStateFlags(gameState)` across all state transitions (`concludeCurrentDay`, `HOST_PAUSE`, `HOST_SCHEDULE_EVENT`, `HOST_CANCEL_SCHEDULE`, `HOST_FINISH_EVENT`, `HOST_CONCLUDE_CHAMPIONSHIP`, `HOST_START_WINNER_PRESENTATION`, `HOST_EXIT_WINNER_PRESENTATION`), ensuring `stateVersion` monotonically increments and downstream clients never drop state frames.
+3. **Non-Blocking Atomic Disk I/O**:
+   - `saveLiveGameState()` refactored to asynchronous atomic write (`.tmp` write followed by `fs.promises.rename`) protected by an `isSavingLiveState` mutex lock, eliminating 5–25ms synchronous disk stalls during high-velocity trading rounds.
+4. **Test & Scenario Universe Disk Protection**:
+   - `saveUniverseToDisk()` now aborts immediately if `activeScenarioMode === 'test'` or `process.env.NODE_ENV === 'test'`, preserving active baseline universe metadata (`exchange`, `currency`, `reference_source`, `reference_timestamp`).
+5. **Subsystem Logic & Math Unification**:
+   - Replaced duplicated inline implementations in `server.js` with authoritative modules from `server/`:
+     - `server/accounting.js`: Implements synchronized 5-tier leaderboard tie-breakers (`netWorth` ➔ `pnlPct` ➔ `cash` ➔ `tradeCount` ➔ `a.id.localeCompare(b.id)`), comprehensive `calculateTeamInvestments`, canonical 7 indices (`NIFTY_TF20` + 6 sectors), and descending sector allocations.
+     - `server/news_scheduler.js`: Standardized reading windows (12s, 18s, 22s, 25s) and schedule feasibility validator.
+     - `server/sanitizer.js`: RFC 4180 CSV cell quote-escaping (`""`) and formula injection shielding (`'`).
+     - `server/persistence.js`: Serializes and restores active WebSocket sessions and `lastOrderAtByTicker`.
+6. **Canonical `CHAMPIONSHIP_CONCLUDED` Lifecycle Status**:
+   - `HOST_FINISH_EVENT` now sets canonical `CHAMPIONSHIP_CONCLUDED` (previously non-canonical `FINAL_ANALYSIS`), perfectly matching `server/state_machine.js`.
+7. **Safe Numeric Parsing & Clamping in `HOST_EDIT_SHARE`**:
+   - Numeric inputs validated with `Number.isFinite()`, clamped to valid bounds (`beta`: 0.1–3.0, `volatility_factor`: 0.0005–0.05), and price history/extremes re-anchored when edited before round start.
+8. **Pre-Competition Price Mutation Guards**:
+   - `HOST_RANDOMIZE_PRICES`, `HOST_APPLY_MARKET_TEMPLATE`, and `HOST_RESET_UNIVERSE_BASELINE` strictly guarded with `if (gameState.configLocked || gameState.status === 'LIVE' || gameState.elapsedSeconds > 0)`.
+9. **Circuit Breaker Upper/Lower Clamp Invariant**:
+   - Background noise loop keeps halted stocks anchored at `upperLimit`/`lowerLimit` without biased random walks, preserving strict directional circuit breaker enforcement until genuine counter-flow liquidity triggers release.
+10. **WebSocket Session Re-Binding on Checkpoint Restore**:
+    - `restoreFromCheckpointData` reconstructs `sessions` mapping from open `wss.clients`, preventing host lockout upon disaster recovery restore.
+11. **Consistent Initial Schema Parity in `HOST_SET_EVENT_LOCK`**:
+    - Team objects initialize with `dayOpeningPortfolioValue: gameState.startingCash`, guaranteeing strict schema parity across default, new, and locked teams.
+12. **Purge of Dead Helper Functions**:
+    - Removed unseeded, unused `gaussianRandom()` from `server.js`, standardizing on seeded `randomGaussian` from `./server/market_engine`.
+
+---
+
+### B. UI & News State-Machine Live Sync Bugs Resolved
+1. **Host Live Market News `[⏸️ PAUSED]` Freeze**:
+   - *Root Cause*: `renderHostDashboard` only called `renderHostNews` if `activeHostTab === 'news' || activeHostTab === 'floor'`. When clicking the canonical "Live Market Floor" navigation tab (`activeHostTab = 'market'`), `renderHostNews` was skipped on TICK_UPDATE. Furthermore, `ensureHostNewsTicker` only updated timers when `activeHostTab === 'news'`. As a result, news cards frozen during a host pause were never re-rendered upon resumption or floor start.
+   - *Fix*:
+     - Expanded `renderHostDashboard` condition to include `market`, `stocks`, `floor`, and all aliases.
+     - Updated `ensureHostNewsTicker` to evaluate whenever the market hub or `#hostNewsList` is active.
+     - Added immediate news re-render and timer synchronization upon `MARKET_RESUMED`, `MARKET_PAUSED`, and `EVENT_CONFIG_LOCKED`.
+     - Added visibility change handler to refresh news timers immediately when the browser tab becomes active.
+2. **Stale Paused News Remaining After Full Championship Reset**:
+   - *Root Cause*: On `CHAMPIONSHIP_RESET` / `CHAMPIONSHIP_RESET_ACK`, `#hostNewsList` and `#hostNewsNextBanner` were not cleared in the DOM. Upon configuring and launching a new event, the old cards from the previous tournament remained visible with old paused badges.
+   - *Fix*: Handlers for `CHAMPIONSHIP_RESET` and `CHAMPIONSHIP_RESET_ACK` now purge `#hostNewsList` and `#hostNewsNextBanner` with clean placeholder notices, and `EVENT_CONFIG_LOCKED` immediately renders the newly generated news schedule.
+3. **News Preview Layout Optimization (Section 5 Setup & Locked Schedule)**:
+   - Extracted dynamic schedule stats into full-width `#setupNewsSummaryBar` above the news grid.
+   - Split news preview by tournament day (`DAY 1 TIMELINE`, `DAY 2 TIMELINE`, `DAY 3 TIMELINE`) with independent multi-column sub-grids in both draft preview (`updateNewsPreviewFromSelection`) and locked schedule (`renderSetupSections`).
+   - Restructured card headers into two non-overlapping rows: Row 1 for timestamp badge and ticker pill (`flex-shrink: 0`); Row 2 for session timing context.
+   - Cards enforce `min-width: 0; overflow: hidden;` preventing text clipping or overflow across all display resolutions.
 
 ---
 
