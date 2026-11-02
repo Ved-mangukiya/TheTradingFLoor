@@ -2853,6 +2853,11 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
 window.addEventListener('keydown', (e) => {
   // ESC key handler
   if (e.key === 'Escape') {
+    const emergModal = document.getElementById('modalEmergencyStop');
+    if (emergModal && !emergModal.classList.contains('hidden')) {
+      closeEmergencyStopModal();
+      return;
+    }
     const podiumModal = document.getElementById('winnerPodiumModal');
     if (podiumModal && !podiumModal.classList.contains('hidden')) {
       dismissPodiumCeremony();
@@ -2964,8 +2969,8 @@ function autoCloseLifecycleModalsOnStateTransition(newState) {
 
   const emergencyStopModal = document.getElementById('modalEmergencyStop');
   if (emergencyStopModal && !emergencyStopModal.classList.contains('hidden')) {
-    // Close if emergency halt is now active (was just triggered) or if market is live (not needed)
-    if (status === 'LIVE' || (gs.isPaused && gs.pauseMode === 'EMERGENCY_HALT')) {
+    // Auto-close only once emergency halt is successfully active, or if event is concluded/reset
+    if ((gs.isPaused && gs.pauseMode === 'EMERGENCY_HALT') || gs.isConcluded || status === 'RESET') {
       closeEmergencyStopModal();
     }
   }
@@ -10311,6 +10316,7 @@ function syncHostProgressiveDisclosure(gs) {
       btnResume.textContent = '🔔 Resuming in 3-2-1...';
       btnResume.className = 'btn btn-primary';
     }
+    if (btnEmergency) btnEmergency.classList.remove('hidden');
     if (stageTitle) stageTitle.textContent = 'Floor Opening Imminent';
     if (stageSub) stageSub.textContent = 'Synchronizing client terminals';
   } else if (gs.status === 'LIVE' && !gs.isPaused) {

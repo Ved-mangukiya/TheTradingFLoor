@@ -5129,7 +5129,7 @@
   </div>
 
   <!-- Lifecycle Modal: Emergency Stop -->
-  <div id="modalEmergencyStop" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;">
+  <div id="modalEmergencyStop" class="hidden modal-overlay" style="z-index: 9999; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;" onclick="if (event.target === this) closeEmergencyStopModal();">
     <div class="modal-content" style="max-width: 520px; width: 100%; padding: 28px; border: 2px solid var(--error-red); border-radius: 16px;">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
         <span style="font-size: 32px;">🛑</span>
