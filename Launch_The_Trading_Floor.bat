@@ -46,36 +46,10 @@ if not exist "node_modules\" (
     echo.
 )
 
-:: 3. Detect Host LAN IP address for participants
-set LAN_IP=localhost
-for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address" /c:"IP Address"') do (
-    for /f "tokens=1" %%b in ("%%a") do (
-        set LAN_IP=%%b
-        goto :ip_found
-    )
-)
-:ip_found
-
-echo ------------------------------------------------------------------------
-echo   CHAMPIONSHIP ACCESS ADDRESSES:
-echo ------------------------------------------------------------------------
-echo   * Host Master Deck : http://localhost:3000/?role=host
-echo     Username: host  ^|  Password: host
-echo.
-echo   * Stage Projector  : http://localhost:3000/?role=projector
-echo     Username: projector  ^|  Password: screen
-echo.
-echo   * Teams on LAN     : http://%LAN_IP%:3000/
-echo     Share this link with student participants on the same Wi-Fi.
-echo ------------------------------------------------------------------------
-echo.
-echo Launching Trading Floor in your web browser...
+:: 3. Launch Host browser deck and start engine
+echo [OK] Pre-flight system checks complete.
+echo [OK] Opening Host Master Control in your default browser...
 start "" cmd /c "timeout /t 2 >nul & start http://localhost:3000/?role=host"
-
-echo.
-echo Engine running. Keep this window open during the tournament.
-echo To safely stop the server, press Ctrl+C or close this window.
-echo ========================================================================
 echo.
 
 "%NODE_EXEC%" server.js live

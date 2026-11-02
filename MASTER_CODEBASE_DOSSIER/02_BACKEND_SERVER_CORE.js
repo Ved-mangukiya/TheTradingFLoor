@@ -520,14 +520,7 @@ function restoreLiveGameState() {
     const data = JSON.parse(raw);
     const success = restoreFromCheckpointData(data, 'CRASH_RECOVERY');
     if (success) {
-      console.log('----------------------------------------------------------------');
-      console.log(' ⚡ [CRASH RECOVERY] Previous live session detected and restored cleanly!');
-      console.log(` • Title:           ${gameState.title}`);
-      console.log(` • Day & Second:    Day ${gameState.currentDay} / ${gameState.totalDays} (${gameState.elapsedSeconds}s elapsed)`);
-      console.log(` • Teams Loaded:    ${Object.keys(teams).length}`);
-      console.log(` • Trades Restored: ${executedTrades.length}`);
-      console.log(' • Market Status:   PAUSED (Host must press Resume to continue)');
-      console.log('----------------------------------------------------------------');
+      console.log('\x1b[33m⚡ [CRASH RECOVERY]\x1b[0m \x1b[90mActive session state restored cleanly from checkpoint.\x1b[0m');
     }
     return success;
   } catch (e) {
@@ -4970,36 +4963,123 @@ const initialScenario = cliMode === 'test'
   ? 'test'
   : (fs.existsSync(path.join(DATA_DIR, 'scenario_live.json')) ? 'live' : 'test');
 
+let wasRestoredFromCrash = false;
 if (cliMode !== 'test' && restoreLiveGameState()) {
+  wasRestoredFromCrash = true;
   // Restored from crash recovery cleanly
 } else {
   loadScenario(initialScenario);
 }
 
-// Detect LAN IP for projector and student laptops/phones
-server.listen(PORT, '0.0.0.0', () => {
+// Print Executive Terminal Dashboard
+function printStartupBanner() {
   const nets = os.networkInterfaces();
-  let lanIp = 'localhost';
+  const lanIps = [];
   Object.keys(nets).forEach((name) => {
     nets[name].forEach((net) => {
-      if (net.family === 'IPv4' && !net.internal) {
-        lanIp = net.address;
+      if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('127.')) {
+        lanIps.push({ name, address: net.address });
       }
     });
   });
 
-  console.log('================================================================');
-  console.log(` 🚀 THE TRADING FLOOR ENGINE ONLINE [${activeScenarioMode.toUpperCase()} MODE]`);
-  console.log('================================================================');
-  console.log(` • Event Title:       ${gameState.title}`);
-  console.log(` • Local PC URL:      http://localhost:${PORT}`);
-  console.log(` • Router LAN URL:    http://${lanIp}:${PORT}`);
-  console.log('----------------------------------------------------------------');
-  console.log(' Credentials:');
-  console.log('   Host Matrix:       host / host');
-  console.log('   Stage Projector:   projector / screen');
-  console.log('   Sound Console:     sound / sound');
-  console.log('   Winner Stage:      winner / winner');
-  console.log('   Trader Teams:      team1..team16 / trade100..trade1600');
-  console.log('================================================================');
+  const primaryLan = lanIps.length > 0 ? lanIps[0].address : 'localhost';
+  const activeCount = companies.filter((c) => c.isEnabled !== false).length;
+  const totalCount = companies.length;
+  const teamKeys = Object.keys(teams).filter((k) => teams[k] && teams[k].role === 'TRADER');
+  const teamCount = teamKeys.length || 16;
+  const firstTeam = teamKeys[0] || 'team1';
+  const lastTeam = teamKeys[teamKeys.length - 1] || `team${teamCount}`;
+  const firstPass = teams[firstTeam]?.password || 'trade100';
+  const lastPass = teams[lastTeam]?.password || `trade${teamCount}00`;
+
+  let statusLabel = '🛠️  SETUP (Awaiting Host Lock)';
+  if (gameState.status === 'STANDBY') statusLabel = '⏸️  STANDBY (Locked — Ready to Launch)';
+  else if (gameState.status === 'LIVE') statusLabel = '🟢  LIVE MARKET ACTIVE';
+  else if (gameState.status === 'MARKET_PAUSED') statusLabel = '⏸️  MARKET PAUSED';
+  else if (gameState.status === 'DAY_COMPLETED') statusLabel = `🏁  DAY ${gameState.currentDay} CONCLUDED`;
+  else if (gameState.status === 'CHAMPIONSHIP_CONCLUDED') statusLabel = '🏆  CHAMPIONSHIP CONCLUDED';
+
+  const recoveryLabel = wasRestoredFromCrash ? '💾 Restored from Crash Recovery Checkpoint' : '✨ Fresh Session Initialized';
+  const formattedCash = Number(gameState.startingCash || 500000).toLocaleString('en-IN');
+  const dayMins = Math.round((gameState.dayDurationSeconds || 1800) / 60);
+
+  const c = {
+    reset: '\x1b[0m',
+    bold: '\x1b[1m',
+    dim: '\x1b[2m',
+    cyan: '\x1b[36m',
+    brightCyan: '\x1b[96m',
+    green: '\x1b[32m',
+    brightGreen: '\x1b[92m',
+    yellow: '\x1b[33m',
+    brightYellow: '\x1b[93m',
+    white: '\x1b[37m',
+    brightWhite: '\x1b[97m',
+    gray: '\x1b[90m'
+  };
+
+  const doubleLine = '═'.repeat(74);
+  const singleLine = '─'.repeat(74);
+
+  console.log('');
+  console.log(c.brightCyan + doubleLine + c.reset);
+  console.log(`  ${c.bold}${c.brightWhite}🏛️   THE TRADING FLOOR CHAMPIONSHIP${c.reset}  ${c.dim}•${c.reset}  ${c.bold}${c.brightGreen}● ENGINE ONLINE${c.reset} ${c.gray}[${activeScenarioMode.toUpperCase()} MODE]${c.reset}`);
+  console.log(`  ${c.gray}Institutional Stock Exchange Simulation Platform  |  Offline Zero-CDN${c.reset}`);
+  console.log(c.brightCyan + doubleLine + c.reset);
+  console.log('');
+
+  console.log(`  ${c.bold}${c.brightCyan}🌐  NETWORK ACCESS & CONNECTION URLS${c.reset}`);
+  console.log(`  ${c.gray}${singleLine}${c.reset}`);
+  console.log(`  ${c.bold}• Host Deck (This PC): ${c.reset}${c.brightCyan}http://localhost:${PORT}/?role=host${c.reset}`);
+  console.log(`    ${c.gray}└─ Organizer Cockpit: Setup, Live Market Ops, News Engine, & Audits${c.reset}`);
+  if (lanIps.length > 0) {
+    console.log(`  ${c.bold}• Wi-Fi / Router LAN:  ${c.reset}${c.brightGreen}http://${primaryLan}:${PORT}${c.reset}`);
+    console.log(`    ${c.gray}└─ Share this LAN link with student trader laptops & mobile devices${c.reset}`);
+    if (lanIps.length > 1) {
+      lanIps.slice(1).forEach((net) => {
+        console.log(`  ${c.bold}• Secondary (${net.name}): ${c.reset}${c.brightCyan}http://${net.address}:${PORT}${c.reset}`);
+      });
+    }
+  } else {
+    console.log(`  ${c.bold}• Local Offline Mode:  ${c.reset}${c.brightGreen}http://localhost:${PORT}${c.reset}`);
+    console.log(`    ${c.gray}└─ Connect this laptop to Wi-Fi/Hotspot to enable multi-device trading${c.reset}`);
+  }
+  console.log('');
+
+  console.log(`  ${c.bold}${c.brightYellow}📊  LIVE TOURNAMENT SPECIFICATIONS${c.reset}`);
+  console.log(`  ${c.gray}${singleLine}${c.reset}`);
+  console.log(`  ${c.dim}• Event Title:    ${c.reset}${c.bold}${gameState.title || 'The Trading Floor Championship'}${c.reset}`);
+  console.log(`  ${c.dim}• Structure:      ${c.reset}${gameState.totalDays || 3} Days  •  ${dayMins}m per Day (${gameState.dayDurationSeconds || 1800}s)  •  ₹${formattedCash} Starting Cash`);
+  console.log(`  ${c.dim}• Stock Universe: ${c.reset}${activeCount} Active Equities (${totalCount} in Universe)  •  ${gameState.transactionFeeBps || 10} bps Fee (${((gameState.transactionFeeBps || 10) / 100).toFixed(2)}%)`);
+  console.log(`  ${c.dim}• Protections:    ${c.reset}±${gameState.circuitBreakerPercent || 20}% Circuit Breakers  •  ${((gameState.tickIntervalMs || 1500) / 1000).toFixed(1)}s High-Frequency Real-Time Ticks`);
+  console.log(`  ${c.dim}• Session Status: ${c.reset}${c.yellow}${statusLabel}${c.reset}  ${c.dim}•${c.reset}  ${c.green}${recoveryLabel}${c.reset}`);
+  console.log('');
+
+  console.log(`  ${c.bold}${c.brightWhite}🔑  ROLE CREDENTIALS & DIRECT ACCESS${c.reset}`);
+  console.log(`  ${c.gray}${singleLine}${c.reset}`);
+  console.log(`  ${c.bold}• Host Matrix:     ${c.reset}${c.cyan}host${c.reset} / ${c.cyan}host${c.reset}           ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=host`);
+  console.log(`  ${c.bold}• Stage Projector: ${c.reset}${c.cyan}projector${c.reset} / ${c.cyan}screen${c.reset}      ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=projector`);
+  console.log(`  ${c.bold}• Sound Console:   ${c.reset}${c.cyan}sound${c.reset} / ${c.cyan}sound${c.reset}          ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=sound`);
+  console.log(`  ${c.bold}• Winner Podium:   ${c.reset}${c.cyan}winner${c.reset} / ${c.cyan}winner${c.reset}        ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=winner`);
+  console.log(`  ${c.bold}• Trader Desks:    ${c.reset}${c.green}${firstTeam}..${lastTeam}${c.reset} / ${c.green}${firstPass}..${lastPass}${c.reset}  (${teamCount} Registered Desks)`);
+  console.log(`    ${c.gray}└─ Direct Desk Link: http://${primaryLan}:${PORT}/?team=${firstTeam}&pass=${firstPass}${c.reset}`);
+  console.log('');
+
+  console.log(`  ${c.bold}${c.brightWhite}📋  QUICK-START EVENT DIRECTOR PROTOCOL${c.reset}`);
+  console.log(`  ${c.gray}${singleLine}${c.reset}`);
+  console.log(`  ${c.brightCyan}1.${c.reset} Open ${c.bold}http://localhost:${PORT}/?role=host${c.reset} on this computer to open Host Master Control.`);
+  console.log(`  ${c.brightCyan}2.${c.reset} Go to ${c.bold}⚙️ 2. Event${c.reset} to verify roster/stocks, then click ${c.bold}🔒 Confirm & Lock${c.reset}.`);
+  console.log(`  ${c.brightCyan}3.${c.reset} Open ${c.bold}http://localhost:${PORT}/?role=projector${c.reset} on the hall projector or main display.`);
+  console.log(`  ${c.brightCyan}4.${c.reset} Connect audio output to hall speakers: ${c.bold}http://localhost:${PORT}/?role=sound${c.reset}.`);
+  console.log(`  ${c.brightCyan}5.${c.reset} Share LAN link with participants: ${c.bold}${c.brightGreen}http://${primaryLan}:${PORT}${c.reset}.`);
+  console.log(`  ${c.brightCyan}6.${c.reset} Press ${c.bold}${c.brightGreen}▶ Start Day 1 (3-2-1)${c.reset} on Host Cockpit to ring the opening bell!`);
+  console.log(c.brightCyan + doubleLine + c.reset);
+  console.log(`  ${c.dim}⚡ To safely stop: Press ${c.reset}${c.bold}Ctrl + C${c.reset}${c.dim} (Session state auto-saved cleanly to disk)${c.reset}`);
+  console.log('');
+}
+
+// Detect LAN IP for projector and student laptops/phones
+server.listen(PORT, '0.0.0.0', () => {
+  printStartupBanner();
 });
