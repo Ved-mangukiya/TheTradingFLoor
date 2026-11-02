@@ -7717,6 +7717,33 @@ function closeStartNextDayModal() {
   playInstitutionalSound('modal_close');
 }
 
+function executeStartNextDayNow() {
+  if (isExecutingLifecycleAction) return;
+  const gs = latestState?.gameState;
+  if (gs && gs.currentDay >= (gs.totalDays || 3)) {
+    closeStartNextDayModal();
+    openFinishEventModal();
+    return;
+  }
+  const btn = document.getElementById('btnExecuteStartNextDayNow');
+  if (btn && btn.disabled) return;
+  if (btn) applyActionContractLock(btn, 'Launching Day...');
+  isExecutingLifecycleAction = true;
+  closeStartNextDayModal();
+  if (ws && sessionToken) {
+    ws.send(JSON.stringify({ action: 'HOST_START_NEXT_DAY', session_token: sessionToken }));
+    setTimeout(() => {
+      if (ws && sessionToken) {
+        ws.send(JSON.stringify({ action: 'HOST_RESUME_COUNTDOWN', session_token: sessionToken }));
+      }
+      isExecutingLifecycleAction = false;
+    }, 350);
+  } else {
+    isExecutingLifecycleAction = false;
+  }
+}
+window.executeStartNextDayNow = executeStartNextDayNow;
+
 function executeStartNextDay() {
   if (isExecutingLifecycleAction) return;
   const gs = latestState?.gameState;
@@ -8513,6 +8540,27 @@ function switchSetupSection(sec) {
     }
   });
 
+  const stepLabels = {
+    'details': 'Step 1 of 6: Details & Rules',
+    'teams': 'Step 2 of 6: Teams Roster',
+    'universe': 'Step 3 of 6: Stock Universe',
+    'schedule': 'Step 4 of 6: Schedule & Timing',
+    'news': 'Step 5 of 6: News Timeline',
+    'review': 'Step 6 of 6: Review & Lock'
+  };
+  const pill = document.getElementById('setupStepProgressPill');
+  if (pill) pill.textContent = stepLabels[sec] || `Step: ${sec}`;
+
+  const btnLockTop = document.getElementById('btnLockEventSetupTop');
+  if (btnLockTop) {
+    const isLocked = latestState && latestState.gameState && (latestState.gameState.configLocked || latestState.gameState.isEventLocked);
+    if (sec === 'review' && !isLocked) {
+      btnLockTop.classList.remove('hidden');
+    } else {
+      btnLockTop.classList.add('hidden');
+    }
+  }
+
   if (sec === 'teams') {
     if (!setupInitialized) initOrRestoreEventSetup();
   } else if (sec === 'universe') {
@@ -9104,7 +9152,7 @@ function updateReviewStats() {
   if (statSchedule) statSchedule.textContent = `${totalDays} Days • ${Math.round(dayDuration / 60)}m / Day (±${cb}%)`;
 }
 
-function openLockSetupConfirmModal() {
+function submitLockEventSetupValidated() {
   const title = (document.getElementById('setupEventTitle')?.value || '').trim();
   if (!title) {
     showOrderToast('⚠️ Event title cannot be empty. Please enter an event title in Step 1.', false);
@@ -9149,6 +9197,8 @@ function openLockSetupConfirmModal() {
   // Authoritative direct lock submission (no redundant double-confirmation modal stack)
   submitLockEventSetup();
 }
+
+const openLockSetupConfirmModal = submitLockEventSetupValidated;
 
 function closeLockSetupConfirmModal() {
   const modal = document.getElementById('lockSetupConfirmModal');
@@ -10159,94 +10209,30 @@ function syncHostSingularActionBar(state) {
 
 function syncHostProgressiveDisclosure(gs) {
   if (!gs) return;
-  const isLocked = !!gs.configLocked && gs.status !== 'SETUP' && gs.status !== 'RESET';
-  const hasStarted = gs.status === 'LIVE' || (gs.elapsedSeconds > 0) || (gs.currentDay > 1) || gs.isConcluded;
 
-  // 1. Hide the "CONFIGURATION UNLOCKED (DRAFT SETUP MODE)" banner once competition is locked & running!
-  const lockBanner = document.getElementById('hostConfigLockBanner');
-  if (lockBanner) {
-    if (hasStarted || isLocked) {
-      lockBanner.classList.add('hidden');
-    } else {
-      lockBanner.classList.remove('hidden');
-    }
-  }
-
-  // 2. Hide top header "Teams Setup" & "Settings" buttons once setup is locked (prevents mid-game clutter)
-  const btnTeamSetup = document.getElementById('btnHostTeamSetup');
-  const btnSettings = document.getElementById('btnHostSettings');
-  if (btnTeamSetup) btnTeamSetup.classList.toggle('hidden', isLocked);
-  if (btnSettings) btnSettings.classList.toggle('hidden', isLocked);
-
-  // 3. Update "⚙️ 2. Event" tab button to show "🔒 2. Event (Locked)" or hide it during active trading
-  const tabBtnEvent = document.getElementById('hostTabBtnEvent');
-  if (tabBtnEvent) {
-    tabBtnEvent.innerHTML = isLocked ? '🔒 2. Event Rules' : '⚙️ 2. Event Setup';
-  }
-
-  // 3B. ATC COCKPIT PROGRESSIVE DISCLOSURE:
-  // Until whole event is configured and locked, NEVER show upper operations cockpit (#hostAtcCockpit).
-  // The host is presented purely with the Guided Event Setup until configuration is locked!
-  const atcCockpit = document.getElementById('hostAtcCockpit');
-  if (atcCockpit) {
-    if (!isLocked) {
-      atcCockpit.classList.add('hidden');
-    } else {
-      atcCockpit.classList.remove('hidden');
-    }
-  }
-
-  // 3C. Update Hub Navigation Tabs:
-  // When event is in draft/setup mode, dim and lock tabs 3 (Live Market) and 4 (Stage & Results)
-  const tabBtnMarket = document.getElementById('hostTabBtnMarket');
-  const tabBtnStage = document.getElementById('hostTabBtnStage');
-  if (tabBtnMarket) {
-    if (!isLocked) {
-      tabBtnMarket.innerHTML = '🔒 3. Live Market';
-      tabBtnMarket.style.opacity = '0.45';
-      tabBtnMarket.style.cursor = 'not-allowed';
-      tabBtnMarket.title = 'Event configuration must be locked first';
-    } else {
-      tabBtnMarket.innerHTML = '📈 3. Live Market';
-      tabBtnMarket.style.opacity = '1';
-      tabBtnMarket.style.cursor = 'pointer';
-      tabBtnMarket.title = '';
-    }
-  }
-  if (tabBtnStage) {
-    if (!isLocked) {
-      tabBtnStage.innerHTML = '🔒 4. Stage & Results';
-      tabBtnStage.style.opacity = '0.45';
-      tabBtnStage.style.cursor = 'not-allowed';
-      tabBtnStage.title = 'Event configuration must be locked first';
-    } else {
-      tabBtnStage.innerHTML = '🖥️ 4. Stage & Results';
-      tabBtnStage.style.opacity = '1';
-      tabBtnStage.style.cursor = 'pointer';
-      tabBtnStage.title = '';
-    }
-  }
-
-  // Auto-route away from market/stage to event setup if in draft mode
-  if (!isLocked && (activeHostTab === 'market' || activeHostTab === 'stage')) {
-    switchHostTab('event');
-  }
-
-  // 4. Disable legacy #hostFlowActionsContainer injection so it never creates duplicate buttons
-  const legacyFlowActions = document.getElementById('hostFlowActionsContainer');
-  if (legacyFlowActions) legacyFlowActions.innerHTML = '';
-
-  // 5. Update the Single ATC Bar telemetry and buttons deterministically
+  const isLocked = !!(gs.configLocked || gs.isEventLocked);
   const day = gs.currentDay || 1;
   const total = gs.totalDays || 3;
-  const remSec = Math.max(0, (gs.dayDurationSeconds || 1800) - (gs.elapsedSeconds || 0));
+  const elapsed = gs.elapsedSeconds || 0;
+  const dur = gs.dayDurationSeconds || 1800;
+  const remSec = Math.max(0, dur - elapsed);
 
+  // Update Dynamic Flow Stepper Steps
+  renderHostDynamicFlowStepper(gs);
+
+  // Update Telemetry Header Labels
   const badge = document.getElementById('marketOpsLiveBadge');
   const dayText = document.getElementById('atcDayText');
+  const timerLabel = document.getElementById('atcTimerLabel');
   const timerVal = document.getElementById('atcTimerValue');
   const modeText = document.getElementById('atcFloorModeText');
+  const stageTitle = document.getElementById('flowStageTitle');
+  const stageSub = document.getElementById('flowStageSub');
 
   if (dayText) dayText.textContent = `DAY ${day} / ${total}`;
+  if (timerLabel) {
+    timerLabel.textContent = gs.status === 'LIVE' ? 'TIME REMAINING' : (gs.status === 'PAUSED' ? 'FROZEN CLOCK' : 'SESSION CLOCK');
+  }
   if (timerVal) timerVal.textContent = formatMMSS(remSec);
   if (modeText) {
     modeText.textContent = gs.status === 'PAUSED'
@@ -10264,22 +10250,42 @@ function syncHostProgressiveDisclosure(gs) {
   const btnConclude = document.getElementById('btnMarketCloseSession');
   const btnAddDay = document.getElementById('btnAtcAddDay');
   const btnEmergency = document.getElementById('btnEmergencyStopTrigger');
+  const btnDraftJump = document.getElementById('btnAtcDraftJump');
+  const ceremonyBar = document.getElementById('hostCeremonyDirectorBar');
 
   // Helper to hide all optional buttons first, then show ONLY what is needed for the current step
-  [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
+  [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency, btnDraftJump].forEach((el) => {
     if (el) el.classList.add('hidden');
   });
 
-  if (!isLocked) {
-    // STEP 1: Setup not locked yet -> Show ONLY [⚙️ Lock Event Setup]
-    if (badge) { badge.textContent = '⚙️ DRAFT SETUP'; badge.className = 'badge badge-paused'; }
-    if (btnResume) {
-      btnResume.classList.remove('hidden');
-      btnResume.disabled = false;
-      btnResume.textContent = '⚙️ Complete & Lock Setup ➔';
-      btnResume.className = 'btn btn-primary';
-      btnResume.onclick = () => switchHostTab('event');
+  // Ceremony Director Bar visibility
+  if (ceremonyBar) {
+    if (gs.status === 'WINNER_ANNOUNCEMENT') {
+      ceremonyBar.classList.remove('hidden');
+      const curScene = (gs.presentationState && (gs.presentationState.scene || gs.presentationState.currentScene)) || 'SCENE_INTRO';
+      const sceneBtns = ceremonyBar.querySelectorAll('[data-ceremony-scene]');
+      sceneBtns.forEach((b) => {
+        if (b.getAttribute('data-ceremony-scene') === curScene) {
+          b.style.background = '#F59E0B';
+          b.style.color = '#000000';
+          b.style.fontWeight = '900';
+        } else {
+          b.style.background = 'transparent';
+          b.style.color = '#F5E3A6';
+          b.style.fontWeight = '700';
+        }
+      });
+    } else {
+      ceremonyBar.classList.add('hidden');
     }
+  }
+
+  if (!isLocked) {
+    // STEP 1: Setup not locked yet -> Show direct jump to Hub 2
+    if (badge) { badge.textContent = '⚙️ DRAFT SETUP'; badge.className = 'badge badge-paused'; }
+    if (btnDraftJump) btnDraftJump.classList.remove('hidden');
+    if (stageTitle) stageTitle.textContent = 'Event Setup in Progress';
+    if (stageSub) stageSub.textContent = 'Complete configuration in Step 6 to arm market';
   } else if (gs.status === 'STANDBY') {
     // STEP 2: Locked & Standby -> Show [▶ Start Day N (3-2-1)] and [⏱️ Schedule Timer]
     if (badge) { badge.textContent = `⏳ DAY ${day} STANDBY`; badge.className = 'badge badge-champagne'; }
@@ -10291,6 +10297,8 @@ function syncHostProgressiveDisclosure(gs) {
       btnResume.onclick = () => hostResumeMarket();
     }
     if (btnSchedule) btnSchedule.classList.remove('hidden');
+    if (stageTitle) stageTitle.textContent = `Day ${day} Armed & Ready`;
+    if (stageSub) stageSub.textContent = 'Awaiting Host Start Command';
   } else if (gs.status === 'SCHEDULED') {
     // STEP 2B: Scheduled Countdown -> Show [▶ Start Now] and [✕ Cancel Schedule]
     if (badge) { badge.textContent = `⏱️ SCHEDULED`; badge.className = 'badge badge-champagne'; }
@@ -10302,6 +10310,19 @@ function syncHostProgressiveDisclosure(gs) {
       btnResume.onclick = () => hostResumeMarket();
     }
     if (btnCancelSched) btnCancelSched.classList.remove('hidden');
+    if (stageTitle) stageTitle.textContent = 'Opening Bell Scheduled';
+    if (stageSub) stageSub.textContent = 'Automatic countdown active';
+  } else if (gs.status === 'COUNTDOWN') {
+    // STEP 2C: Resuming Countdown Active (3-2-1)
+    if (badge) { badge.textContent = '🔔 STARTING (3-2-1)...'; badge.className = 'badge badge-active'; }
+    if (btnResume) {
+      btnResume.classList.remove('hidden');
+      btnResume.disabled = true;
+      btnResume.textContent = '🔔 Resuming in 3-2-1...';
+      btnResume.className = 'btn btn-primary';
+    }
+    if (stageTitle) stageTitle.textContent = 'Floor Opening Imminent';
+    if (stageSub) stageSub.textContent = 'Synchronizing client terminals';
   } else if (gs.status === 'LIVE' && !gs.isPaused) {
     // STEP 3: LIVE TRADING -> Direct Choice Pause Actions (Zero Duplication)
     if (badge) { badge.textContent = `🟢 LIVE • DAY ${day}/${total}`; badge.className = 'badge badge-active'; }
@@ -10327,7 +10348,9 @@ function syncHostProgressiveDisclosure(gs) {
       btnConclude.onclick = () => openConcludeDayModal();
     }
     if (btnEmergency) btnEmergency.classList.remove('hidden');
-  } else if (gs.status === 'PAUSED' || gs.isPaused) {
+    if (stageTitle) stageTitle.textContent = `Day ${day} Live Trading`;
+    if (stageSub) stageSub.textContent = 'Floor open & active';
+  } else if (gs.status === 'PAUSED' || (gs.isPaused && isLocked && gs.status !== 'STANDBY' && gs.status !== 'SCHEDULED' && gs.status !== 'DAY_COMPLETED' && !gs.isConcluded)) {
     // STEP 4: PAUSED -> Show [▶ Resume Market (3-2-1)] + Direct 1-Click Mode Switcher
     const isBlk = gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'EMERGENCY_HALT';
     if (badge) {
@@ -10365,21 +10388,23 @@ function syncHostProgressiveDisclosure(gs) {
       btnConclude.style.color = '#14352B';
       btnConclude.onclick = () => openConcludeDayModal();
     }
+    if (stageTitle) stageTitle.textContent = isBlk ? 'Market Blackout Paused' : 'Market Soft Frozen';
+    if (stageSub) stageSub.textContent = 'Hit Resume (3-2-1) to continue';
   } else if (gs.status === 'DAY_COMPLETED') {
-    // STEP 5: DAY CONCLUDED -> Show [▶ Advance to Day N+1] (or [🏆 Finalize Championship]) + [➕ Add Day]
+    // STEP 5: DAY CONCLUDED -> Show [⏭️ Prepare Day X+1 (Roll Over Portfolios)] (or [🏆 1. Finalize Official Championship Audit])
     if (badge) { badge.textContent = `🔔 DAY ${day} COMPLETED`; badge.className = 'badge badge-champagne'; }
     if (btnConclude) {
       btnConclude.classList.remove('hidden');
       btnConclude.disabled = false;
       if (day < total) {
-        btnConclude.textContent = `▶ Advance to Day ${day + 1} ➔`;
+        btnConclude.textContent = `⏭️ Prepare Day ${day + 1} (Roll Over Portfolios) ➔`;
         btnConclude.className = 'btn btn-primary';
         btnConclude.style.background = 'var(--price-up)';
         btnConclude.style.borderColor = 'var(--price-up)';
         btnConclude.style.color = '#FFFFFF';
         btnConclude.onclick = () => openStartNextDayModal();
       } else {
-        btnConclude.textContent = '🏆 Finalize Championship ➔';
+        btnConclude.textContent = '🏆 1. Finalize Official Championship Audit ➔';
         btnConclude.className = 'btn btn-champagne';
         btnConclude.style.background = '';
         btnConclude.style.borderColor = '';
@@ -10388,19 +10413,28 @@ function syncHostProgressiveDisclosure(gs) {
       }
     }
     if (btnAddDay) btnAddDay.classList.remove('hidden');
+    if (stageTitle) stageTitle.textContent = `Day ${day} Audited & Concluded`;
+    if (stageSub) stageSub.textContent = day < total ? `Ready to rollover into Day ${day + 1}` : 'Ready for final championship audit';
   } else if (gs.isConcluded || gs.status === 'CHAMPIONSHIP_CONCLUDED' || gs.status === 'WINNER_ANNOUNCEMENT') {
     // STEP 6: GRAND FINALE CEREMONY
     if (badge) { badge.textContent = '👑 GRAND FINALE'; badge.className = 'badge badge-champagne'; }
     if (btnConclude) {
       btnConclude.classList.remove('hidden');
       btnConclude.disabled = false;
-      btnConclude.textContent = '👑 Launch / Advance Winner Ceremony ➔';
-      btnConclude.className = 'btn btn-champagne';
-      btnConclude.style.background = '';
-      btnConclude.style.borderColor = '';
-      btnConclude.style.color = '';
-      btnConclude.onclick = () => handleFlowPrimaryAction();
+      if (gs.status === 'WINNER_ANNOUNCEMENT') {
+        btnConclude.textContent = '👑 Winner Ceremony in Progress on Projector ➔';
+        btnConclude.className = 'btn btn-champagne';
+        btnConclude.onclick = () => switchHostTab('stage');
+      } else {
+        btnConclude.textContent = '👑 2. Launch Auditorium Winner Ceremony on Projector ➔';
+        btnConclude.className = 'btn btn-champagne';
+        btnConclude.style.background = '';
+        btnConclude.style.borderColor = '';
+        btnConclude.onclick = () => hostStartWinnerPresentation();
+      }
     }
+    if (stageTitle) stageTitle.textContent = 'Championship Finalized';
+    if (stageSub) stageSub.textContent = 'Auditorium Ceremony Active';
   }
 }
 
@@ -10833,6 +10867,19 @@ function hostFinalizeDay() {
   );
 }
 
+function playDrumrollCue() {
+  playInstitutionalSound('winner_drumroll_boom');
+  if (ws && ws.readyState === WebSocket.OPEN && sessionToken) {
+    ws.send(JSON.stringify({
+      action: 'HOST_TRIGGER_AUDIO_CUE',
+      session_token: sessionToken,
+      cue: 'winner_drumroll_boom'
+    }));
+  }
+  showOrderToast('🥁 Dramatic drumroll cue broadcast to Hall PA Audio Console.', true);
+}
+window.playDrumrollCue = playDrumrollCue;
+
 function hostExitWinnerPresentation() {
   if (!ws || !sessionToken) return;
   const btn = document.getElementById('hostDismissPodium');
@@ -11054,71 +11101,56 @@ document.getElementById('customNewsForm').addEventListener('submit', (e) => {
 
 // Event Settings Modal
 function openEventSettingsModal() {
-  if (!latestState) return;
-  const g = latestState.gameState;
-  document.getElementById('settingEventTitle').value = g.title || '';
-  document.getElementById('settingDayDuration').value = g.dayDurationSeconds || 1800;
-  document.getElementById('settingTotalDays').value = g.totalDays || 3;
-  document.getElementById('settingCircuitPercent').value = g.circuitBreakerPercent || 20;
-  document.getElementById('settingStartingCash').value = g.startingCash || 500000;
-  document.getElementById('settingFeeBps').value = g.transactionFeeBps || 0;
-  document.getElementById('eventSettingsModal').classList.remove('hidden');
-  syncBodyModalScrollLock();
-  playInstitutionalSound('modal_open');
+  switchHostTab('event');
+  switchSetupSection('details');
 }
 
 function closeEventSettingsModal() {
-  document.getElementById('eventSettingsModal').classList.add('hidden');
+  const modal = document.getElementById('eventSettingsModal');
+  if (modal) modal.classList.add('hidden');
   syncBodyModalScrollLock();
-  playInstitutionalSound('modal_close');
 }
 
-document.getElementById('eventSettingsForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (!ws || !sessionToken) return;
+const eventSettingsForm = document.getElementById('eventSettingsForm');
+if (eventSettingsForm) {
+  eventSettingsForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!ws || !sessionToken) return;
 
-  const title = document.getElementById('settingEventTitle').value.trim();
-  const dayDurationSeconds = parseInt(document.getElementById('settingDayDuration').value, 10);
-  const totalDays = parseInt(document.getElementById('settingTotalDays').value, 10);
-  const circuitBreakerPercent = parseFloat(document.getElementById('settingCircuitPercent').value);
-  const startingCash = parseFloat(document.getElementById('settingStartingCash').value);
-  const transactionFeeBps = parseInt(document.getElementById('settingFeeBps').value, 10) || 0;
+    const title = (document.getElementById('settingEventTitle')?.value || '').trim();
+    const dayDurationSeconds = parseInt(document.getElementById('settingDayDuration')?.value || '1800', 10);
+    const totalDays = parseInt(document.getElementById('settingTotalDays')?.value || '3', 10);
+    const circuitBreakerPercent = parseFloat(document.getElementById('settingCircuitPercent')?.value || '20');
+    const startingCash = parseFloat(document.getElementById('settingStartingCash')?.value || '500000');
+    const transactionFeeBps = parseInt(document.getElementById('settingFeeBps')?.value || '0', 10) || 0;
 
-  ws.send(JSON.stringify({
-    action: 'HOST_UPDATE_EVENT_CONFIG',
-    session_token: sessionToken,
-    title,
-    dayDurationSeconds,
-    totalDays,
-    circuitBreakerPercent,
-    startingCash,
-    transactionFeeBps
-  }));
+    ws.send(JSON.stringify({
+      action: 'HOST_UPDATE_EVENT_CONFIG',
+      session_token: sessionToken,
+      title,
+      dayDurationSeconds,
+      totalDays,
+      circuitBreakerPercent,
+      startingCash,
+      transactionFeeBps
+    }));
 
-  closeEventSettingsModal();
-});
+    closeEventSettingsModal();
+  });
+}
 
 // Teams Setup Manager & CSV
 let localTeamsRoster = [];
 
 function openTeamSetupModal() {
-  if (!latestState) return;
-  if (latestState.allTeamsList && latestState.allTeamsList.length > 0) {
-    localTeamsRoster = JSON.parse(JSON.stringify(latestState.allTeamsList));
-  } else if (localTeamsRoster.length === 0) {
-    generateTeamRows(12);
-    return;
-  }
-  renderTeamsSetupTable();
-  document.getElementById('teamSetupModal').classList.remove('hidden');
-  syncBodyModalScrollLock();
-  playInstitutionalSound('modal_open');
+  switchHostTab('event');
+  switchSetupSection('teams');
 }
 
 function closeTeamSetupModal() {
-  document.getElementById('teamSetupModal').classList.add('hidden');
+  const modal = document.getElementById('teamSetupModal');
+  if (modal) modal.classList.add('hidden');
   syncBodyModalScrollLock();
-  playInstitutionalSound('modal_close');
 }
 
 function generateTeamRows(count) {
@@ -13487,6 +13519,10 @@ window.regenerateNewsTimeline = regenerateNewsTimeline;
 window.openLockSetupConfirmModal = openLockSetupConfirmModal;
 window.closeLockSetupConfirmModal = closeLockSetupConfirmModal;
 window.submitLockEventSetup = submitLockEventSetup;
+window.submitLockEventSetupValidated = submitLockEventSetupValidated;
+window.openLockSetupConfirmModal = submitLockEventSetupValidated;
+window.playDrumrollCue = typeof playDrumrollCue === 'function' ? playDrumrollCue : null;
+
 window.updateLoginEventStatusBanner = updateLoginEventStatusBanner;
 window.applyTeamCountPreset = applyTeamCountPreset;
 window.addSetupTeamRow = addSetupTeamRow;

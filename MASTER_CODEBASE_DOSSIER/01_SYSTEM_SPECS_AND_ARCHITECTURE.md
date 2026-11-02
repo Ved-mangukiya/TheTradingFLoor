@@ -1144,12 +1144,37 @@ This document honestly outlines verified system boundaries, operational limitati
 # CURRENT SYSTEM STATUS — THE TRADING FLOOR CHAMPIONSHIP
 
 **Date**: 2026-11-02  
-**Version**: 2.8.1 (Full Audit Verification • UI Alignment & Host Live News Sync Parity)  
-**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 194/194 Total Chunk Assertions Passing + 5/5 Phase 1 Assertions Passing + 0 Duplicate DOM IDs)  
+**Version**: 2.9.0 (Unified Operational Flow Refactor • Hub 2 Guided Workspace • Ceremony Director Bar)  
+**Status**: PRODUCTION-READY, FULLY IMPLEMENTED & VERIFIED (36/36 Unified Single-Flow Master Assertions Passing + 195/195 Total Chunk Assertions Passing across all 4 suites + 0 Duplicate DOM IDs)  
 
 ---
 
 ## 0. RECENT FIXES & AUDITED DEFECT RESOLUTION (2026-11-02)
+
+### A. Unified Operational Flow & Hub 2 Setup Streamlining
+1. **Elimination of Redundant Setup Modals**:
+   - Completely purged duplicate setup dialogs: `#teamSetupModal`, `#eventSettingsModal`, `#championshipWizardModal`, and `#lockSetupConfirmModal`.
+   - Setup, roster management, stock universe selection, schedule, and news timeline are routed exclusively through Hub 2 (⚙️ 2. Event) using the canonical 6-step guided workspace.
+   - Header shortcut buttons `#btnHostTeamSetup` and `#btnHostSettings` purged; legacy modal functions (`openEventSettingsModal`, `openTeamSetupModal`, `openChampionshipWizardModal`) redirect seamlessly to Hub 2.
+2. **Direct Setup Lock Contract (`#btnSubmitLockSetup`)**:
+   - Renamed review lock trigger to `#btnSubmitLockSetup` calling `submitLockEventSetupValidated()`.
+   - Validates event details, stock count (>= 4), and team roster before immediately locking configuration and opening `#postLockDay1Modal` (zero redundant confirmation modals).
+3. **Host Operations Bar & ATC Progressive Disclosure**:
+   - In draft setup mode (`configLocked === false`), market resume buttons are hidden and replaced with direct jump button `#btnAtcDraftJump` (`🔒 Complete Setup in Step 6 to Arm Floor ➔`).
+   - Fixed `COUNTDOWN` state so countdown (3-2-1) renders actively rather than falling into paused state.
+   - In `DAY_COMPLETED`, primary button displays `⏭️ Prepare Day X+1 (Roll Over Portfolios) ➔` opening `#modalStartNextDay` with `🚀 Roll Over & Start Day Now (3-2-1)` (`executeStartNextDayNow`) and `⏳ Roll Over to Standby Lobby` (`executeStartNextDay`).
+   - Final day conclusion unified into Step 1 (`🏆 1. Finalize Official Championship Audit ➔`) and Step 2 (`👑 2. Launch Auditorium Winner Ceremony on Projector ➔`).
+   - Added `#hostCeremonyDirectorBar` into `#hostAtcCockpit` to control 6 ceremony scenes (`SCENE_INTRO`, `SCENE_BRONZE`, `SCENE_SILVER`, `playDrumrollCue`, `SCENE_CHAMPION`, `SCENE_PODIUM`, `SCENE_LEADERBOARD`, `hostExitWinnerPresentation`).
+4. **Missing Host Floor Controls Restored**:
+   - Added `📢 + Broadcast Custom Breaking News` button (`#btnOpenCustomNews`) in Hub 3 News Control Centre.
+   - Added `⚡ Circuit Breaker Simulator` button (`#btnOpenCircuitTest`) in Hub 3 Stocks Table header.
+5. **Zero DOM ID Duplication & 100% Test Suite Verification**:
+   - 0 duplicate DOM IDs across all 737 unique elements (`npm run test:ids`).
+   - 195/195 total automated test assertions passing across all 4 suites:
+     - `test_unified_master_flow.js`: 36/36 assertions passed (100%).
+     - `test_chunk2_state_machine.js`: 5/5 assertions passed (100%).
+     - `test_chunk3_ui_and_overlays.js`: 90/90 assertions passed (100%).
+     - `test_chunk4_action_contracts.js`: 64/64 assertions passed (100%).
 
 ### A. All 12 Backend Server Core (`server.js`) & Subsystem (`server/*.js`) Audit Items Resolved
 1. **News Smoothstep Freeze During Market Pause**:

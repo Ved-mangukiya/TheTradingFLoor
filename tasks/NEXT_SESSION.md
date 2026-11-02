@@ -1,11 +1,11 @@
 # NEXT SESSION TASKS — THE TRADING FLOOR CHAMPIONSHIP
 
-**Current Baseline**: Version 2.8.1 (Full Audit Verification • UI Alignment & Host Live News Sync Parity)  
+**Current Baseline**: Version 2.9.0 (Unified Operational Flow Refactor • Hub 2 Guided Workspace • Ceremony Director Bar)  
 **Authoritative Multi-Suite Verification**:
 - `npm test` / `node tests/test_unified_master_flow.js`: **36/36 passing (100%)** across all 11 tournament lifecycle phases in a single chronological run on isolated port 3099.
-- `npm run test:all`: **194/194 passing (100%)** across all 4 chunks (`test_unified_master_flow.js`, `test_chunk2_state_machine.js`, `test_chunk3_ui_and_overlays.js`, `test_chunk4_action_contracts.js`).
+- `npm run test:all`: **195/195 passing (100%)** across all 4 chunks (`test_unified_master_flow.js`, `test_chunk2_state_machine.js`, `test_chunk3_ui_and_overlays.js`, `test_chunk4_action_contracts.js`).
 - `npm run test:phase1`: **5/5 passing (100%)** across deterministic seed reproducibility, stochastic phase diversity, boundary clamping, symmetric order-flow impact, and lifecycle eligibility.
-- DOM ID Integrity: **0 duplicate IDs** across all 748 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
+- DOM ID Integrity: **0 duplicate IDs** across all 737 unique DOM IDs in `public/index.html` (`node tools/find_duplicate_ids.js`).
 - Host Live Market News Parity: Immediate synchronization upon `MARKET_RESUMED`, `MARKET_PAUSED`, `EVENT_CONFIG_LOCKED`, sub-tab navigation, and window focus/visibility change.
 - Host News Reset Purge: Clean DOM element evacuation on championship reset eliminating ghost badges.
 - Setup Section 5 News Plan Preview: Synchronized day-by-day grouped timeline cards with full-width summary header and zero clipping.

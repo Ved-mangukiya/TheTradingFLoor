@@ -577,40 +577,9 @@ Contains:
        VIEW: GUIDED EVENT SETUP CENTRE (#eventSetupView placeholder)
        Canonical 6-step setup workspace is hosted inside #hostView Hub 2 (#hostTabContentEvent)
        ========================================================================== -->
-  <div id="eventSetupView" class="hidden" style="display: none;"></div>
-
-  <!-- Lock Setup Confirmation Modal -->
-  <div id="lockSetupConfirmModal" class="hidden modal-overlay" style="z-index: 130;">
-    <div class="modal-content" style="max-width: 540px; padding: 28px; text-align: center;">
-      <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--champagne-light); color: var(--champagne-accent); font-size: 26px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-        🔒
-      </div>
-      <h3 style="font-size: 20px; font-weight: 900; color: var(--text-forest); margin-bottom: 8px;">
-        Confirm Event Lock &amp; Activate Logins
-      </h3>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
-        Are you ready to lock the competition? This action performs the following authoritative steps:
-      </p>
-
-      <div style="text-align: left; background: var(--surface-cream); border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 24px; font-size: 12px; line-height: 1.6;">
-        <div style="margin-bottom: 6px;">✓ <strong>Team Desks:</strong> Activates credentials for all configured teams.</div>
-        <div style="margin-bottom: 6px;">✓ <strong>Stock Selection:</strong> Permanently freezes the active tradeable equities.</div>
-        <div style="margin-bottom: 6px;">✓ <strong>News Engine:</strong> Locks the scheduled multi-day journalistic wire timeline.</div>
-        <div>✓ <strong>Host Control:</strong> Unlocks the full Live Host Operations Command Centre.</div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 12px;">
-        <button type="button" onclick="closeLockSetupConfirmModal()" class="btn btn-outline" style="padding: 10px 18px;">
-          Cancel / Keep Editing
-        </button>
-        <button type="button" id="btnSubmitLockSetup" onclick="submitLockEventSetup()" class="btn btn-primary" style="padding: 10px 24px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);">
-          Yes, Lock Event &amp; Open Logins
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Post-Lock Day 1 Launch Modal -->
+  <div id="eventSetupView" class="hidden" style="display: none;"></div>
+
+<!-- Post-Lock Day 1 Launch Modal -->
   <div id="postLockDay1Modal" class="hidden modal-overlay" style="z-index: 135;">
     <div class="modal-content" style="max-width: 580px; padding: 32px 28px; text-align: center; border: 2px solid var(--champagne-accent); box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
       <div style="width: 56px; height: 56px; border-radius: 50%; background: #ECFDF5; color: #059669; font-size: 28px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; border: 2px solid #A7F3D0;">
@@ -1249,13 +1218,7 @@ Contains:
 
       <!-- Host Action Buttons -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <button id="btnHostTeamSetup" onclick="openTeamSetupModal()" class="btn btn-outline">
-          👥 Teams Setup
-        </button>
-        <button id="btnHostSettings" onclick="openEventSettingsModal()" class="btn btn-outline">
-          ⚙️ Settings
-        </button>
-        <button onclick="openResetChampionshipModal()" class="btn btn-outline"
+<button onclick="openResetChampionshipModal()" class="btn btn-outline"
           style="border-color: var(--error-red); color: var(--error-red);"
           title="Safely reset all championship data and configure a new championship">
           ⚠️ Reset Game
@@ -1305,7 +1268,13 @@ Contains:
         </div>
 
         <!-- 2. Center: ONE Primary Action Button + Clean Mode Toggle -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <!-- Direct Jump to Hub 2 when in draft setup mode -->
+          <button id="btnAtcDraftJump" type="button" onclick="switchHostTab('event'); switchSetupSection('review');" class="hidden btn btn-primary"
+            style="min-width: 250px; padding: 10px 22px; font-size: 13.5px; font-weight: 900; background: #1D4ED8; border-color: #1E40AF; box-shadow: 0 4px 12px rgba(29,78,216,0.25);">
+            🔒 Complete Setup in Step 6 to Arm Floor ➔
+          </button>
+
           <!-- Appears ONLY when Paused or Standby -->
           <button id="btnMarketResume" type="button" onclick="hostResumeMarket()" class="btn btn-primary"
             style="min-width: 210px; padding: 10px 22px; font-size: 13.5px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 12px rgba(21,128,61,0.25);">
@@ -1350,7 +1319,26 @@ Contains:
             🛑 Emergency Stop
           </button>
         </div>
-      </div>
+      </div>
+      <!-- Stage Winner Ceremony Director Bar (Active during WINNER_ANNOUNCEMENT) -->
+      <div id="hostCeremonyDirectorBar" class="hidden" style="margin-top: 14px; padding-top: 12px; border-top: 2px solid var(--champagne-accent, #B88728); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">👑</span>
+          <strong style="font-size: 13px; color: var(--text-forest); text-transform: uppercase; letter-spacing: 0.05em;">Ceremony Stage Director:</strong>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+          <button type="button" id="btnCeremonySceneIntro" onclick="hostSetPresentationScene('SCENE_INTRO')" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700;">1. Audit Intro</button>
+          <button type="button" id="btnCeremonySceneBronze" onclick="hostSetPresentationScene('SCENE_BRONZE')" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700;">2. 🥉 3rd Place</button>
+          <button type="button" id="btnCeremonySceneSilver" onclick="hostSetPresentationScene('SCENE_SILVER')" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700;">3. 🥈 2nd Place</button>
+          <button type="button" id="btnCeremonySceneDrumroll" onclick="playDrumrollCue()" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 800; border-color: #B45309; color: #B45309;">🥁 Drumroll</button>
+          <button type="button" id="btnCeremonySceneChampion" onclick="hostSetPresentationScene('SCENE_CHAMPION')" class="btn btn-champagne" style="font-size: 11.5px; padding: 6px 14px; font-weight: 900;">4. 🏆 Champion</button>
+          <button type="button" id="btnCeremonyScenePodium" onclick="hostSetPresentationScene('SCENE_PODIUM')" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700;">5. 🎖️ Full Podium</button>
+          <button type="button" id="btnCeremonySceneStandings" onclick="hostSetPresentationScene('SCENE_LEADERBOARD')" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700;">6. 📋 Standings</button>
+          <button type="button" id="btnCeremonyExit" onclick="hostExitWinnerPresentation()" class="btn btn-outline" style="font-size: 11.5px; padding: 6px 12px; font-weight: 700; color: var(--error-red); border-color: var(--error-red);">🚪 Exit Ceremony</button>
+        </div>
+      </div>
+
+
 
       <!-- Hidden Legacy Compatibility Elements (So existing scripts & tests never throw null errors) -->
       <div style="display: none !important;">
@@ -1653,10 +1641,11 @@ Contains:
               Configure tournament rules, team rosters, tradeable stocks, schedule, and news timeline. Settings freeze once locked.
             </p>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="btnLockEventSetupTop" type="button" onclick="openLockSetupConfirmModal()" class="btn btn-champagne" style="font-weight: 800; font-size: 12px; padding: 8px 16px;">
-              🔒 Confirm &amp; Lock Event
-            </button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="setupStepProgressPill" class="badge badge-champagne" style="font-size: 11px; font-weight: 800; padding: 6px 12px;">Step 1 of 6: Details</span>
+            <button id="btnLockEventSetupTop" type="button" onclick="submitLockEventSetupValidated()" class="hidden btn btn-champagne" style="font-weight: 800; font-size: 12px; padding: 8px 16px;">
+              🔒 Confirm &amp; Lock Event
+            </button>
           </div>
         </div>
 
@@ -2055,8 +2044,8 @@ Contains:
               <button id="btnUnlockEventReview" type="button" onclick="hostUnlockEventSetup()" class="hidden btn btn-outline" style="padding: 12px 24px; font-size: 13px; font-weight: 800; border-color: #D97706; color: #B45309;">
                 🔓 Unlock Configuration
               </button>
-              <button id="btnReviewSubmitLock" type="button" onclick="openLockSetupConfirmModal()" class="btn btn-primary" style="padding: 14px 36px; font-size: 15px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 16px rgba(33,134,83,0.3);">
-                🔒 Confirm &amp; Lock Event Setup (Open Team Logins)
+              <button id="btnSubmitLockSetup" type="button" onclick="submitLockEventSetupValidated()" class="btn btn-primary" style="padding: 14px 36px; font-size: 15px; font-weight: 900; background: var(--price-up); border-color: var(--price-up); box-shadow: 0 4px 16px rgba(33,134,83,0.3);">
+                🔒 Confirm &amp; Lock Event Setup (Open Team Logins)
               </button>
             </div>
           </div>
@@ -2180,7 +2169,12 @@ Contains:
               title="Randomize starting prices ±10% within safe bounds">🎲 Randomize Prices (±10%)</button>
             <button onclick="hostResetUniverseBaseline()" class="btn btn-outline"
               style="padding: 4px 8px; font-size: 11px; color: var(--error-red); border-color: var(--error-border);"
-              title="Reset to 20-Stock Baseline">↺ Reset to Baseline</button>
+              title="Reset to 20-Stock Baseline">↺ Reset to Baseline</button>
+            <button type="button" id="btnOpenCircuitTest" onclick="openCircuitHaltTestModal()" class="btn btn-outline"
+              style="padding: 4px 10px; font-size: 11px; font-weight: 800; border-color: #B45309; color: #B45309;"
+              title="Test circuit breaker halts and limits">
+              ⚡ Circuit Breaker Simulator
+            </button>
           </div>
         </div>
 
@@ -2254,7 +2248,12 @@ Contains:
               title="Temporarily reveal private price-impact delta % for 60 seconds">
               👁️ Reveal Private News Details
             </button>
-            </div>
+              <button type="button" id="btnOpenCustomNews" onclick="openCustomNewsModal()" class="btn btn-primary"
+              style="padding: 6px 14px; font-size: 12px; font-weight: 800; background: var(--price-up); border-color: var(--price-up);"
+              title="Broadcast custom breaking news shock">
+              📢 + Broadcast Custom Breaking News
+            </button>
+          </div>
         </div>
 
         <!-- 60-Second Reveal Warning Banner -->
@@ -4515,129 +4514,9 @@ Contains:
         </div>
       </form>
     </div>
-  </div>
-
-  <!-- Modal E: Host Event Settings Modal -->
-  <div id="eventSettingsModal" class="hidden modal-overlay">
-    <div class="modal-content" style="max-width: 540px;">
-      <div class="modal-header">
-        <h2 style="font-size: 18px;">Championship Global Settings</h2>
-        <button onclick="closeEventSettingsModal()" class="modal-close-btn">✕</button>
-      </div>
-
-      <form id="eventSettingsForm">
-        <div class="form-group">
-          <label class="form-label" for="settingEventTitle">Event Title</label>
-          <input id="settingEventTitle" type="text" class="form-input"
-            placeholder="e.g. Annual Intra-College Trading Championship" />
-        </div>
-        <div class="settings-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingDayDuration">Round Duration (Seconds)</label>
-            <input id="settingDayDuration" type="number" step="30" min="60" class="form-input"
-              style="font-family: var(--font-mono);" />
-            <span style="font-size: 11px; color: var(--text-muted);">e.g. 1800s = 30 minutes</span>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingTotalDays">Total Trading Rounds / Days</label>
-            <input id="settingTotalDays" type="number" min="1" max="10" class="form-input"
-              style="font-family: var(--font-mono);" />
-          </div>
-        </div>
-        <div class="settings-modal-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="form-group">
-            <label class="form-label" for="settingCircuitPercent">Circuit Breaker Limit (%)</label>
-            <input id="settingCircuitPercent" type="number" step="1" min="5" max="50" class="form-input"
-              style="font-family: var(--font-mono);" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingStartingCash">Starting Virtual Cash (₹)</label>
-            <input id="settingStartingCash" type="number" step="10000" min="10000" class="form-input"
-              style="font-family: var(--font-mono);" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="settingFeeBps">Transaction Brokerage Fee (Basis Points)</label>
-          <input id="settingFeeBps" type="number" min="0" max="100" step="5" class="form-input"
-            style="font-family: var(--font-mono);" />
-          <span style="font-size: 11px; color: var(--text-muted);">0 bps = 0%, 10 bps = 0.10%, 25 bps = 0.25%</span>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" onclick="closeEventSettingsModal()" class="btn btn-outline">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save & Broadcast Settings</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal F: Host Team Setup & CSV Import/Export Modal -->
-  <div id="teamSetupModal" class="hidden modal-overlay">
-    <div class="modal-content" style="max-width: 820px; max-height: 85vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <div>
-          <h2 style="font-size: 18px;">Team Management & Roster</h2>
-          <p style="font-size: 12px; color: var(--text-muted);">Configure team names, member rosters, credentials, and
-            starting cash.</p>
-        </div>
-        <button onclick="closeTeamSetupModal()" class="modal-close-btn">✕</button>
-      </div>
-
-      <!-- Quick Presets & Add -->
-      <div class="cream-panel"
-        style="padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span
-            style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Presets:</span>
-          <button onclick="generateTeamRows(4)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">4
-            Teams</button>
-          <button onclick="generateTeamRows(8)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">8
-            Teams</button>
-          <button onclick="generateTeamRows(12)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">12
-            Teams</button>
-          <button onclick="generateTeamRows(16)" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;">16
-            Teams</button>
-        </div>
-        <div style="display: flex; gap: 8px;">
-          <button onclick="exportTeamsCsv()" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;">Export
-            CSV</button>
-          <button onclick="addNewTeamRow()" class="btn btn-sage" style="padding: 4px 10px; font-size: 11px;">+ Add
-            Team</button>
-        </div>
-      </div>
-
-      <!-- Editable Roster Table -->
-      <div class="table-scroll-wrap"
-        style="overflow: auto; flex: 1; border: 1px solid var(--subtle-border); border-radius: var(--radius-sm); margin-bottom: 16px; -webkit-overflow-scrolling: touch;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-          <thead>
-            <tr
-              style="background-color: var(--surface-cream); border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 11px; text-transform: uppercase;">
-              <th style="padding: 8px;">Username</th>
-              <th style="padding: 8px;">Team Name</th>
-              <th style="padding: 8px;">Members</th>
-              <th style="padding: 8px;">Password</th>
-              <th style="padding: 8px; text-align: center;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="teamsSetupTbody"></tbody>
-        </table>
-      </div>
-
-      <!-- Submit Footer -->
-      <div
-        style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--subtle-border); padding-top: 14px;">
-        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
-          <input id="resetBalancesCheckbox" type="checkbox" />
-          Reset existing cash balances to Starting Cash
-        </label>
-        <div style="display: flex; gap: 8px;">
-          <button onclick="closeTeamSetupModal()" class="btn btn-outline">Cancel</button>
-          <button onclick="saveTeamsConfiguration()" class="btn btn-primary">Apply & Save Roster</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </div>
+
+</div>
 
   <!-- Modal H: Share Universe Editor Modal (Add/Edit Share) -->
   <div id="shareEditorModal" class="hidden modal-overlay">
@@ -4818,151 +4697,9 @@ Contains:
         </button>
       </div>
     </div>
-  </div>
-
-  <!-- Modal I: New Championship Setup Wizard Modal -->
-  <div id="championshipWizardModal" class="hidden modal-overlay" style="z-index: 125; overflow-y: auto;">
-    <div class="modal-content" style="max-width: 920px; max-height: 90vh; display: flex; flex-direction: column;">
-      <div class="modal-header">
-        <div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 24px;">🏛️</span>
-            <div>
-              <h2 style="font-size: 20px; margin: 0;">New Championship Setup Wizard</h2>
-              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Configure tournament parameters,
-                team roster, and share universe in 3 simple steps.</p>
-            </div>
-          </div>
-        </div>
-        <button onclick="closeChampionshipWizardModal()" class="modal-close-btn">✕</button>
-      </div>
-
-      <div style="flex: 1; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 20px;">
-        <!-- STEP 1: Tournament Parameters -->
-        <div class="wizard-step">
-          <div style="display: flex; align-items: center; margin-bottom: 14px;">
-            <span class="wizard-step-num">1</span>
-            <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Event Brand & Trading
-              Rules</h3>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label" for="wizardEventTitle">Championship Event Title</label>
-              <input id="wizardEventTitle" type="text" value="The Trading Floor Championship" class="form-input" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="wizardStartingCash">Starting Cash per Team (INR)</label>
-              <input id="wizardStartingCash" type="number" value="500000" step="50000" class="form-input"
-                style="font-family: var(--font-mono);" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="wizardTotalDays">Total Trading Days</label>
-              <select id="wizardTotalDays" class="form-input">
-                <option value="1">1 Day (Sprint Final)</option>
-                <option value="2">2 Days (Qualifier + Final)</option>
-                <option value="3" selected>3 Days (Full Championship)</option>
-                <option value="5">5 Days (Week Tournament)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="wizardDayDuration">Trading Session Duration (per Day)</label>
-              <select id="wizardDayDuration" class="form-input">
-                <option value="300">5 Minutes (Ultra Rapid Dry-Run)</option>
-                <option value="600">10 Minutes (Fast Round)</option>
-                <option value="1200">20 Minutes (Standard College Round)</option>
-                <option value="1800" selected>30 Minutes (Championship Official)</option>
-                <option value="2700">45 Minutes (Extended Market)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="wizardTransactionFee">Transaction Fee (Basis Points)</label>
-              <select id="wizardTransactionFee" class="form-input">
-                <option value="0" selected>0 bps (Zero Commission)</option>
-                <option value="5">5 bps (0.05% Institutional)</option>
-                <option value="10">10 bps (0.10% Standard Brokerage)</option>
-                <option value="20">20 bps (0.20% High Friction)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="wizardCircuitBreaker">Circuit Breaker Limit (%)</label>
-              <select id="wizardCircuitBreaker" class="form-input">
-                <option value="15">15% Limit (Strict Exchange)</option>
-                <option value="20" selected>20% Limit (Official GTU Default)</option>
-                <option value="25">25% Limit (Wide Band)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- STEP 2: Team Roster Builder -->
-        <div class="wizard-step">
-          <div
-            style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px;">
-            <div style="display: flex; align-items: center;">
-              <span class="wizard-step-num">2</span>
-              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Participating Teams &
-                Passwords</h3>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
-              <span
-                style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Quick
-                Count:</span>
-              <button type="button" onclick="setWizardTeamCount(4)" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">4 Teams</button>
-              <button type="button" onclick="setWizardTeamCount(8)" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">8 Teams</button>
-              <button type="button" onclick="setWizardTeamCount(12)" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">12 Teams</button>
-              <button type="button" onclick="setWizardTeamCount(16)" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">16 Teams</button>
-              <button type="button" onclick="addWizardTeamRow()" class="btn btn-sage"
-                style="padding: 3px 8px; font-size: 11px;">+ Add Team</button>
-            </div>
-          </div>
-          <div style="overflow-x: auto; max-height: 260px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-              <thead>
-                <tr
-                  style="border-bottom: 1px solid var(--subtle-border); color: var(--text-muted); font-size: 10px; text-transform: uppercase;">
-                  <th style="padding: 6px;">ID</th>
-                  <th style="padding: 6px;">Team Display Name</th>
-                  <th style="padding: 6px;">Username</th>
-                  <th style="padding: 6px;">Password / PIN</th>
-                  <th style="padding: 6px;">Student Members</th>
-                  <th style="padding: 6px; text-align: center;">Action</th>
-                </tr>
-              </thead>
-              <tbody id="wizardTeamsTbody" style="font-family: var(--font-mono);"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- STEP 3: Share Universe Selection -->
-        <div class="wizard-step">
-          <div
-            style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px;">
-            <div style="display: flex; align-items: center;">
-              <span class="wizard-step-num">3</span>
-              <h3 style="font-size: 15px; font-weight: 800; color: var(--text-forest); margin: 0;">Tradeable Share
-                Universe</h3>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-              <button type="button" onclick="toggleAllWizardUniverse(true)" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">Select All</button>
-              <button type="button" onclick="selectWizardUniversePreset('balanced')" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">Balanced Mix</button>
-              <button type="button" onclick="selectWizardUniversePreset('top6')" class="btn btn-outline"
-                style="padding: 3px 8px; font-size: 11px;">Top 6 Only</button>
-            </div>
-          </div>
-          <div id="wizardUniverseContainer"
-            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Wizard Modal Footer -->
+  </div>
+
+<!-- Wizard Modal Footer -->
       <div
         style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid var(--subtle-border); margin-top: 14px;">
         <button type="button" onclick="closeChampionshipWizardModal()" class="btn btn-outline">Close Wizard</button>
@@ -5325,11 +5062,11 @@ Contains:
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
         <button type="button" onclick="closeLifecycleModal('modalStartNextDay')" class="btn btn-outline">Cancel</button>
-        <button type="button" id="btnExecuteStartNextDaySchedule" onclick="executeStartNextDayAndSchedule()" class="btn btn-outline" style="border-color: #2563EB; color: #1D4ED8; font-weight: 800;">
-          ⏱️ Advance &amp; Schedule Countdown...
-        </button>
-        <button type="button" id="btnExecuteStartNextDay" onclick="executeStartNextDay()" class="btn btn-primary" style="background: var(--price-up); border-color: var(--price-up); font-weight: 800;">
-          ▶️ Advance to Standby
+        <button type="button" id="btnExecuteStartNextDay" onclick="executeStartNextDay()" class="btn btn-outline" style="border-color: #2563EB; color: #1D4ED8; font-weight: 800;">
+          ⏳ Roll Over to Standby Lobby
+        </button>
+        <button type="button" id="btnExecuteStartNextDayNow" onclick="executeStartNextDayNow()" class="btn btn-primary" style="background: var(--price-up); border-color: var(--price-up); font-weight: 900; box-shadow: 0 4px 12px rgba(33,134,83,0.25);">
+          🚀 Roll Over &amp; Start Day Now (3-2-1)
         </button>
       </div>
     </div>
