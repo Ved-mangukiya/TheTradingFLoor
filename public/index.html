@@ -1256,7 +1256,7 @@
         <!-- 2. Center: ONE Primary Action Button + Clean Mode Toggle -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <!-- Direct Jump to Hub 2 when in draft setup mode -->
-          <button id="btnAtcDraftJump" type="button" onclick="switchHostTab('event'); switchSetupSection('review');" class="btn btn-primary"
+          <button id="btnAtcDraftJump" type="button" onclick="switchHostTab('event'); switchSetupSection('review');" class="hidden btn btn-primary"
             style="min-width: 250px; padding: 10px 22px; font-size: 13.5px; font-weight: 900; background: #1D4ED8; border-color: #1E40AF; box-shadow: 0 4px 12px rgba(29,78,216,0.25);">
             🔒 Complete Setup in Step 6 to Arm Floor ➔
           </button>
@@ -2921,7 +2921,7 @@
               Completely clears active market trajectories, orders, and returns all 16 desks to Day 1 Standby. Requires entering the explicit confirmation phrase <code style="background: #FEE2E2; padding: 2px 6px; font-weight: 900; border-radius: 4px;">RESET CHAMPIONSHIP</code>. Historical archives and exports remain protected.
             </p>
           </div>
-          <button onclick="openFullResetModal()" class="btn btn-outline"
+          <button onclick="openResetChampionshipModal()" class="btn btn-outline"
             style="padding: 10px 20px; font-size: 13px; font-weight: 800; border-color: #DC2626; color: #DC2626; background: #FFFFFF; box-shadow: 0 4px 12px rgba(220,38,38,0.15);">
             🔄 Reset Championship Event
           </button>

@@ -9933,6 +9933,9 @@ function renderHostView(state) {
   } else if (activeHostTab === 'news' || activeHostTab === 'floor' || activeHostTab === 'market' || activeHostTab === 'stocks' || HOST_TAB_ALIASES[activeHostTab] === 'market') {
     renderHostNews(state);
   }
+  if (typeof updateHostNewsLiveTimers === 'function') {
+    updateHostNewsLiveTimers(state);
+  }
 
   // 3. Render Leaderboard Table (Live Championship Rankings)
   try {
@@ -10118,6 +10121,66 @@ function syncHostSingularActionBar(state) {
   syncHostProgressiveDisclosure(gs);
 }
 
+
+function renderHostDynamicFlowStepper(gs) {
+  if (!gs) return;
+  const day = gs.currentDay || 1;
+  const total = gs.totalDays || 3;
+  const isConcluded = !!(gs.isConcluded || (day >= total && gs.elapsedSeconds >= (gs.dayDurationSeconds || 1800)));
+  const isWinnerActive = !!(gs.presentationState?.active || gs.projectorState?.isWinnerActive || gs.status === 'WINNER_ANNOUNCEMENT');
+  const isScheduled = gs.status === 'SCHEDULED';
+  const isPre = day === 1 && (isScheduled || gs.status === 'PRE_EVENT_COUNTDOWN' || (gs.elapsedSeconds === 0 && gs.status !== 'LIVE'));
+
+  const dynamicStepsContainer = document.getElementById('hostDynamicFlowSteps');
+  if (dynamicStepsContainer) {
+    let html = '';
+    html += `<span class="flow-step-pill ${isPre ? 'active' : 'completed'}">Pre-Event</span>`;
+    html += `<span style="color: var(--text-muted); font-size: 11px;">➔</span>`;
+    for (let i = 1; i <= total; i++) {
+      let cls = 'flow-step-pill';
+      if (i < day) cls += ' completed';
+      else if (i === day) {
+        if (gs.status === 'DAY_COMPLETED' || isConcluded) cls += ' completed';
+        else if (isPre) cls = 'flow-step-pill';
+        else cls += ' active';
+      }
+      html += `<span class="${cls}">Day ${i}</span>`;
+      html += `<span style="color: var(--text-muted); font-size: 11px;">➔</span>`;
+    }
+    html += `<span class="flow-step-pill ${isWinnerActive || isConcluded ? 'active' : ''}">🏆 Winner Reveal</span>`;
+    dynamicStepsContainer.innerHTML = html;
+  }
+
+  const pPre = document.getElementById('flowStepPre');
+  const pD1 = document.getElementById('flowStepDay1');
+  const pD2 = document.getElementById('flowStepDay2');
+  const pD3 = document.getElementById('flowStepDay3');
+  const pRev = document.getElementById('flowStepReveal');
+
+  if (pPre) pPre.className = `flow-step-pill ${isPre ? 'active' : 'completed'}`;
+  if (pD1) {
+    if (day === 1 && !isConcluded && !isPre) pD1.className = 'flow-step-pill active';
+    else if (day > 1 || isConcluded) pD1.className = 'flow-step-pill completed';
+    else pD1.className = 'flow-step-pill';
+  }
+  if (pD2) {
+    if (day === 2 && !isConcluded) pD2.className = 'flow-step-pill active';
+    else if (day > 2 || isConcluded) pD2.className = 'flow-step-pill completed';
+    else pD2.className = 'flow-step-pill';
+  }
+  if (pD3) {
+    if (day >= 3 && !isConcluded) pD3.className = 'flow-step-pill active';
+    else if (isConcluded) pD3.className = 'flow-step-pill completed';
+    else pD3.className = 'flow-step-pill';
+  }
+  if (pRev) {
+    if (isConcluded || isWinnerActive) pRev.className = 'flow-step-pill active';
+    else pRev.className = 'flow-step-pill';
+  }
+}
+window.renderHostDynamicFlowStepper = renderHostDynamicFlowStepper;
+window.openFullResetModal = openResetChampionshipModal;
+
 function syncHostProgressiveDisclosure(gs) {
   if (!gs) return;
 
@@ -10129,7 +10192,13 @@ function syncHostProgressiveDisclosure(gs) {
   const remSec = Math.max(0, dur - elapsed);
 
   // Update Dynamic Flow Stepper Steps
-  renderHostDynamicFlowStepper(gs);
+  try {
+    if (typeof renderHostDynamicFlowStepper === 'function') {
+      renderHostDynamicFlowStepper(gs);
+    }
+  } catch (errStepper) {
+    console.warn('[FLOW STEPPER WARN]', errStepper);
+  }
 
   // Update Telemetry Header Labels
   const badge = document.getElementById('marketOpsLiveBadge');
@@ -11937,9 +12006,9 @@ function updateHostNewsLiveTimers(state) {
 
     if (upcoming) {
       const rem = Math.max(0, (upcoming.trigger_second || 0) - elapsed);
-      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING' || (!gs.isPaused && elapsed > 0)) && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
-      const isCountdown = gs.status === 'COUNTDOWN' || (gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
-      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'VISIBLE_FROZEN' || gs.pauseMode === 'EMERGENCY_HALT') && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING') && !gs.isPaused && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isCountdown = gs.status === 'COUNTDOWN' || !!(gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.isPaused === true) && gs.status !== 'STANDBY' && gs.status !== 'SCHEDULED' && gs.status !== 'SETUP' && gs.status !== 'RESET' && gs.status !== 'DAY_COMPLETED' && !gs.isConcluded;
 
       if (isActuallyPaused) {
         bannerEl.innerHTML = `<span style="color:#B45309;">⏸️ Market Paused:</span> <span style="color:var(--text-forest); font-weight:700;">${escapeHtml(upcoming.headline.slice(0, 50))}...</span> (<strong style="color:var(--text-forest);">${formatMMSS(rem)}</strong> remaining after resume)`;
@@ -11986,9 +12055,9 @@ function updateHostNewsLiveTimers(state) {
       badgeEl.innerHTML = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(ev.trigger_second || 0)}</span>`;
     } else {
       const remSec = Math.max(0, (ev.trigger_second || 0) - elapsed);
-      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING' || (!gs.isPaused && elapsed > 0)) && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
-      const isCountdown = gs.status === 'COUNTDOWN' || (gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
-      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.pauseMode === 'BLACKOUT' || gs.pauseMode === 'VISIBLE_FROZEN' || gs.pauseMode === 'EMERGENCY_HALT') && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isLive = (gs.status === 'LIVE' || gs.status === 'RUNNING') && !gs.isPaused && gs.status !== 'STANDBY' && gs.status !== 'SETUP' && gs.status !== 'RESET';
+      const isCountdown = gs.status === 'COUNTDOWN' || !!(gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gs.status === 'PAUSED' || gs.isPaused === true) && gs.status !== 'STANDBY' && gs.status !== 'SCHEDULED' && gs.status !== 'SETUP' && gs.status !== 'RESET' && gs.status !== 'DAY_COMPLETED' && !gs.isConcluded;
 
       if (isLive) {
         if (remSec === 0) {
@@ -12049,10 +12118,11 @@ function renderHostNews(state) {
     } else if (evDay > currentDay) {
       initialBadge = `<span class="badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">📅 DAY ${evDay} @ ${formatMMSS(triggerSec)}</span>`;
     } else {
-      const gsStatus = (state.gameState && state.gameState.status) || 'STANDBY';
-      const isLive = (gsStatus === 'LIVE' || gsStatus === 'RUNNING' || (state.gameState && !state.gameState.isPaused && elapsedSec > 0)) && gsStatus !== 'STANDBY' && gsStatus !== 'SETUP' && gsStatus !== 'RESET';
-      const isCountdown = gsStatus === 'COUNTDOWN' || (state.gameState && state.gameState.activeCountdown && (state.gameState.activeCountdown.type === 'RESUME' || state.gameState.activeCountdown.seconds > 0));
-      const isActuallyPaused = !isLive && !isCountdown && (gsStatus === 'PAUSED' || (state.gameState && (state.gameState.pauseMode === 'BLACKOUT' || state.gameState.pauseMode === 'VISIBLE_FROZEN' || state.gameState.pauseMode === 'EMERGENCY_HALT'))) && gsStatus !== 'STANDBY' && gsStatus !== 'SETUP' && gsStatus !== 'RESET';
+      const gs = state.gameState || {};
+      const gsStatus = gs.status || 'STANDBY';
+      const isLive = (gsStatus === 'LIVE' || gsStatus === 'RUNNING') && !gs.isPaused && gsStatus !== 'STANDBY' && gsStatus !== 'SETUP' && gsStatus !== 'RESET';
+      const isCountdown = gsStatus === 'COUNTDOWN' || !!(gs.activeCountdown && (gs.activeCountdown.type === 'RESUME' || gs.activeCountdown.seconds > 0));
+      const isActuallyPaused = !isLive && !isCountdown && (gsStatus === 'PAUSED' || gs.isPaused === true) && gsStatus !== 'STANDBY' && gsStatus !== 'SCHEDULED' && gsStatus !== 'SETUP' && gsStatus !== 'RESET' && gsStatus !== 'DAY_COMPLETED' && !gs.isConcluded;
 
       if (isLive) {
         const estTimeStr = ev.estimatedWallClock || (remSec > 0 ? new Date(Date.now() + remSec * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) + ' IST' : '');

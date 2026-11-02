@@ -1248,6 +1248,7 @@ function triggerCircuitBreaker(stock, direction) {
   stock.isHalted = true;
   stock.haltDirection = direction;
   stock.activeTransition = null;
+  stock.circuitCooldownUntilEpoch = 0;
 
   const limitFactor = direction === 'UPPER'
     ? (1 + gameState.circuitBreakerPercent / 100)
@@ -1278,6 +1279,23 @@ function releaseCircuitBreaker(stock) {
   const oldDir = stock.haltDirection;
   stock.isHalted = false;
   stock.haltDirection = null;
+
+  // Institutional Market-Maker Stabilization Cushion (Soros Liquidity Intervention)
+  // Pull price safely 2.0% inside the band so stochastic tick loop doesn't instantly re-trip the halt
+  const cbPct = gameState.circuitBreakerPercent || 20;
+  const upperLimit = +(stock.dayOpenPrice * (1 + cbPct / 100)).toFixed(2);
+  const lowerLimit = +(stock.dayOpenPrice * (1 - cbPct / 100)).toFixed(2);
+
+  if (oldDir === 'UPPER') {
+    stock.currentPrice = +(upperLimit * 0.98).toFixed(2); // 2.0% pullback cushion below upper limit
+  } else if (oldDir === 'LOWER') {
+    stock.currentPrice = +(lowerLimit * 1.02).toFixed(2); // 2.0% bounce cushion above lower limit
+  }
+
+  // Clear any lingering shock transitions and arm 45-second stabilization cooldown
+  stock.activeTransition = null;
+  stock.circuitCooldownUntilEpoch = Date.now() + 45000;
+  recordStockHistoryPoint(stock);
 
   recordAuditEvent('CIRCUIT_RECOVERY', {
     ticker: stock.ticker,
@@ -1605,10 +1623,19 @@ function restartEngineInterval() {
         recordStockHistoryPoint(stock);
 
         const curPaise = Math.round(stock.currentPrice * 100);
-        if (curPaise >= Math.round(upperLimit * 100) && !stock.isHalted) {
-          triggerCircuitBreaker(stock, 'UPPER');
-        } else if (curPaise <= Math.round(lowerLimit * 100) && !stock.isHalted) {
-          triggerCircuitBreaker(stock, 'LOWER');
+        const isCooldown = stock.circuitCooldownUntilEpoch && Date.now() < stock.circuitCooldownUntilEpoch;
+        if (isCooldown) {
+          if (curPaise >= Math.round(upperLimit * 100)) {
+            stock.currentPrice = +(upperLimit - 0.10).toFixed(2);
+          } else if (curPaise <= Math.round(lowerLimit * 100)) {
+            stock.currentPrice = +(lowerLimit + 0.10).toFixed(2);
+          }
+        } else {
+          if (curPaise >= Math.round(upperLimit * 100) && !stock.isHalted) {
+            triggerCircuitBreaker(stock, 'UPPER');
+          } else if (curPaise <= Math.round(lowerLimit * 100) && !stock.isHalted) {
+            triggerCircuitBreaker(stock, 'LOWER');
+          }
         }
         return;
       }
@@ -1655,10 +1682,19 @@ function restartEngineInterval() {
       const curPaise = Math.round(stock.currentPrice * 100);
       const upperPaise = Math.round(upperLimit * 100);
       const lowerPaise = Math.round(lowerLimit * 100);
-      if (curPaise >= upperPaise && !stock.isHalted) {
-        triggerCircuitBreaker(stock, 'UPPER');
-      } else if (curPaise <= lowerPaise && !stock.isHalted) {
-        triggerCircuitBreaker(stock, 'LOWER');
+      const isCooldown = stock.circuitCooldownUntilEpoch && Date.now() < stock.circuitCooldownUntilEpoch;
+      if (isCooldown) {
+        if (curPaise >= upperPaise) {
+          stock.currentPrice = +(upperLimit - 0.10).toFixed(2);
+        } else if (curPaise <= lowerPaise) {
+          stock.currentPrice = +(lowerLimit + 0.10).toFixed(2);
+        }
+      } else {
+        if (curPaise >= upperPaise && !stock.isHalted) {
+          triggerCircuitBreaker(stock, 'UPPER');
+        } else if (curPaise <= lowerPaise && !stock.isHalted) {
+          triggerCircuitBreaker(stock, 'LOWER');
+        }
       }
     });
 
@@ -2597,10 +2633,15 @@ wss.on('connection', (ws) => {
         // Dynamic market impact (unified order-flow buying pressure)
         const buyImpact = calculateOrderFlowImpact(stock, qty, 'BUY');
         const candidatePrice = +(stock.currentPrice + buyImpact).toFixed(2);
+        const isCooldown = stock.circuitCooldownUntilEpoch && Date.now() < stock.circuitCooldownUntilEpoch;
         if (Math.round(candidatePrice * 100) >= Math.round(upperLimit * 100)) {
-          stock.currentPrice = upperLimit;
-          if (!stock.isHalted) {
-            triggerCircuitBreaker(stock, 'UPPER');
+          if (isCooldown) {
+            stock.currentPrice = +(upperLimit - 0.05).toFixed(2);
+          } else {
+            stock.currentPrice = upperLimit;
+            if (!stock.isHalted) {
+              triggerCircuitBreaker(stock, 'UPPER');
+            }
           }
         } else {
           stock.currentPrice = Math.min(stock.max_price || 500000, candidatePrice);
@@ -2682,10 +2723,15 @@ wss.on('connection', (ws) => {
         // Dynamic market impact (unified order-flow selling pressure)
         const sellImpact = Math.abs(calculateOrderFlowImpact(stock, qty, 'SELL'));
         const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
+        const isCooldown = stock.circuitCooldownUntilEpoch && Date.now() < stock.circuitCooldownUntilEpoch;
         if (Math.round(candidatePrice * 100) <= Math.round(lowerLimit * 100)) {
-          stock.currentPrice = lowerLimit;
-          if (!stock.isHalted) {
-            triggerCircuitBreaker(stock, 'LOWER');
+          if (isCooldown) {
+            stock.currentPrice = +(lowerLimit + 0.05).toFixed(2);
+          } else {
+            stock.currentPrice = lowerLimit;
+            if (!stock.isHalted) {
+              triggerCircuitBreaker(stock, 'LOWER');
+            }
           }
         } else {
           stock.currentPrice = Math.max(stock.min_price || 1, candidatePrice);
@@ -2833,10 +2879,15 @@ wss.on('connection', (ws) => {
         // Dynamic market impact with full Circuit Breaker clamping & Upper Circuit recovery
         const sellImpact = Math.abs(calculateOrderFlowImpact(stock, qty, 'SELL'));
         const candidatePrice = +(stock.currentPrice - sellImpact).toFixed(2);
+        const isCooldown = stock.circuitCooldownUntilEpoch && Date.now() < stock.circuitCooldownUntilEpoch;
         if (Math.round(candidatePrice * 100) <= Math.round(lowerLimit * 100)) {
-          stock.currentPrice = lowerLimit;
-          if (!stock.isHalted) {
-            triggerCircuitBreaker(stock, 'LOWER');
+          if (isCooldown) {
+            stock.currentPrice = +(lowerLimit + 0.05).toFixed(2);
+          } else {
+            stock.currentPrice = lowerLimit;
+            if (!stock.isHalted) {
+              triggerCircuitBreaker(stock, 'LOWER');
+            }
           }
         } else {
           stock.currentPrice = Math.max(stock.min_price || 1, candidatePrice);
@@ -4521,6 +4572,7 @@ wss.on('connection', (ws) => {
           c.isHalted = false;
           c.haltDirection = null;
           c.activeTransition = null;
+          c.circuitCooldownUntilEpoch = 0;
           c.history = [{ time: 0, price: base }];
         });
 

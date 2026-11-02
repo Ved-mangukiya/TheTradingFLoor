@@ -378,3 +378,4 @@ module.exports = {
   startAutoNewsSync,
   loadCacheFromDisk
 };
+
