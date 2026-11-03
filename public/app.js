@@ -14263,3 +14263,293 @@ window.closeFullNewsModal = closeFullNewsModal;
     setInterval(tickRealtimeClocks, 1000);
   }
 })();
+
+
+// ==========================================================================
+// VINTAGE FINANCIAL BROADSHEET & ARCHIVAL BRAND SYSTEM ENGINE (v3.0)
+// Themes: Aged Linen (#f6f1e5), FT Salmon (#fbf0e4), NYT Ivory (#faf8f3)
+// Typewriter Audio Feedback • Font Scaler • Reading Track • Print Support
+// ==========================================================================
+(function initBroadsheetBrandEngine() {
+  // 1. Web Audio API Mechanical Typewriter & Telegraph Synthesizer
+  const BroadsheetSound = {
+    ctx: null,
+    soundEnabled: false,
+
+    init() {
+      try {
+        const saved = localStorage.getItem('ttf_typewriter_sound');
+        this.soundEnabled = saved === 'true';
+      } catch (e) {
+        this.soundEnabled = false;
+      }
+
+      this.updateUI();
+
+      const toggleBtn = document.getElementById('soundToggleBtn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          this.toggleSound();
+        });
+      }
+
+      // Intercept button and interactive clicks for physical typewriter tick
+      if (typeof document !== 'undefined') {
+        document.addEventListener('click', (e) => {
+          const t = e.target;
+          if (!t) return;
+          if (t.closest('button') || t.closest('.font-btn') || t.closest('.vintage-tab-button') || t.closest('.lot-pill')) {
+            this.playClick();
+          }
+        }, true);
+
+        document.addEventListener('keydown', (e) => {
+          const t = e.target;
+          if (!t) return;
+          if (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA') {
+            this.playClick();
+          }
+        }, true);
+      }
+    },
+
+    getContext() {
+      if (!this.ctx) {
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) this.ctx = new AudioContextClass();
+        } catch (e) {}
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      return this.ctx;
+    },
+
+    toggleSound() {
+      this.soundEnabled = !this.soundEnabled;
+      try {
+        localStorage.setItem('ttf_typewriter_sound', String(this.soundEnabled));
+      } catch (e) {}
+      this.updateUI();
+      if (this.soundEnabled) {
+        this.playChime();
+      }
+    },
+
+    updateUI() {
+      const btn = document.getElementById('soundToggleBtn');
+      if (btn) {
+        if (this.soundEnabled) {
+          btn.classList.remove('muted');
+          btn.innerHTML = '<span>🔊</span> SOUND ON';
+        } else {
+          btn.classList.add('muted');
+          btn.innerHTML = '<span>🔈</span> MUTED';
+        }
+      }
+    },
+
+    playClick() {
+      if (!this.soundEnabled) return;
+      const ctx = this.getContext();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.035);
+
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.035);
+      } catch (e) {}
+    },
+
+    playChime() {
+      if (!this.soundEnabled) return;
+      const ctx = this.getContext();
+      if (!ctx) return;
+      try {
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e) {}
+    }
+  };
+
+  // 2. 100% Light Pastel Theme Cycler (Aged Linen -> FT Salmon -> NYT Ivory)
+  const BroadsheetTheme = {
+    themes: ['theme-aged', 'theme-salmon', 'theme-ivory'],
+    labels: {
+      'theme-aged': 'AGED PARCHMENT',
+      'theme-salmon': 'FT SALMON PEACH',
+      'theme-ivory': 'NYT HERITAGE IVORY'
+    },
+    icons: {
+      'theme-aged': '📜',
+      'theme-salmon': '📰',
+      'theme-ivory': '🏛️'
+    },
+    currentTheme: 'theme-aged',
+
+    init() {
+      let saved = 'theme-aged';
+      try {
+        saved = localStorage.getItem('ttf_broadsheet_theme') || 'theme-aged';
+      } catch (e) {}
+
+      if (this.themes.includes(saved)) {
+        this.currentTheme = saved;
+      }
+      this.apply(this.currentTheme);
+
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          this.cycle();
+        });
+      }
+    },
+
+    apply(theme) {
+      this.currentTheme = theme;
+      if (typeof document !== 'undefined' && document.body) {
+        this.themes.forEach(t => document.body.classList.remove(t));
+        document.body.classList.add(theme);
+      }
+
+      const labelEl = document.getElementById('themeLabel');
+      const iconEl = document.getElementById('themeIcon');
+      if (labelEl) labelEl.textContent = this.labels[theme] || 'AGED PARCHMENT';
+      if (iconEl) iconEl.textContent = this.icons[theme] || '📜';
+
+      try {
+        localStorage.setItem('ttf_broadsheet_theme', theme);
+      } catch (e) {}
+    },
+
+    cycle() {
+      const nextIdx = (this.themes.indexOf(this.currentTheme) + 1) % this.themes.length;
+      this.apply(this.themes[nextIdx]);
+      BroadsheetSound.playClick();
+    }
+  };
+
+  // 3. Typographic Font Scale Adjuster (sm / md / lg)
+  const BroadsheetTypeScale = {
+    sizes: ['font-size-sm', 'font-size-md', 'font-size-lg'],
+    currentSize: 'font-size-md',
+
+    init() {
+      let saved = 'font-size-md';
+      try {
+        saved = localStorage.getItem('ttf_broadsheet_fontsize') || 'font-size-md';
+      } catch (e) {}
+
+      if (this.sizes.includes(saved)) {
+        this.currentSize = saved;
+      }
+      this.apply(this.currentSize);
+
+      if (typeof document !== 'undefined') {
+        const buttons = document.querySelectorAll('.font-btn');
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sz = btn.getAttribute('data-size');
+            const targetClass = 'font-size-' + sz;
+            if (this.sizes.includes(targetClass)) {
+              this.apply(targetClass);
+              BroadsheetSound.playClick();
+            }
+          });
+        });
+      }
+    },
+
+    apply(sizeClass) {
+      this.currentSize = sizeClass;
+      if (typeof document !== 'undefined' && document.body) {
+        this.sizes.forEach(s => document.body.classList.remove(s));
+        document.body.classList.add(sizeClass);
+
+        const buttons = document.querySelectorAll('.font-btn');
+        buttons.forEach(btn => {
+          const sz = btn.getAttribute('data-size');
+          btn.classList.toggle('active', 'font-size-' + sz === sizeClass);
+        });
+      }
+
+      try {
+        localStorage.setItem('ttf_broadsheet_fontsize', sizeClass);
+      } catch (e) {}
+    }
+  };
+
+  // 4. Broadsheet Reading Progress & Print Edition
+  const BroadsheetReadingTrack = {
+    init() {
+      if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+      const track = document.getElementById('readingProgressBar');
+      if (track) {
+        window.addEventListener('scroll', () => {
+          const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+          const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+          track.style.width = scrolled.toFixed(1) + '%';
+        }, { passive: true });
+      }
+
+      const printBtn = document.getElementById('printEditionBtn');
+      if (printBtn) {
+        printBtn.addEventListener('click', () => {
+          BroadsheetSound.playClick();
+          window.print();
+        });
+      }
+    }
+  };
+
+  // Expose global helpers
+  if (typeof window !== 'undefined') {
+    window.SoundEngine = BroadsheetSound;
+    window.BroadsheetTheme = BroadsheetTheme;
+    window.BroadsheetTypeScale = BroadsheetTypeScale;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        BroadsheetSound.init();
+        BroadsheetTheme.init();
+        BroadsheetTypeScale.init();
+        BroadsheetReadingTrack.init();
+      });
+    } else {
+      BroadsheetSound.init();
+      BroadsheetTheme.init();
+      BroadsheetTypeScale.init();
+      BroadsheetReadingTrack.init();
+    }
+  }
+})();
