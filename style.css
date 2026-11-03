@@ -1,104 +1,288 @@
 /* ==========================================================================
-   THE TRADING FLOOR CHAMPIONSHIP — INSTITUTIONAL DESIGN SYSTEM
-   Theme: Premium White, Warm Ivory, and Pastel Luxury
-   Offline-First Architecture (Zero CDN Dependency)
+   THE TRADING FLOOR CHAMPIONSHIP — MASTER VINTAGE BROADSHEET DESIGN SYSTEM v3.0
+   Theme: Aged Linen (#f6f1e5) • FT Salmon Peach (#fbf0e4) • NYT Heritage Cream (#faf8f3)
+   Offline-First Zero-CDN Architecture • Aristocratic Letterpress Aesthetic
+   Architected for Ved Mangukiya • SSASIT (GTU Code: 076)
    ========================================================================== */
 
-/* 1. DESIGN TOKENS & SYSTEM VARIABLES */
+/* 1. ARCHIVAL BROADSHEET DESIGN TOKENS & SYSTEM VARIABLES */
 :root {
-  /* v4 Projector-Grade Card Stock Tokens */
-  --paper: #FFFDF9;
-  --paper-2: #EFE5CE;
-  --paper-3: #E4D7B8;
-  --edge: rgba(48, 34, 10, 0.34);
-  --edge-strong: rgba(22, 32, 46, 0.65);
-  --ink: #0A121E;
-  --ink-2: #253244;
-  --ink-3: #435166;
-  --gold-ink: #78530D;
-  --gold: #B88728;
-  --gold-hi: #F5E3A6;
-  --gold-lo: #684A10;
-  --navy: #0F2137;
-  --navy-2: #1E3A5F;
-  --green: #0F683C;
-  --green-bg: #E9F6EE;
-  --red: #B42318;
-  --red-bg: #FEECEB;
-  --amber: #9A4A06;
-  --amber-bg: #FEF3C7;
-  --g1: 18%;
-  --g2: 82%;
+  /* === Theme 1: Archival Broadside (Classic Aged Linen #f6f1e5 - Default) === */
+  --paper-base:      #f6f1e5;
+  --paper-surface:   #faf7f0;
+  --paper-panel:     #efe7d5;
+  --paper-old:       #e5dac0;
+  --paper-tint:      #dcceb0;
+  --paper-card:      #fdfbf7;
+  --paper-highlight: #fffefb;
+
+  /* Primary Archival Printer's Inks */
+  --ink-black:   #18120a;
+  --ink-dark:    #2b2216;
+  --ink-brown:   #493926;
+  --ink-light:   #735f47;
+  --ink-muted:   #938069;
+  --ink-faint:   #b8a892;
+
+  /* Pastoral & Archival Financial Accents (Soft & Authoritative) */
+  --bull-sage:      #2e4d25;
+  --bull-sage-soft: #3f6633;
+  --bull-pastel:    #eef5ea;
+  --bull-border:    #4e783f;
+
+  --bear-crimson:     #782823;
+  --bear-crimson-soft:#963832;
+  --bear-pastel:      #faecea;
+  --bear-border:      #a84841;
+
+  --sepia-amber:      #7c4617;
+  --sepia-amber-soft: #a05d21;
+  --sepia-pastel:     #fbf2e6;
+
+  --navy-slate:       #1c2a3d;
+  --navy-slate-soft:  #2f435f;
+  --navy-pastel:      #eaf0f7;
+
+  --gold-crest:       #b48b26;
+  --gold-pastel:      #faf4de;
+
+  /* Structural Borders */
+  --border-dark:  #2b2216;
+  --border-mid:   #78644e;
+  --border-aged:  #b7a48a;
+  --border-light: #d8c9b2;
+  --border-faint: #e9dec9;
+
+  /* Offline-First Zero-CDN Font Stacks with System Typography Fallbacks */
+  --font-masthead:   'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-headline:   'Old Standard TT', Georgia, 'Times New Roman', serif;
+  --font-body:       'Crimson Text', Georgia, Garamond, serif;
+  --font-typewriter: 'Courier Prime', 'Courier New', monospace;
+  --font-gothic:     'IM Fell English', Georgia, serif;
+  --font-serif:      var(--font-masthead);
+  --font-sans:       'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:       var(--font-typewriter);
+
+  /* Spacing Grid (4px base) */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;
+  --sp-4: 16px;  --sp-5: 24px;  --sp-6: 32px;
+  --sp-7: 48px;  --sp-8: 64px;  --sp-9: 96px;
+
+  /* Tactile Letterpress Elevation Shadows & Radii */
+  --shadow-xs:    1px 1px 0 var(--border-dark);
+  --shadow-sm:    2px 2px 0 var(--border-dark);
+  --shadow-md:    4px 4px 0 var(--border-dark);
+  --shadow-lg:    7px 7px 0 var(--border-dark);
+  --shadow-xl:    10px 10px 0 var(--border-dark);
+  --shadow-paper: 0 4px 14px rgba(43, 34, 22, 0.08), 2px 2px 0 var(--border-dark);
+  --shadow-champagne: 0 8px 24px rgba(180, 139, 38, 0.22);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Transitions */
+  --ease-fast: 0.14s cubic-bezier(0.2, 0, 0, 1);
+  --ease-mid:  0.24s cubic-bezier(0.2, 0, 0, 1);
+  --ease-slow: 0.4s cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layout Dimensions */
+  --sidebar-w:    280px;
+  --content-max:  1320px;
+
+  /* SVG Paper Grain Texture */
   --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 
-  /* Core Luxury Ivory & Pastel Palette (Strictly Light / Pastel Luxury - Zero Dark Shell) */
-  --bg-ivory: #F8F5EF;
-  --body-gradient: radial-gradient(1200px 800px at 20% 0%, #FFFDF8 0%, #F8F5EF 55%, #F0E9DA 100%);
-  --card-white: #FFFFFF;
-  --surface-cream: #FFFDF9;
+  /* === Backwards-Compatible Legacy Token Mappings (Zero UI Breakage) === */
+  --paper: var(--paper-card);
+  --paper-2: var(--paper-panel);
+  --paper-3: var(--paper-old);
+  --edge: var(--border-aged);
+  --edge-strong: var(--border-dark);
+  --ink: var(--ink-black);
+  --ink-2: var(--ink-dark);
+  --ink-3: var(--ink-brown);
+  --gold-ink: var(--sepia-amber);
+  --gold: var(--gold-crest);
+  --gold-hi: var(--gold-pastel);
+  --gold-lo: var(--ink-brown);
+  --navy: var(--navy-slate);
+  --navy-2: var(--navy-slate-soft);
+  --green: var(--bull-sage);
+  --green-bg: var(--bull-pastel);
+  --red: var(--bear-crimson);
+  --red-bg: var(--bear-pastel);
+  --amber: var(--sepia-amber);
+  --amber-bg: var(--sepia-pastel);
+  --g1: 18%;
+  --g2: 82%;
+
+  --bg-ivory: var(--paper-base);
+  --body-gradient: radial-gradient(1200px 800px at 20% 0%, var(--paper-highlight) 0%, var(--paper-base) 55%, var(--paper-panel) 100%);
+  --card-white: var(--paper-card);
+  --surface-cream: var(--paper-surface);
   
-  /* High-Contrast Aristocratic Typography */
-  --text-forest: #14352B;       /* Deep British Racing Emerald for Editorial Serif Headings (13:1 contrast on white) */
-  --text-charcoal: #18221D;     /* Deep Slate Charcoal for Crystal-Clear UI Body Text (14:1 contrast on white) */
-  --text-muted: #4E5D57;        /* Readable Slate Sage for Subtitles & Meta (5.5:1 contrast - WCAG AAA compliant) */
-  --text-light: #70807A;        /* Secondary Tagline & Hint Color */
+  --text-forest: var(--bull-sage);
+  --text-charcoal: var(--ink-dark);
+  --text-muted: var(--ink-light);
+  --text-light: var(--ink-muted);
 
-  /* Pastel Luxury Surfaces & Champagne Accents */
-  --accent-blue: #325886;
-  --champagne-accent: #B49A70;
-  --champagne-hover: #9C835A;
-  --champagne-light: #F7F3EB;
-  --champagne-glow: rgba(180, 154, 112, 0.22);
-  --soft-sage: #E3EBE3;
-  --soft-sage-hover: #D2E0D2;
-  --pale-blue: #E7EDF5;
-  --pale-blue-hover: #D5E2F0;
-  --warm-beige: #EEE4D6;
-  --subtle-border: #E5DDD1;
-  --card-border: #DFD7CA;
-  --border-focus: #B49A70;
+  --accent-blue: var(--navy-slate-soft);
+  --champagne-accent: var(--gold-crest);
+  --champagne-hover: var(--sepia-amber);
+  --champagne-light: var(--paper-surface);
+  --champagne-glow: rgba(180, 139, 38, 0.22);
+  --soft-sage: var(--bull-pastel);
+  --soft-sage-hover: #d2e0d2;
+  --pale-blue: var(--navy-pastel);
+  --pale-blue-hover: #d5e2f0;
+  --warm-beige: var(--paper-panel);
+  --subtle-border: var(--border-light);
+  --card-border: var(--border-dark);
+  --border-focus: var(--border-dark);
 
-  /* Financial Indicators (Vibrant High-Contrast Signals) */
-  --price-up: #15803D;          /* Vibrant Forest Emerald (+Profit) */
-  --price-up-bg: #EAF5EE;
-  --price-up-border: #BCE3CB;
+  --price-up: var(--bull-sage);
+  --price-up-bg: var(--bull-pastel);
+  --price-up-border: var(--bull-border);
 
-  --price-down: #DC2626;        /* Vibrant Crimson Loss (-Loss) */
-  --price-down-bg: #FEF2F2;
-  --price-down-border: #FECACA;
+  --price-down: var(--bear-crimson);
+  --price-down-bg: var(--bear-pastel);
+  --price-down-border: var(--bear-border);
 
-  --warning-amber: #B45309;      /* Warning Amber */
-  --warning-bg: #FFFBEB;
-  --warning-border: #FDE68A;
+  --warning-amber: var(--sepia-amber);
+  --warning-bg: var(--sepia-pastel);
+  --warning-border: var(--border-mid);
 
-  --error-red: #B91C1C;          /* Error Red */
-  --error-bg: #FEF2F2;
-  --error-border: #FECACA;
+  --error-red: var(--bear-crimson);
+  --error-bg: var(--bear-pastel);
+  --error-border: var(--bear-border);
 
-  /* Podium Accents */
-  --podium-gold: #D4AF37;
-  --podium-gold-bg: #FCF8E8;
+  --podium-gold: var(--gold-crest);
+  --podium-gold-bg: var(--gold-pastel);
   --podium-silver: #8C9CAE;
-  --podium-silver-bg: #F1F4F8;
+  --podium-silver-bg: var(--navy-pastel);
   --podium-bronze: #A06840;
-  --podium-bronze-bg: #F9EFE7;
-
-  /* Distinct Typography Stacks (with offline-ready fallbacks) */
-  --font-serif: 'Playfair Display', 'Libre Baskerville', 'Baskerville', Georgia, 'Times New Roman', serif;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'SF Mono', Consolas, 'Courier New', monospace;
-
-  /* Radius & Shadows (Warm Organic Luxury Shadows) */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --shadow-sm: 0 1px 3px rgba(20, 53, 43, 0.04), 0 1px 2px rgba(20, 53, 43, 0.02);
-  --shadow-md: 0 4px 16px rgba(20, 53, 43, 0.06), 0 1px 4px rgba(20, 53, 43, 0.03);
-  --shadow-lg: 0 12px 32px rgba(20, 53, 43, 0.08), 0 2px 8px rgba(20, 53, 43, 0.03);
-  --shadow-xl: 0 24px 48px rgba(20, 53, 43, 0.12);
-  --shadow-champagne: 0 8px 24px rgba(180, 154, 112, 0.2);
+  --podium-bronze-bg: var(--sepia-pastel);
 }
+
+/* === Theme 1: Archival Broadside (Classic Aged Linen #f6f1e5) === */
+body.theme-aged {
+  --paper-base:      #f6f1e5;
+  --paper-surface:   #faf7f0;
+  --paper-panel:     #efe7d5;
+  --paper-old:       #e5dac0;
+  --paper-tint:      #dcceb0;
+  --paper-card:      #fdfbf7;
+  --paper-highlight: #fffefb;
+
+  --ink-black:   #18120a;
+  --ink-dark:    #2b2216;
+  --ink-brown:   #493926;
+  --ink-light:   #735f47;
+  --ink-muted:   #938069;
+  --ink-faint:   #b8a892;
+
+  --border-dark:  #2b2216;
+  --border-mid:   #78644e;
+  --border-aged:  #b7a48a;
+  --border-light: #d8c9b2;
+  --border-faint: #e9dec9;
+
+  --bull-sage:      #2e4d25;
+  --bull-sage-soft: #3f6633;
+  --bull-pastel:    #eef5ea;
+  --bull-border:    #4e783f;
+
+  --bear-crimson:     #782823;
+  --bear-crimson-soft:#963832;
+  --bear-pastel:      #faecea;
+  --bear-border:      #a84841;
+
+  --sepia-amber:      #7c4617;
+  --sepia-amber-soft: #a05d21;
+  --sepia-pastel:     #fbf2e6;
+
+  --navy-slate:       #1c2a3d;
+  --navy-slate-soft:  #2f435f;
+  --navy-pastel:      #eaf0f7;
+
+  --gold-crest:       #b48b26;
+  --gold-pastel:      #faf4de;
+}
+
+/* === Theme 2: Financial Salmon (FT Salmon Peach #fbf0e4) === */
+body.theme-salmon {
+  --paper-base:      #fbf0e4;
+  --paper-surface:   #fff8f0;
+  --paper-panel:     #f4e3d1;
+  --paper-old:       #ebd3be;
+  --paper-tint:      #dfc2a9;
+  --paper-card:      #fffdf9;
+  --paper-highlight: #ffffff;
+
+  --ink-black:   #1a110a;
+  --ink-dark:    #2e1f14;
+  --ink-brown:   #503624;
+  --ink-light:   #78563e;
+  --ink-muted:   #9b765b;
+  --ink-faint:   #bf9f86;
+
+  --border-dark:  #2e1f14;
+  --border-mid:   #825d43;
+  --border-aged:  #c29f84;
+  --border-light: #e0c3ab;
+  --border-faint: #f0dac7;
+
+  --bull-sage:      #264820;
+  --bull-sage-soft: #386030;
+  --bull-pastel:    #eef5ea;
+  --bull-border:    #4a783e;
+
+  --bear-crimson:     #7c2723;
+  --bear-crimson-soft:#9b3731;
+  --bear-pastel:      #faecea;
+  --bear-border:      #ac4740;
+}
+
+/* === Theme 3: Imperial Ivory (NYT Heritage Cream #faf8f3) === */
+body.theme-ivory {
+  --paper-base:      #faf8f3;
+  --paper-surface:   #ffffff;
+  --paper-panel:     #f0ede4;
+  --paper-old:       #e4dfd4;
+  --paper-tint:      #d4cdc0;
+  --paper-card:      #ffffff;
+  --paper-highlight: #ffffff;
+
+  --ink-black:   #120e0a;
+  --ink-dark:    #221c16;
+  --ink-brown:   #3e342a;
+  --ink-light:   #68594b;
+  --ink-muted:   #887768;
+  --ink-faint:   #b0a090;
+
+  --border-dark:  #221c16;
+  --border-mid:   #6e5f50;
+  --border-aged:  #b2a392;
+  --border-light: #d6cbbf;
+  --border-faint: #e8e1d7;
+
+  --bull-sage:      #2e4d25;
+  --bull-sage-soft: #3f6633;
+  --bull-pastel:    #eef5ea;
+  --bull-border:    #4e783f;
+
+  --bear-crimson:     #782823;
+  --bear-crimson-soft:#963832;
+  --bear-pastel:      #faecea;
+  --bear-border:      #a84841;
+}
+
+/* Font Scale Modifiers */
+body.font-size-sm { font-size: 14.5px; }
+body.font-size-md { font-size: 16px; }
+body.font-size-lg { font-size: 18px; }
 
 /* 2. BASE RESETS & GLOBAL STYLES */
 * {
@@ -176,10 +360,10 @@ h4, h5, h6 {
 /* 3. CARD & SURFACE ELEVATIONS */
 .luxury-card {
   background-color: var(--card-white);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 2px solid var(--border-dark);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .luxury-card:hover {
@@ -189,8 +373,9 @@ h4, h5, h6 {
 
 .cream-panel {
   background-color: var(--surface-cream);
-  border: 1px solid var(--subtle-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-aged);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 /* 4. BUTTONS & INTERACTIVE ELEMENTS */
@@ -199,18 +384,20 @@ h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 13px;
-  padding: 9px 18px;
+  font-family: var(--font-typewriter);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
-  border: 1px solid transparent;
+  border: 2px solid var(--border-dark);
   cursor: pointer;
-  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
   user-select: none;
   text-decoration: none;
   white-space: nowrap;
-  min-height: 38px;
+  min-height: 36px;
   position: relative;
 }
 
@@ -220,14 +407,14 @@ h4, h5, h6 {
 }
 
 .btn:hover:not(:disabled) {
-  transform: translateY(-1.5px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 /* Tactile physical click compression */
 .btn:active:not(:disabled) {
-  transform: translateY(1.5px) scale(0.985);
-  transition-duration: 60ms;
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 
 .btn-primary {
@@ -5788,4 +5975,1152 @@ th.th-wrap {
   color: var(--ink) !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+}
+
+
+/* ==========================================================================
+   20. MASTER VINTAGE BROADSHEET & BRAND KIT SUITE (MEDIA INTEGRATION)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   3. MASTER TOP UTILITY & BAROMETER STRIP
+   -------------------------------------------------------------------------- */
+.utility-bar {
+    background: var(--ink-dark);
+    color: var(--paper-surface);
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-dark);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}
+
+.utility-container {
+    max-width: 100%;
+    padding: 6px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.utility-left, .utility-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.utility-widget {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.utility-divider {
+    color: rgba(255, 255, 255, 0.25);
+    user-select: none;
+}
+
+.status-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #62b347;
+    box-shadow: 0 0 6px #62b347;
+    animation: pulseGlow 1.8s infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+.edition-pill {
+    background: var(--paper-surface);
+    color: var(--ink-dark);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    border: 1px solid var(--gold-crest);
+}
+
+/* Sound Toggle Button */
+.sound-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-size: 10px;
+    color: var(--paper-surface);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.sound-toggle-btn.muted {
+    opacity: 0.55;
+}
+.sound-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--gold-crest);
+}
+
+/* Font Scale & Action Buttons */
+.font-size-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.font-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+
+.font-btn:hover, .font-btn.active {
+    background: var(--paper-surface);
+    color: var(--ink-dark);
+    font-weight: 700;
+}
+
+.utility-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--paper-surface);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+
+.utility-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--gold-crest);
+}
+
+.creator-badge {
+    background: rgba(180, 139, 38, 0.25);
+    border: 1px solid var(--gold-crest);
+    color: var(--gold-crest);
+    padding: 2px 8px;
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+/* Reading Progress Bar */
+.reading-progress-track {
+    position: fixed;
+    top: 34px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    z-index: 1001;
+}
+
+.reading-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--gold-crest);
+    transition: width 0.05s linear;
+}
+
+/* Torn Edge & Paper Effects */
+.torn-edge-top {
+    position: relative;
+}
+.torn-edge-top::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(45deg, var(--paper-base), var(--paper-base) 4px, transparent 4px, transparent 8px);
+}
+.torn-edge-bottom {
+    position: relative;
+}
+.torn-edge-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: repeating-linear-gradient(45deg, var(--paper-base), var(--paper-base) 4px, transparent 4px, transparent 8px);
+}
+
+/* --------------------------------------------------------------------------
+   BROADSHEET FOLIO & MASTHEAD TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+.newspaper-broadsheet-container {
+    background: var(--paper-base);
+    border: 3px double var(--border-dark);
+    max-width: var(--content-max);
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.broadsheet-folio-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 18px;
+    background: var(--paper-panel);
+    border-bottom: 1px solid var(--border-dark);
+    font-family: var(--font-typewriter);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--ink-brown);
+    text-transform: uppercase;
+}
+
+.folio-date {
+    font-family: var(--font-typewriter);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.folio-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background: var(--paper-panel);
+    border: 1px solid var(--border-aged);
+    font-family: var(--font-typewriter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.masthead-showcase {
+    padding: 24px 24px 14px;
+    border-bottom: 3px double var(--border-dark);
+    background: var(--paper-base);
+}
+
+.masthead-triad-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr 240px;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.masthead-ear-box {
+    border: 2px solid var(--border-dark);
+    padding: 10px 12px;
+    background: var(--paper-surface);
+}
+
+.masthead-ear-box .ear-title {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-brown);
+    border-bottom: 1px solid var(--border-aged);
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+.ear-data-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+.ear-data-row .val.positive { color: var(--bull-sage); font-weight: 700; }
+.ear-data-row .val.negative { color: var(--bear-crimson); font-weight: 700; }
+
+.masthead-centerpiece {
+    text-align: center;
+}
+
+.masthead-motto-rule {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--ink-brown);
+    margin-bottom: 6px;
+}
+
+.motto-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-dark);
+}
+
+.masthead-title {
+    font-family: var(--font-masthead);
+    font-size: clamp(38px, 6.5vw, 84px);
+    font-weight: 900;
+    font-style: italic;
+    color: var(--ink-black);
+    line-height: 0.95;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.masthead-subline {
+    font-family: var(--font-headline);
+    font-size: 13.5px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--ink-dark);
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.masthead-meta-strip {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 2px solid var(--border-dark);
+    font-family: var(--font-typewriter);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--ink-brown);
+}
+
+/* Broadsheet Story Typography */
+.story-kicker {
+    font-family: var(--font-typewriter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--bear-crimson);
+    margin-bottom: 8px;
+}
+
+.story-lead-headline {
+    font-family: var(--font-masthead);
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--ink-black);
+    line-height: 1.15;
+    margin-bottom: 10px;
+}
+
+.story-deck {
+    font-family: var(--font-headline);
+    font-size: 14.5px;
+    font-style: italic;
+    color: var(--ink-brown);
+    line-height: 1.45;
+    margin-bottom: 12px;
+}
+
+.story-prose {
+    font-family: var(--font-body);
+    font-size: 15.5px;
+    line-height: 1.7;
+    color: var(--ink-dark);
+}
+.story-prose p {
+    margin-bottom: 14px;
+    text-align: justify;
+}
+
+.dropcap-letter::first-letter {
+    font-family: var(--font-masthead);
+    font-size: 4.4em;
+    font-weight: 900;
+    float: left;
+    line-height: 0.8;
+    margin: 4px 8px 0 0;
+    color: var(--ink-black);
+}
+
+/* Halftone Engraving Frame */
+.halftone-engraving-frame {
+    border: 2px solid var(--border-dark);
+    background: var(--paper-old);
+    margin: 14px 0;
+    overflow: hidden;
+}
+
+.halftone-visual {
+    height: 180px;
+    background-image: radial-gradient(circle, var(--border-mid) 1px, transparent 1px);
+    background-size: 6px 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.halftone-tag {
+    font-family: var(--font-typewriter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    background: var(--ink-dark);
+    color: var(--paper-surface);
+    padding: 4px 10px;
+}
+
+.halftone-caption-text {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--ink-brown);
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-aged);
+    line-height: 1.4;
+}
+
+/* Pullquote Box */
+.vintage-pullquote-box {
+    background: var(--paper-panel);
+    border-top: 2px solid var(--border-dark);
+    border-bottom: 2px solid var(--border-dark);
+    padding: 16px 20px;
+    margin: 18px 0;
+    text-align: center;
+}
+
+.pullquote-phrase {
+    font-family: var(--font-masthead);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.45;
+    color: var(--ink-black);
+    margin-bottom: 8px;
+}
+
+.pullquote-attribution {
+    font-family: var(--font-typewriter);
+    font-size: 10px;
+    color: var(--ink-brown);
+    letter-spacing: 0.5px;
+}
+
+/* --------------------------------------------------------------------------
+   VINTAGE BROADSHEET TABLES
+   -------------------------------------------------------------------------- */
+.vintage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+}
+.vintage-table th {
+    font-family: var(--font-headline);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--ink-brown);
+    border-bottom: 2px solid var(--border-dark);
+    padding: 8px 10px;
+    text-align: left;
+}
+.vintage-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-aged);
+    color: var(--ink-dark);
+}
+.vintage-table tr:hover {
+    background: rgba(43, 34, 22, 0.04);
+}
+.vintage-table td.text-right, .vintage-table th.text-right {
+    text-align: right;
+    font-family: var(--font-typewriter);
+}
+.vintage-table td.positive {
+    color: var(--bull-sage);
+    font-weight: 700;
+}
+.vintage-table td.negative {
+    color: var(--bear-crimson);
+    font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   ORDER BOOK & LEVEL-2 MARKET DEPTH
+   -------------------------------------------------------------------------- */
+.order-book-frame {
+    background: var(--paper-card);
+    border: 3px double var(--border-dark);
+    padding: 18px;
+    box-shadow: var(--shadow-paper);
+    margin-bottom: var(--sp-5);
+}
+
+.order-book-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--border-aged);
+}
+
+.order-book-heading {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink-black);
+}
+
+.order-book-timestamp {
+    font-family: var(--font-typewriter);
+    font-size: 10px;
+    color: var(--ink-muted);
+}
+
+.order-book-split-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+}
+
+.order-depth-column {
+    background: var(--paper-panel);
+    border: 1px solid var(--border-aged);
+    padding: 12px;
+}
+
+.depth-column-header {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--border-dark);
+}
+.order-depth-column.bids .depth-column-header { color: var(--bull-sage); }
+.order-depth-column.asks .depth-column-header { color: var(--bear-crimson); }
+
+.order-row-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    font-family: var(--font-typewriter);
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+    text-align: right;
+}
+.order-row-columns span:first-child { text-align: left; }
+
+.order-list-entries {
+    font-family: var(--font-typewriter);
+    font-size: 11.5px;
+}
+
+.order-table-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px dotted var(--border-light);
+    text-align: right;
+    transition: background var(--ease-fast);
+}
+.order-table-row:hover {
+    background: var(--paper-old);
+}
+.order-table-row span:first-child { text-align: left; font-weight: 700; }
+
+.spread-divider-column, .spread-indicator {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--paper-old);
+    border: 1px solid var(--border-aged);
+}
+
+.spread-label {
+    font-family: var(--font-typewriter);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+}
+
+.spread-amount {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--sepia-amber);
+}
+
+/* --------------------------------------------------------------------------
+   TRADING ACTION CARDS & TICKETS
+   -------------------------------------------------------------------------- */
+.trading-action-card {
+    background: var(--paper-surface);
+    border: 2px solid var(--border-dark);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--ease-mid);
+}
+.trading-action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.trading-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-aged);
+}
+.trading-card-header .trading-icon {
+    font-size: 18px;
+}
+
+.trading-label {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--ink-black);
+}
+
+.trading-field {
+    width: 100%;
+    font-family: var(--font-typewriter);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border: 2px solid var(--border-aged);
+    background: var(--paper-panel);
+    color: var(--ink-black);
+    transition: all var(--ease-fast);
+}
+.trading-field:focus {
+    outline: none;
+    border-color: var(--ink-dark);
+    background: var(--paper-surface);
+}
+
+.trading-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    color: var(--ink-brown);
+    padding: 10px 0;
+    border-top: 1px solid var(--border-aged);
+    margin-bottom: 14px;
+}
+
+.trading-total-figure {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink-dark);
+}
+
+.trading-submit-btn {
+    width: 100%;
+    padding: 12px;
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: 2px solid var(--border-dark);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--ease-fast);
+}
+.trading-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+.trading-submit-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+}
+
+.trading-btn-buy {
+    background: var(--bull-sage);
+    color: var(--paper-surface);
+    border-color: var(--bull-sage);
+}
+.trading-btn-buy:hover { background: var(--bull-sage-soft); }
+
+.trading-btn-sell {
+    background: var(--bear-crimson);
+    color: var(--paper-surface);
+    border-color: var(--bear-crimson);
+}
+.trading-btn-sell:hover { background: var(--bear-crimson-soft); }
+
+.trading-btn-stoploss {
+    background: var(--sepia-amber);
+    color: var(--paper-surface);
+    border-color: var(--sepia-amber);
+}
+.trading-btn-stoploss:hover { background: var(--sepia-amber-soft); }
+
+/* --------------------------------------------------------------------------
+   TICKER SYSTEM & MARQUEE WIRE
+   -------------------------------------------------------------------------- */
+.ticker-system-wrapper {
+    border-bottom: 2px solid var(--border-dark);
+}
+
+.ticker-strip {
+    display: flex;
+    align-items: center;
+    height: 34px;
+    background: var(--ink-dark);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+.ticker-strip.ticker-indices {
+    background: var(--ink-black);
+}
+
+.ticker-header-badge {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border-right: 1px solid var(--border-mid);
+    color: var(--paper-surface);
+    font-family: var(--font-typewriter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ticker-marquee-viewport {
+    flex: 1;
+    overflow: hidden;
+}
+
+.ticker-marquee-track {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    will-change: transform;
+    animation: marqueeTrack 28s linear infinite;
+}
+.ticker-marquee-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes marqueeTrack {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.ticker-item-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    border-right: 1px dotted rgba(255, 255, 255, 0.15);
+    color: var(--paper-surface);
+}
+.ticker-item-cell .sym { font-weight: 700; color: #ffffff; }
+.ticker-item-cell .price { color: rgba(255, 255, 255, 0.9); }
+.ticker-item-cell .delta.positive { color: #7ad15e; font-weight: 700; }
+.ticker-item-cell .delta.negative { color: #f5827b; font-weight: 700; }
+
+.breaking-dispatch-bar {
+    display: flex;
+    align-items: center;
+    background: var(--bear-crimson);
+    color: #ffffff;
+    height: 32px;
+    overflow: hidden;
+}
+
+.breaking-lead-badge {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    font-family: var(--font-typewriter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.breaking-carousel-wrap {
+    flex: 1;
+    overflow: hidden;
+    padding: 0 14px;
+}
+
+.breaking-carousel-slide {
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------------------------
+   VINTAGE MODALS & DIALOGS
+   -------------------------------------------------------------------------- */
+.vintage-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(24, 18, 10, 0.65);
+    backdrop-filter: blur(3px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+.vintage-modal-backdrop.show { display: flex; }
+
+.vintage-modal-dialog {
+    background: var(--paper-surface);
+    border: 4px double var(--border-dark);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: modalSpring 0.28s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes modalSpring {
+    from { transform: translateY(-24px) scale(0.96); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--border-aged);
+}
+
+.modal-dialog-title {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--ink-black);
+}
+
+.modal-close-trigger {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    background: transparent;
+    transition: all var(--ease-fast);
+}
+.modal-close-trigger:hover {
+    background: var(--bear-crimson);
+    color: #ffffff;
+    border-color: var(--bear-crimson);
+}
+
+.modal-dialog-body {
+    padding: 20px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-dark);
+}
+
+.modal-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 2px solid var(--border-aged);
+    background: var(--paper-panel);
+}
+
+/* Vintage Tabs */
+.vintage-tabs-container {
+    background: var(--paper-surface);
+    border: 2px solid var(--border-dark);
+    margin-bottom: var(--sp-5);
+}
+
+.vintage-tab-strip {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--border-dark);
+    background: var(--paper-panel);
+}
+
+.vintage-tab-button {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 11px 18px;
+    border: none;
+    border-right: 1px solid var(--border-aged);
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+}
+.vintage-tab-button:hover {
+    color: var(--ink-dark);
+    background: var(--paper-old);
+}
+.vintage-tab-button.active {
+    background: var(--paper-surface);
+    color: var(--ink-black);
+    border-bottom: 2px solid var(--paper-surface);
+    margin-bottom: -2px;
+}
+
+/* --------------------------------------------------------------------------
+   VINTAGE TOASTS & FEEDBACK
+   -------------------------------------------------------------------------- */
+.vintage-toast-alert {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--paper-surface);
+    border: 3px double var(--border-dark);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 340px;
+    z-index: 2500;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(120%);
+    opacity: 0;
+    transition: all 0.32s cubic-bezier(0.2, 0, 0, 1);
+    pointer-events: none;
+}
+.vintage-toast-alert.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.toast-flash-icon {
+    font-size: 18px;
+    animation: pulseGlow 1.2s infinite;
+}
+
+.toast-heading {
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-dark);
+    margin-bottom: 4px;
+}
+
+.toast-detail {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--ink-brown);
+}
+
+.toast-close-btn {
+    font-size: 16px;
+    line-height: 1;
+    color: var(--ink-muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+.copy-feedback-toast {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--bull-sage);
+    color: #ffffff;
+    font-family: var(--font-typewriter);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 8px 18px;
+    border: 2px solid var(--border-dark);
+    box-shadow: var(--shadow-md);
+    z-index: 3000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+}
+.copy-feedback-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   CUSTOM CONTROLS: VINTAGE BUTTONS, SELECTS & CHECKBOXES
+   -------------------------------------------------------------------------- */
+.vintage-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--font-typewriter);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border: 2px solid var(--border-dark);
+    background: transparent;
+    color: var(--ink-dark);
+    box-shadow: var(--shadow-xs);
+    cursor: pointer;
+    transition: all var(--ease-fast);
+    user-select: none;
+    white-space: nowrap;
+}
+.vintage-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    background: var(--ink-dark);
+    color: var(--paper-surface);
+}
+.vintage-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+}
+.vintage-btn-primary {
+    background: var(--ink-dark);
+    color: var(--paper-surface);
+    border-color: var(--ink-dark);
+}
+.vintage-btn-primary:hover {
+    background: var(--ink-black);
+    border-color: var(--ink-black);
+}
+
+.vintage-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: var(--paper-panel);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b2216' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
+    padding: 9px 34px 9px 12px;
+    border: 2px solid var(--border-dark);
+    font-family: var(--font-typewriter);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-dark);
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    transition: all var(--ease-fast);
+}
+.vintage-select:focus {
+    outline: none;
+    border-color: var(--gold-crest);
+    box-shadow: var(--shadow-sm);
+}
+
+.vintage-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.vintage-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-dark);
+    background: var(--paper-surface);
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   PRINT BROADSHEET STYLESHEET
+   -------------------------------------------------------------------------- */
+@media print {
+    .utility-bar,
+    .reading-progress-track,
+    .vintage-toast-alert,
+    .copy-feedback-toast {
+        display: none !important;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11pt !important;
+    }
+
+    .newspaper-broadsheet-container {
+        border: none !important;
+        box-shadow: none !important;
+    }
 }

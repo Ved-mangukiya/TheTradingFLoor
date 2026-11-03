@@ -9,7 +9,71 @@
   <link rel="stylesheet" href="style.css?v=2.7.0" />
 </head>
 
-<body class="ttf-app">
+<body class="ttf-app theme-aged font-size-md">
+
+  <!-- ==========================================================================
+       MASTER TOP UTILITY & MARKET BAROMETER STRIP (ARCHIVAL BROADSHEET)
+       ========================================================================== -->
+  <aside class="utility-bar" aria-label="System Controls & Market Barometer">
+    <div class="utility-container">
+      <div class="utility-left">
+        <div class="utility-widget" title="Surat Meteorological Station">
+          <span>☀️</span>
+          <span>SURAT 32°C • BAROMETER 1012 hPa</span>
+        </div>
+        <div class="utility-divider">|</div>
+        <div class="utility-widget">
+          <span class="status-pulse-dot"></span>
+          <span id="marketStatusText">MARKET OPEN (NSE / BSE)</span>
+        </div>
+        <div class="utility-divider">|</div>
+        <div class="utility-widget">
+          <span class="edition-pill">PASTEL ARCHIVAL SYSTEM</span>
+        </div>
+      </div>
+
+      <div class="utility-right">
+        <!-- Sound Toggle -->
+        <button type="button" id="soundToggleBtn" class="sound-toggle-btn muted" title="Toggle Mechanical Typewriter Audio Feedback">
+          <span>🔈</span> MUTED
+        </button>
+
+        <div class="utility-divider">|</div>
+
+        <!-- Font Scale Adjuster -->
+        <div class="font-size-group" title="Adjust Typography Scale">
+          <span class="control-label" style="font-size: 10px; opacity: 0.85; letter-spacing: 0.5px;">TYPE:</span>
+          <button type="button" id="fontSmBtn" class="font-btn" data-size="sm">A</button>
+          <button type="button" id="fontMdBtn" class="font-btn active" data-size="md">AA</button>
+          <button type="button" id="fontLgBtn" class="font-btn" data-size="lg">AAA</button>
+        </div>
+
+        <div class="utility-divider">|</div>
+
+        <!-- 100% Light Pastel Theme Toggler (No Dark Mode) -->
+        <button type="button" id="themeToggleBtn" class="utility-action-btn" title="Cycle Pastel Themes (Archival Aged / FT Salmon / NYT Ivory)">
+          <span id="themeIcon">📜</span>
+          <span id="themeLabel">AGED PARCHMENT</span>
+        </button>
+
+        <!-- Print Broadsheet Button -->
+        <button type="button" id="printEditionBtn" class="utility-action-btn" title="Print Broadsheet Clipping">
+          <span>🖨️</span>
+          <span>PRINT EDITION</span>
+        </button>
+
+        <!-- Creator Attribution -->
+        <div class="creator-badge" title="SSASIT GTU Code: 076" onclick="openDeveloperInfoModal()" style="cursor: pointer;">
+          <span>⚡ VED MANGUKIYA</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Reading Progress Bar -->
+  <div class="reading-progress-track">
+    <div id="readingProgressBar" class="reading-progress-bar"></div>
+  </div>
 
   <!-- 0. Main Stage Navigation Direct Entry -->
 
@@ -495,70 +559,107 @@
        VIEW 1: UNIVERSAL AUTHENTICATION TERMINAL (#loginView)
        ========================================================================== -->
   <section id="loginView"
-    style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    <div class="luxury-card login-card" style="max-width: 440px; width: 100%; padding: 36px;">
-      <div style="text-align: center; margin-bottom: 26px;">
-        <div class="brand-icon" style="margin: 0 auto 14px auto; width: 44px; height: 44px; font-size: 22px;">TF</div>
-        <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-family: var(--font-mono); font-weight: 700; background: var(--paper-2); border: 1.5px solid var(--edge); color: var(--gold-ink); margin: 0 auto 14px auto;">
-          <span class="dot-pulse-green"></span>
-          <span>REALTIME:</span>
+    style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;">
+    
+    <!-- Grand Vintage Broadsheet Masthead for Front Page Login -->
+    <div class="newspaper-broadsheet-container" style="max-width: 540px; width: 100%; margin-bottom: 24px; border: 3px double var(--border-dark); box-shadow: var(--shadow-paper);">
+      <div class="broadsheet-folio-bar">
+        <span>PAGE A1 • OFFICIAL FINANCIAL GAZETTE</span>
+        <span>★ ★ ★ ★ ★ FIVE-STAR INVESTOR EDITION</span>
+        <span>SURAT &amp; MUMBAI</span>
+      </div>
+      <div class="masthead-showcase" style="padding: 22px 20px 14px; text-align: center; border-bottom: 2px solid var(--border-dark);">
+        <div class="masthead-motto-rule">
+          <span class="motto-line"></span>
+          <span style="font-size: 11px; letter-spacing: 2px;">❧ THE NATIONAL DAILY OF DALAL STREET ☙</span>
+          <span class="motto-line"></span>
+        </div>
+        <h1 id="loginEventTitle" class="masthead-title" style="font-size: clamp(28px, 5vw, 42px); margin: 6px 0;">The Trading Floor</h1>
+        <p class="masthead-subline" style="font-size: 11.5px; margin-bottom: 4px;">Institutional Trading Championship &amp; Bourse Gazette</p>
+        <div style="font-family: var(--font-body); font-size: 12px; font-style: italic; color: var(--ink-brown);">“Veritas in Numeris — In Integritate Mercatus”</div>
+        <div class="masthead-meta-strip" style="font-size: 9px; gap: 8px; padding-top: 8px; margin-top: 8px;">
+          <span>VOL. XCVII • NO. 308</span>
+          <span>•</span>
+          <span>SSASIT GTU CODE: 076</span>
+          <span>•</span>
+          <span>AIR-GAPPED LOCAL ENCLAVE</span>
+          <span>•</span>
           <span id="loginRealTimeClock">--:--:--</span>
-        </div>
-        <h1 id="loginEventTitle" style="font-size: 26px; line-height: 1.2; margin-bottom: 6px;">The Trading Floor</h1>
-        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Institutional Trading Championship</p>
-      </div>
-
-      <!-- Live Server Connection Health Badge -->
-      <div id="loginServerConnectionBadge" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #F1F5F9; color: #475569; margin: 0 auto 16px auto; width: fit-content;">
-        <span id="loginServerConnectionDot" style="width: 7px; height: 7px; border-radius: 50%; background: #94A3B8;"></span>
-        <span id="loginServerConnectionText">Connecting to Engine...</span>
-      </div>
-
-      <!-- Live Event Readiness / Team Login Gate Banner -->
-      <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--subtle-border); background: var(--surface-cream); display: flex; align-items: center; gap: 12px; text-align: left;">
-        <span id="loginEventStatusIcon" style="font-size: 22px; line-height: 1;">⏳</span>
-        <div style="flex: 1;">
-          <div id="loginEventStatusTitle" style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Competition Setup in Progress</div>
-          <div id="loginEventStatusDesc" style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-top: 2px;">The host is getting everything ready. Team logins will open soon.</div>
-        </div>
-      </div>
-
-      <form id="loginForm">
-        <div class="form-group">
-          <label class="form-label" for="loginUsername">Username</label>
-          <input id="loginUsername" type="text" required placeholder="e.g. team1, host, projector" class="form-input"
-            style="font-family: var(--font-mono);" />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="loginPassword">Password</label>
-          <input id="loginPassword" type="password" required placeholder="••••••••" class="form-input"
-            style="font-family: var(--font-mono);" />
-        </div>
-        <p id="loginError" class="hidden"
-          style="color: var(--error-red); background-color: var(--error-bg); border: 1px solid var(--error-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; margin-bottom: 14px;">
-        </p>
-        <button id="btnLoginSubmit" type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800;">
-          Access Terminal ➔
-        </button>
-      </form>
-
-      
-
-      <!-- Dedicated Developer Branding & Copyright Footer -->
-      <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--subtle-border); text-align: center;">
-        <button type="button" onclick="openDeveloperInfoModal()" class="btn btn-outline" style="font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 999px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-sans);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-          Developer &amp; System Architecture Info
-        </button>
-        <div style="font-size: 11px; font-weight: 800; color: var(--text-charcoal); line-height: 1.4;">
-          Ved Mangukiya • All Rights Reserved.
-        </div>
-        <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
-          Lead Developer &amp; Architect • Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India
         </div>
       </div>
     </div>
-  </section>
+
+    <!-- Official Authorization Terminal Card -->
+    <div class="vintage-modal-dialog login-card" style="max-width: 500px; width: 100%; padding: 0; box-shadow: var(--shadow-lg); background: var(--paper-surface); border: 3px double var(--border-dark);">
+      <div class="modal-dialog-header" style="background: var(--paper-panel); padding: 14px 20px; border-bottom: 2px solid var(--border-dark);">
+        <div>
+          <div style="font-family: var(--font-typewriter); font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold-crest); text-transform: uppercase;">
+            TERMINAL ACCESS GATEWAY
+          </div>
+          <h3 style="font-family: var(--font-headline); font-size: 18px; margin: 2px 0 0 0; color: var(--ink-black);">
+            Authentication &amp; Floor Clearance
+          </h3>
+        </div>
+        <div class="crest-gold" style="width: 38px; height: 38px; font-size: 16px; margin: 0; border: 2px solid var(--border-dark); background: var(--paper-surface); color: var(--ink-dark); display: flex; align-items: center; justify-content: center; font-weight: 900; font-family: var(--font-headline);">TF</div>
+      </div>
+
+      <div style="padding: 24px 26px;">
+        <!-- Live Server Connection Health Badge -->
+        <div id="loginServerConnectionBadge" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 14px; border-radius: 4px; font-size: 10.5px; font-weight: 700; font-family: var(--font-typewriter); background: var(--paper-panel); border: 1px solid var(--border-aged); color: var(--ink-brown); margin: 0 auto 16px auto; width: fit-content;">
+          <span id="loginServerConnectionDot" style="width: 7px; height: 7px; border-radius: 50%; background: #94A3B8;"></span>
+          <span id="loginServerConnectionText">Connecting to Engine...</span>
+        </div>
+
+        <!-- Live Event Readiness / Team Login Gate Banner -->
+        <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--border-aged); background: var(--paper-panel); display: flex; align-items: center; gap: 12px; text-align: left;">
+          <span id="loginEventStatusIcon" style="font-size: 22px; line-height: 1;">⏳</span>
+          <div style="flex: 1;">
+            <div id="loginEventStatusTitle" style="font-family: var(--font-headline); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Competition Setup in Progress</div>
+            <div id="loginEventStatusDesc" style="font-family: var(--font-body); font-size: 13px; color: var(--ink-brown); line-height: 1.4; margin-top: 2px;">The host is getting everything ready. Team logins will open soon.</div>
+          </div>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="loginUsername" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">USER CLEARANCE ID</label>
+            <input id="loginUsername" type="text" required placeholder="e.g. host, team1..team16, projector" class="form-input"
+              style="font-family: var(--font-typewriter); font-size: 13px; padding: 10px 14px; border: 2px solid var(--border-dark); background: var(--paper-panel); color: var(--ink-black); width: 100%; border-radius: 0;" />
+          </div>
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label class="form-label" for="loginPassword" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">PASSPHRASE KEY</label>
+            <input id="loginPassword" type="password" required placeholder="••••••••" class="form-input"
+              style="font-family: var(--font-typewriter); font-size: 13px; padding: 10px 14px; border: 2px solid var(--border-dark); background: var(--paper-panel); color: var(--ink-black); width: 100%; border-radius: 0;" />
+          </div>
+          <p id="loginError" class="hidden"
+            style="color: var(--bear-crimson); background-color: var(--bear-pastel); border: 1px solid var(--bear-border); padding: 8px 12px; font-family: var(--font-typewriter); font-size: 11.5px; font-weight: 700; margin-bottom: 14px;">
+          </p>
+          <button id="btnLoginSubmit" type="submit" class="vintage-btn vintage-btn-primary" style="width: 100%; padding: 13px; font-size: 13px; font-weight: 800; letter-spacing: 1.5px;">
+            SEAL &amp; ENTER TERMINAL ➔
+          </button>
+        </form>
+
+        <!-- Security Guarantee Pills -->
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
+          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">🛡️ AIR-GAPPED NETWORK</span>
+          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">🔒 ISOLATED SESSIONS</span>
+          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">⚡ ZERO DATA LEAKAGE</span>
+        </div>
+
+        <!-- Dedicated Developer Branding & Copyright Footer -->
+        <div style="margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--border-aged); text-align: center;">
+          <button type="button" onclick="openDeveloperInfoModal()" class="vintage-btn vintage-btn-outline" style="font-size: 10px; font-weight: 700; padding: 6px 14px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 7px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            Developer &amp; System Architecture Info
+          </button>
+          <div style="font-family: var(--font-typewriter); font-size: 10.5px; font-weight: 800; color: var(--ink-dark); line-height: 1.4;">
+            Ved Mangukiya • All Rights Reserved.
+          </div>
+          <div style="font-family: var(--font-body); font-size: 12px; color: var(--ink-muted); margin-top: 2px;">
+            Lead Developer &amp; Architect • Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India
+          </div>
+        </div>
+      </div>
+    </div>  </section>
 
   <!-- ==========================================================================
        VIEW: GUIDED EVENT SETUP CENTRE (#eventSetupView placeholder)
@@ -5195,6 +5296,19 @@
         <button type="button" onclick="closeCircuitTestModal()" class="btn btn-outline">Close</button>
       </div>
     </div>
+  </div>
+
+  <!-- Copy Feedback Toast -->
+  <div id="copyFeedbackToast" class="copy-feedback-toast">Copied to Clipboard!</div>
+
+  <!-- Broadsheet Telegraph Toast Alert -->
+  <div id="marketAlertToast" class="vintage-toast-alert" role="status" aria-live="polite">
+    <div class="toast-flash-icon">⚡</div>
+    <div class="toast-body">
+      <h5 id="toastTitle" class="toast-heading">BOURSE WIRE ALERT</h5>
+      <p id="toastMessage" class="toast-detail">Market operational on authoritative local enclave.</p>
+    </div>
+    <button type="button" id="toastCloseBtn" class="toast-close-btn" title="Dismiss" aria-label="Dismiss Alert" onclick="document.getElementById('marketAlertToast').classList.remove('show')">×</button>
   </div>
 
   <script src="js/state_guard.js"></script>
