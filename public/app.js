@@ -10209,6 +10209,36 @@ function syncHostProgressiveDisclosure(gs) {
   // btnAtcDraftJump removed — element deleted from DOM
   const ceremonyBar = document.getElementById('hostCeremonyDirectorBar');
 
+
+  // Update Smart Autopilot Directive Banner
+  const guideDirective = document.getElementById('hostGuidedFlowDirective');
+  if (guideDirective) {
+    if (!isLocked) {
+      guideDirective.innerHTML = '👉 <span><strong>STEP 1:</strong> Review Event Setup in Hub 2 below. Click <strong>"Confirm & Lock Event Setup"</strong> to arm the floor.</span>';
+      guideDirective.style.background = '#EFF6FF'; guideDirective.style.borderColor = '#BFDBFE'; guideDirective.style.color = '#1E40AF';
+    } else if (gs.status === 'STANDBY') {
+      guideDirective.innerHTML = '👉 <span><strong>STEP 2:</strong> Floor is armed & ready! When participants are ready, click <strong>"▶ Start Day ' + day + ' (3-2-1)"</strong>.</span>';
+      guideDirective.style.background = '#FEF3C7'; guideDirective.style.borderColor = '#FDE68A'; guideDirective.style.color = '#92400E';
+    } else if (gs.status === 'COUNTDOWN') {
+      guideDirective.innerHTML = '🔔 <span>Resuming in 3-2-1... Market opening bell is sounding!</span>';
+      guideDirective.style.background = '#ECFDF5'; guideDirective.style.borderColor = '#A7F3D0'; guideDirective.style.color = '#065F46';
+    } else if (gs.status === 'LIVE' && !gs.isPaused) {
+      guideDirective.innerHTML = '🟢 <span><strong>FLOOR IS LIVE:</strong> Trading active. Click <strong>"Pause"</strong> to broadcast breaking news, or <strong>"Conclude Day"</strong> when timer expires.</span>';
+      guideDirective.style.background = '#F0FDF4'; guideDirective.style.borderColor = '#BBF7D0'; guideDirective.style.color = '#15803D';
+    } else if (gs.status === 'PAUSED' || gs.isPaused) {
+      guideDirective.innerHTML = '⏸️ <span><strong>MARKET PAUSED:</strong> Trading is frozen. When ready to resume, click <strong>"▶ Resume Market (3-2-1)"</strong>.</span>';
+      guideDirective.style.background = '#FEF2F2'; guideDirective.style.borderColor = '#FECACA'; guideDirective.style.color = '#B91C1C';
+    } else if (gs.status === 'DAY_COMPLETED') {
+      if (day < total) {
+        guideDirective.innerHTML = '🔔 <span><strong>DAY ' + day + ' CONCLUDED:</strong> Standings verified. Click <strong>"⏭️ Prepare Day ' + (day + 1) + '"</strong> to roll over portfolios.</span>';
+        guideDirective.style.background = '#EFF6FF'; guideDirective.style.borderColor = '#BFDBFE'; guideDirective.style.color = '#1E40AF';
+      } else {
+        guideDirective.innerHTML = '🏆 <span><strong>CHAMPIONSHIP CONCLUDED:</strong> Final results locked! Click <strong>"Stage Winner Presentation"</strong> to reveal winners on stage.</span>';
+        guideDirective.style.background = '#FEF3C7'; guideDirective.style.borderColor = '#FDE68A'; guideDirective.style.color = '#92400E';
+      }
+    }
+  }
+
   // Helper to hide all optional buttons first, then show ONLY what is needed for the current step
   [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
     if (el) el.classList.add('hidden');

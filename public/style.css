@@ -299,16 +299,16 @@ html {
 
 html, body {
   min-height: 100vh;
-  background-color: var(--bg-ivory);
-  background-image: var(--body-gradient);
-  background-attachment: fixed;
-  color: var(--text-charcoal);
+  background-color: var(--paper-base);
+  color: var(--ink-dark);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 img, svg, video, canvas {
@@ -7123,4 +7123,26 @@ th.th-wrap {
         border: none !important;
         box-shadow: none !important;
     }
+}
+
+
+/* Chart Type Switcher Pills */
+#chartTypeTabs button {
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  border-radius: 3px;
+}
+#chartTypeTabs button.btn-sage {
+  background: var(--price-up, #15803D);
+  color: #FFFFFF;
+  border-color: var(--price-up, #15803D);
+}
+
+/* Host Smart Guided Action Strip */
+#hostGuidedFlowDirective {
+  animation: subtlePulse 3s infinite ease-in-out;
+}
+@keyframes subtlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.88; }
 }

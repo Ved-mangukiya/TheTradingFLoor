@@ -1,8 +1,8 @@
 {
   "name": "the-trading-floor",
-  "version": "2.7.0",
+  "version": "3.0.0",
   "description": "Real-time LAN stock market simulation engine for The Trading Floor Championship",
-  "author": "Ved Mangukiya (Surat, Gujarat, India)",
+  "author": "Ved Mangukiya (SSASIT)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js live",

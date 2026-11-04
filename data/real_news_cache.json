@@ -1,8 +1,8 @@
 {
-  "savedAt": "2026-11-04T06:15:03.085Z",
-  "lastSyncTime": "2026-11-04T06:15:03.085Z",
+  "savedAt": "2026-11-04T06:45:01.959Z",
+  "lastSyncTime": "2026-11-04T06:45:01.959Z",
   "provider": "Google News Official Financial RSS",
-  "count": 23,
+  "count": 16,
   "articles": [
     {
       "id": "NEWS_129127983",
@@ -15,7 +15,7 @@
       "matchedTickers": [],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.076Z"
+      "fetchedAt": "2026-11-04T06:45:01.953Z"
     },
     {
       "id": "NEWS_547300937",
@@ -30,7 +30,7 @@
       ],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.079Z"
+      "fetchedAt": "2026-11-04T06:45:01.955Z"
     },
     {
       "id": "NEWS_689845033",
@@ -45,7 +45,7 @@
       ],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.079Z"
+      "fetchedAt": "2026-11-04T06:45:01.955Z"
     },
     {
       "id": "NEWS_55081952",
@@ -58,7 +58,7 @@
       "matchedTickers": [],
       "sentiment": "BULLISH",
       "sentimentScore": 0.85,
-      "fetchedAt": "2026-11-04T06:15:03.080Z"
+      "fetchedAt": "2026-11-04T06:45:01.956Z"
     },
     {
       "id": "NEWS_96724781",
@@ -71,20 +71,7 @@
       "matchedTickers": [],
       "sentiment": "BULLISH",
       "sentimentScore": 0.85,
-      "fetchedAt": "2026-11-04T06:15:03.080Z"
-    },
-    {
-      "id": "NEWS_802693329",
-      "headline": "November 2026 F&O Monthly Expiry - Groww",
-      "source": "Groww",
-      "publishedAt": "2026-11-01T07:00:00.000Z",
-      "publishedAtFormatted": "1 Nov 2026, 12:30 pm",
-      "summary": "November 2026 F&O Monthly Expiry&nbsp;&nbsp;Groww",
-      "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1MbDhrd01qWkVHejFJaHhvNHhRQ21SRVVxUnNPWlkxRXZzQnp6WTZSRnNSTHhTeEdYVUxmT2RJX2l4c1U3ZjVtcWtLNU1WUjZ2Y3V3TktiVQ?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.080Z"
+      "fetchedAt": "2026-11-04T06:45:01.956Z"
     },
     {
       "id": "NEWS_2110269726",
@@ -97,205 +84,102 @@
       "matchedTickers": [],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.080Z"
+      "fetchedAt": "2026-11-04T06:45:01.956Z"
     },
     {
-      "id": "NEWS_790987284",
-      "headline": "India's Sensex slumps to 32-month low on oil surge, foreign exodus - Reuters",
-      "source": "Reuters",
-      "publishedAt": "2026-10-08T07:00:00.000Z",
-      "publishedAtFormatted": "8 Oct 2026, 12:30 pm",
-      "summary": "India's Sensex slumps to 32-month low on oil surge, foreign exodus&nbsp;&nbsp;Reuters",
-      "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxPRGc3d3VfemdCVm9OMG8tZFo3MFpXMmtQR3paUW9yMWFia0txelBIS0w2M3RSeDdRdzV2WkR0WmU2ZFdNVkUyUWJMbWQ1YVA0M3d0Y3hRQkMxa3FlMDMtSXZ1OHF6UWNaTzRmTklWVnpSNHp2bzdRT0F3SlNvVzVFQ0trU21MeHlOMmU4R3U1c0NNTmw0dGtoT1lORzRBOGdTaUMyRjFtWFc4bXdsemFV?oc=5",
-      "matchedTickers": [],
-      "sentiment": "BEARISH",
-      "sentimentScore": -0.6,
-      "fetchedAt": "2026-11-04T06:15:03.081Z"
-    },
-    {
-      "id": "NEWS_870327158",
-      "headline": "Stock Market Crash: Investors Lose Rs 5 Lakh Crore As Sensex, Nifty Tank. 3 Reasons Why Market Are Falling Today - NDTV",
-      "source": "NDTV",
-      "publishedAt": "2026-10-19T07:00:00.000Z",
-      "publishedAtFormatted": "19 Oct 2026, 12:30 pm",
-      "summary": "Stock Market Crash: Investors Lose Rs 5 Lakh Crore As Sensex, Nifty Tank. 3 Reasons Why Market Are Falling Today&nbsp;&nbsp;NDTV",
-      "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxNcVB5dExGMi1SMkEwc3BfTk10Sm80amNqd0JYYU1PeUFYWTcwSk9TeGhEMDdyZ2JMY0pZeGVfbU12VnM5dF9VVVI3NlFNOUlrYkZzMFVWTWN1NDdKNlVhbnVkS0RFSzRrQ2t0TEl4NlNYYlBVeFlSd29CQU9LYWk0UWhxSFd6cnY4akxReFk1UGFFUFlVOGFhRExIbDZqUmZyTzg2MGZGWDlIT2lScTVGZ1ludEZfUFdRb1Jr0gHDAUFVX3lxTE02Zk9MNDBpdm1fQlg5MVEzdkowOTlLQ1pZMUY1VDRoWERQMmwzVXJKaHBVaGdDR3lOWHdmeHN1ZG5uVG1ZRUliWTg4eHpDa21JUGxQdThZQjNPeTQ5dkxMbldPei1Gb1RJU1RjR1dLUGRGX0NWRVZyTDNXSGhUU1J6ZjBoYk51SGVDV2FPVzhpZ1VXNjFmMHM3T01ZLU82Q0w5Z2I1NUo2aFhpd3BoOUNISlkxZDBVWE1Na2F3TWo3Z3J4aw?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.081Z"
-    },
-    {
-      "id": "NEWS_1420819368",
-      "headline": "Stock Market: BSE Sensex climbed over 230 points & NSE Nifty rallied over 74 points - News On AIR",
-      "source": "News On AIR",
-      "publishedAt": "2026-05-26T19:29:34.000Z",
-      "publishedAtFormatted": "27 May 2026, 12:59 am",
-      "summary": "Stock Market: BSE Sensex climbed over 230 points & NSE Nifty rallied over 74 points&nbsp;&nbsp;News On AIR",
-      "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxPME5zY2ZsNkhOVXppWjJ2U3RxVGhQS1B1c2E0d0JEVUlzQjRyWkpRSTdvbGFTc2NuYlVoaDJEMUtNb1hnVFBDNURQalRTWVBMaWdRb29mTXVrUzh2Y05FQm1WV3FwazZNc0RBVHlQNS00aVpFTEs1eHdXMmRKQnJqdWRoLWNDb1JVLWcxU0gxZERzLUg0T29LUzV5dGU3dWY1a1p5N2VtQjN4QQ?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.081Z"
-    },
-    {
-      "id": "NEWS_847866696",
-      "headline": "Indian benchmark shares post longest weekly losing run in 25 years - Reuters",
-      "source": "Reuters",
-      "publishedAt": "2026-10-01T07:00:00.000Z",
-      "publishedAtFormatted": "1 Oct 2026, 12:30 pm",
-      "summary": "Indian benchmark shares post longest weekly losing run in 25 years&nbsp;&nbsp;Reuters",
-      "url": "https://news.google.com/rss/articles/CBMitAFBVV95cUxOa2lpSGdlN0dhOTM3eUw3MlQtN183dHZydW95WXVWM2MyTEFaeTlvRUllR29aLWJxT3dvdVNmNlpzTGVldkpIMFNScVVhVEJ5TTU5TDhoVTZZWlpXbENCUHlKMWx3MmJ4bWkyU1E1OGF6Sk9YakxYcHRyM0tWdnlrX0NpQktmLU90VkRRVG5FQXdPZ3c3dFV0N0xndUdrTl9lY0xKZUJsNmY4LS1BYndDNENRZC0?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.082Z"
-    },
-    {
-      "id": "NEWS_1751487909",
-      "headline": "Top stocks to watch today: SBI, NSE, ITC, Sun Pharma, IDBI Bank shares in focus on Tuesday, 3 Nov | Full list - Livemint",
-      "source": "Livemint",
-      "publishedAt": "2026-11-03T01:47:56.000Z",
-      "publishedAtFormatted": "3 Nov 2026, 7:17 am",
-      "summary": "Top stocks to watch today: SBI, NSE, ITC, Sun Pharma, IDBI Bank shares in focus on Tuesday, 3 Nov | Full list&nbsp;&nbsp;Livemint",
-      "url": "https://news.google.com/rss/articles/CBMigAJBVV95cUxPbm5sUENKT2N5bGFXb3o5NXhqdUpweTBTOWlRc2RzWU80Tnp0UDlYYXh4NG9McDlTb1dkcmliRGptVG9DbWxjQUNlM3BuOS1tTU1mVHJXdExCaXUxbDJHTjBhZ3FMVlRmVTFBUmxoWnRZRW1aNGs5VmxMaEc1YVBaS0V4VTQxWTV2WVpDd1VOQ1ZNbEdBZU85Q2tQeWlaUEx5QnBvQTA0a1V5eDBjQ01nM1hUR3kzQXpRQndSTlFqNU5TX3o2UFc3VGlER3lzMkpNOUpsZTlveG1uWGdaeVllaFE4bHE2T0RaeS1Lck91OV9LTEFfYVdzRWdyYjlMRmpl0gGGAkFVX3lxTE9zM0FLU0hKWUpseUNyOFR4TE1ETWYwTmpFZ01nQnMzOExaWjZOaFpuMFZIQTRiWUpfbkhoOGZxbmR5T1dINjh2cGZITGdNSWxBV2o0MEtYaGE0UWdOdFFmekFQb3NINFdDSGZ0RDdYeGROX1JTd0tBNjdld2lKRm8wdnpCR3VWaUpaalpoTDVZWWgwLVNqS25xNzJSVUpjNUZ6MUFMRktIY2FpeDRiQlFNTTh0b0R3bWNxeU9kMzZoa3V6RHc0ZHB5bjA4d1M3T3JjVXo4aWpUM1hJRWQtdUFnbnIzMTN6cW5Zc1FmVFhjM0hLNXo2eU54LVJyLTZFeXNYOUVrekE?oc=5",
+      "id": "NEWS_474883740",
+      "headline": "Sensex Up 705, Nifty Above 23,600 as Rally Extends on Tuesday - HDFC Sky",
+      "source": "HDFC Sky",
+      "publishedAt": "2026-11-03T04:39:57.000Z",
+      "publishedAtFormatted": "3 Nov 2026, 10:09 am",
+      "summary": "Sensex Up 705, Nifty Above 23,600 as Rally Extends on Tuesday&nbsp;&nbsp;HDFC Sky",
+      "url": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxPLU5FNXNQWkdoc2xpaXZWcEJPQTBabG5QQjUyQ04ySjFpT0NiOGVabTM1LWx2S3hISGxzTzcwN0hNT3RkYzhrTzFrNkdMVzlMQUlCbmM4RGEySXFvOWxfM0FRYTloMTBZb0djeUlidm9sYmZFR1luYXJ0VWEzMzBJOGtyOE1EeExsT2NsdXZ5YzlPOGdycTRTc1otQk5YWFkxWlpDeWZSTVNTazdWcC15a0JaS0k0eTFVVEJ2N0NFakNHLVNWQTJ5MHlXRmVjQzg1bVM3R3hJMA?oc=5",
       "matchedTickers": [
-        "SBIN",
-        "SUNPHARMA"
+        "HDFCBANK"
+      ],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-04T06:45:01.957Z"
+    },
+    {
+      "id": "NEWS_1039880943",
+      "headline": "Sensex, Nifty open flat as IT stocks drag, but FII buying supports market sentiment - ANI News",
+      "source": "ANI News",
+      "publishedAt": "2026-11-04T04:06:00.000Z",
+      "publishedAtFormatted": "4 Nov 2026, 9:36 am",
+      "summary": "Sensex, Nifty open flat as IT stocks drag, but FII buying supports market sentiment&nbsp;&nbsp;ANI News",
+      "url": "https://news.google.com/rss/articles/CBMizAFBVV95cUxNZEVCcjdCVHEyUFVVU2hYWjJ3Ym0wV3ZldTluUFczRFUyVDk3cVBacEVXamI4eFliR1R0OC1RQVc0ZGhyNS1ZUUhjTzZWdjgzRlc0SkV4bmwwUmZ5dkNYWDVMM1Y4VXN2QTFkWXA4QlNvYW1ZSWNYRmNhRFNvcUtUbGhMcU1xTlExWXlDZmotY1Z1YzVLMUJuMFRzaUI5OHdhZzhMT1BLYVB5SUtkdjBIem5keHlWZVhwZm0yLW9sVFRpSG1aVUpQOXRfS08?oc=5",
+      "matchedTickers": [],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-04T06:45:01.957Z"
+    },
+    {
+      "id": "NEWS_416050467",
+      "headline": "Market wrap, Nov 3: SENSEX jumps 1,225 pts, NIFTY50 ends at 23,810; NSE-listed firms add ₹5 lakh crore mcap - Upstox",
+      "source": "Upstox",
+      "publishedAt": "2026-11-03T10:49:53.000Z",
+      "publishedAtFormatted": "3 Nov 2026, 4:19 pm",
+      "summary": "Market wrap, Nov 3: SENSEX jumps 1,225 pts, NIFTY50 ends at 23,810; NSE-listed firms add ₹5 lakh crore mcap&nbsp;&nbsp;Upstox",
+      "url": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxOVFQ3QXZzTlg2b1dsUUdIZmlzRG9pT1lDLVJKWFhQY0cwTkw5QlN0TTJIYUtHdUdEREVENmE2VWV3Q0hIamV1TndjQTRCTExMa2J2UFN6NV9Qc0NaWDVFUDg2YkluQXMwUDFwT3A3N2NXeDZCVHN6WUZPNlI3SHc2emRlV2RLZXBRcjJfSnlIX092ZjFFNnJ6YVdlRnFsaDl3TXp3V0ZkMmZULW9MeWdOZW9KZHExNHA0TVNYa0puRk1DanRwM2J2VUVtdXR5eWMtTExCM2NWVTlwc2hxMndyOVEyMGkwVkNHUG5sQkFaX2RqUlZm?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-04T06:45:01.957Z"
+    },
+    {
+      "id": "NEWS_1385798101",
+      "headline": "Indian Markets Rally for 4th Day on Easing Macro Pressures, FII Inflows - Rediff",
+      "source": "Rediff",
+      "publishedAt": "2026-11-03T10:58:30.000Z",
+      "publishedAtFormatted": "3 Nov 2026, 4:28 pm",
+      "summary": "Indian Markets Rally for 4th Day on Easing Macro Pressures, FII Inflows&nbsp;&nbsp;Rediff",
+      "url": "https://news.google.com/rss/articles/CBMiywFBVV95cUxPRzRhaVBKT1ZxaHhMRVRJMXpRNWJoWFhNSGJDR1hkc0FpM05XcEh6LUhXUnpNajVsQURPdkVTT0xYNWU5eWRhV0JKZGRadVhkT0ZoQzZxTDN5SkZkZEprLWJJMzlYRnJzS0ZQeUlFV0NwNmtUVE9kcF80eHVIWC1QczFRS1pDVkZzbFlJNFN6Sk91RTlQTXNFWmRad3c2TjJyOUZxT3JYbnpSZy1nNG9ScUM4dy12UEZTcmt5Q2RuQnpBXzI2UVRxWVpZQdIBzgFBVV95cUxNT2tPLXRoOU9oRG5nOUUyOWhNUG1OOW5wcjdmQjFVdF9CNU9rWDlqVlpTay1EaVRtU1RTRVBxQ0JJeW5LMDM4Wm5Ub2gwby1BNmRSVktwOF8zbENybE1iWGY4YW94Wnh4clJtd1lJbFJpWTlLbVVCam1OZTlDOEVPTXN4d3lBMi1lZngwUXlzSGRuay1yR0VLUEhFM3YxVUZxVmp4X25mTVBqc2xwdDYyX2xMaFlFSGpuUWZ3MnFOX2JIUTBrV24weHAtcm5NZw?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-04T06:45:01.957Z"
+    },
+    {
+      "id": "NEWS_2137142050",
+      "headline": "Sensex settles 1,200 pts higher, Nifty ends near 23,450: Strong RIL Q2 results among key factors behind... - Moneycontrol.com",
+      "source": "Moneycontrol.com",
+      "publishedAt": "2026-11-02T04:05:38.000Z",
+      "publishedAtFormatted": "2 Nov 2026, 9:35 am",
+      "summary": "Sensex settles 1,200 pts higher, Nifty ends near 23,450: Strong RIL Q2 results among key factors behind...&nbsp;&nbsp;Moneycontrol.com",
+      "url": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxNM21fUjBzU3UxS3JYcVlLNHU1cUphazN3MzhEQnQ1X3lTTld1ZTZPMGpSa3M3Vk11akNqN2k4dXRoWnpSN0RSSHpjeGUxcnphOFF0TnFHamxtNG5HeVpydERQNEtWY25YWjN1Q3hfaTdJdTFuaUVVZDVfRTl0V18yRTdjbXpKVlBidjRMaGRyTHJCYnZxY1dEVUJIT0g5RHFGVTRxLUhWVUtXT3ZQdTVtbVR2dE8tTTc2NTFsT1VkUEhsX0lnV21LMFpQWkVxbGxBMG44Z25GckZ3cndleEZqQ1RjblB1SDRyQVdjbWVEXzQ2UWvSAfgBQVVfeXFMUFZhQlM0eTlESzBFd2pvM3hMVGJ3SkZUY2Y1bUxwZXB0aEd2dEl6QXJuRUYwMmZtUnJIQlVUVDV6WnpyYkpzU0RPNWY3dWJXcHFPVkh1YW92UnlCVlE4Zlp4OXEwQ3l6MjBubVN2MUl0XzJiVDc0ZmZhVGlQY3d3cENacktTVTZYOXBUczNkdnhBMjliUXJwMmRjR1pLRnJMY0F6U196TjU4d1Z6SVhpTngxT1g3NmdkWXc3VFBST2UtejNIOHBsWWt3d2lIdWVQRWRVNVV1WENkXzFJaXp2Zk54OEJxMmstX3RIUmdKc2ZxelZFYzFXZ0s?oc=5",
+      "matchedTickers": [
+        "RELIANCE"
       ],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.082Z"
+      "fetchedAt": "2026-11-04T06:45:01.958Z"
     },
     {
-      "id": "NEWS_731040721",
-      "headline": "Stock market holiday today on September 14: BSE, NSE to remain closed today on account of Ganesh Chaturthi - Moneycontrol.com",
-      "source": "Moneycontrol.com",
-      "publishedAt": "2026-09-14T07:00:00.000Z",
-      "publishedAtFormatted": "14 Sept 2026, 12:30 pm",
-      "summary": "Stock market holiday today on September 14: BSE, NSE to remain closed today on account of Ganesh Chaturthi&nbsp;&nbsp;Moneycontrol.com",
-      "url": "https://news.google.com/rss/articles/CBMi_gFBVV95cUxQaHFneWN5Smx3RnkwQWJnQ0V3ejdHSXloSGkxWUVjNTROdnZPS25mbzRDOEZzN25GX3hJZTZ4NDZyR2thTS1CdzNoTzA4M0R0Q3RFR09FYmI0Qk9CRDU1TExWOTBMcF9sV05na3JDRlUwUHRvQTFCSGVrQmk3TVFEeFh2aWxkeEo5dGRLOWpnTkxMTWhXcGMySVEwN195UkVYTkpGR0NsRFNlWTdlZ0RJREhNdmtNdTlGQ0FCZUQ3WGRtZllmT090RHNhNDdfVFgxdm1Yb0tVak56YnZqTzdOZDdYejNxR0Q0UTZ5M3pzR2RoUmFEUWZUZldCc1Fsd9IBgwJBVV95cUxQa1huci1veTI1YnRPckJCLTZIUGFWVFcyU1RsdDN5TEY0dm54aHZjSnR1U2o0eEMzM1NfY0MtMXJxX2dxdnU2MjVST0pYMEdDVXFKS0VucERFdVlpd3hVMTVOaHFZa2ZhNEtyX2d5VjE3OGxTdHB0bGx3bWZuVFZFYVJMMlVKTHFLLVAwdzBJVDZodWFwYXlEeUpJT1E3dGN2a3FFUHYwS0xlZUloaFFwcDVqWV9sMFdWYnBncHVzaGNRYVc4V25oanF6ZFdJTDhzVlNyR1I4QU52U040WWxEVVB2bjEtbjdUdDd0eDc3ZlJOTzUzaDdoam8zMXpndTVHTHV3?oc=5",
+      "id": "NEWS_770282298",
+      "headline": "Stock markets rally in early trade on foreign fund inflows, easing crude oil prices - DT Next",
+      "source": "DT Next",
+      "publishedAt": "2026-11-04T04:53:07.000Z",
+      "publishedAtFormatted": "4 Nov 2026, 10:23 am",
+      "summary": "Stock markets rally in early trade on foreign fund inflows, easing crude oil prices&nbsp;&nbsp;DT Next",
+      "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxNSkd4VHIxVXhzWnZhWDVyYmVuTEs5RFJMVVBVdzVfNl9Hd1BtdWZYNVh3WkJJUEIwYjJ0SzJqZHc5OV8yOU9mS0dKUGNvMUdWVERBSEZ5WE9sN21DTmEwR2VDVEZWZGJucjNyQnBJTlNvOFpZMWszb3FYa2E0bUNFUVd2dEM0VXFyckYxbE9wSlVSUjZKT1lqemlfbkcxOTRRTjBaVnRBLTJmVU9RMGpjRzZqTjJWemMzV0HSAccBQVVfeXFMUG9OTWRtalZxdmt1c3NPWVV4WjV4Y25ab2dMTzdaN0VBWEJXY083YWRkSDc3Wnp0c0NrT19XNVdFOUtCUVZKOVBrZzFkODUtZXN4M2VWRXlWY3VXeTlyaDJDaUFWQk5xSUxaQ3AzODR5QU9KakMyYW5jVWZxQjlqWHNUZk50ejVjWVVDbk1EaS1YV2NrdUV0cGkyN0lCX2xsUHcwZkN4LS1tTjJlX3FpZGZTNUpKVHp5eWVncHFvMWhFa21OOWd4Yw?oc=5",
+      "matchedTickers": [],
+      "sentiment": "BULLISH",
+      "sentimentScore": 0.6,
+      "fetchedAt": "2026-11-04T06:45:01.958Z"
+    },
+    {
+      "id": "NEWS_2036180310",
+      "headline": "SFC Environmental Technologies Share Price, Stock Price - NSE/BSE Live - NDTV Profit",
+      "source": "NDTV Profit",
+      "publishedAt": "2026-11-04T06:27:16.000Z",
+      "publishedAtFormatted": "4 Nov 2026, 11:57 am",
+      "summary": "SFC Environmental Technologies Share Price, Stock Price - NSE/BSE Live&nbsp;&nbsp;NDTV Profit",
+      "url": "https://news.google.com/rss/articles/CBMijAFBVV95cUxQbGZkQVJ4U0UzTTU3R2NCSU9BM3Y3UGx3eGFyVWM5OGpieTgwUTlCY3BWN1JqaElfNHVPYUxmdXZGMEx3TXBSVWFlcmZmN29rV0ZOdlY0czV0di1ZVHRyU3NRTUk3RUNZNVRCWlRVcjFaejBjN0hBS3BmSjh5WFVqbENjT3JGeFQzOTRmNg?oc=5",
       "matchedTickers": [],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.082Z"
-    },
-    {
-      "id": "NEWS_525987356",
-      "headline": "India's Nifty and Sensex diverge following launch of new auction mechanism - Reuters",
-      "source": "Reuters",
-      "publishedAt": "2026-08-03T07:00:00.000Z",
-      "publishedAtFormatted": "3 Aug 2026, 12:30 pm",
-      "summary": "India's Nifty and Sensex diverge following launch of new auction mechanism&nbsp;&nbsp;Reuters",
-      "url": "https://news.google.com/rss/articles/CBMiqgFBVV95cUxQazBsLXlLazNKQ0tJV3JleVhBcV9JZktMbkR1WVB1allUaGcyZjUzdk5HeGRpNmx2REJ0ZEV0c0JOMGo5UkVoTEpEWGNpN1BNd0s0a2lMdGd5RkFuWFFNM0RDcEdEdGRpUGZVclU1QmtTRkR6YWNjclJkdmU0anNrejQ4RkpLeWFPVEtmSVJVcS0xcVZNNHc1UjZWMDQ0ZU5LRnRkSTNVdV83QQ?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.082Z"
-    },
-    {
-      "id": "NEWS_1154679040",
-      "headline": "India's Nifty, Sensex touch new highs on key wins for the BJP - Reuters",
-      "source": "Reuters",
-      "publishedAt": "2023-12-04T08:00:00.000Z",
-      "publishedAtFormatted": "4 Dec 2023, 1:30 pm",
-      "summary": "India's Nifty, Sensex touch new highs on key wins for the BJP&nbsp;&nbsp;Reuters",
-      "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxQWExPY1p0U2JCSjFna3ZQUVRpQ3l3c0lPcHM4eTN1OGpuNDhVVXUtSW15THNGR0RVOHZyb3R1ZnBnU0Z3UUh5SUN1dmdHQzhhM1VyWmNEZmh3QWJJcW4zaXltak80OFVUZm9Wc21LMHIyemRHSXNPcE1PSEt3aC1nelZYX0ZIeUppT0hYYjBSd2tpVTduNEhqa01MYUM1cXBLR0NTenVFMVA?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.083Z"
-    },
-    {
-      "id": "NEWS_608946709",
-      "headline": "Market Closing Updates: Sensex down by 2.95%, Nifty by 3.24% - Groww",
-      "source": "Groww",
-      "publishedAt": "2025-04-07T07:00:00.000Z",
-      "publishedAtFormatted": "7 Apr 2025, 12:30 pm",
-      "summary": "Market Closing Updates: Sensex down by 2.95%, Nifty by 3.24%&nbsp;&nbsp;Groww",
-      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTFBqMG9Nc0dTU0tfemYwbzlHU2FEZ1M5SERGbVNlTEdGZDlOMENJRGRBbEpxUmV4N3NGc2J2cXBCTlNTQlZZRzNLU0otc0phb3J6ZUMtbGlmOVdYN1JHYjFUMy04bk9nT0ZXUWNwdjFxZlBMcXJab2ljblBB?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.083Z"
-    },
-    {
-      "id": "NEWS_13777263",
-      "headline": "Top Losers Today - NSE Top Losers Stocks Live, BSE Top Losers Shares Today - The Economic Times",
-      "source": "The Economic Times",
-      "publishedAt": "2024-06-11T18:45:00.000Z",
-      "publishedAtFormatted": "12 Jun 2024, 12:15 am",
-      "summary": "Top Losers Today - NSE Top Losers Stocks Live, BSE Top Losers Shares Today&nbsp;&nbsp;The Economic Times",
-      "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE1pdllieG9walJtZS01eEV5TXozT2d4aHZtby1TSEJ2WHM2ZDVCVG5kOEk2V3VDemRWd0tqajBYOGlILTJncTV4eU1XSUVUU3ljOXNzOFBXUkx6TTN3cTRrTHh3aS1BRE5SUWM5RGxqZTBQQlk0?oc=5",
-      "matchedTickers": [],
-      "sentiment": "BEARISH",
-      "sentimentScore": -0.6,
-      "fetchedAt": "2026-11-04T06:15:03.083Z"
-    },
-    {
-      "id": "NEWS_1970090121",
-      "headline": "NSE and BSE Increase Lot Sizes for Index Derivative Contracts - Groww",
-      "source": "Groww",
-      "publishedAt": "2025-02-20T08:00:00.000Z",
-      "publishedAtFormatted": "20 Feb 2025, 1:30 pm",
-      "summary": "NSE and BSE Increase Lot Sizes for Index Derivative Contracts&nbsp;&nbsp;Groww",
-      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE9LcU9oQjBfMmJwU3V5Q004WGI3amZ6U3k1NldTb1p4RjFPWDFIc0hubXZSV0xXT2p3cnctakpGV0FUaGMxU1NYRlpYdXdpa0RoYVZtVHBvbmg3bkc0RTJ3V21IMnk1eWVDb2NwVmhsakZXTHVSVlE?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.083Z"
-    },
-    {
-      "id": "NEWS_1806158433",
-      "headline": "NSE - National Stock Exchange of India Ltd: Live Share/Stock Market News & Updates, Quotes- Nseindia.com - NSE India",
-      "source": "NSE India",
-      "publishedAt": "2014-07-25T05:11:21.000Z",
-      "publishedAtFormatted": "25 Jul 2014, 10:41 am",
-      "summary": "NSE - National Stock Exchange of India Ltd: Live Share/Stock Market News & Updates, Quotes- Nseindia.com&nbsp;&nbsp;NSE India",
-      "url": "https://news.google.com/rss/articles/CBMiPkFVX3lxTE15aFBDQy1lOHpHNnVLU3dRM1lsWmNDMVRQNWJPcXBDSklxT1VIUnVxVDMwRHJsRTJtdmNLcEd3?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.084Z"
-    },
-    {
-      "id": "NEWS_868301019",
-      "headline": "Indian Stock Market: Exchanges and Indexes - Investopedia",
-      "source": "Investopedia",
-      "publishedAt": "2017-03-25T20:06:47.000Z",
-      "publishedAtFormatted": "26 Mar 2017, 1:36 am",
-      "summary": "Indian Stock Market: Exchanges and Indexes&nbsp;&nbsp;Investopedia",
-      "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTFA5aVZfNnQwXzdDeUgteEN6dHFjUFphVlliamFaYkRlMHU5VThwVGxnaUJ1NVpiamsxekNmLTFqT0ZSWDFEQmU0OHVhWUV4T2xxejlqaFFJVE8xdEY5b1RNQnZGdDYxX1FEVFNsVWQ3LUVZWlJrdTFPMG03bw?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.084Z"
-    },
-    {
-      "id": "NEWS_1658683497",
-      "headline": "Stock Market: Stock Market Today | Stock Market Live News Update - Moneycontrol.com",
-      "source": "Moneycontrol.com",
-      "publishedAt": "2011-01-09T21:42:24.000Z",
-      "publishedAtFormatted": "10 Jan 2011, 3:12 am",
-      "summary": "Stock Market: Stock Market Today | Stock Market Live News Update&nbsp;&nbsp;Moneycontrol.com",
-      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE9rN1l6YVVCd3lGQ3B3azRWVUY0NmJpdFJDaTZUc2RGcXlmbklqQ2FSdlpKNWtPb1hFaEdQSzJ3YXhWeGUzU21iRk1hRDRNMjFROVdFRjRyRFZUYnFS?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.084Z"
-    },
-    {
-      "id": "NEWS_1101202932",
-      "headline": "Business News: Stock and Share Market News, Economy and Finance News, Sensex, Nifty, Global Market, NSE, BSE Live IPO News - Moneycontrol.com - Moneycontrol.com",
-      "source": "Moneycontrol.com",
-      "publishedAt": "2010-04-08T00:31:36.000Z",
-      "publishedAtFormatted": "8 Apr 2010, 6:01 am",
-      "summary": "Business News: Stock and Share Market News, Economy and Finance News, Sensex, Nifty, Global Market, NSE, BSE Live IPO News - Moneycontrol.com&nbsp;&nbsp;Moneycontrol.com",
-      "url": "https://news.google.com/rss/articles/CBMiQ0FVX3lxTE8xNVVlNFBqbHZidXZqVFlHVm92akRDWFNhUHdMR1ZWczViWjhfcFg1TlJYSklXNDg5N0I5eG4xdndVdmM?oc=5",
-      "matchedTickers": [],
-      "sentiment": "NEUTRAL",
-      "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.084Z"
+      "fetchedAt": "2026-11-04T06:45:01.958Z"
     },
     {
       "id": "NEWS_1611118434",
@@ -308,7 +192,36 @@
       "matchedTickers": [],
       "sentiment": "NEUTRAL",
       "sentimentScore": 0,
-      "fetchedAt": "2026-11-04T06:15:03.085Z"
+      "fetchedAt": "2026-11-04T06:45:01.959Z"
+    },
+    {
+      "id": "NEWS_1806158433",
+      "headline": "NSE - National Stock Exchange of India Ltd: Live Share/Stock Market News & Updates, Quotes- Nseindia.com - NSE India",
+      "source": "NSE India",
+      "publishedAt": "2014-07-25T05:11:21.000Z",
+      "publishedAtFormatted": "25 Jul 2014, 10:41 am",
+      "summary": "NSE - National Stock Exchange of India Ltd: Live Share/Stock Market News & Updates, Quotes- Nseindia.com&nbsp;&nbsp;NSE India",
+      "url": "https://news.google.com/rss/articles/CBMiPkFVX3lxTE15aFBDQy1lOHpHNnVLU3dRM1lsWmNDMVRQNWJPcXBDSklxT1VIUnVxVDMwRHJsRTJtdmNLcEd3?oc=5",
+      "matchedTickers": [],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-04T06:45:01.959Z"
+    },
+    {
+      "id": "NEWS_1689624161",
+      "headline": "Sensex, Nifty Today: India Stock Markets Edge Higher For Fifth Day; HUL, Bharti Airtel, HDFC Bank In Focus; Check Market Drivers - The Sunday Guardian",
+      "source": "The Sunday Guardian",
+      "publishedAt": "2026-11-04T05:21:32.000Z",
+      "publishedAtFormatted": "4 Nov 2026, 10:51 am",
+      "summary": "Sensex, Nifty Today: India Stock Markets Edge Higher For Fifth Day; HUL, Bharti Airtel, HDFC Bank In Focus; Check Market Drivers&nbsp;&nbsp;The Sunday Guardian",
+      "url": "https://news.google.com/rss/articles/CBMi_wFBVV95cUxNUUhFMlB6cmhBR3E2Z3pNQ2E2a2laR1ZnMDNjWG1ETEhRQklzOEx2aHdkVm1TTkRLTTA0WjdrUVZuc3BXUjliZW1mU0EtMW43Ti1XTFNvSVp3ZWdJY3JJTUI2TjZRckxaeFpMd2ZMcGJOS1BHSzAzNHlBUFhNcWZwRVFnLUZFRjY5Q19KNHpfVGQ3THpFdFhJN1BfYWRWNnhIbFlIalowV09IQVpJRVNDa19kODlEeEotcEpNU0tzUW54UGlKeW96UDBnM1AyQl92bFhGYzMzOTJtSTk2TE1sVUxpOWYwRl9rS0wzeEhZMHdRSzJaUENsX2hNclV0LTTSAYQCQVVfeXFMTlgyemdpV3g5YklPUUpCakh0ZGI2czg2bTk3U3VZMHZ1dUwtWTdzd29oc2s2NUVZY0wxLXBsWHlBQTNibW50cWhoaVJONHowR3BnZENiczB0YS1lN01mMmE2S3BwWXFPNDJhRXZsNlZaTG9Ra25jbjlmbzhOc04tT3hDU0VabF9Oa3B4Y09HaTA0V1Q1UzlkU211dE0yeDk3UjdrMXpJQTdLSlptRU1BODRwUmlRQVM5OGtybzd6UnVaaEM5WW0xa1dDLUhKZU5mYUxpVEhZWjZsX28tZERjV0d0THE0cVFSVHQ4WGFibU1pWWtYME12amxOeFNoMnB6REpaVW0?oc=5",
+      "matchedTickers": [
+        "HDFCBANK",
+        "AIRTEL"
+      ],
+      "sentiment": "NEUTRAL",
+      "sentimentScore": 0,
+      "fetchedAt": "2026-11-04T06:45:01.959Z"
     }
   ]
 }

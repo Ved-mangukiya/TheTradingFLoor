@@ -11,70 +11,6 @@
 
 <body class="ttf-app theme-aged font-size-md">
 
-  <!-- ==========================================================================
-       MASTER TOP UTILITY & MARKET BAROMETER STRIP (ARCHIVAL BROADSHEET)
-       ========================================================================== -->
-  <aside class="utility-bar" aria-label="System Controls & Market Barometer">
-    <div class="utility-container">
-      <div class="utility-left">
-        <div class="utility-widget" title="Surat Meteorological Station">
-          <span>☀️</span>
-          <span>SURAT 32°C • BAROMETER 1012 hPa</span>
-        </div>
-        <div class="utility-divider">|</div>
-        <div class="utility-widget">
-          <span class="status-pulse-dot"></span>
-          <span id="marketStatusText">MARKET OPEN (NSE / BSE)</span>
-        </div>
-        <div class="utility-divider">|</div>
-        <div class="utility-widget">
-          <span class="edition-pill">PASTEL ARCHIVAL SYSTEM</span>
-        </div>
-      </div>
-
-      <div class="utility-right">
-        <!-- Sound Toggle -->
-        <button type="button" id="soundToggleBtn" class="sound-toggle-btn muted" title="Toggle Mechanical Typewriter Audio Feedback">
-          <span>🔈</span> MUTED
-        </button>
-
-        <div class="utility-divider">|</div>
-
-        <!-- Font Scale Adjuster -->
-        <div class="font-size-group" title="Adjust Typography Scale">
-          <span class="control-label" style="font-size: 10px; opacity: 0.85; letter-spacing: 0.5px;">TYPE:</span>
-          <button type="button" id="fontSmBtn" class="font-btn" data-size="sm">A</button>
-          <button type="button" id="fontMdBtn" class="font-btn active" data-size="md">AA</button>
-          <button type="button" id="fontLgBtn" class="font-btn" data-size="lg">AAA</button>
-        </div>
-
-        <div class="utility-divider">|</div>
-
-        <!-- 100% Light Pastel Theme Toggler (No Dark Mode) -->
-        <button type="button" id="themeToggleBtn" class="utility-action-btn" title="Cycle Pastel Themes (Archival Aged / FT Salmon / NYT Ivory)">
-          <span id="themeIcon">📜</span>
-          <span id="themeLabel">AGED PARCHMENT</span>
-        </button>
-
-        <!-- Print Broadsheet Button -->
-        <button type="button" id="printEditionBtn" class="utility-action-btn" title="Print Broadsheet Clipping">
-          <span>🖨️</span>
-          <span>PRINT EDITION</span>
-        </button>
-
-        <!-- Creator Attribution -->
-        <div class="creator-badge" title="SSASIT GTU Code: 076" onclick="openDeveloperInfoModal()" style="cursor: pointer;">
-          <span>⚡ VED MANGUKIYA</span>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Reading Progress Bar -->
-  <div class="reading-progress-track">
-    <div id="readingProgressBar" class="reading-progress-bar"></div>
-  </div>
-
   <!-- 0. Main Stage Navigation Direct Entry -->
 
   <!-- ==========================================================================
@@ -104,7 +40,7 @@
                 Surat, Gujarat, India
               </span>
               <span>•</span>
-              <span style="color: var(--text-charcoal); font-weight: 600;">Pursuing Bachelor of Business Administration (BBA)</span>
+              <span style="color: var(--text-charcoal); font-weight: 600;">SSASIT</span>
             </div>
           </div>
         </div>
@@ -134,10 +70,10 @@
           Academic Affiliation &amp; University
         </h4>
         <div style="font-family: var(--font-serif); font-size: 16px; font-weight: 800; color: var(--text-forest); line-height: 1.4;">
-          Gujarat Technological University (GTU)
+          SSASIT
         </div>
         <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-sans);">
-          Surat, Gujarat, India • NAAC A+ Accredited University
+          Surat, Gujarat, India
         </div>
       </div>
 
@@ -559,107 +495,72 @@
        VIEW 1: UNIVERSAL AUTHENTICATION TERMINAL (#loginView)
        ========================================================================== -->
   <section id="loginView"
-    style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;">
+    style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px 16px; background-color: var(--paper-base); box-sizing: border-box; width: 100%; max-width: 100vw; overflow-x: hidden;">
     
-    <!-- Grand Vintage Broadsheet Masthead for Front Page Login -->
-    <div class="newspaper-broadsheet-container" style="max-width: 540px; width: 100%; margin-bottom: 24px; border: 3px double var(--border-dark); box-shadow: var(--shadow-paper);">
-      <div class="broadsheet-folio-bar">
-        <span>PAGE A1 • OFFICIAL FINANCIAL GAZETTE</span>
-        <span>★ ★ ★ ★ ★ FIVE-STAR INVESTOR EDITION</span>
-        <span>SURAT &amp; MUMBAI</span>
-      </div>
-      <div class="masthead-showcase" style="padding: 22px 20px 14px; text-align: center; border-bottom: 2px solid var(--border-dark);">
-        <div class="masthead-motto-rule">
-          <span class="motto-line"></span>
-          <span style="font-size: 11px; letter-spacing: 2px;">❧ THE NATIONAL DAILY OF DALAL STREET ☙</span>
-          <span class="motto-line"></span>
+    <!-- Editorial Institutional Login Card -->
+    <div class="login-card-container" style="max-width: 460px; width: 100%; background: var(--paper-surface); border: 2px solid var(--border-dark); box-shadow: 0 12px 36px rgba(0,0,0,0.06); box-sizing: border-box; border-radius: 4px;">
+      
+      <!-- Editorial Header Banner -->
+      <div style="background: var(--paper-panel); padding: 24px 24px 18px; text-align: center; border-bottom: 2px solid var(--border-dark);">
+        <div style="font-family: var(--font-typewriter); font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold-crest); text-transform: uppercase; margin-bottom: 4px;">
+          ARENA ENGINE • FINANCIAL SIMULATION
         </div>
-        <h1 id="loginEventTitle" class="masthead-title" style="font-size: clamp(28px, 5vw, 42px); margin: 6px 0;">The Trading Floor</h1>
-        <p class="masthead-subline" style="font-size: 11.5px; margin-bottom: 4px;">Institutional Trading Championship &amp; Bourse Gazette</p>
-        <div style="font-family: var(--font-body); font-size: 12px; font-style: italic; color: var(--ink-brown);">“Veritas in Numeris — In Integritate Mercatus”</div>
-        <div class="masthead-meta-strip" style="font-size: 9px; gap: 8px; padding-top: 8px; margin-top: 8px;">
-          <span>VOL. XCVII • NO. 308</span>
-          <span>•</span>
-          <span>SSASIT GTU CODE: 076</span>
-          <span>•</span>
-          <span>AIR-GAPPED LOCAL ENCLAVE</span>
-          <span>•</span>
-          <span id="loginRealTimeClock">--:--:--</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Official Authorization Terminal Card -->
-    <div class="vintage-modal-dialog login-card" style="max-width: 500px; width: 100%; padding: 0; box-shadow: var(--shadow-lg); background: var(--paper-surface); border: 3px double var(--border-dark);">
-      <div class="modal-dialog-header" style="background: var(--paper-panel); padding: 14px 20px; border-bottom: 2px solid var(--border-dark);">
-        <div>
-          <div style="font-family: var(--font-typewriter); font-size: 9.5px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold-crest); text-transform: uppercase;">
-            TERMINAL ACCESS GATEWAY
-          </div>
-          <h3 style="font-family: var(--font-headline); font-size: 18px; margin: 2px 0 0 0; color: var(--ink-black);">
-            Authentication &amp; Floor Clearance
-          </h3>
-        </div>
-        <div class="crest-gold" style="width: 38px; height: 38px; font-size: 16px; margin: 0; border: 2px solid var(--border-dark); background: var(--paper-surface); color: var(--ink-dark); display: flex; align-items: center; justify-content: center; font-weight: 900; font-family: var(--font-headline);">TF</div>
+        <h1 id="loginEventTitle" style="font-family: var(--font-headline); font-size: 32px; font-weight: 800; color: var(--ink-black); margin: 0; letter-spacing: -0.02em;">
+          The Trading Floor
+        </h1>
+        <p style="font-family: var(--font-body); font-size: 13.5px; color: var(--ink-brown); margin: 4px 0 0; font-style: italic;">
+          Institutional Trading Championship &amp; Market Simulation
+        </p>
       </div>
 
-      <div style="padding: 24px 26px;">
+      <div style="padding: 24px 24px 22px;">
         <!-- Live Server Connection Health Badge -->
-        <div id="loginServerConnectionBadge" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 14px; border-radius: 4px; font-size: 10.5px; font-weight: 700; font-family: var(--font-typewriter); background: var(--paper-panel); border: 1px solid var(--border-aged); color: var(--ink-brown); margin: 0 auto 16px auto; width: fit-content;">
+        <div id="loginServerConnectionBadge" style="display: flex; align-items: center; justify-content: center; gap: 7px; padding: 5px 14px; font-size: 11px; font-weight: 600; font-family: var(--font-typewriter); background: var(--paper-panel); border: 1px solid var(--border-aged); color: var(--ink-brown); margin: 0 auto 16px auto; width: fit-content; border-radius: 3px;">
           <span id="loginServerConnectionDot" style="width: 7px; height: 7px; border-radius: 50%; background: #94A3B8;"></span>
-          <span id="loginServerConnectionText">Connecting to Engine...</span>
+          <span id="loginServerConnectionText">Connecting to Arena Engine...</span>
         </div>
 
         <!-- Live Event Readiness / Team Login Gate Banner -->
-        <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--border-aged); background: var(--paper-panel); display: flex; align-items: center; gap: 12px; text-align: left;">
-          <span id="loginEventStatusIcon" style="font-size: 22px; line-height: 1;">⏳</span>
+        <div id="loginEventStatusBanner" style="margin-bottom: 20px; padding: 12px 14px; border: 1px solid var(--border-aged); background: var(--paper-panel); display: flex; align-items: center; gap: 12px; text-align: left; border-radius: 3px;">
+          <span id="loginEventStatusIcon" style="font-size: 20px; line-height: 1;">⏳</span>
           <div style="flex: 1;">
-            <div id="loginEventStatusTitle" style="font-family: var(--font-headline); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--warning-amber);">Competition Setup in Progress</div>
-            <div id="loginEventStatusDesc" style="font-family: var(--font-body); font-size: 13px; color: var(--ink-brown); line-height: 1.4; margin-top: 2px;">The host is getting everything ready. Team logins will open soon.</div>
+            <div id="loginEventStatusTitle" style="font-family: var(--font-headline); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sepia-amber);">Competition Setup in Progress</div>
+            <div id="loginEventStatusDesc" style="font-family: var(--font-body); font-size: 12.5px; color: var(--ink-brown); line-height: 1.4; margin-top: 2px;">The host is preparing the floor. Team logins will unlock shortly.</div>
           </div>
         </div>
 
         <form id="loginForm">
           <div class="form-group" style="margin-bottom: 16px;">
-            <label class="form-label" for="loginUsername" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">USER CLEARANCE ID</label>
+            <label class="form-label" for="loginUsername" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">TRADER ID / USERNAME</label>
             <input id="loginUsername" type="text" required placeholder="e.g. host, team1..team16, projector" class="form-input"
-              style="font-family: var(--font-typewriter); font-size: 13px; padding: 10px 14px; border: 2px solid var(--border-dark); background: var(--paper-panel); color: var(--ink-black); width: 100%; border-radius: 0;" />
+              style="font-family: var(--font-typewriter); font-size: 13.5px; padding: 10px 14px; border: 1.5px solid var(--border-dark); background: var(--paper-surface); color: var(--ink-black); width: 100%; border-radius: 3px; box-sizing: border-box;" />
           </div>
           <div class="form-group" style="margin-bottom: 18px;">
-            <label class="form-label" for="loginPassword" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">PASSPHRASE KEY</label>
+            <label class="form-label" for="loginPassword" style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark); letter-spacing: 0.5px; margin-bottom: 6px; display: block;">PASSWORD</label>
             <input id="loginPassword" type="password" required placeholder="••••••••" class="form-input"
-              style="font-family: var(--font-typewriter); font-size: 13px; padding: 10px 14px; border: 2px solid var(--border-dark); background: var(--paper-panel); color: var(--ink-black); width: 100%; border-radius: 0;" />
+              style="font-family: var(--font-typewriter); font-size: 13.5px; padding: 10px 14px; border: 1.5px solid var(--border-dark); background: var(--paper-surface); color: var(--ink-black); width: 100%; border-radius: 3px; box-sizing: border-box;" />
           </div>
           <p id="loginError" class="hidden"
-            style="color: var(--bear-crimson); background-color: var(--bear-pastel); border: 1px solid var(--bear-border); padding: 8px 12px; font-family: var(--font-typewriter); font-size: 11.5px; font-weight: 700; margin-bottom: 14px;">
+            style="color: var(--bear-crimson); background-color: var(--bear-pastel); border: 1px solid var(--bear-border); padding: 8px 12px; font-family: var(--font-typewriter); font-size: 11.5px; font-weight: 700; margin-bottom: 14px; border-radius: 3px;">
           </p>
-          <button id="btnLoginSubmit" type="submit" class="vintage-btn vintage-btn-primary" style="width: 100%; padding: 13px; font-size: 13px; font-weight: 800; letter-spacing: 1.5px;">
-            SEAL &amp; ENTER TERMINAL ➔
+          <button id="btnLoginSubmit" type="submit" class="vintage-btn vintage-btn-primary" style="width: 100%; padding: 12px; font-size: 13px; font-weight: 800; letter-spacing: 1px; border-radius: 3px; cursor: pointer;">
+            SIGN IN TO TRADING FLOOR ➔
           </button>
         </form>
 
-        <!-- Security Guarantee Pills -->
-        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
-          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">🛡️ AIR-GAPPED NETWORK</span>
-          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">🔒 ISOLATED SESSIONS</span>
-          <span style="font-family: var(--font-typewriter); font-size: 9px; font-weight: 700; color: var(--ink-muted); padding: 3px 8px; border: 1px dashed var(--border-aged); background: var(--paper-panel);">⚡ ZERO DATA LEAKAGE</span>
-        </div>
-
-        <!-- Dedicated Developer Branding & Copyright Footer -->
-        <div style="margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--border-aged); text-align: center;">
-          <button type="button" onclick="openDeveloperInfoModal()" class="vintage-btn vintage-btn-outline" style="font-size: 10px; font-weight: 700; padding: 6px 14px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 7px;">
+        <!-- Compact Developer Attribution Footer -->
+        <div style="margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border-aged); text-align: center;">
+          <button type="button" onclick="openDeveloperInfoModal()" class="vintage-btn vintage-btn-outline" style="font-size: 10.5px; font-weight: 700; padding: 6px 14px; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 7px; border-radius: 3px; cursor: pointer;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-            Developer &amp; System Architecture Info
+            Developer &amp; System Info
           </button>
-          <div style="font-family: var(--font-typewriter); font-size: 10.5px; font-weight: 800; color: var(--ink-dark); line-height: 1.4;">
-            Ved Mangukiya • All Rights Reserved.
-          </div>
-          <div style="font-family: var(--font-body); font-size: 12px; color: var(--ink-muted); margin-top: 2px;">
-            Lead Developer &amp; Architect • Pursuing BBA • Gujarat Technological University • Surat, Gujarat, India
+          <div style="font-family: var(--font-typewriter); font-size: 11px; font-weight: 700; color: var(--ink-dark);">
+            Ved Mangukiya • SSASIT
           </div>
         </div>
       </div>
-    </div>  </section>
+    </div>
+  </section>
 
   <!-- ==========================================================================
        VIEW: GUIDED EVENT SETUP CENTRE (#eventSetupView placeholder)
@@ -1355,8 +1256,13 @@
           </div>
         </div>
 
-        <!-- 2. Center: ONE Primary Action Button + Clean Mode Toggle -->
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- 2. Center: ONE Primary Action Button + Clean Mode Toggle + Smart Autopilot Directive -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div id="hostGuidedFlowDirective" style="font-family: var(--font-sans); font-size: 11.5px; font-weight: 700; color: #1E40AF; background: #EFF6FF; border: 1px solid #BFDBFE; padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px;">
+            👉 <span>Current Step: Market armed. Click Start Day to ring the opening bell.</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+
 
           <!-- Appears ONLY when Paused or Standby -->
           <button id="btnMarketResume" type="button" onclick="hostResumeMarket()" class="hidden btn btn-primary"
@@ -1377,6 +1283,7 @@
           <div id="atcPauseModeSelector" class="hidden" style="display: none !important;">
             <button type="button" id="btnModeSelectSoft" onclick="hostSelectOrSwitchPauseMode('VISIBLE_FROZEN')"></button>
           </div>
+        </div>
         </div>
 
         <!-- 3. Right: Contextual Lifecycle Actions -->
@@ -4531,8 +4438,21 @@
             <span id="chartModalMultiDayPct" class="badge badge-champagne" style="font-family: var(--font-mono); font-size: 11px;">All-Days: +0.00%</span>
           </div>
         </div>
-        <!-- Multi-Day Chart Timeframe Switcher -->
-        <div id="chartTimeframeTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <!-- Chart View Style & Timeframe Controls -->
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div id="chartTypeTabs" style="display: flex; align-items: center; gap: 4px; background: var(--paper-panel); padding: 3px 5px; border: 1px solid var(--border-aged); border-radius: 4px;">
+            <button type="button" id="btnChartType_AREA" onclick="setChartType('AREA')" class="btn btn-sage" style="padding: 3px 9px; font-size: 11px; font-weight: 700;">
+              📈 Line / Area
+            </button>
+            <button type="button" id="btnChartType_CANDLE" onclick="setChartType('CANDLE')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px; font-weight: 700;">
+              🕯️ Candlestick
+            </button>
+            <button type="button" id="btnChartType_BAR" onclick="setChartType('BAR')" class="btn btn-outline" style="padding: 3px 9px; font-size: 11px; font-weight: 700;">
+              📊 OHLC Bar
+            </button>
+          </div>
+          <!-- Multi-Day Chart Timeframe Switcher -->
+          <div id="chartTimeframeTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
           <button type="button" id="btnChartTf_TODAY" onclick="setChartTimeframe('TODAY')" class="btn btn-sage" style="padding: 5px 12px; font-size: 11px; font-weight: 800;">
             📈 Today (Intraday)
           </button>
