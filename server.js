@@ -5254,7 +5254,7 @@ function printStartupBanner() {
 
   console.log(`  ${c.bold}${c.brightCyan}🌐  NETWORK ACCESS & CONNECTION URLS${c.reset}`);
   console.log(`  ${c.gray}${singleLine}${c.reset}`);
-  console.log(`  ${c.bold}• Host Deck (This PC): ${c.reset}${c.brightCyan}http://localhost:${PORT}/?role=host${c.reset}`);
+  console.log(`  ${c.bold}• Host Deck (This PC): ${c.reset}${c.brightCyan}http://localhost:${PORT}/${c.reset}`);
   console.log(`    ${c.gray}└─ Organizer Cockpit: Setup, Live Market Ops, News Engine, & Audits${c.reset}`);
   if (lanIps.length > 0) {
     console.log(`  ${c.bold}• Wi-Fi / Router LAN:  ${c.reset}${c.brightGreen}http://${primaryLan}:${PORT}${c.reset}`);
@@ -5281,20 +5281,20 @@ function printStartupBanner() {
 
   console.log(`  ${c.bold}${c.brightWhite}🔑  ROLE CREDENTIALS & DIRECT ACCESS${c.reset}`);
   console.log(`  ${c.gray}${singleLine}${c.reset}`);
-  console.log(`  ${c.bold}• Host Matrix:     ${c.reset}${c.cyan}host${c.reset} / ${c.cyan}host${c.reset}           ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=host`);
-  console.log(`  ${c.bold}• Stage Projector: ${c.reset}${c.cyan}projector${c.reset} / ${c.cyan}screen${c.reset}      ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=projector`);
-  console.log(`  ${c.bold}• Sound Console:   ${c.reset}${c.cyan}sound${c.reset} / ${c.cyan}sound${c.reset}          ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=sound`);
-  console.log(`  ${c.bold}• Winner Podium:   ${c.reset}${c.cyan}winner${c.reset} / ${c.cyan}winner${c.reset}        ${c.dim}->${c.reset}  http://localhost:${PORT}/?role=winner`);
+  console.log(`  ${c.bold}• Host Matrix:     ${c.reset}${c.cyan}host${c.reset} / ${c.cyan}host${c.reset}           ${c.dim}->${c.reset}  http://localhost:${PORT}/`);
+  console.log(`  ${c.bold}• Stage Projector: ${c.reset}${c.cyan}projector${c.reset} / ${c.cyan}screen${c.reset}      ${c.dim}->${c.reset}  http://localhost:${PORT}/`);
+  console.log(`  ${c.bold}• Sound Console:   ${c.reset}${c.cyan}sound${c.reset} / ${c.cyan}sound${c.reset}          ${c.dim}->${c.reset}  http://localhost:${PORT}/`);
+  console.log(`  ${c.bold}• Winner Podium:   ${c.reset}${c.cyan}winner${c.reset} / ${c.cyan}winner${c.reset}        ${c.dim}->${c.reset}  http://localhost:${PORT}/`);
   console.log(`  ${c.bold}• Trader Desks:    ${c.reset}${c.green}${firstTeam}..${lastTeam}${c.reset} / ${c.green}${firstPass}..${lastPass}${c.reset}  (${teamCount} Registered Desks)`);
-  console.log(`    ${c.gray}└─ Direct Desk Link: http://${primaryLan}:${PORT}/?team=${firstTeam}&pass=${firstPass}${c.reset}`);
+  console.log(`    ${c.gray}└─ Terminal Login Link: http://${primaryLan}:${PORT}/${c.reset}`);
   console.log('');
 
   console.log(`  ${c.bold}${c.brightWhite}📋  QUICK-START EVENT DIRECTOR PROTOCOL${c.reset}`);
   console.log(`  ${c.gray}${singleLine}${c.reset}`);
-  console.log(`  ${c.brightCyan}1.${c.reset} Open ${c.bold}http://localhost:${PORT}/?role=host${c.reset} on this computer to open Host Master Control.`);
+  console.log(`  ${c.brightCyan}1.${c.reset} Open ${c.bold}http://localhost:${PORT}/${c.reset} on this computer to open Host Master Control.`);
   console.log(`  ${c.brightCyan}2.${c.reset} Go to ${c.bold}⚙️ 2. Event${c.reset} to verify roster/stocks, then click ${c.bold}🔒 Confirm & Lock${c.reset}.`);
-  console.log(`  ${c.brightCyan}3.${c.reset} Open ${c.bold}http://localhost:${PORT}/?role=projector${c.reset} on the hall projector or main display.`);
-  console.log(`  ${c.brightCyan}4.${c.reset} Connect audio output to hall speakers: ${c.bold}http://localhost:${PORT}/?role=sound${c.reset}.`);
+  console.log(`  ${c.brightCyan}3.${c.reset} Open ${c.bold}http://localhost:${PORT}/${c.reset} on the hall projector or main display.`);
+  console.log(`  ${c.brightCyan}4.${c.reset} Connect audio output to hall speakers: ${c.bold}http://localhost:${PORT}/${c.reset}.`);
   console.log(`  ${c.brightCyan}5.${c.reset} Share LAN link with participants: ${c.bold}${c.brightGreen}http://${primaryLan}:${PORT}${c.reset}.`);
   console.log(`  ${c.brightCyan}6.${c.reset} Press ${c.bold}${c.brightGreen}▶ Start Day 1 (3-2-1)${c.reset} on Host Cockpit to ring the opening bell!`);
   console.log(c.brightCyan + doubleLine + c.reset);
