@@ -1971,33 +1971,7 @@ function attachWebSocketEvents(onOpenHook) {
     if (connDot) connDot.style.background = '#10B981';
     if (connText) connText.textContent = 'Arena Engine Connected';
     const params = new URLSearchParams(window.location.search);
-    const targetQuery = params.get('role') || params.get('team') || params.get('autologin') || params.get('user');
-
-    if (targetQuery) {
-      if (targetQuery.toLowerCase() === 'login' || params.get('logout') === 'true') {
-        sessionToken = null;
-        sessionStorage.removeItem('ttf_session_token');
-        switchSpaView(null);
-        return;
-      }
-
-      const creds = getAutoCredentials(targetQuery, params);
-      if (creds) {
-        // Discard any inherited parent/tab session token to authenticate requested role cleanly
-        sessionToken = null;
-        sessionStorage.removeItem('ttf_session_token');
-        ws.send(JSON.stringify({ action: 'LOGIN', username: creds.u, password: creds.p }));
-        return;
-      }
-    }
-
-    if (params.get('logout') === 'true') {
-      sessionToken = null;
-      sessionStorage.removeItem('ttf_session_token');
-      switchSpaView(null);
-      return;
-    }
-
+    // URL-param auto-login removed — all sessions require fresh login via WebSocket
     if (sessionToken) {
       ws.send(JSON.stringify({ action: 'RESUME_SESSION', session_token: sessionToken }));
     }
@@ -8686,7 +8660,6 @@ function copySetupCredentialsToClipboard() {
     lines.push(`Desk #${t.slot}: ${t.name}`);
     lines.push(`   Username: ${t.username}`);
     lines.push(`   Password: ${t.password}`);
-    lines.push(`   Direct Access: ${origin}/?team=${t.username}&pass=${encodeURIComponent(t.password)}`);
     lines.push('');
   });
 
@@ -8718,13 +8691,12 @@ function downloadSetupCredentialsCsv() {
   const teams = getSetupTeamsArray();
   const origin = window.location.origin;
   const rows = [
-    ['Desk Slot', 'Team Name', 'Username', 'Password', 'Direct URL']
+    ['Desk Slot', 'Team Name', 'Username', 'Password']
   ];
   teams.forEach((t) => {
-    const url = `${origin}/?team=${t.username}&pass=${encodeURIComponent(t.password)}`;
     const safeName = /^[=+\-@]/.test(t.name) ? `'${t.name}` : t.name;
     const safePass = /^[=+\-@]/.test(t.password) ? `'${t.password}` : t.password;
-    rows.push([t.slot, `"${safeName.replace(/"/g, '""')}"`, t.username, `"${safePass.replace(/"/g, '""')}"`, url]);
+    rows.push([t.slot, `"${safeName.replace(/"/g, '""')}"`, t.username, `"${safePass.replace(/"/g, '""')}"`]);
   });
   const csvContent = rows.map((r) => r.join(',')).join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -9504,7 +9476,6 @@ function renderSetupSections(state) {
       const foundTeam = teamsList.find((t) => t.id === username || t.id === `team_${i}` || t.name === `Team ${i}` || t.name === `TEAM ${i}`) || {};
       const teamName = foundTeam.name || `Team ${i}`;
       const members = foundTeam.members || '—';
-      const directUrl = `${origin}/?team=${username}&pass=${password}`;
       rows.push(`
         <tr style="border-bottom: 1px solid var(--subtle-border);">
           <td style="padding: 8px; font-weight: 700; color: var(--champagne-accent);">Desk #${i}</td>
@@ -9512,16 +9483,6 @@ function renderSetupSections(state) {
           <td style="padding: 8px; font-family: var(--font-sans); color: var(--text-muted); font-size: 11px;">${escapeHtml(members)}</td>
           <td style="padding: 8px; font-weight: 800; color: #1E40AF;">${username}</td>
           <td style="padding: 8px; color: var(--text-charcoal); background-color: var(--surface-cream); border-radius: 4px;">${password}</td>
-          <td style="padding: 8px; text-align: center;">
-            <button onclick="openTerminalTab('/?team=${username}&pass=${password}')" class="btn btn-sage" style="padding: 3px 10px; font-size: 11px;">
-              Launch Desk
-            </button>
-          </td>
-          <td style="padding: 8px; text-align: center;">
-            <button onclick="copyToClipboard('${directUrl}')" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;" title="Copy Desk Link">
-              🔗 Copy
-            </button>
-          </td>
         </tr>
       `);
     }
@@ -10245,11 +10206,11 @@ function syncHostProgressiveDisclosure(gs) {
   const btnConclude = document.getElementById('btnMarketCloseSession');
   const btnAddDay = document.getElementById('btnAtcAddDay');
   const btnEmergency = document.getElementById('btnEmergencyStopTrigger');
-  const btnDraftJump = document.getElementById('btnAtcDraftJump');
+  // btnAtcDraftJump removed — element deleted from DOM
   const ceremonyBar = document.getElementById('hostCeremonyDirectorBar');
 
   // Helper to hide all optional buttons first, then show ONLY what is needed for the current step
-  [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency, btnDraftJump].forEach((el) => {
+  [btnResume, btnPause, btnModeBlackout, modeSelector, btnSchedule, btnCancelSched, btnConclude, btnAddDay, btnEmergency].forEach((el) => {
     if (el) el.classList.add('hidden');
   });
 
@@ -10278,9 +10239,8 @@ function syncHostProgressiveDisclosure(gs) {
   if (!isLocked) {
     // STEP 1: Setup not locked yet -> Show direct jump to Hub 2
     if (badge) { badge.textContent = '⚙️ DRAFT SETUP'; badge.className = 'badge badge-paused'; }
-    if (btnDraftJump) btnDraftJump.classList.remove('hidden');
     if (stageTitle) stageTitle.textContent = 'Event Setup in Progress';
-    if (stageSub) stageSub.textContent = 'Complete configuration in Step 6 to arm market';
+    if (stageSub) stageSub.textContent = 'Complete configuration in Hub 2 to arm market';
   } else if (gs.status === 'STANDBY') {
     // STEP 2: Locked & Standby -> Show [▶ Start Day N (3-2-1)] and [⏱️ Schedule Timer]
     if (badge) { badge.textContent = `⏳ DAY ${day} STANDBY`; badge.className = 'badge badge-champagne'; }
@@ -10564,7 +10524,6 @@ function renderHostLauncherTab(state) {
     const foundTeam = teamsList.find((t) => t.id === username || t.id === `team_${i}` || t.name === `Team ${i}` || t.name === `TEAM ${i}`) || {};
     const teamName = foundTeam.name || `Team ${i}`;
     const members = foundTeam.members || '—';
-    const directUrl = `${origin}/?team=${username}&pass=${password}`;
 
     rows.push(`
       <tr style="border-bottom: 1px solid var(--subtle-border);">
@@ -10573,16 +10532,6 @@ function renderHostLauncherTab(state) {
         <td style="padding: 8px; font-family: var(--font-sans); color: var(--text-muted); font-size: 11px;">${escapeHtml(members)}</td>
         <td style="padding: 8px; font-weight: 800; color: #1E40AF;">${username}</td>
         <td style="padding: 8px; color: var(--text-charcoal); background-color: var(--surface-cream); border-radius: 4px;">${password}</td>
-        <td style="padding: 8px; text-align: center;">
-          <button onclick="openTerminalTab('/?team=${username}&pass=${password}')" class="btn btn-sage" style="padding: 3px 10px; font-size: 11px;">
-            Launch Desk
-          </button>
-        </td>
-        <td style="padding: 8px; text-align: center;">
-          <button onclick="copyToClipboard('${directUrl}')" class="btn btn-outline" style="padding: 3px 8px; font-size: 11px;" title="Copy Desk Link">
-            🔗 Copy Link
-          </button>
-        </td>
       </tr>
     `);
   }
@@ -10591,7 +10540,8 @@ function renderHostLauncherTab(state) {
 }
 
 function openTerminalTab(path) {
-  window.open(path, '_blank');
+  // Always open the base URL — new tab requires fresh login
+  window.open('/', '_blank');
 }
 
 function copyToClipboard(text) {
@@ -10611,13 +10561,13 @@ function copyAllCredentialsToClipboard() {
   let text = `==========================================================\n`;
   text += `THE TRADING FLOOR CHAMPIONSHIP — TERMINAL CREDENTIALS\n`;
   text += `==========================================================\n\n`;
-  text += `[HOST MASTER CONTROL]\nURL: ${origin}/?role=host\nUsername: host\nPassword: host\n\n`;
-  text += `[AUDITORIUM STAGE PROJECTOR]\nURL: ${origin}/?role=projector\nUsername: projector\nPassword: screen\n\n`;
+  text += `[HOST MASTER CONTROL]\nURL: ${origin}/\nUsername: host\nPassword: host\n\n`;
+  text += `[AUDITORIUM STAGE PROJECTOR]\nURL: ${origin}/\nUsername: projector\nPassword: screen\n\n`;
   text += `[TRADER TERMINALS (TEAMS 1 - 16)]\n`;
   for (let i = 1; i <= 16; i++) {
-    text += `Team ${i}: Username: team${i} | Password: trade${i}00 | Direct Link: ${origin}/?team=team${i}\n`;
+    text += `Team ${i}: Username: team${i} | Password: trade${i}00\n`;
   }
-  text += `\nGeneral Login: ${origin}/\n`;
+  text += `\nAll terminals: Navigate to ${origin}/ and log in with the credentials above.\n`;
 
   copyToClipboard(text);
 }
@@ -11053,16 +11003,36 @@ function openWinnerPodium() {
 }
 window.openWinnerPodium = openWinnerPodium;
 
-function downloadReport(type) {
+async function downloadReport(type) {
   if (!sessionToken) return;
   let endpoint = '';
-  if (type === 'standings') endpoint = '/api/export/standings';
-  else if (type === 'trades') endpoint = '/api/export/trades';
-  else if (type === 'audit-csv') endpoint = '/api/export/audit-csv';
-  else if (type === 'audit-json') endpoint = '/api/audit-log';
+  let filename = 'report.csv';
+  if (type === 'standings') { endpoint = '/api/export/standings'; filename = 'championship_standings.csv'; }
+  else if (type === 'trades') { endpoint = '/api/export/trades'; filename = 'championship_trades.csv'; }
+  else if (type === 'audit-csv') { endpoint = '/api/export/audit-csv'; filename = 'championship_audit.csv'; }
+  else if (type === 'audit-json') { endpoint = '/api/audit-log'; filename = 'championship_audit.json'; }
 
   if (endpoint) {
-    window.open(`${endpoint}?token=${encodeURIComponent(sessionToken)}`, '_blank');
+    try {
+      const res = await fetch(endpoint, {
+        headers: { 'x-session-token': sessionToken }
+      });
+      if (!res.ok) {
+        showOrderToast('Failed to download report', false);
+        return;
+      }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      showOrderToast(`📥 Downloaded ${filename}`, true);
+    } catch (e) {
+      showOrderToast('Download error', false);
+    }
   }
 }
 
